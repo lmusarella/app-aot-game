@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracker Gioco da Tavolo - AoT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <main>
+            <header>
+                <div class="header-title">
+                    <h1>AOT Companion</h1>
+                </div>
+                <div class="header-controls">
+                    <div class="mission-counter">
+                        <span id="mission-count">Missione #1</span>
+                        <span id="mission-timer">20:00</span>
+                    </div>
+                    <button id="reset-game-btn" class="btn btn-reset">Reset</button>
+                </div>
+            </header>
+
+            <div class="main-grid">
+                <!-- MISSION BOX -->
+                <div class="grid-item mission-box">
+                    <h2 class="grid-item-title">Quadro Missione</h2>
+                    <div class="grid-item-content">
+                        <div class="mission-details-box">
+                            <p><strong>Obiettivo:</strong> <span id="mission-objective-text"></span></p>
+                            <p><strong>Ricompensa:</strong> <span id="mission-reward-text"></span></p>
+                            <p><strong>Evento:</strong> <span id="mission-event-text"></span></p>
+                        </div>
+                        <div class="mission-controls">
+                             <button id="decrease-mission" class="btn">-</button>
+                             <div class="mission-main-actions">
+                                <button id="restart-mission-btn" class="btn btn-restart">Riavvia Timer</button>
+                                <button id="complete-mission-btn" class="btn btn-complete">Missione Completata</button>
+                             </div>
+                             <button id="increase-mission" class="btn">+</button>
+                        </div>
+                        <h3 class="sub-title">Unità in Missione</h3>
+                        <div class="squad-management">
+                            <div class="unit-counts">
+                                <p>Reclute Vive: <span id="living-recruits">0/0</span></p>
+                                <p>Comandanti Vivi: <span id="living-commanders">0/0</span></p>
+                            </div>
+                            <div class="buttons">
+                                <button id="open-recruits-popup" class="btn">Gestisci Reclute</button>
+                                <button id="open-commanders-popup" class="btn">Gestisci Comandanti</button>
+                            </div>
+                        </div>
+                        <div id="mission-units-grid" class="mission-units-grid"></div>
+                    </div>
+                </div>
+
+                <!-- TITAN BOX -->
+                <div class="grid-item titan-box">
+                    <h2 class="grid-item-title titans-header">Giganti in Campo</h2>
+                    <div class="grid-item-content">
+                        <button id="add-titan-btn" class="btn btn-add-titan">Aggiungi Gigante</button>
+                        <div id="titan-grid" class="mission-units-grid"></div>
+                    </div>
+                </div>
+                
+                <!-- RIGHT COLUMN (DICE + LOG) -->
+                <div class="grid-item right-column">
+                    <div class="grid-item dice-box">
+                        <h2 class="grid-item-title">Lancio Dadi</h2>
+                         <div id="dice-roller-panel">
+                            <div class="dice-group">
+                                <label>D20</label>
+                                <div class="dice-button-group">
+                                    <button class="roll-dice-btn" data-sides="20" data-count="1">1</button>
+                                    <button class="roll-dice-btn" data-sides="20" data-count="2">2</button>
+                                    <button class="roll-dice-btn" data-sides="20" data-count="3">3</button>
+                                    <button class="roll-dice-btn" data-sides="20" data-count="4">4</button>
+                                    <button class="roll-dice-btn" data-sides="20" data-count="5">5</button>
+                                </div>
+                            </div>
+                            <div class="dice-group">
+                                <label>D4</label>
+                                <div class="dice-button-group">
+                                    <button class="roll-dice-btn" data-sides="4" data-count="1">1</button>
+                                    <button class="roll-dice-btn" data-sides="4" data-count="2">2</button>
+                                    <button class="roll-dice-btn" data-sides="4" data-count="3">3</button>
+                                    <button class="roll-dice-btn" data-sides="4" data-count="4">4</button>
+                                    <button class="roll-dice-btn" data-sides="4" data-count="5">5</button>
+                                </div>
+                            </div>
+                            <div id="dice-result-area"><p>Risultati...</p></div>
+                        </div>
+                    </div>
+                    <div class="grid-item log-box">
+                        <h2 class="grid-item-title">Cronologia Eventi</h2>
+                        <div id="log-entries"></div>
+                    </div>
+                </div>
+
+                <!-- STATS GRID - BOTTOM ROW -->
+                <div class="stats-grid">
+                    <div class="grid-item stats-box">
+                        <h3 class="stats-title">Morale</h3>
+                        <div class="slider-value-container">
+                            <input type="range" id="morale" min="0" max="15" value="15">
+                            <span id="morale-value">15</span>
+                        </div>
+                        <p id="morale-description"></p>
+                    </div>
+                    <div class="grid-item stats-box">
+                        <h3 class="stats-title">Esperienza</h3>
+                        <div class="slider-value-container">
+                            <input type="range" id="xp" min="0" max="70" value="0">
+                            <span id="xp-value">Livello 1 (XP: 0)</span>
+                        </div>
+                        <p id="xp-bonuses"></p>
+                    </div>
+                    <div class="grid-item stats-box" id="bonus-box">
+                        <h3 class="stats-title">Bonus/Malus Attivi</h3>
+                        <p id="bonus-recap-text"></p>
+                    </div>
+                    <div class="grid-item stats-box" id="wall-hp-section">
+                        <h3 class="stats-title">Mura</h3>
+                        <!-- Wall HP sliders will be injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- POPUPS -->
+    <div id="recruits-popup" class="popup"><div class="popup-content"><div class="popup-header"><h2>Reclute</h2><button class="close-button" id="close-recruits-popup">&times;</button></div><div class="unit-list-container"><ul id="recruits-list"></ul></div></div></div>
+    <div id="commanders-popup" class="popup"><div class="popup-content"><div class="popup-header"><h2>Comandanti</h2><button class="close-button" id="close-commanders-popup">&times;</button></div><div class="unit-list-container"><ul id="commanders-list"></ul></div></div></div>
+    <div id="reset-confirm-modal" class="confirm-modal"><div class="confirm-modal-content"><p>Sei sicuro di voler resettare l'intera partita?</p><div class="confirm-modal-buttons"><button id="cancel-reset-btn" class="btn">Annulla</button><button id="confirm-reset-btn" class="btn btn-reset">Conferma</button></div></div></div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

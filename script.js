@@ -1,0 +1,673 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DATA & STATE MANAGEMENT ---
+    let gameState = {};
+    let missionTimerInterval;
+    let pendingHpChanges = {};
+    let hpChangeTimers = {};
+    
+    const titanTypes = ['Puro', 'Anomalo', 'Mutaforma'];
+    const xpTable = [
+        { level: 1, xpRequired: 0, bonus: "-" },
+        { level: 2, xpRequired: 10, bonus: "+1 AGI" },
+        { level: 3, xpRequired: 20, bonus: "+1 AGI, +1 TEC" },
+        { level: 4, xpRequired: 30, bonus: "+1 AGI, +1 TEC, +1 STR" },
+        { level: 5, xpRequired: 40, bonus: "Cura le tue reclute di 5 HP complessivi. +1 AGI, +1 TEC, +1 STR" },
+        { level: 6, xpRequired: 50, bonus: "Ogni giocatore può pescare una carta equipaggiamento. +1 AGI, +1 TEC, +1 STR" },
+        { level: 7, xpRequired: 60, bonus: "Ripara le tue attuali mura di 5 HP. +1 AGI, +1 TEC, +1 STR" },
+        { level: 8, xpRequired: 70, bonus: "Cura i tuoi comandanti di 8 HP complessivi. +1 AGI, +1 TEC, +1 STR" },
+        { level: 9, xpRequired: 80, bonus: "Cura le tue reclute di 10 HP complessivi. +1 AGI, +1 TEC, +1 STR" },
+        { level: 10, xpRequired: 90, bonus: "Le tue reclute subiscono un danno in meno da tutte le fonti. +1 AGI, +1 TEC, +1 STR" }
+    ];
+    
+    const missionData = {
+        1: { objective: "Uccidi 3 Giganti Puri.", reward: "+2 XP", event: "Spawn di 2 Giganti Puri" },
+        2: { objective: "Uccidi 4 Giganti Puri.", reward: "+2 XP", event: "Spawn di 3 Giganti Puri" },
+        3: { objective: "Uccidi 1 Gigante Anomalo e 2 Giganti Puri.", reward: "+3 XP", event: "Spawn di 1 Gigante Anomalo" },
+        4: { objective: "Uccidi 2 Giganti Anomali.", reward: "+5 XP, +1 Morale", event: "Spawn di 2 Giganti Anomali" },
+        5: { objective: "Uccidi 3 Giganti Anomali.", reward: "+4 XP", event: "Spawn di 2 Gigante Anomalo" },
+        6: { objective: "Uccidi 1 Gigante Mutaforma.", reward: "+2 XP, +1 Morale", event: "Spawn di 1 Gigante Mutaforma" },
+        7: { objective: "Uccidi 1 Gigante Mutaforma e 2 Giganti Anomali.", reward: "+3 XP", event: "Spawn di Gigante Mutaforma e 2 Giganti Anomali" },
+        8: { objective: "Uccidi tutti i Giganti Mutaforma.", reward: "+6 XP", event: "Spawn di 2 Giganti MuMutaforma e 3 giganti " }
+    };
+
+    const titanSpawnTable = {
+        1: { 'Puro': '1-16', 'Anomalo': '17-19', 'Mutaforma': '20' },
+        2: { 'Puro': '1-15', 'Anomalo': '16-18', 'Mutaforma': '19-20' },
+        3: { 'Puro': '1-14', 'Anomalo': '15-17', 'Mutaforma': '18-20' },
+        4: { 'Puro': '1-13', 'Anomalo': '14-16', 'Mutaforma': '17-20' },
+        5: { 'Puro': '1-12', 'Anomalo': '13-15', 'Mutaforma': '16-20' },
+        6: { 'Puro': '1-11', 'Anomalo': '12-14', 'Mutaforma': '15-20' },
+        7: { 'Puro': '1-9', 'Anomalo': '10-13', 'Mutaforma': '14-20' },
+        8: { 'Puro': '1-8', 'Anomalo': '9-12', 'Mutaforma': '13-20' }
+    };
+
+    const elements = {
+        moraleSlider: document.getElementById('morale'),
+        xpSlider: document.getElementById('xp'),
+        livingRecruitsSpan: document.getElementById('living-recruits'),
+        livingCommandersSpan: document.getElementById('living-commanders'),
+        openRecruitsPopupBtn: document.getElementById('open-recruits-popup'),
+        recruitsPopup: document.getElementById('recruits-popup'),
+        closeRecruitsPopupBtn: document.getElementById('close-recruits-popup'),
+        recruitsList: document.getElementById('recruits-list'),
+        openCommandersPopupBtn: document.getElementById('open-commanders-popup'),
+        commandersPopup: document.getElementById('commanders-popup'),
+        closeCommandersPopupBtn: document.getElementById('close-commanders-popup'),
+        commandersList: document.getElementById('commanders-list'),
+        missionCount: document.getElementById('mission-count'),
+        missionTimer: document.getElementById('mission-timer'),
+        missionObjectiveText: document.getElementById('mission-objective-text'),
+        missionRewardText: document.getElementById('mission-reward-text'),
+        missionEventText: document.getElementById('mission-event-text'),
+        missionUnitsGrid: document.getElementById('mission-units-grid'),
+        decreaseMissionBtn: document.getElementById('decrease-mission'),
+        increaseMissionBtn: document.getElementById('increase-mission'),
+        addTitanBtn: document.getElementById('add-titan-btn'),
+        titanGrid: document.getElementById('titan-grid'),
+        completeMissionBtn: document.getElementById('complete-mission-btn'),
+        restartMissionBtn: document.getElementById('restart-mission-btn'),
+        resetGameBtn: document.getElementById('reset-game-btn'),
+        resetConfirmModal: document.getElementById('reset-confirm-modal'),
+        confirmResetBtn: document.getElementById('confirm-reset-btn'),
+        cancelResetBtn: document.getElementById('cancel-reset-btn'),
+        diceRollerPanel: document.getElementById('dice-roller-panel'),
+        diceResultArea: document.getElementById('dice-result-area'),
+        wallHpSection: document.getElementById('wall-hp-section'),
+        logEntries: document.getElementById('log-entries'),
+        moraleDescription: document.getElementById('morale-description'),
+        xpBonuses: document.getElementById('xp-bonuses'),
+        bonusRecapText: document.getElementById('bonus-recap-text'),
+    };
+    
+    const addLogEntry = (message, type = 'info') => {
+        if (!gameState.logData) gameState.logData = [];
+        const timestamp = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        gameState.logData.unshift({ time: timestamp, message, type });
+        if (gameState.logData.length > 100) { // Keep log from getting too big
+            gameState.logData.pop();
+        }
+        renderLog();
+        saveGameState();
+    };
+    
+    const renderLog = () => {
+        elements.logEntries.innerHTML = gameState.logData.map(entry => 
+            `<p class="log-${entry.type}"><strong>[${entry.time}]</strong> ${entry.message}</p>`
+        ).join('');
+    };
+
+    const updateSlider = (slider) => {
+        const container = slider.closest('.slider-value-container');
+        if (!container) return;
+        const valueSpan = container.querySelector('span');
+        if (valueSpan) {
+            if (slider.id === 'xp') {
+                const xp = parseInt(slider.value, 10);
+                const currentLevel = xpTable.filter(l => xp >= l.xpRequired).pop() || xpTable[0];
+                valueSpan.textContent = `Livello ${currentLevel.level} (XP: ${xp})`;
+            } else {
+                valueSpan.textContent = slider.value;
+            }
+        }
+        
+        const percentage = (slider.value / slider.max) * 100;
+        let colorVar = 'var(--status-low)';
+        if (percentage > 60) colorVar = 'var(--status-high)';
+        else if (percentage > 30) colorVar = 'var(--status-medium)';
+
+        slider.style.setProperty('--slider-color', colorVar);
+        slider.style.setProperty('--range-progress', `${percentage}%`);
+    };
+
+    const getHpStatusClass = (hp, initialHp) => {
+        if (hp <= 0) return 'hp-dead';
+        const percentage = (hp / initialHp) * 100;
+        if (percentage > 60) return 'hp-high';
+        if (percentage > 30) return 'hp-medium';
+        return 'hp-low';
+    };
+
+    const updateMorale = () => {
+        updateSlider(elements.moraleSlider);
+        const morale = elements.moraleSlider.value;
+        if (morale == 0) elements.moraleDescription.textContent = "AVETE PERSO";
+        else if (morale <= 5) elements.moraleDescription.textContent = "Malus: -2 AGI, -1 STR, -1TEC";
+        else if (morale <= 9) elements.moraleDescription.textContent = "Malus: -1 AGI, -1 STR";
+        else if (morale <= 12) elements.moraleDescription.textContent = "Malus: -1 AGI";
+        else elements.moraleDescription.textContent = "Nessun malus";
+        updateBonusRecap();
+    };
+
+    const updateXP = () => {
+        updateSlider(elements.xpSlider);
+        const xp = parseInt(elements.xpSlider.value, 10);
+        const currentLevel = xpTable.filter(l => xp >= l.xpRequired).pop() || xpTable[0];
+        elements.xpBonuses.textContent = `Bonus: ${currentLevel.bonus}`;
+        updateBonusRecap();
+    };
+    
+    const updateBonusRecap = () => {
+        const totalBonuses = { AGI: 0, STR: 0, TEC: 0 };
+        const morale = parseInt(elements.moraleSlider.value, 10);
+        if (morale <= 5) {
+            totalBonuses.AGI -= 2; totalBonuses.STR -= 1; totalBonuses.TEC -= 1;
+        } else if (morale <= 9) {
+            totalBonuses.AGI -= 1; totalBonuses.STR -= 1;
+        } else if (morale <= 12) {
+            totalBonuses.AGI -= 1;
+        }
+
+        const xp = parseInt(elements.xpSlider.value, 10);
+        const currentLevel = xpTable.filter(l => xp >= l.xpRequired).pop() || xpTable[0];
+        if (currentLevel && currentLevel.bonus !== "-") {
+            const parts = currentLevel.bonus.split(',').map(s => s.trim());
+            parts.forEach(part => {
+                const match = part.match(/([+-]\d+)\s(AGI|STR|TEC)/);
+                if (match) {
+                    totalBonuses[match[2]] += parseInt(match[1], 10);
+                }
+            });
+        }
+        
+        let bonusString = Object.entries(totalBonuses)
+            .filter(([, value]) => value !== 0)
+            .map(([stat, value]) => `${value > 0 ? '+' : ''}${value} ${stat}`)
+            .join(', ');
+
+        elements.bonusRecapText.textContent = bonusString || "Nessun bonus/malus";
+    };
+
+    const updateUnitCounts = () => {
+        const livingRecruits = gameState.recruitsData.filter(r => r.hp > 0).length;
+        const totalRecruits = gameState.recruitsData.length;
+        elements.livingRecruitsSpan.textContent = `${livingRecruits}/${totalRecruits}`;
+
+        const livingCommanders = gameState.commandersData.filter(c => c.hp > 0).length;
+        const totalCommanders = gameState.commandersData.length;
+        elements.livingCommandersSpan.textContent = `${livingCommanders}/${totalCommanders}`;
+    };
+
+    const renderUnitListInPopup = (listElement, data, type) => {
+        listElement.innerHTML = '';
+        const living = data.filter(u => u.hp > 0).sort((a,b) => a.name.localeCompare(b.name));
+        const dead = data.filter(u => u.hp <= 0).sort((a,b) => a.name.localeCompare(b.name));
+        
+        const createLi = (unit) => {
+            const li = document.createElement('li');
+            const hpClass = getHpStatusClass(unit.hp, unit.initialHp);
+            li.innerHTML = `
+                <div class="unit-info-popup">
+                    <img src="${unit.imageUrl}" alt="${unit.name}" class="unit-image-popup" onerror="this.onerror=null;this.src='https://placehold.co/60x60/cccccc/000000?text=IMG';">
+                    <span class="${hpClass}">${unit.name} (HP: ${unit.hp > 0 ? unit.hp : 'Morto'})</span>
+                </div>
+                <div class="hp-controls">
+                    <button class="hp-change btn" data-id="${unit.id}" data-type="${type}" data-amount="-1" ${unit.hp <= 0 ? 'disabled' : ''}>-</button>
+                    <button class="hp-change btn" data-id="${unit.id}" data-type="${type}" data-amount="1">+</button>
+                    <button class="mission-button btn ${unit.onMission ? 'on-mission' : ''}" data-id="${unit.id}" data-type="${type}" ${unit.hp <= 0 ? 'disabled' : ''}>
+                        ${unit.onMission ? 'Rimuovi' : 'Invia'}
+                    </button>
+                </div>`;
+            return li;
+        };
+
+        living.forEach(unit => listElement.appendChild(createLi(unit)));
+        if (dead.length > 0 && living.length > 0) {
+            const separator = document.createElement('li');
+            separator.innerHTML = `<hr style="width:100%; border-color: var(--background-lighter); margin: 0.5rem 0;">`;
+            listElement.appendChild(separator);
+        }
+        dead.forEach(unit => listElement.appendChild(createLi(unit)));
+    };
+    
+    const updateMissionView = () => {
+        elements.missionCount.textContent = `Missione #${gameState.currentMissionNumber}`;
+        const currentMission = missionData[gameState.currentMissionNumber] || { objective: "N/D", reward: "N/D", event: "N/D" };
+        elements.missionObjectiveText.textContent = currentMission.objective;
+        elements.missionRewardText.textContent = currentMission.reward;
+        elements.missionEventText.textContent = currentMission.event;
+        
+        elements.missionUnitsGrid.innerHTML = '';
+        const onMissionUnits = [...gameState.recruitsData, ...gameState.commandersData].filter(u => u.onMission && u.hp > 0);
+
+        if (onMissionUnits.length === 0) {
+            elements.missionUnitsGrid.innerHTML = `<p style="color: var(--text-secondary); text-align: center; grid-column: 1 / -1; margin: auto;">Nessuna unità in missione.</p>`;
+            return;
+        }
+        
+        onMissionUnits.forEach(unit => {
+            const card = document.createElement('div');
+            const hpClass = getHpStatusClass(unit.hp, unit.initialHp);
+            card.className = `unit-card ${unit.type === 'commander' ? 'commander' : ''}`;
+            card.innerHTML = `
+                <button class="remove-from-mission-btn" data-id="${unit.id}" data-type="${unit.type}">&times;</button>
+                <img src="${unit.imageUrl}" alt="${unit.name}" class="unit-image" onerror="this.onerror=null;this.src='https://placehold.co/60x60/cccccc/000000?text=IMG';">
+                <div class="name">${unit.name}</div>
+                <div class="stat-row">
+                    <div class="controls">
+                        <button class="hp-change btn" data-id="${unit.id}" data-type="${unit.type}" data-amount="-1">-</button>
+                        <span class="label hp ${hpClass}">${unit.hp}</span>
+                        <button class="hp-change btn" data-id="${unit.id}" data-type="${unit.type}" data-amount="1">+</button>
+                    </div>
+                </div>`;
+            elements.missionUnitsGrid.appendChild(card);
+        });
+    };
+
+    const renderTitanSpawnLegend = () => {
+        const header = document.querySelector('.titans-header');
+        if (!header) return;
+        
+        let legend = header.querySelector('.titan-spawn-legend');
+        if (!legend) {
+            legend = document.createElement('div');
+            legend.className = 'titan-spawn-legend';
+            legend.style.cssText = 'display:flex; gap: 0.75rem; font-size: 1.5rem; align-items:center;';
+            header.appendChild(legend);
+        }
+
+        const currentSpawnData = titanSpawnTable[gameState.currentMissionNumber] || titanSpawnTable[1];
+        legend.innerHTML = `
+            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#a0aec0;"></div><span>${currentSpawnData['Puro']}</span></div>
+            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#ecc94b;"></div><span>${currentSpawnData['Anomalo']}</span></div>
+            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#f56565;"></div><span>${currentSpawnData['Mutaforma']}</span></div>
+        `;
+    };
+
+    const renderTitans = () => {
+        elements.titanGrid.innerHTML = '';
+        const allTitans = [...gameState.titansData];
+
+        if (allTitans.length === 0) {
+            elements.titanGrid.innerHTML = `<p style="color: var(--text-secondary); text-align: center; grid-column: 1 / -1; margin: auto;">Nessun gigante in campo.</p>`;
+            return;
+        }
+        
+        allTitans.forEach(titan => {
+            const card = document.createElement('div');
+            const isDead = titan.hp <= 0;
+            const hpClass = getHpStatusClass(titan.hp, titan.initialHp);
+            card.className = `unit-card ${isDead ? 'titan-dead' : `titan-${titan.type.toLowerCase()}`}`;
+
+            card.innerHTML = `
+                <button class="remove-titan-btn" data-id="${titan.id}">&times;</button>
+                <div class="name">${isDead ? 'Sconfitto' : titan.name}</div>
+                <button class="titan-type-switcher" data-id="${titan.id}" ${isDead ? 'disabled' : ''}>${titan.type}</button>
+                <div class="stat-row">
+                    <div class="controls">
+                        <button class="hp-change btn" data-id="${titan.id}" data-type="titan" data-amount="-1" ${isDead ? 'disabled' : ''}>-</button>
+                        <span class="label hp ${hpClass}">${titan.hp}</span>
+                        <button class="hp-change btn" data-id="${titan.id}" data-type="titan" data-amount="1" ${isDead ? 'disabled' : ''}>+</button>
+                    </div>
+                </div>
+                 <div class="stat-row">
+                    <div class="controls">
+                        <button class="cooldown-change btn" data-id="${titan.id}" data-amount="-1">-</button>
+                        <span class="label">R:${titan.cooldown}</span>
+                        <button class="cooldown-change btn" data-id="${titan.id}" data-amount="1">+</button>
+                    </div>
+                </div>`;
+            elements.titanGrid.appendChild(card);
+        });
+    };
+    
+    const handleHpChange = (e) => {
+        const target = e.target.closest('.hp-change');
+        if (!target) return;
+        const { id, type, amount } = target.dataset;
+        const key = `${type}-${id}`;
+
+        clearTimeout(hpChangeTimers[key]);
+
+        if (!pendingHpChanges[key]) {
+            let data, unit;
+            if (type === 'titan') data = gameState.titansData;
+            else if (type === 'recruit') data = gameState.recruitsData;
+            else data = gameState.commandersData;
+            unit = data.find(u => u.id == id);
+            if (!unit) return;
+            pendingHpChanges[key] = { amount: 0, unit };
+        }
+
+        pendingHpChanges[key].amount += parseInt(amount, 10);
+        
+        hpChangeTimers[key] = setTimeout(() => {
+            if (pendingHpChanges[key]) {
+                processHpChange(pendingHpChanges[key].unit, pendingHpChanges[key].amount);
+                delete pendingHpChanges[key];
+                delete hpChangeTimers[key];
+            }
+        }, 1000); // Group changes within 1 second
+    };
+
+    const processHpChange = (unit, totalAmount) => {
+        if (!unit || totalAmount === 0) return;
+    
+        const oldHp = unit.hp;
+        const wasAlive = oldHp > 0;
+    
+        unit.hp = Math.max(0, unit.hp + totalAmount);
+        const isNowDead = unit.hp <= 0;
+    
+        if (wasAlive && !isNowDead) { // Log damage/healing only if the unit is not dying in this change
+            if (totalAmount < 0) {
+                addLogEntry(`${unit.name} ha subito ${-totalAmount} danni.`, 'damage');
+            } else {
+                addLogEntry(`${unit.name} è stato curato di ${totalAmount} HP.`, 'info');
+            }
+        }
+    
+        if (wasAlive && isNowDead) {
+            handleUnitDeath(unit);
+        } else if (!wasAlive && unit.hp > 0) {
+            handleUnitResurrection(unit);
+        }
+    
+        updateAllUIElements();
+        saveGameState();
+    };
+
+    const handleUnitDeath = (unit) => {
+        let moraleChange = 0;
+        let xpChange = 0;
+        
+        if (titanTypes.includes(unit.type)) {
+            const rewards = { 'Puro': { m: 1, xp: 1 }, 'Anomalo': { m: 2, xp: 2 }, 'Mutaforma': { m: 5, xp: 3 } };
+            const reward = rewards[unit.type];
+            if (reward) {
+                moraleChange = reward.m;
+                xpChange = reward.xp;
+                unit.isDefeated = true;
+                addLogEntry(`${unit.name} è stato sconfitto! (Morale +${reward.m}, XP +${reward.xp})`, 'mission');
+            }
+        } else {
+            addLogEntry(`${unit.name} è stato sconfitto!`, 'death');
+            if (unit.type === 'recruit') moraleChange = -3;
+            else if (unit.type === 'commander') moraleChange = -5;
+        }
+        applyStatChanges(moraleChange, xpChange);
+    };
+
+    const handleUnitResurrection = (unit) => {
+        addLogEntry(`${unit.name} è tornato in vita!`, 'info');
+        let moraleChange = 0;
+        let xpChange = 0;
+        if (unit.type === 'recruit') moraleChange = 3;
+        else if (unit.type === 'commander') moraleChange = 5;
+        else if (titanTypes.includes(unit.type) && unit.isDefeated) {
+            const rewards = { 'Puro': { m: 1, xp: 1 }, 'Anomalo': { m: 2, xp: 2 }, 'Mutaforma': { m: 5, xp: 3 } };
+            const reward = rewards[unit.type];
+            if (reward) {
+                moraleChange = -reward.m;
+                xpChange = -reward.xp;
+                unit.isDefeated = false;
+            }
+        }
+        applyStatChanges(moraleChange, xpChange);
+    };
+
+    const applyStatChanges = (moraleChange, xpChange) => {
+        if (moraleChange !== 0) {
+            const newMorale = Math.max(0, Math.min(15, parseInt(elements.moraleSlider.value, 10) + moraleChange));
+            elements.moraleSlider.value = newMorale;
+            gameState.morale = newMorale;
+            updateMorale();
+        }
+        if (xpChange !== 0) {
+            const newXP = Math.max(0, Math.min(70, parseInt(elements.xpSlider.value, 10) + xpChange));
+            elements.xpSlider.value = newXP;
+            gameState.xp = newXP;
+            updateXP();
+        }
+    };
+
+    const updateAllUIElements = () => {
+        updateMorale();
+        updateXP();
+        renderUnitListInPopup(elements.recruitsList, gameState.recruitsData, 'recruit');
+        renderUnitListInPopup(elements.commandersList, gameState.commandersData, 'commander');
+        updateUnitCounts();
+        updateMissionView();
+        renderTitans();
+        renderLog();
+    };
+
+    const handleMissionToggle = (e) => {
+        const target = e.target.closest('.mission-button, .remove-from-mission-btn');
+        if (!target) return;
+        const { id, type } = target.dataset;
+        const data = type === 'recruit' ? gameState.recruitsData : gameState.commandersData;
+        const unit = data.find(u => u.id == id);
+        if (unit) {
+            unit.onMission = !unit.onMission;
+            updateAllUIElements();
+            saveGameState();
+        }
+    };
+
+    const handleTitanActions = (e) => {
+        const target = e.target;
+        
+        if (target.closest('.hp-change')) {
+            handleHpChange(e);
+            return;
+        }
+
+        const id = target.dataset.id;
+        if (!id) return;
+        const titan = gameState.titansData.find(t => t.id == id);
+        if (!titan) return;
+
+        if (target.matches('.remove-titan-btn')) {
+            gameState.titansData = gameState.titansData.filter(t => t.id != id);
+        } else if (target.matches('.cooldown-change')) {
+            titan.cooldown = Math.max(0, titan.cooldown + parseInt(target.dataset.amount, 10));
+        } else if (target.matches('.titan-type-switcher')) {
+            const currentIndex = titanTypes.indexOf(titan.type);
+            titan.type = titanTypes[(currentIndex + 1) % titanTypes.length];
+        }
+        renderTitans();
+        saveGameState();
+    };
+    
+    const addTitan = () => {
+        const newId = (gameState.titanIdCounter || 0) + 1;
+        gameState.titanIdCounter = newId;
+        const newTitan = {
+            id: newId, name: `Gigante #${newId}`,
+            hp: 12, initialHp: 12, cooldown: 0, type: 'Puro',
+            isDefeated: false, createdAt: Date.now()
+        };
+        gameState.titansData.push(newTitan);
+        addLogEntry(`${newTitan.name} è apparso.`, 'info');
+        renderTitans();
+        saveGameState();
+    };
+
+    const changeMission = (amount) => {
+        let newMissionNumber = gameState.currentMissionNumber + amount;
+        const missionKeys = Object.keys(missionData);
+        if (newMissionNumber < 1) newMissionNumber = 1;
+        if (newMissionNumber > missionKeys.length) newMissionNumber = missionKeys.length;
+        
+        if (gameState.currentMissionNumber !== newMissionNumber) {
+            gameState.currentMissionNumber = newMissionNumber;
+            addLogEntry(`Passato alla Missione #${gameState.currentMissionNumber}.`, 'mission');
+        }
+        updateMissionView();
+        renderTitanSpawnLegend();
+        saveGameState();
+    };
+    
+    const completeMission = () => {
+        const currentMission = missionData[gameState.currentMissionNumber];
+        if (!currentMission) return;
+
+        const rewardString = currentMission.reward;
+        const xpMatch = rewardString.match(/\+(\d+)\s*XP/);
+        if (xpMatch) applyStatChanges(0, parseInt(xpMatch[1], 10));
+        const moraleMatch = rewardString.match(/\+(\d+)\s*Morale/);
+        if (moraleMatch) applyStatChanges(parseInt(moraleMatch[1], 10), 0);
+        
+        gameState.recruitsData.forEach(u => u.onMission = false);
+        gameState.commandersData.forEach(u => u.onMission = false);
+        addLogEntry("Tutte le unità sono state richiamate.", "info");
+
+        if (gameState.titansData.length > 0) {
+            gameState.titansData = [];
+            addLogEntry("Tutti i giganti sono stati rimossi.", "info");
+        }
+        
+        addLogEntry(`Missione #${gameState.currentMissionNumber} completata!`, 'mission');
+        
+        changeMission(1);
+        updateAllUIElements();
+    };
+
+    const startMissionTimer = () => {
+        clearInterval(missionTimerInterval);
+        let time = 20 * 60;
+        missionTimerInterval = setInterval(() => {
+            const minutes = Math.floor(time / 60);
+            let seconds = time % 60;
+            elements.missionTimer.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            if (--time < 0) {
+                clearInterval(missionTimerInterval);
+                elements.missionTimer.textContent = "SCADUTO";
+            }
+        }, 1000);
+    };
+    
+    const restartMissionTimer = () => {
+        startMissionTimer();
+        addLogEntry("Timer della missione riavviato.", "mission");
+    };
+
+    const saveGameState = () => {
+        gameState.morale = parseInt(elements.moraleSlider.value, 10);
+        gameState.xp = parseInt(elements.xpSlider.value, 10);
+        localStorage.setItem('aotGameState', JSON.stringify(gameState));
+    };
+
+    const loadGameState = () => {
+        const savedState = localStorage.getItem('aotGameState');
+        gameState = savedState ? JSON.parse(savedState) : initializeDefaultState();
+    };
+    
+    const initializeDefaultState = () => {
+        return {
+            currentMissionNumber: 1,
+            recruitsData: [
+                { id: 1, name: 'Armin Arlert', hp: 10, initialHp: 10, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/f5d273/000000?text=A' },
+                { id: 2, name: 'Connie Springer', hp: 8, initialHp: 8, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/d3d3d3/000000?text=C' },
+                { id: 3, name: 'Sasha Blouse', hp: 9, initialHp: 9, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/c4a683/FFFFFF?text=S' },
+                { id: 4, name: 'Reiner Braun', hp: 15, initialHp: 15, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/e2e8f0/000000?text=R' },
+                { id: 5, name: 'Bertholdt Hoover', hp: 13, initialHp: 13, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/a0aec0/000000?text=B' },
+                { id: 6, name: 'Annie Leonhart', hp: 12, initialHp: 12, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/fde68a/000000?text=A' },
+                { id: 7, name: 'Ymir', hp: 11, initialHp: 11, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/718096/FFFFFF?text=Y' },
+                { id: 8, name: 'Krista Lenz', hp: 7, initialHp: 7, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/fefcbf/000000?text=K' },
+                { id: 9, name: 'Marco Bott', hp: 8, initialHp: 8, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/b7791f/FFFFFF?text=M' },
+                { id: 10, name: 'Thomas Wagner', hp: 8, initialHp: 8, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/9b2c2c/FFFFFF?text=T' },
+                { id: 11, name: 'Mina Carolina', hp: 7, initialHp: 7, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/6b46c1/FFFFFF?text=M' },
+                { id: 12, name: 'Samuel L. Jackson', hp: 8, initialHp: 8, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/000000/FFFFFF?text=S' },
+                { id: 13, name: 'Mikasa Ackerman', hp: 14, initialHp: 14, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/c23b22/FFFFFF?text=M' },
+                { id: 14, name: 'Jean Kirstein', hp: 12, initialHp: 12, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/c4a683/000000?text=J' },
+                { id: 15, name: 'Floch Forster', hp: 9, initialHp: 9, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/e53e3e/FFFFFF?text=F' },
+                { id: 16, name: 'Eren Yeager', hp: 10, initialHp: 10, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/7d7c68/FFFFFF?text=E' }
+            ],
+            commandersData: [
+                { id: 1, name: 'Hange Zoë', hp: 17, initialHp: 17, onMission: false, type: 'commander', imageUrl: 'https://placehold.co/60x60/5d4c46/FFFFFF?text=H' },
+                { id: 2, name: 'Mike Zacharias', hp: 18, initialHp: 18, onMission: false, type: 'commander', imageUrl: 'https://placehold.co/60x60/48bb78/000000?text=M' },
+                { id: 3, name: 'Erwin Smith', hp: 16, initialHp: 16, onMission: false, type: 'commander', imageUrl: 'https://placehold.co/60x60/0077be/FFFFFF?text=E' },
+                { id: 4, name: 'Levi Ackerman', hp: 20, initialHp: 20, onMission: false, type: 'commander', imageUrl: 'https://placehold.co/60x60/4a4a4a/FFFFFF?text=L' }
+            ],
+            titansData: [],
+            titanIdCounter: 0, logData: [], morale: 15, xp: 0,
+        };
+    };
+
+    const resetGame = () => {
+        clearInterval(missionTimerInterval);
+        gameState = initializeDefaultState();
+        addLogEntry("Partita resettata.", "info");
+        fullRender();
+        startMissionTimer();
+        saveGameState();
+    };
+
+    const fullRender = () => {
+        elements.moraleSlider.value = gameState.morale;
+        elements.xpSlider.value = gameState.xp;
+        updateAllUIElements();
+        renderTitanSpawnLegend();
+        renderWallHP();
+    };
+    
+    const renderWallHP = () => {
+        elements.wallHpSection.innerHTML = '<h3 class="stats-title">Mura</h3>';
+         ['maria', 'rose', 'sina'].forEach(wall => {
+            const maxHp = { maria: 15, rose: 5, sina: 3 }[wall];
+            const label = { maria: 'Wall Maria', rose: 'Wall Rose', sina: 'Wall Sina'}[wall];
+            const statDiv = document.createElement('div');
+            statDiv.className = 'stat';
+            statDiv.innerHTML = `
+                <label for="wall-${wall}-hp">${label}:</label>
+                <div class="slider-value-container">
+                    <input type="range" id="wall-${wall}-hp" min="0" max="${maxHp}" value="${maxHp}">
+                    <span>${maxHp}</span>
+                </div>`;
+            elements.wallHpSection.appendChild(statDiv);
+            const slider = statDiv.querySelector('input');
+            slider.addEventListener('input', () => updateSlider(slider));
+            updateSlider(slider);
+        });
+    };
+
+    const init = () => {
+        const setupPopup = (openBtn, closeBtn, popupEl) => {
+            openBtn.addEventListener('click', () => popupEl.classList.add('show'));
+            closeBtn.addEventListener('click', () => popupEl.classList.remove('show'));
+        };
+        setupPopup(elements.openRecruitsPopupBtn, elements.closeRecruitsPopupBtn, elements.recruitsPopup);
+        setupPopup(elements.openCommandersPopupBtn, elements.closeCommandersPopupBtn, elements.commandersPopup);
+
+        elements.moraleSlider.addEventListener('input', () => { updateMorale(); saveGameState(); });
+        elements.xpSlider.addEventListener('input', () => { updateXP(); saveGameState(); });
+        elements.completeMissionBtn.addEventListener('click', completeMission);
+        elements.restartMissionBtn.addEventListener('click', restartMissionTimer);
+        elements.decreaseMissionBtn.addEventListener('click', () => changeMission(-1));
+        elements.increaseMissionBtn.addEventListener('click', () => changeMission(1));
+        
+        // Specific listeners to avoid double-firing HP changes
+        elements.missionUnitsGrid.addEventListener('click', handleHpChange);
+        elements.recruitsList.addEventListener('click', handleHpChange);
+        elements.commandersList.addEventListener('click', handleHpChange);
+
+        document.body.addEventListener('click', (e) => {
+            if (e.target.closest('.mission-button') || e.target.closest('.remove-from-mission-btn')) handleMissionToggle(e);
+            if (e.target.matches('.roll-dice-btn')) {
+                const sides = parseInt(e.target.dataset.sides);
+                const count = parseInt(e.target.dataset.count);
+                let rolls = []; let sum = 0;
+                for (let i = 0; i < count; i++) { const roll = Math.floor(Math.random() * sides) + 1; rolls.push(roll); sum += roll; }
+                elements.diceResultArea.innerHTML = `<p><strong>Tiri:</strong> ${rolls.join(', ')}</p><p><strong>Totale:</strong> ${sum}</p>`;
+                addLogEntry(`Lanciati ${count}D${sides}. Risultati: ${rolls.join(', ')}. Totale: ${sum}.`, 'dice');
+            }
+        });
+
+        elements.addTitanBtn.addEventListener('click', addTitan);
+        elements.titanGrid.addEventListener('click', handleTitanActions);
+        
+        elements.resetGameBtn.addEventListener('click', () => elements.resetConfirmModal.classList.add('show'));
+        elements.cancelResetBtn.addEventListener('click', () => elements.resetConfirmModal.classList.remove('show'));
+        elements.confirmResetBtn.addEventListener('click', () => {
+            elements.resetConfirmModal.classList.remove('show');
+            resetGame();
+        });
+
+        loadGameState();
+        fullRender();
+        startMissionTimer();
+    };
+
+    init();
+});
