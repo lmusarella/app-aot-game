@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "name": "AOT Companion DB",
+    "version": 1
+  },
+  "settings": {
+    "moraleDefault": 15,
+    "moraleMin": 0,
+    "moraleMax": 15,
+    "xpDefault": 0,
+    "xpMin": 0,
+    "xpMax": 70,
+    "missionTimerSeconds": 1200
+  },
+  "xpTable": [
+    { "level": 1,  "xpRequired": 0,  "bonus": "-" },
+    { "level": 2,  "xpRequired": 10, "bonus": "+1 AGI" },
+    { "level": 3,  "xpRequired": 20, "bonus": "+1 AGI, +1 TEC" },
+    { "level": 4,  "xpRequired": 30, "bonus": "+1 AGI, +1 TEC, +1 STR" },
+    { "level": 5,  "xpRequired": 40, "bonus": "Cura le tue reclute di 5 HP complessivi. +1 AGI, +1 TEC, +1 STR" },
+    { "level": 6,  "xpRequired": 50, "bonus": "Ogni giocatore può pescare una carta equipaggiamento. +1 AGI, +1 TEC, +1 STR" },
+    { "level": 7,  "xpRequired": 60, "bonus": "Ripara le tue attuali mura di 5 HP. +1 AGI, +1 TEC, +1 STR" },
+    { "level": 8,  "xpRequired": 70, "bonus": "Cura i tuoi comandanti di 8 HP complessivi. +1 AGI, +1 TEC, +1 STR" },
+    { "level": 9,  "xpRequired": 80, "bonus": "Cura le tue reclute di 10 HP complessivi. +1 AGI, +1 TEC, +1 STR" },
+    { "level": 10, "xpRequired": 90, "bonus": "Le tue reclute subiscono un danno in meno da tutte le fonti. +1 AGI, +1 TEC, +1 STR" }
+  ],
+  "missions": {
+    "1": { "objective": "Uccidi 3 Giganti Puri.", "reward": "+2 XP", "event": "Spawn di 2 Giganti Puri" },
+    "2": { "objective": "Uccidi 4 Giganti Puri.", "reward": "+2 XP", "event": "Spawn di 3 Giganti Puri" },
+    "3": { "objective": "Uccidi 1 Gigante Anomalo e 2 Giganti Puri.", "reward": "+3 XP", "event": "Spawn di 1 Gigante Anomalo" },
+    "4": { "objective": "Uccidi 2 Giganti Anomali.", "reward": "+5 XP, +1 Morale", "event": "Spawn di 2 Giganti Anomali" },
+    "5": { "objective": "Uccidi 3 Giganti Anomali.", "reward": "+4 XP", "event": "Spawn di 2 Gigante Anomalo" },
+    "6": { "objective": "Uccidi 1 Gigante Mutaforma.", "reward": "+2 XP, +1 Morale", "event": "Spawn di 1 Gigante Mutaforma" },
+    "7": { "objective": "Uccidi 1 Gigante Mutaforma e 2 Giganti Anomali.", "reward": "+3 XP", "event": "Spawn di Gigante Mutaforma e 2 Giganti Anomali" },
+    "8": { "objective": "Uccidi tutti i Giganti Mutaforma.", "reward": "+6 XP", "event": "Spawn di 2 Giganti Mutaforma e 3 Giganti" }
+  },
+  "titanSpawnTable": {
+    "1": { "Puro": "1-16", "Anomalo": "17-19", "Mutaforma": "20" },
+    "2": { "Puro": "1-15", "Anomalo": "16-18", "Mutaforma": "19-20" },
+    "3": { "Puro": "1-14", "Anomalo": "15-17", "Mutaforma": "18-20" },
+    "4": { "Puro": "1-13", "Anomalo": "14-16", "Mutaforma": "17-20" },
+    "5": { "Puro": "1-12", "Anomalo": "13-15", "Mutaforma": "16-20" },
+    "6": { "Puro": "1-11", "Anomalo": "12-14", "Mutaforma": "15-20" },
+    "7": { "Puro": "1-9",  "Anomalo": "10-13", "Mutaforma": "14-20" },
+    "8": { "Puro": "1-8",  "Anomalo": "9-12",  "Mutaforma": "13-20" }
+  },
+  "eventCards": [
+	  { "id": 1,  "titolo": "Rifornimenti Inattesi", "descrizione": "Le tue squadre trovano una cassa di rifornimenti. Tutti i giocatori pescano una carta equipaggiamento.", "tipo": "bonus" },
+	  { "id": 2,  "titolo": "Maltempo Improvviso",   "descrizione": "Una pioggia torrenziale riduce la visibilità. Malus di -1 a tutti i tiri di dado per questo turno.", "tipo": "malus" },
+	  { "id": 3,  "titolo": "Tradimento!",           "descrizione": "Una delle tue reclute si rivela essere un Gigante Mutaforma! Spawn di 1 Gigante Mutaforma.", "tipo": "spawn" },
+	  { "id": 4,  "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 5,  "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 6,  "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 7,  "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 8,  "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 9,  "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 10, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 11, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 12, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 13, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 14, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 15, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 16, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 17, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 18, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 19, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 20, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 21, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 22, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 23, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 24, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 25, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 26, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 27, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" },
+	  { "id": 28, "titolo": "Discesa del Gigante!",  "descrizione": "Si sente un rombo di tuono in lontananza...", "tipo": "spawn" }
+	],
+  "units": {
+    "recruits": [
+      { "id": 1,  "name": "Armin Arlert",     "hp": 10, "initialHp": 10, "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/f5d273/000000?text=A" },
+      { "id": 2,  "name": "Connie Springer",   "hp": 8,  "initialHp": 8,  "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/d3d3d3/000000?text=C" },
+      { "id": 3,  "name": "Sasha Blouse",      "hp": 9,  "initialHp": 9,  "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/c4a683/FFFFFF?text=S" },
+      { "id": 4,  "name": "Reiner Braun",      "hp": 15, "initialHp": 15, "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/e2e8f0/000000?text=R" },
+      { "id": 5,  "name": "Bertholdt Hoover",  "hp": 13, "initialHp": 13, "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/a0aec0/000000?text=B" },
+      { "id": 6,  "name": "Annie Leonhart",    "hp": 12, "initialHp": 12, "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/fde68a/000000?text=A" },
+      { "id": 7,  "name": "Ymir",              "hp": 11, "initialHp": 11, "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/718096/FFFFFF?text=Y" },
+      { "id": 8,  "name": "Krista Lenz",       "hp": 7,  "initialHp": 7,  "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/fefcbf/000000?text=K" },
+      { "id": 9,  "name": "Marco Bott",        "hp": 8,  "initialHp": 8,  "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/b7791f/FFFFFF?text=M" },
+      { "id": 10, "name": "Thomas Wagner",     "hp": 8,  "initialHp": 8,  "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/9b2c2c/FFFFFF?text=T" },
+      { "id": 11, "name": "Mina Carolina",     "hp": 7,  "initialHp": 7,  "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/6b46c1/FFFFFF?text=M" },
+      { "id": 12, "name": "Samuel L. Jackson", "hp": 8,  "initialHp": 8,  "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/000000/FFFFFF?text=S" },
+      { "id": 13, "name": "Mikasa Ackerman",   "hp": 14, "initialHp": 14, "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/c23b22/FFFFFF?text=M" },
+      { "id": 14, "name": "Jean Kirstein",     "hp": 12, "initialHp": 12, "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/c4a683/000000?text=J" },
+      { "id": 15, "name": "Floch Forster",     "hp": 9,  "initialHp": 9,  "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/e53e3e/FFFFFF?text=F" },
+      { "id": 16, "name": "Eren Yeager",       "hp": 10, "initialHp": 10, "onMission": false, "type": "recruit",   "imageUrl": "https://placehold.co/60x60/7d7c68/FFFFFF?text=E" }
+    ],
+    "commanders": [
+      { "id": 1, "name": "Hange Zoë",      "hp": 17, "initialHp": 17, "onMission": false, "type": "commander", "imageUrl": "https://placehold.co/60x60/5d4c46/FFFFFF?text=H" },
+      { "id": 2, "name": "Mike Zacharias", "hp": 18, "initialHp": 18, "onMission": false, "type": "commander", "imageUrl": "https://placehold.co/60x60/48bb78/000000?text=M" },
+      { "id": 3, "name": "Erwin Smith",    "hp": 16, "initialHp": 16, "onMission": false, "type": "commander", "imageUrl": "https://placehold.co/60x60/0077be/FFFFFF?text=E" },
+      { "id": 4, "name": "Levi Ackerman",  "hp": 20, "initialHp": 20, "onMission": false, "type": "commander", "imageUrl": "https://placehold.co/60x60/4a4a4a/FFFFFF?text=L" }
+    ],
+    "titans": [],
+    "titanIdCounterStart": 0
+  }
+}

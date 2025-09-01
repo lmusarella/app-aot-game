@@ -1,45 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
+	
     // --- DATA & STATE MANAGEMENT ---
+	
+	let db = {};                       // conterrà i dati di aot_db.json
+	let xpTable = [];                  // da db.xpTable
+	let missionData = {};              // da db.missions
+	let titanSpawnTable = {};          // da db.titanSpawnTable
+	let defaultMissionTimerSeconds = 20 * 60; // sovrascrivibile da db.settings.missionTimerSeconds
+
     let gameState = {};
     let missionTimerInterval;
     let pendingHpChanges = {};
     let hpChangeTimers = {};
     
     const titanTypes = ['Puro', 'Anomalo', 'Mutaforma'];
-    const xpTable = [
-        { level: 1, xpRequired: 0, bonus: "-" },
-        { level: 2, xpRequired: 10, bonus: "+1 AGI" },
-        { level: 3, xpRequired: 20, bonus: "+1 AGI, +1 TEC" },
-        { level: 4, xpRequired: 30, bonus: "+1 AGI, +1 TEC, +1 STR" },
-        { level: 5, xpRequired: 40, bonus: "Cura le tue reclute di 5 HP complessivi. +1 AGI, +1 TEC, +1 STR" },
-        { level: 6, xpRequired: 50, bonus: "Ogni giocatore può pescare una carta equipaggiamento. +1 AGI, +1 TEC, +1 STR" },
-        { level: 7, xpRequired: 60, bonus: "Ripara le tue attuali mura di 5 HP. +1 AGI, +1 TEC, +1 STR" },
-        { level: 8, xpRequired: 70, bonus: "Cura i tuoi comandanti di 8 HP complessivi. +1 AGI, +1 TEC, +1 STR" },
-        { level: 9, xpRequired: 80, bonus: "Cura le tue reclute di 10 HP complessivi. +1 AGI, +1 TEC, +1 STR" },
-        { level: 10, xpRequired: 90, bonus: "Le tue reclute subiscono un danno in meno da tutte le fonti. +1 AGI, +1 TEC, +1 STR" }
-    ];
+   
     
-    const missionData = {
-        1: { objective: "Uccidi 3 Giganti Puri.", reward: "+2 XP", event: "Spawn di 2 Giganti Puri" },
-        2: { objective: "Uccidi 4 Giganti Puri.", reward: "+2 XP", event: "Spawn di 3 Giganti Puri" },
-        3: { objective: "Uccidi 1 Gigante Anomalo e 2 Giganti Puri.", reward: "+3 XP", event: "Spawn di 1 Gigante Anomalo" },
-        4: { objective: "Uccidi 2 Giganti Anomali.", reward: "+5 XP, +1 Morale", event: "Spawn di 2 Giganti Anomali" },
-        5: { objective: "Uccidi 3 Giganti Anomali.", reward: "+4 XP", event: "Spawn di 2 Gigante Anomalo" },
-        6: { objective: "Uccidi 1 Gigante Mutaforma.", reward: "+2 XP, +1 Morale", event: "Spawn di 1 Gigante Mutaforma" },
-        7: { objective: "Uccidi 1 Gigante Mutaforma e 2 Giganti Anomali.", reward: "+3 XP", event: "Spawn di Gigante Mutaforma e 2 Giganti Anomali" },
-        8: { objective: "Uccidi tutti i Giganti Mutaforma.", reward: "+6 XP", event: "Spawn di 2 Giganti MuMutaforma e 3 giganti " }
-    };
-
-    const titanSpawnTable = {
-        1: { 'Puro': '1-16', 'Anomalo': '17-19', 'Mutaforma': '20' },
-        2: { 'Puro': '1-15', 'Anomalo': '16-18', 'Mutaforma': '19-20' },
-        3: { 'Puro': '1-14', 'Anomalo': '15-17', 'Mutaforma': '18-20' },
-        4: { 'Puro': '1-13', 'Anomalo': '14-16', 'Mutaforma': '17-20' },
-        5: { 'Puro': '1-12', 'Anomalo': '13-15', 'Mutaforma': '16-20' },
-        6: { 'Puro': '1-11', 'Anomalo': '12-14', 'Mutaforma': '15-20' },
-        7: { 'Puro': '1-9', 'Anomalo': '10-13', 'Mutaforma': '14-20' },
-        8: { 'Puro': '1-8', 'Anomalo': '9-12', 'Mutaforma': '13-20' }
-    };
+   
 
     const elements = {
         moraleSlider: document.getElementById('morale'),
@@ -77,6 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
         moraleDescription: document.getElementById('morale-description'),
         xpBonuses: document.getElementById('xp-bonuses'),
         bonusRecapText: document.getElementById('bonus-recap-text'),
+		importJsonBtn: document.getElementById('import-json-btn'),
+		importJsonInput: document.getElementById('import-json-input'),
     };
     
     const addLogEntry = (message, type = 'info') => {
@@ -523,19 +502,19 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAllUIElements();
     };
 
-    const startMissionTimer = () => {
-        clearInterval(missionTimerInterval);
-        let time = 20 * 60;
-        missionTimerInterval = setInterval(() => {
-            const minutes = Math.floor(time / 60);
-            let seconds = time % 60;
-            elements.missionTimer.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-            if (--time < 0) {
-                clearInterval(missionTimerInterval);
-                elements.missionTimer.textContent = "SCADUTO";
-            }
-        }, 1000);
-    };
+	const startMissionTimer = () => {
+	  clearInterval(missionTimerInterval);
+	  let time = Number.isFinite(defaultMissionTimerSeconds) ? defaultMissionTimerSeconds : 20 * 60;
+	  missionTimerInterval = setInterval(() => {
+		const minutes = Math.floor(time / 60);
+		let seconds = time % 60;
+		elements.missionTimer.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+		if (--time < 0) {
+		  clearInterval(missionTimerInterval);
+		  elements.missionTimer.textContent = "SCADUTO";
+		}
+	  }, 1000);
+	};
     
     const restartMissionTimer = () => {
         startMissionTimer();
@@ -553,38 +532,83 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState = savedState ? JSON.parse(savedState) : initializeDefaultState();
     };
     
-    const initializeDefaultState = () => {
-        return {
-            currentMissionNumber: 1,
-            recruitsData: [
-                { id: 1, name: 'Armin Arlert', hp: 10, initialHp: 10, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/f5d273/000000?text=A' },
-                { id: 2, name: 'Connie Springer', hp: 8, initialHp: 8, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/d3d3d3/000000?text=C' },
-                { id: 3, name: 'Sasha Blouse', hp: 9, initialHp: 9, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/c4a683/FFFFFF?text=S' },
-                { id: 4, name: 'Reiner Braun', hp: 15, initialHp: 15, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/e2e8f0/000000?text=R' },
-                { id: 5, name: 'Bertholdt Hoover', hp: 13, initialHp: 13, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/a0aec0/000000?text=B' },
-                { id: 6, name: 'Annie Leonhart', hp: 12, initialHp: 12, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/fde68a/000000?text=A' },
-                { id: 7, name: 'Ymir', hp: 11, initialHp: 11, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/718096/FFFFFF?text=Y' },
-                { id: 8, name: 'Krista Lenz', hp: 7, initialHp: 7, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/fefcbf/000000?text=K' },
-                { id: 9, name: 'Marco Bott', hp: 8, initialHp: 8, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/b7791f/FFFFFF?text=M' },
-                { id: 10, name: 'Thomas Wagner', hp: 8, initialHp: 8, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/9b2c2c/FFFFFF?text=T' },
-                { id: 11, name: 'Mina Carolina', hp: 7, initialHp: 7, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/6b46c1/FFFFFF?text=M' },
-                { id: 12, name: 'Samuel L. Jackson', hp: 8, initialHp: 8, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/000000/FFFFFF?text=S' },
-                { id: 13, name: 'Mikasa Ackerman', hp: 14, initialHp: 14, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/c23b22/FFFFFF?text=M' },
-                { id: 14, name: 'Jean Kirstein', hp: 12, initialHp: 12, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/c4a683/000000?text=J' },
-                { id: 15, name: 'Floch Forster', hp: 9, initialHp: 9, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/e53e3e/FFFFFF?text=F' },
-                { id: 16, name: 'Eren Yeager', hp: 10, initialHp: 10, onMission: false, type: 'recruit', imageUrl: 'https://placehold.co/60x60/7d7c68/FFFFFF?text=E' }
-            ],
-            commandersData: [
-                { id: 1, name: 'Hange Zoë', hp: 17, initialHp: 17, onMission: false, type: 'commander', imageUrl: 'https://placehold.co/60x60/5d4c46/FFFFFF?text=H' },
-                { id: 2, name: 'Mike Zacharias', hp: 18, initialHp: 18, onMission: false, type: 'commander', imageUrl: 'https://placehold.co/60x60/48bb78/000000?text=M' },
-                { id: 3, name: 'Erwin Smith', hp: 16, initialHp: 16, onMission: false, type: 'commander', imageUrl: 'https://placehold.co/60x60/0077be/FFFFFF?text=E' },
-                { id: 4, name: 'Levi Ackerman', hp: 20, initialHp: 20, onMission: false, type: 'commander', imageUrl: 'https://placehold.co/60x60/4a4a4a/FFFFFF?text=L' }
-            ],
-            titansData: [],
-            titanIdCounter: 0, logData: [], morale: 15, xp: 0,
-        };
-    };
+	const initializeDefaultState = () => {
+		  const moraleMin = db.settings?.moraleMin ?? 0;
+		  const moraleMax = db.settings?.moraleMax ?? 15;
+		  const xpMin = db.settings?.xpMin ?? 0;
+		  const xpMax = db.settings?.xpMax ?? 70;
 
+		  const moraleDefault = clampInt(db.settings?.moraleDefault ?? 15, moraleMin, moraleMax);
+		  const xpDefault = clampInt(db.settings?.xpDefault ?? 0, xpMin, xpMax);
+
+		  // Se il DB fornisce le unità, usale; altrimenti fallback agli array esistenti
+		  const recruitsFromDb   = Array.isArray(db.units?.recruits)   ? db.units.recruits   : [];
+		  const commandersFromDb = Array.isArray(db.units?.commanders) ? db.units.commanders : [];
+		  const titansFromDb     = Array.isArray(db.units?.titans)     ? db.units.titans     : [];
+		  const titanIdCounter   = Number.isFinite(db.units?.titanIdCounterStart)
+			? db.units.titanIdCounterStart
+			: 0;
+
+		  const titans = titansFromDb.length ? titansFromDb : [];
+
+		  return {
+			currentMissionNumber: 1,
+			recruitsData: recruits.map(u => normalizeUnit(u, 'recruit')),
+			commandersData: commanders.map(u => normalizeUnit(u, 'commander')),
+			titansData: titans.map(normalizeTitan),
+			titanIdCounter,
+			logData: [],
+			morale: moraleDefault,
+			xp: xpDefault,
+		  };
+	};
+
+	// --- helpers usati sopra (aggiungili se non già presenti) ---
+	function clampInt(n, min, max) { return Math.max(min, Math.min(max, parseInt(n, 10))); }
+	function safeString(v, fallback = '') { return (typeof v === 'string' && v.length ? v : fallback); }
+	function defaultInitialHpFor(type) { return type === 'commander' ? 18 : 10; }
+
+	function normalizeUnit(u, fixedType) {
+	  const id = Number.isFinite(u.id) ? parseInt(u.id, 10) : genUnitId(fixedType);
+	  const initialHp = Number.isFinite(u.initialHp) ? parseInt(u.initialHp, 10) : defaultInitialHpFor(fixedType);
+	  const hp = clampInt(Number.isFinite(u.hp) ? parseInt(u.hp, 10) : initialHp, 0, initialHp);
+	  return {
+		id,
+		name: safeString(u.name, fixedType === 'recruit' ? 'Recluta' : 'Comandante'),
+		hp,
+		initialHp,
+		onMission: Boolean(u.onMission),
+		type: fixedType,
+		imageUrl: safeString(u.imageUrl, 'https://placehold.co/60x60/cccccc/000000?text=IMG')
+	  };
+	}
+
+	function normalizeTitan(t) {
+	  const legal = ['Puro', 'Anomalo', 'Mutaforma'];
+	  const type = legal.includes(t.type) ? t.type : 'Puro';
+	  const initialHp = Number.isFinite(t.initialHp) ? parseInt(t.initialHp, 10) : 12;
+	  const hp = clampInt(Number.isFinite(t.hp) ? parseInt(t.hp, 10) : initialHp, 0, initialHp);
+	  return {
+		id: Number.isFinite(t.id) ? parseInt(t.id, 10) : genTitanId(),
+		name: safeString(t.name, 'Gigante'),
+		hp,
+		initialHp,
+		cooldown: Math.max(0, Number.isFinite(t.cooldown) ? parseInt(t.cooldown, 10) : 0),
+		type,
+		isDefeated: Boolean(t.isDefeated),
+		createdAt: Number.isFinite(t.createdAt) ? Number(t.createdAt) : Date.now()
+	  };
+	}
+
+	function genUnitId(type) {
+	  const arr = type === 'commander' ? (gameState.commandersData || []) : (gameState.recruitsData || []);
+	  const maxId = arr.reduce((m, u) => Math.max(m, Number(u.id) || 0), 0);
+	  return maxId + 1;
+	}
+	function genTitanId() {
+	  gameState.titanIdCounter = (gameState.titanIdCounter || 0) + 1;
+	  return gameState.titanIdCounter;
+	}
     const resetGame = () => {
         clearInterval(missionTimerInterval);
         gameState = initializeDefaultState();
@@ -621,8 +645,25 @@ document.addEventListener('DOMContentLoaded', () => {
             updateSlider(slider);
         });
     };
+	
+	async function loadDatabase() {
+	  // se aot_db.json è nella root accanto a index.html:
+	  const res = await fetch('./aot_db.json', { cache: 'no-cache' });
+	  if (!res.ok) throw new Error('Impossibile caricare aot_db.json');
 
-    const init = () => {
+	  db = await res.json();
+
+	  // mappa tabelle/setting
+	  xpTable = Array.isArray(db.xpTable) ? db.xpTable : [];
+	  missionData = db.missions || {};
+	  titanSpawnTable = db.titanSpawnTable || {};
+	  if (db.settings?.missionTimerSeconds) {
+		defaultMissionTimerSeconds = db.settings.missionTimerSeconds;
+	  }
+	}
+
+
+    const init = async () => {
         const setupPopup = (openBtn, closeBtn, popupEl) => {
             openBtn.addEventListener('click', () => popupEl.classList.add('show'));
             closeBtn.addEventListener('click', () => popupEl.classList.remove('show'));
@@ -663,6 +704,14 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.resetConfirmModal.classList.remove('show');
             resetGame();
         });
+
+		  try {
+			await loadDatabase();  // <--- carica aot_db.json
+			addLogEntry('Database caricato.', 'info');
+		  } catch (e) {
+			console.error(e);
+			addLogEntry('⚠️ Database non caricato, uso i fallback locali.', 'error');
+		  }
 
         loadGameState();
         fullRender();
