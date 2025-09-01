@@ -630,6 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const moraleMax = db.settings?.moraleMax ?? 15;
         const xpMin = db.settings?.xpMin ?? 0;
         const xpMax = db.settings?.xpMax ?? 70;
+        const wallDefaultHp = db.settings?.wallDefaultHp;
 
         const moraleDefault = clampInt(db.settings?.moraleDefault ?? 15, moraleMin, moraleMax);
         const xpDefault = clampInt(db.settings?.xpDefault ?? 0, xpMin, xpMax);
@@ -653,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logData: [],
             morale: moraleDefault,
             xp: xpDefault,
-            wallHp: { maria: 15, rose: 5, sina: 3 },
+            wallHp: { maria: wallDefaultHp.maria, rose: wallDefaultHp.rose, sina: wallDefaultHp.sina },
             eventDeck: [],
             eventDiscardPile: [],
             removedEventCards: []

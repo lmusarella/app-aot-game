@@ -10,7 +10,12 @@
     "xpDefault": 0,
     "xpMin": 0,
     "xpMax": 70,
-    "missionTimerSeconds": 1200
+    "missionTimerSeconds": 1200,
+    "wallDefaultHp": {
+      "maria": 15,
+      "rose": 5,
+      "sina": 3
+    }
   },
   "xpTable": [
     { "level": 1,  "xpRequired": 0,  "bonus": "-" },
