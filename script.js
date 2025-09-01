@@ -598,6 +598,33 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    function normalizeTitan(t) {
+        const legal = ['Puro', 'Anomalo', 'Mutaforma'];
+        const type = legal.includes(t.type) ? t.type : 'Puro';
+        const initialHp = Number.isFinite(t.initialHp) ? parseInt(t.initialHp, 10) : 12;
+        const hp = clampInt(Number.isFinite(t.hp) ? parseInt(t.hp, 10) : initialHp, 0, initialHp);
+        return {
+            id: Number.isFinite(t.id) ? parseInt(t.id, 10) : genTitanId(),
+            name: safeString(t.name, 'Gigante'),
+            hp,
+            initialHp,
+            cooldown: Math.max(0, Number.isFinite(t.cooldown) ? parseInt(t.cooldown, 10) : 0),
+            type,
+            isDefeated: Boolean(t.isDefeated),
+            createdAt: Number.isFinite(t.createdAt) ? Number(t.createdAt) : Date.now()
+        };
+    }
+
+    function genUnitId(type) {
+        const arr = type === 'commander' ? (gameState.commandersData || []) : (gameState.recruitsData || []);
+        const maxId = arr.reduce((m, u) => Math.max(m, Number(u.id) || 0), 0);
+        return maxId + 1;
+    }
+    function genTitanId() {
+        gameState.titanIdCounter = (gameState.titanIdCounter || 0) + 1;
+        return gameState.titanIdCounter;
+    }
+
     const initializeDefaultState = () => {
         const moraleMin = db.settings?.moraleMin ?? 0;
         const moraleMax = db.settings?.moraleMax ?? 15;
