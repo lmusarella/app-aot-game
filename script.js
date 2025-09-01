@@ -15,9 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const titanTypes = ['Puro', 'Anomalo', 'Mutaforma'];
    
-    
-   
-
     const elements = {
         moraleSlider: document.getElementById('morale'),
         xpSlider: document.getElementById('xp'),
@@ -553,8 +550,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		  return {
 			currentMissionNumber: 1,
-			recruitsData: recruits.map(u => normalizeUnit(u, 'recruit')),
-			commandersData: commanders.map(u => normalizeUnit(u, 'commander')),
+			recruitsData: recruitsFromDb.map(u => normalizeUnit(u, 'recruit')),
+			commandersData: commandersFromDb.map(u => normalizeUnit(u, 'commander')),
 			titansData: titans.map(normalizeTitan),
 			titanIdCounter,
 			logData: [],
