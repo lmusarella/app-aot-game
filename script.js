@@ -703,11 +703,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 		  try {
-			await loadDatabase();  // <--- carica aot_db.json
-			addLogEntry('Database caricato.', 'info');
+			await loadDatabase();  // <--- carica aot_db.json		
 		  } catch (e) {
-			console.error(e);
-			addLogEntry('⚠️ Database non caricato, uso i fallback locali.', 'error');
+			console.error(e);	
 		  }
 
         loadGameState();
