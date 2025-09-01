@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         missionData = db.missions || {};
         titanSpawnTable = db.titanSpawnTable || {};
         allEventCards = db.eventCards || [];
-        
+
         if (db.settings?.missionTimerSeconds) {
             defaultMissionTimerSeconds = db.settings.missionTimerSeconds;
         }
@@ -577,6 +577,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    function clampInt(n, min, max) { return Math.max(min, Math.min(max, parseInt(n, 10))); }
+    // --- helpers usati sopra (aggiungili se non già presenti) ---
+    function clampInt(n, min, max) { return Math.max(min, Math.min(max, parseInt(n, 10))); }
+    function safeString(v, fallback = '') { return (typeof v === 'string' && v.length ? v : fallback); }
+    function defaultInitialHpFor(type) { return type === 'commander' ? 18 : 10; }
+
+    function normalizeUnit(u, fixedType) {
+        const id = Number.isFinite(u.id) ? parseInt(u.id, 10) : genUnitId(fixedType);
+        const initialHp = Number.isFinite(u.initialHp) ? parseInt(u.initialHp, 10) : defaultInitialHpFor(fixedType);
+        const hp = clampInt(Number.isFinite(u.hp) ? parseInt(u.hp, 10) : initialHp, 0, initialHp);
+        return {
+            id,
+            name: safeString(u.name, fixedType === 'recruit' ? 'Recluta' : 'Comandante'),
+            hp,
+            initialHp,
+            onMission: Boolean(u.onMission),
+            type: fixedType,
+            imageUrl: safeString(u.imageUrl, 'https://placehold.co/60x60/cccccc/000000?text=IMG')
+        };
+    }
+
     const initializeDefaultState = () => {
         const moraleMin = db.settings?.moraleMin ?? 0;
         const moraleMax = db.settings?.moraleMax ?? 15;
@@ -740,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     async function main() {
-       
+
         await loadDB();
 
         loadGameState();
