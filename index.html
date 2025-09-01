@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
+     <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
 </head>
 <body>
 
@@ -23,12 +23,7 @@
                         <span id="mission-count">Missione #1</span>
                         <span id="mission-timer">20:00</span>
                     </div>
-					
-					
-  
                     <button id="reset-game-btn" class="btn btn-reset">Reset</button>
-					
-					
                 </div>
             </header>
 
@@ -50,6 +45,7 @@
                              </div>
                              <button id="increase-mission" class="btn">+</button>
                         </div>
+                         <button id="draw-event-btn" class="btn btn-event">Pesca Evento (<span id="event-deck-count">0</span>)</button>
                         <h3 class="sub-title">Unità in Missione</h3>
                         <div class="squad-management">
                             <div class="unit-counts">
@@ -144,6 +140,20 @@
     <div id="commanders-popup" class="popup"><div class="popup-content"><div class="popup-header"><h2>Comandanti</h2><button class="close-button" id="close-commanders-popup">&times;</button></div><div class="unit-list-container"><ul id="commanders-list"></ul></div></div></div>
     <div id="reset-confirm-modal" class="confirm-modal"><div class="confirm-modal-content"><p>Sei sicuro di voler resettare l'intera partita?</p><div class="confirm-modal-buttons"><button id="cancel-reset-btn" class="btn">Annulla</button><button id="confirm-reset-btn" class="btn btn-reset">Conferma</button></div></div></div>
     
+    <!-- EVENT CARD POPUP -->
+    <div id="event-card-popup" class="popup">
+        <div class="event-card">
+            <h2 id="event-card-title" class="event-card-title"></h2>
+            <div id="event-card-description" class="event-card-description"></div>
+            <p id="event-card-type" class="event-card-type"></p>
+            <div class="event-card-actions">
+                <button id="event-reshuffle-btn" class="btn">Rimescola</button>
+                <button id="event-discard-btn" class="btn">Scarta</button>
+                <button id="event-remove-btn" class="btn btn-reset">Rimuovi</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
