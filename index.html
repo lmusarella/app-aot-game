@@ -1,15 +1,29 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#111827">
     <title>Tracker Gioco da Tavolo - AoT</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-     <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
 </head>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('Service Worker registrato'))
+                .catch(err => console.error('SW registration failed:', err));
+        });
+    }
+</script>
+
 <body>
 
     <div class="app-container">
@@ -38,14 +52,15 @@
                             <p><strong>Evento:</strong> <span id="mission-event-text"></span></p>
                         </div>
                         <div class="mission-controls">
-                             <button id="decrease-mission" class="btn">-</button>
-                             <div class="mission-main-actions">
+                            <button id="decrease-mission" class="btn">-</button>
+                            <div class="mission-main-actions">
                                 <button id="restart-mission-btn" class="btn btn-restart">Riavvia Timer</button>
                                 <button id="complete-mission-btn" class="btn btn-complete">Missione Completata</button>
-                             </div>
-                             <button id="increase-mission" class="btn">+</button>
+                            </div>
+                            <button id="increase-mission" class="btn">+</button>
                         </div>
-                         <button id="draw-event-btn" class="btn btn-event">Pesca Evento (<span id="event-deck-count">0</span>)</button>
+                        <button id="draw-event-btn" class="btn btn-event">Pesca Evento (<span
+                                id="event-deck-count">0</span>)</button>
                         <h3 class="sub-title">Unità in Missione</h3>
                         <div class="squad-management">
                             <div class="unit-counts">
@@ -69,12 +84,12 @@
                         <div id="titan-grid" class="mission-units-grid"></div>
                     </div>
                 </div>
-                
+
                 <!-- RIGHT COLUMN (DICE + LOG) -->
                 <div class="grid-item right-column">
                     <div class="grid-item dice-box">
                         <h2 class="grid-item-title">Lancio Dadi</h2>
-                         <div id="dice-roller-panel">
+                        <div id="dice-roller-panel">
                             <div class="dice-group">
                                 <label>D20</label>
                                 <div class="dice-button-group">
@@ -95,7 +110,9 @@
                                     <button class="roll-dice-btn" data-sides="4" data-count="5">5</button>
                                 </div>
                             </div>
-                            <div id="dice-result-area"><p>Risultati...</p></div>
+                            <div id="dice-result-area">
+                                <p>Risultati...</p>
+                            </div>
                         </div>
                     </div>
                     <div class="grid-item log-box">
@@ -136,10 +153,34 @@
     </div>
 
     <!-- POPUPS -->
-    <div id="recruits-popup" class="popup"><div class="popup-content"><div class="popup-header"><h2>Reclute</h2><button class="close-button" id="close-recruits-popup">&times;</button></div><div class="unit-list-container"><ul id="recruits-list"></ul></div></div></div>
-    <div id="commanders-popup" class="popup"><div class="popup-content"><div class="popup-header"><h2>Comandanti</h2><button class="close-button" id="close-commanders-popup">&times;</button></div><div class="unit-list-container"><ul id="commanders-list"></ul></div></div></div>
-    <div id="reset-confirm-modal" class="confirm-modal"><div class="confirm-modal-content"><p>Sei sicuro di voler resettare l'intera partita?</p><div class="confirm-modal-buttons"><button id="cancel-reset-btn" class="btn">Annulla</button><button id="confirm-reset-btn" class="btn btn-reset">Conferma</button></div></div></div>
-    
+    <div id="recruits-popup" class="popup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h2>Reclute</h2><button class="close-button" id="close-recruits-popup">&times;</button>
+            </div>
+            <div class="unit-list-container">
+                <ul id="recruits-list"></ul>
+            </div>
+        </div>
+    </div>
+    <div id="commanders-popup" class="popup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h2>Comandanti</h2><button class="close-button" id="close-commanders-popup">&times;</button>
+            </div>
+            <div class="unit-list-container">
+                <ul id="commanders-list"></ul>
+            </div>
+        </div>
+    </div>
+    <div id="reset-confirm-modal" class="confirm-modal">
+        <div class="confirm-modal-content">
+            <p>Sei sicuro di voler resettare l'intera partita?</p>
+            <div class="confirm-modal-buttons"><button id="cancel-reset-btn" class="btn">Annulla</button><button
+                    id="confirm-reset-btn" class="btn btn-reset">Conferma</button></div>
+        </div>
+    </div>
+
     <!-- EVENT CARD POPUP -->
     <div id="event-card-popup" class="popup">
         <div class="event-card">
@@ -156,4 +197,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
