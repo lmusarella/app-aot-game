@@ -257,9 +257,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="name">${unit.name}</div>
                 <div class="stat-row">
                     <div class="controls">
-                        <button class="hp-change btn" data-id="${unit.id}" data-type="${type}" data-amount="-1">-</button>
+                        <button class="hp-change btn" data-id="${unit.id}" data-type="${unit.type}" data-amount="-1">-</button>
                         <span class="label hp ${hpClass}">${unit.hp}</span>
-                        <button class="hp-change btn" data-id="${unit.id}" data-type="${type}" data-amount="1">+</button>
+                        <button class="hp-change btn" data-id="${unit.id}" data-type="${unit.type}" data-amount="1">+</button>
                     </div>
                 </div>`;
             elements.missionUnitsGrid.appendChild(card);
