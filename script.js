@@ -790,6 +790,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function main() {
 
+        const url = './assets/risorsa_audio_avvio_app.mp3'; // <— metti qui il tuo default
+        await playAudioFromUrl(url, { loop: false, volume: 1 });
+
         await loadDB();
 
         loadGameState();
@@ -839,6 +842,66 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.eventReshuffleBtn) elements.eventReshuffleBtn.addEventListener('click', () => handleEventCardAction('reshuffle'));
         if (elements.eventDiscardBtn) elements.eventDiscardBtn.addEventListener('click', () => handleEventCardAction('discard'));
         if (elements.eventRemoveBtn) elements.eventRemoveBtn.addEventListener('click', () => handleEventCardAction('remove'));
+    }
+
+    /**
+ * Riproduce un file audio da URL. Gestisce autoplay-block con un pulsante.
+ * @param {string} url - URL assoluto o relativo del file audio (mp3, wav, ogg, ecc.)
+ * @param {{loop?: boolean, volume?: number}} [opts]
+ * @returns {Promise<HTMLAudioElement>} l'elemento <audio> usato
+ */
+    async function playAudioFromUrl(url, opts = {}) {
+        const { loop = false, volume = 1 } = opts;
+
+        const audio = new Audio();
+        audio.src = url;
+        audio.preload = 'auto';
+        audio.loop = loop;
+        audio.volume = Math.max(0, Math.min(1, volume));
+        // Se l'audio fosse su altro dominio e un giorno volessi analizzarlo via WebAudio,
+        // questa riga aiuta. Per semplice playback non è strettamente necessaria.
+        audio.crossOrigin = 'anonymous';
+
+        try {
+            await audio.play();
+        } catch (err) {
+            // Autoplay probabilmente bloccato: mostro un pulsante per sbloccare
+            if (err && (err.name === 'NotAllowedError' || err.name === 'AbortError')) {
+                showUnlockButton(audio);
+            } else {
+                console.error('Errore riproduzione:', err);
+                alert('Impossibile riprodurre l’audio: ' + (err?.message || err));
+            }
+        }
+
+        return audio;
+    }
+
+    function showUnlockButton(audio) {
+        const btn = document.createElement('button');
+        btn.textContent = 'Tocca per riprodurre';
+        Object.assign(btn.style, {
+            position: 'fixed',
+            inset: '0',
+            margin: 'auto',
+            width: 'min(320px, 90vw)',
+            height: '56px',
+            fontSize: '18px',
+            borderRadius: '12px',
+            border: 'none',
+            padding: '0 16px',
+            cursor: 'pointer',
+            boxShadow: '0 8px 24px rgba(0,0,0,.2)',
+        });
+        btn.addEventListener('click', async () => {
+            try {
+                await audio.play();
+                btn.remove();
+            } catch (e) {
+                alert('Non riesco a riprodurre: ' + (e?.message || e));
+            }
+        });
+        document.body.appendChild(btn);
     }
 
     main();
