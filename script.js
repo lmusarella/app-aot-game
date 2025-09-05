@@ -469,10 +469,12 @@ class MissionView {
         this.unitsGrid = document.getElementById('mission-units-grid');
         this.recruitsCount = document.getElementById('living-recruits');
         this.commandersCount = document.getElementById('living-commanders');
+        this.completeMission = document.getElementById('complete-mission-btn');
     }
     bind() {
         this.btnDec?.addEventListener('click', () => this._changeMission(-1));
         this.btnInc?.addEventListener('click', () => this._changeMission(1));
+        this.completeMission?.addEventListener('click', () => this._completeMission());
 
         // Mission grid interactions
         this.unitsGrid?.addEventListener('click', (e) => {
@@ -542,6 +544,10 @@ class MissionView {
         // delegated to App: emit custom event to centralize death/resurrect/morale/xp changes
         document.dispatchEvent(new CustomEvent('hp:queue', { detail: { kind: type, id, amount } }));
     }
+
+    _completeMission() {
+        
+    }
 }
 
 class UnitPopupsView {
@@ -565,7 +571,7 @@ class UnitPopupsView {
         this.closeRecruits?.addEventListener('click', () => this.recruitsPopup?.classList.remove('show'));
         this.openCommanders?.addEventListener('click', () => this.commandersPopup?.classList.add('show'));
         this.closeCommanders?.addEventListener('click', () => this.commandersPopup?.classList.remove('show'));
-        this.openGrid?.addEventListener('click', () => this.openGrid?.classList.remove('show'));
+        this.openGrid?.addEventListener('click', () => this.openGrid?.classList.add('show'));
         this.closeGrid?.addEventListener('click', () => this.openGrid?.classList.remove('show'));
 
         const handle = (e) => {
