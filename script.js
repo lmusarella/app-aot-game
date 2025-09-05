@@ -1,15 +1,31 @@
 'use strict';
 
-/*************************************************
- * AOT Companion — DOM-safe (no innerHTML)
- * GENERAZIONE PER CLASSI — PARTE 1
- * Contiene: Utilities + Helper `el()`, Repositories,
- * Store, Services (Audio/Timer/Deck/Log)
- *************************************************/
+/**
+ * AOT Companion — SOLID Refactor (single-file, no build step)
+ * -----------------------------------------------------------
+ * - Single Responsibility: domain models, data layer, services, views, and controllers are separated.
+ * - Open/Closed: entities and views are extensible via small adapters/options (no core edits needed).
+ * - Liskov: concrete types (Unit/Titan) follow the same behavioral contracts expected by the UI.
+ * - Interface Segregation: small, focused interfaces (repositories/services) passed as dependencies.
+ * - Dependency Inversion: high-level orchestration (App) depends on abstractions injected via ctor.
+ *
+ * Drop-in replacement for your previous script.js.
+ * Keep your HTML as-is. No bundlers required.
+ */
 
 /* ===========================
  * Utilities & Domain Types
  * =========================== */
+
+/** @template T */
+class Optional {
+    /** @param {T | undefined | null} v */
+    constructor(v) { this.v = v ?? undefined; }
+  /** @returns {boolean} */ isSome() { return this.v !== undefined; }
+  /** @returns {T} */ unwrap() { if (this.v === undefined) throw new Error('Optional empty'); return this.v; }
+  /** @template R @param {(t:T)=>R} fn */ map(fn) { return this.isSome() ? new Optional(fn(this.v)) : new Optional(undefined) }
+  /** @template R @param {R} fallback */ orElse(fallback) { return this.isSome() ? this.v : fallback }
+}
 
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 const toInt = (v, d = 0) => { const n = parseInt(String(v), 10); return Number.isFinite(n) ? n : d; };
@@ -28,104 +44,6 @@ const nowTime = () => new Date().toLocaleTimeString('it-IT', { hour: '2-digit', 
 /** @typedef {ReturnType<typeof buildInitialState>} GameState */
 
 const TITAN_TYPES = ['Puro', 'Anomalo', 'Mutaforma'];
-
-/**
- * Helper per creare nodi DOM in modo conciso e sicuro.
- * @param {keyof HTMLElementTagNameMap} tag
- * @param {{ className?:string, text?:string, attrs?:Record<string,string>, dataset?:Record<string, any>, style?:Partial<CSSStyleDeclaration> }} [opts]
- * @param {...(Node|string)} children
- */
-function el(tag, opts = {}, ...children) {
-    const node = document.createElement(tag);
-    const { className, text, attrs, dataset, style } = opts;
-    if (className) node.className = className;
-    if (text != null) node.textContent = text;
-    if (attrs) for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
-    if (dataset) Object.assign(node.dataset, dataset);
-    if (style) Object.assign(node.style, style);
-    for (const c of children) { node.append(c instanceof Node ? c : document.createTextNode(String(c))); }
-    return node;
-}
-
-/* ===========================
- * Initial State Builder (funzioni pure)
- * =========================== */
-
-function defaultsFromSettings(s) {
-    const moraleMin = toInt(s?.moraleMin ?? 0), moraleMax = toInt(s?.moraleMax ?? 15);
-    const xpMin = toInt(s?.xpMin ?? 0), xpMax = toInt(s?.xpMax ?? 70);
-    return {
-        moraleMin, moraleMax, xpMin, xpMax,
-        moraleDefault: clamp(toInt(s?.moraleDefault ?? 15), moraleMin, moraleMax),
-        xpDefault: clamp(toInt(s?.xpDefault ?? 0), xpMin, xpMax),
-        missionTimerSeconds: toInt(s?.missionTimerSeconds ?? 20 * 60),
-        wallDefaultHp: s?.wallDefaultHp ?? { maria: 15, rose: 5, sina: 3 }
-    };
-}
-
-function normalizeUnit(u, fixedType) {
-    const initialHp = toInt(u.initialHp ?? (fixedType === 'commander' ? 18 : 10));
-    return {
-        id: toInt(u.id ?? 0),
-        name: safeStr(u.name, fixedType === 'recruit' ? 'Recluta' : 'Comandante'),
-        hp: clamp(toInt(u.hp ?? initialHp), 0, initialHp),
-        initialHp,
-        onMission: Boolean(u.onMission),
-        type: /** @type {UnitType} */(fixedType),
-        imageUrl: safeStr(u.imageUrl, 'https://placehold.co/60x60/cccccc/000000?text=IMG')
-    };
-}
-
-function normalizeTitan(t) {
-    const type = TITAN_TYPES.includes(t.type) ? t.type : 'Puro';
-    const initialHp = toInt(t.initialHp ?? 12);
-    return {
-        id: toInt(t.id ?? 0),
-        name: safeStr(t.name, 'Gigante'),
-        hp: clamp(toInt(t.hp ?? initialHp), 0, initialHp),
-        initialHp,
-        cooldown: Math.max(0, toInt(t.cooldown ?? 0)),
-        type: /** @type {any} */(type),
-        isDefeated: Boolean(t.isDefeated),
-        createdAt: Number.isFinite(t.createdAt) ? Number(t.createdAt) : Date.now()
-    };
-}
-
-function buildInitialState(db, saved) {
-    const def = defaultsFromSettings(db.settings || {});
-    const recruitsDb = db.units?.recruits ?? [];
-    const commandersDb = db.units?.commanders ?? [];
-    const titansDb = db.units?.titans ?? [];
-
-    /** @type {GameState} */
-    const base = {
-        currentMissionNumber: 1,
-        recruitsData: recruitsDb.map(u => normalizeUnit(u, 'recruit')),
-        commandersData: commandersDb.map(u => normalizeUnit(u, 'commander')),
-        titansData: titansDb.map(normalizeTitan),
-        titanIdCounter: db.units?.titanIdCounterStart ? toInt(db.units.titanIdCounterStart) : 0,
-        logData: [],
-        morale: def.moraleDefault,
-        xp: def.xpDefault,
-        wallHp: { ...def.wallDefaultHp },
-        eventDeck: [...db.eventCards],
-        eventDiscardPile: [],
-        removedEventCards: [],
-
-        __db: db,
-        __defaults: def
-    };
-
-    if (!saved) return base;
-    return {
-        ...base,
-        ...saved,
-        wallHp: saved.wallHp ? { ...base.wallHp, ...saved.wallHp } : base.wallHp,
-        eventDeck: Array.isArray(saved.eventDeck) ? saved.eventDeck : base.eventDeck,
-        eventDiscardPile: Array.isArray(saved.eventDiscardPile) ? saved.eventDiscardPile : base.eventDiscardPile,
-        removedEventCards: Array.isArray(saved.removedEventCards) ? saved.removedEventCards : base.removedEventCards,
-    };
-}
 
 /* ===========================
  * Repositories
@@ -211,6 +129,7 @@ class DeckService {
 
   /** @returns {number} */ count() { return this.store.get().eventDeck.length; }
 
+    /** Ensure the deck has cards, reshuffling from discard if empty. */
     _ensureDeck() {
         const state = this.store.get();
         if (state.eventDeck.length === 0) {
@@ -248,51 +167,108 @@ class LogService {
     }
 }
 
-'use strict';
+/* ===========================
+ * Initial State Builder
+ * =========================== */
 
-/*************************************************
- * AOT Companion — DOM-safe (no innerHTML)
- * GENERAZIONE PER CLASSI — PARTE 2
- * Contiene: UI helpers, Views, App orchestrator, Boot
- * Dipende dalle definizioni della Parte 1 (el, clamp,
- * toInt, TITAN_TYPES, buildInitialState, Store, ecc.)
- *************************************************/
+function normalizeUnit(u, fixedType) {
+    const initialHp = toInt(u.initialHp ?? (fixedType === 'commander' ? 18 : 10));
+    return {
+        id: toInt(u.id ?? 0),
+        name: safeStr(u.name, fixedType === 'recruit' ? 'Recluta' : 'Comandante'),
+        hp: clamp(toInt(u.hp ?? initialHp), 0, initialHp),
+        initialHp,
+        onMission: Boolean(u.onMission),
+        type: /** @type {UnitType} */(fixedType),
+        imageUrl: safeStr(u.imageUrl, 'https://placehold.co/60x60/cccccc/000000?text=IMG')
+    };
+}
+function normalizeTitan(t) {
+    const type = TITAN_TYPES.includes(t.type) ? t.type : 'Puro';
+    const initialHp = toInt(t.initialHp ?? 12);
+    return {
+        id: toInt(t.id ?? 0),
+        name: safeStr(t.name, 'Gigante'),
+        hp: clamp(toInt(t.hp ?? initialHp), 0, initialHp),
+        initialHp,
+        cooldown: Math.max(0, toInt(t.cooldown ?? 0)),
+        type: /** @type {any} */(type),
+        isDefeated: Boolean(t.isDefeated),
+        createdAt: Number.isFinite(t.createdAt) ? Number(t.createdAt) : Date.now()
+    };
+}
+
+function defaultsFromSettings(s) {
+    const moraleMin = toInt(s.moraleMin ?? 0), moraleMax = toInt(s.moraleMax ?? 15);
+    const xpMin = toInt(s.xpMin ?? 0), xpMax = toInt(s.xpMax ?? 70);
+    return {
+        moraleMin, moraleMax, xpMin, xpMax,
+        moraleDefault: clamp(toInt(s.moraleDefault ?? 15), moraleMin, moraleMax),
+        xpDefault: clamp(toInt(s.xpDefault ?? 0), xpMin, xpMax),
+        missionTimerSeconds: toInt(s.missionTimerSeconds ?? 20 * 60),
+        wallDefaultHp: s.wallDefaultHp ?? { maria: 15, rose: 5, sina: 3 }
+    };
+}
+
+function buildInitialState(db, saved) {
+    const def = defaultsFromSettings(db.settings || {});
+    const recruitsDb = db.units?.recruits ?? [];
+    const commandersDb = db.units?.commanders ?? [];
+    const titansDb = db.units?.titans ?? [];
+
+    /** @type {GameState} */
+    const base = {
+        currentMissionNumber: 1,
+        recruitsData: recruitsDb.map(u => normalizeUnit(u, 'recruit')),
+        commandersData: commandersDb.map(u => normalizeUnit(u, 'commander')),
+        titansData: titansDb.map(normalizeTitan),
+        titanIdCounter: db.units?.titanIdCounterStart ? toInt(db.units.titanIdCounterStart) : 0,
+        logData: [],
+        morale: def.moraleDefault,
+        xp: def.xpDefault,
+        wallHp: { ...def.wallDefaultHp },
+        eventDeck: [...db.eventCards],
+        eventDiscardPile: [],
+        removedEventCards: [],
+
+        // Non-DB but handy to carry along
+        __db: db,
+        __defaults: def
+    };
+
+    if (!saved) return base;
+
+    // Merge saved in (safe-ish)
+    return {
+        ...base,
+        ...saved,
+        wallHp: saved.wallHp ? { ...base.wallHp, ...saved.wallHp } : base.wallHp,
+        eventDeck: Array.isArray(saved.eventDeck) ? saved.eventDeck : base.eventDeck,
+        eventDiscardPile: Array.isArray(saved.eventDiscardPile) ? saved.eventDiscardPile : base.eventDiscardPile,
+        removedEventCards: Array.isArray(saved.removedEventCards) ? saved.removedEventCards : base.removedEventCards,
+    };
+}
 
 /* ===========================
- * UI Helpers (no innerHTML)
+ * View Helpers
  * =========================== */
 
 const UI = {
-    /** Restituisce una classe CSS in base alla % HP */
-    hpClass(hp, initial) {
-        if (hp <= 0) return 'hp-dead';
-        const p = (hp / initial) * 100;
-        return p > 60 ? 'hp-high' : p > 30 ? 'hp-medium' : 'hp-low';
-    },
-    /** Aggiorna decorazioni dei range slider */
+    hpClass(hp, initial) { if (hp <= 0) return 'hp-dead'; const p = (hp / initial) * 100; return p > 60 ? 'hp-high' : p > 30 ? 'hp-medium' : 'hp-low'; },
     sliderDecor(slider) {
         const container = slider.closest('.slider-value-container');
         const valueSpan = container?.querySelector('span');
-        if (valueSpan) {
-            // per XP lasciamo gestione esterna eventuale; per morale aggiorniamo live
-            if (slider.id !== 'xp') valueSpan.textContent = slider.value;
-        }
+        if (valueSpan) { valueSpan.textContent = slider.id === 'xp' ? valueSpan.textContent : slider.value; }
         const pct = (toInt(slider.value) / toInt(slider.max)) * 100;
-        let colorVar = 'var(--status-low)';
-        if (pct > 60) colorVar = 'var(--status-high)';
-        else if (pct > 30) colorVar = 'var(--status-medium)';
+        let colorVar = 'var(--status-low)'; if (pct > 60) colorVar = 'var(--status-high)'; else if (pct > 30) colorVar = 'var(--status-medium)';
         slider.style.setProperty('--slider-color', colorVar);
         slider.style.setProperty('--range-progress', `${pct}%`);
     },
-    /** Calcola livello/bonus dall'XP table */
-    levelFromXp(xp, xpTable) {
-        const arr = xpTable.filter(l => xp >= l.xpRequired);
-        return arr.length ? arr[arr.length - 1] : { level: 1, xpRequired: 0, bonus: '-' };
-    },
+    levelFromXp(xp, xpTable) { const arr = xpTable.filter(l => xp >= l.xpRequired); return arr.length ? arr[arr.length - 1] : { level: 1, xpRequired: 0, bonus: '-' }; },
 };
 
 /* ===========================
- * Views (render con DOM API, no innerHTML)
+ * Views (each has render + bind)
  * =========================== */
 
 class StartOverlayView {
@@ -308,37 +284,30 @@ class StartOverlayView {
         } = opts;
 
         return new Promise(resolve => {
-            const overlay = el('div');
-            overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.85); backdrop-filter: blur(2px) saturate(.9); display:grid; place-items:center; z-index:999999; transition:opacity .2s; opacity:0;';
-
-            const modal = el('div', { attrs: { role: 'dialog', 'aria-modal': 'true' } });
-            modal.style.cssText = 'width:min(560px,92vw); background:linear-gradient(180deg,#121421,#171a2b); color:#e7e9ef; border:1px solid #2a2e45; border-radius:16px; padding:20px 20px 84px; box-shadow:0 16px 48px rgba(0,0,0,.45); transform:translateY(8px); transition:transform .2s, opacity .2s; opacity:0; position:relative;';
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `position:fixed; inset:0; background:rgba(0,0,0,.85); backdrop-filter: blur(2px) saturate(.9); display:grid; place-items:center; z-index:999999; transition:opacity .2s; opacity:0;`;
+            const modal = document.createElement('div');
+            modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true');
+            modal.style.cssText = `width:min(560px,92vw); background:linear-gradient(180deg,#121421,#171a2b); color:#e7e9ef; border:1px solid #2a2e45; border-radius:16px; padding:20px 20px 84px; box-shadow:0 16px 48px rgba(0,0,0,.45); transform:translateY(8px); transition:transform .2s, opacity .2s; opacity:0; position:relative;`;
             const accent = '#c53030';
-
-            const headerRow = el('div', { style: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' } },
-                el('div', { style: { width: '6px', height: '28px', borderRadius: '4px', background: accent, boxShadow: '0 0 0 1px rgba(0,0,0,.25) inset' } }),
-                el('h2', { text: title, style: { margin: '0', fontSize: '22px', letterSpacing: '.3px' } })
-            );
-
-            const img = imageUrl ? el('img', { attrs: { src: imageUrl, alt: imageAlt }, style: { width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: '12px', boxShadow: '0 6px 20px rgba(0,0,0,.35)', outline: '1px solid rgba(255,255,255,.06)', marginBottom: '14px' } }) : null;
-            if (img) img.addEventListener('error', () => { img.style.display = 'none'; });
-
-            const p = el('p', { text: message, style: { margin: '0', opacity: '.95' } });
-
-            const cancel = el('button', { text: cancelText, attrs: { id: 'start-cancel' }, style: { position: 'absolute', left: '20px', bottom: '20px', padding: '10px 14px', borderRadius: '10px', border: '1px solid #2a2e45', background: '#1d2240', color: '#e7e9ef', cursor: 'pointer' } });
-            const confirm = el('button', { text: confirmText, attrs: { id: 'start-confirm' }, style: { position: 'absolute', right: '20px', bottom: '20px', padding: '10px 14px', borderRadius: '10px', border: 'none', background: accent, color: '#fff', cursor: 'pointer' } });
-
-            modal.append(headerRow);
-            if (img) modal.append(img);
-            modal.append(p, cancel, confirm);
-            overlay.append(modal);
-            document.body.appendChild(overlay);
-
+            modal.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="width:6px;height:28px;border-radius:4px;background:${accent};box-shadow:0 0 0 1px rgba(0,0,0,.25) inset;"></div>
+          <h2 style="margin:0;font-size:22px;letter-spacing:.3px;">${title}</h2>
+        </div>
+        ${imageUrl ? `<img src="${imageUrl}" alt="${imageAlt}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.35);outline:1px solid rgba(255,255,255,.06);margin-bottom:14px;" onerror="this.style.display='none'">` : ''}
+        <p style="margin:0;opacity:.95;">${message}</p>
+        <button id="start-cancel" style="position:absolute;left:20px;bottom:20px;padding:10px 14px;border-radius:10px;border:1px solid #2a2e45;background:#1d2240;color:#e7e9ef;cursor:pointer;">${cancelText}</button>
+        <button id="start-confirm" style="position:absolute;right:20px;bottom:20px;padding:10px 14px;border-radius:10px;border:none;background:${accent};color:#fff;cursor:pointer;">${confirmText}</button>
+      `;
+            overlay.appendChild(modal); document.body.appendChild(overlay);
             const prevOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
             requestAnimationFrame(() => { overlay.style.opacity = '1'; modal.style.opacity = '1'; modal.style.transform = 'translateY(0)'; });
 
             const cleanup = (res) => { document.body.style.overflow = prevOverflow; overlay.remove(); resolve(res); };
             const onKey = (e) => { if (e.key === 'Escape') cleanup(false); if (e.key === 'Enter') confirm.click(); };
+            const confirm = modal.querySelector('#start-confirm');
+            const cancel = modal.querySelector('#start-cancel');
             cancel.addEventListener('click', () => cleanup(false));
             confirm.addEventListener('click', () => cleanup(true));
             document.addEventListener('keydown', onKey, { once: true });
@@ -379,11 +348,11 @@ class StatsView {
     bind() {
         this.morale?.addEventListener('input', () => {
             const v = toInt(this.morale.value); UI.sliderDecor(this.morale);
-            this.store.set(prev => ({ ...prev, morale: Math.max(prev.__defaults.moraleMin, Math.min(prev.__defaults.moraleMax, v)) }));
+            this.store.set(prev => ({ ...prev, morale: clamp(v, prev.__defaults.moraleMin, prev.__defaults.moraleMax) }));
         });
         this.xp?.addEventListener('input', () => {
             const v = toInt(this.xp.value); UI.sliderDecor(this.xp);
-            this.store.set(prev => ({ ...prev, xp: Math.max(prev.__defaults.xpMin, Math.min(prev.__defaults.xpMax, v)) }));
+            this.store.set(prev => ({ ...prev, xp: clamp(v, prev.__defaults.xpMin, prev.__defaults.xpMax) }));
         });
         this.renderWalls();
     }
@@ -392,15 +361,20 @@ class StatsView {
         if (this.morale) { this.morale.value = String(s.morale); UI.sliderDecor(this.morale); }
         if (this.xp) { this.xp.value = String(s.xp); UI.sliderDecor(this.xp); }
 
+        // Morale description
         const m = s.morale;
         let desc = 'Nessun malus';
         if (m == 0) desc = 'AVETE PERSO'; else if (m <= 5) desc = 'Malus: -2 AGI, -1 STR, -1 TEC'; else if (m <= 9) desc = 'Malus: -1 AGI, -1 STR'; else if (m <= 12) desc = 'Malus: -1 AGI';
         if (this.moraleDesc) this.moraleDesc.textContent = desc;
 
+        // XP bonus label
         const lvl = UI.levelFromXp(s.xp, s.__db.xpTable);
         if (this.xpBonuses) this.xpBonuses.textContent = `Bonus: ${lvl.bonus}`;
 
+        // Recap
         this._renderBonusRecap(m, s.xp, s.__db.xpTable);
+
+        // Walls (values + slider color)
         this._refreshWallSliders();
     }
     _renderBonusRecap(morale, xp, xpTable) {
@@ -422,48 +396,39 @@ class StatsView {
     }
     renderWalls() {
         const container = this.wallHpSection; if (!container) return;
+        container.innerHTML = '<h3 class="stats-title">Mura</h3>';
         const s = this.store.get();
         const cfg = { maria: 15, rose: 5, sina: 3, ...s.__defaults.wallDefaultHp };
-
-        const frag = new DocumentFragment();
-        frag.append(el('h3', { className: 'stats-title', text: 'Mura' }));
-
-        /** @type {(key:'maria'|'rose'|'sina')=>void} */
-        const addWall = (name) => {
-            const id = `wall-${name}-hp`;
+        ['maria', 'rose', 'sina'].forEach(name => {
             const labelMap = { maria: 'Wall Maria', rose: 'Wall Rose', sina: 'Wall Sina' };
-            const wrap = el('div', { className: 'stat' });
-            const label = el('label', { attrs: { for: id }, text: labelMap[name] + ':' });
+            const id = `wall-${name}-hp`;
+            const wrap = document.createElement('div'); wrap.className = 'stat';
+            wrap.innerHTML = `
+        <label for="${id}">${labelMap[name]}:</label>
+        <div class="slider-value-container">
+          <input type="range" id="${id}" data-wall-name="${name}" min="0" max="${cfg[name]}" value="${s.wallHp[name]}">
+          <span>${s.wallHp[name]}</span>
+        </div>`;
+            container.appendChild(wrap);
+        });
 
-            const slider = /** @type {HTMLInputElement} */(el('input', { attrs: { type: 'range', id, min: '0', max: String(cfg[name]), value: String(s.wallHp[name]) }, dataset: { wallName: name } }));
-            const spanVal = el('span', { text: String(s.wallHp[name]) });
-            const sliderWrap = el('div', { className: 'slider-value-container' }, slider, spanVal);
-
-            wrap.append(label, sliderWrap);
-            frag.append(wrap);
-
-            UI.sliderDecor(slider);
-            slider.addEventListener('input', () => {
-                UI.sliderDecor(slider);
-                const newHp = toInt(slider.value);
-                this.store.set(prev => ({ ...prev, wallHp: { ...prev.wallHp, [name]: newHp } }));
-                spanVal.textContent = String(newHp);
+        container.querySelectorAll('input[type="range"]').forEach(sl => {
+            UI.sliderDecor(/** @type {HTMLInputElement} */(sl));
+            sl.addEventListener('input', (e) => {
+                const el = /** @type {HTMLInputElement} */(e.currentTarget);
+                const wall = el.dataset.wallName; const newHp = toInt(el.value);
+                UI.sliderDecor(el);
+                this.store.set(prev => ({ ...prev, wallHp: { ...prev.wallHp, [wall]: newHp } }));
             });
-        };
-
-        addWall('maria'); addWall('rose'); addWall('sina');
-        container.replaceChildren(frag);
+        });
     }
     _refreshWallSliders() {
         if (!this.wallHpSection) return; const s = this.store.get();
         this.wallHpSection.querySelectorAll('input[type="range"]').forEach(sl => {
-            const elx = /** @type {HTMLInputElement} */(sl);
-            const wall = /** @type {'maria'|'rose'|'sina'} */(elx.dataset.wallName);
-            const val = s.wallHp[wall];
-            if (toInt(elx.value) !== val) { elx.value = String(val); }
-            const container = elx.closest('.slider-value-container');
-            const span = container?.querySelector('span'); if (span) span.textContent = String(val);
-            UI.sliderDecor(elx);
+            const el = /** @type {HTMLInputElement} */(sl);
+            const wall = el.dataset.wallName; const val = s.wallHp[wall];
+            if (toInt(el.value) !== val) { el.value = String(val); }
+            UI.sliderDecor(el);
         });
     }
 }
@@ -473,14 +438,7 @@ class LogView {
     constructor(store) { this.store = store; this.wrap = document.getElementById('log-entries'); }
     render() {
         const s = this.store.get(); if (!this.wrap) return;
-        const frag = new DocumentFragment();
-        (s.logData || []).forEach(e => {
-            const p = el('p', { className: `log-${e.type}` });
-            const strong = el('strong', { text: `[${e.time}]` });
-            p.append(strong, ' ', document.createTextNode(e.message));
-            frag.append(p);
-        });
-        this.wrap.replaceChildren(frag);
+        this.wrap.innerHTML = (s.logData || []).map(e => `<p class="log-${e.type}"><strong>[${e.time}]</strong> ${e.message}</p>`).join('');
     }
 }
 
@@ -493,12 +451,7 @@ class DiceView {
             if (!btn) return; const sides = toInt(btn.dataset.sides), count = toInt(btn.dataset.count);
             const rolls = Array.from({ length: count }, () => 1 + Math.floor(Math.random() * sides));
             const sum = rolls.reduce((a, b) => a + b, 0);
-            if (this.result) {
-                const frag = new DocumentFragment();
-                frag.append(el('p', {}, el('strong', { text: 'Tiri:' }), ' ', rolls.join(', ')));
-                frag.append(el('p', {}, el('strong', { text: 'Totale:' }), ' ', String(sum)));
-                this.result.replaceChildren(frag);
-            }
+            if (this.result) this.result.innerHTML = `<p><strong>Tiri:</strong> ${rolls.join(', ')}</p><p><strong>Totale:</strong> ${sum}</p>`;
             this.logger.add(`Lanciati ${count}D${sides}. Risultati: ${rolls.join(', ')}. Totale: ${sum}.`, 'dice');
         });
     }
@@ -521,6 +474,7 @@ class MissionView {
         this.btnDec?.addEventListener('click', () => this._changeMission(-1));
         this.btnInc?.addEventListener('click', () => this._changeMission(1));
 
+        // Mission grid interactions
         this.unitsGrid?.addEventListener('click', (e) => {
             const rmBtn = e.target instanceof HTMLElement ? e.target.closest('.remove-from-mission-btn') : null;
             const hpBtn = e.target instanceof HTMLElement ? e.target.closest('.hp-change') : null;
@@ -546,36 +500,33 @@ class MissionView {
 
         const onMission = [...s.recruitsData, ...s.commandersData].filter(u => u.onMission && u.hp > 0);
         if (!this.unitsGrid) return;
+        if (onMission.length === 0) { this.unitsGrid.innerHTML = `<p style="color:var(--text-secondary);text-align:center;grid-column:1/-1;margin:auto;">Nessuna unità in missione.</p>`; return; }
 
-        const frag = new DocumentFragment();
-        if (onMission.length === 0) {
-            frag.append(el('p', { style: { color: 'var(--text-secondary)', textAlign: 'center', gridColumn: '1/-1', margin: 'auto' }, text: 'Nessuna unità in missione.' }));
-        } else {
-            for (const u of onMission) {
-                const hpC = UI.hpClass(u.hp, u.initialHp);
-
-                const closeBtn = el('button', { className: 'remove-from-mission-btn', dataset: { id: u.id, type: u.type } }, '×');
-                const img = el('img', { className: 'unit-image', attrs: { src: u.imageUrl, alt: u.name } });
-                img.addEventListener('error', () => { img.src = 'https://placehold.co/60x60/cccccc/000000?text=IMG'; });
-                const nameDiv = el('div', { className: 'name', text: u.name });
-
-                const minus = el('button', { className: 'hp-change btn', dataset: { id: u.id, type: u.type, amount: -1 } }, '-');
-                const hp = el('span', { className: `label hp ${hpC}`, text: String(u.hp) });
-                const plus = el('button', { className: 'hp-change btn', dataset: { id: u.id, type: u.type, amount: 1 } }, '+');
-                const controls = el('div', { className: 'controls' }, minus, hp, plus);
-                const statRow = el('div', { className: 'stat-row' }, controls);
-
-                const card = el('div', { className: `unit-card ${u.type === 'commander' ? 'commander' : ''}` }, closeBtn, img, nameDiv, statRow);
-                frag.append(card);
-            }
-        }
-        this.unitsGrid.replaceChildren(frag);
+        const frag = document.createDocumentFragment();
+        onMission.forEach(u => {
+            const card = document.createElement('div');
+            const hpC = UI.hpClass(u.hp, u.initialHp);
+            card.className = `unit-card ${u.type === 'commander' ? 'commander' : ''}`;
+            card.innerHTML = `
+        <button class="remove-from-mission-btn" data-id="${u.id}" data-type="${u.type}">&times;</button>
+        <img src="${u.imageUrl}" alt="${u.name}" class="unit-image" onerror="this.onerror=null;this.src='https://placehold.co/60x60/cccccc/000000?text=IMG';">
+        <div class="name">${u.name}</div>
+        <div class="stat-row">
+          <div class="controls">
+            <button class="hp-change btn" data-id="${u.id}" data-type="${u.type}" data-amount="-1">-</button>
+            <span class="label hp ${hpC}">${u.hp}</span>
+            <button class="hp-change btn" data-id="${u.id}" data-type="${u.type}" data-amount="1">+</button>
+          </div>
+        </div>`;
+            frag.appendChild(card);
+        });
+        this.unitsGrid.innerHTML = ''; this.unitsGrid.appendChild(frag);
     }
     _changeMission(delta) {
         this.store.set(prev => {
             const keys = Object.keys(prev.__db.missions);
             const max = keys.length ? Math.max(...keys.map(k => toInt(k))) : 1;
-            const next = Math.max(1, Math.min(max, prev.currentMissionNumber + delta));
+            let next = clamp(prev.currentMissionNumber + delta, 1, max);
             if (next !== prev.currentMissionNumber) this.logger.add(`Passato alla Missione #${next}.`, 'mission');
             return { ...prev, currentMissionNumber: next };
         });
@@ -588,6 +539,7 @@ class MissionView {
         });
     }
     _queueHpChange(type, id, amount) {
+        // delegated to App: emit custom event to centralize death/resurrect/morale/xp changes
         document.dispatchEvent(new CustomEvent('hp:queue', { detail: { kind: type, id, amount } }));
     }
 }
@@ -596,7 +548,7 @@ class UnitPopupsView {
     /** @param {Store} store */
     constructor(store) {
         this.store = store;
-        this.gridPopup = document.getElementById('grid-popup');
+        this.openGrid = document.getElementById('grid-popup');
         this.recruitsPopup = document.getElementById('recruits-popup');
         this.commandersPopup = document.getElementById('commanders-popup');
         this.recruitsList = document.getElementById('recruits-list');
@@ -613,8 +565,8 @@ class UnitPopupsView {
         this.closeRecruits?.addEventListener('click', () => this.recruitsPopup?.classList.remove('show'));
         this.openCommanders?.addEventListener('click', () => this.commandersPopup?.classList.add('show'));
         this.closeCommanders?.addEventListener('click', () => this.commandersPopup?.classList.remove('show'));
-        this.openGrid?.addEventListener('click', () => this.gridPopup?.classList.add('show'));
-        this.closeGrid?.addEventListener('click', () => this.gridPopup?.classList.remove('show'));
+        this.openGrid?.addEventListener('click', () => this.openGrid?.classList.remove('show'));
+        this.closeGrid?.addEventListener('click', () => this.openGrid?.classList.remove('show'));
 
         const handle = (e) => {
             const btn = e.target instanceof HTMLElement ? e.target.closest('.hp-change, .mission-button') : null; if (!btn) return;
@@ -624,41 +576,34 @@ class UnitPopupsView {
         };
         this.recruitsList?.addEventListener('click', handle);
         this.commandersList?.addEventListener('click', handle);
-
     }
     render() {
         this._renderList('recruit', this.recruitsList);
         this._renderList('commander', this.commandersList);
     }
     _renderList(type, ul) {
-        if (!ul) return; const s = this.store.get(); const data = type === 'recruit' ? s.recruitsData : s.commandersData; ul.replaceChildren();
+        if (!ul) return; const s = this.store.get(); const data = type === 'recruit' ? s.recruitsData : s.commandersData; ul.innerHTML = '';
         const living = data.filter(u => u.hp > 0).sort((a, b) => a.name.localeCompare(b.name));
         const dead = data.filter(u => u.hp <= 0).sort((a, b) => a.name.localeCompare(b.name));
-        const frag = new DocumentFragment();
-
         const createLi = (u) => {
-            const li = el('li');
-            const info = el('div', { className: 'unit-info-popup' });
-            const img = el('img', { className: 'unit-image-popup', attrs: { src: u.imageUrl, alt: u.name } });
-            img.addEventListener('error', () => { img.src = 'https://placehold.co/60x60/cccccc/000000?text=IMG'; });
-            const nameSpan = el('span', { className: UI.hpClass(u.hp, u.initialHp), text: `${u.name} (HP: ${u.hp > 0 ? u.hp : 'Morto'})` });
-            info.append(img, nameSpan);
-
-            const controls = el('div', { className: 'hp-controls' });
-            const minus = el('button', { className: 'hp-change btn', dataset: { id: u.id, type, amount: -1 }, attrs: u.hp <= 0 ? { disabled: 'true' } : {} }, '-');
-            const plus = el('button', { className: 'hp-change btn', dataset: { id: u.id, type, amount: 1 } }, '+');
-            const mission = el('button', { className: `mission-button btn ${u.onMission ? 'on-mission' : ''}`, dataset: { id: u.id, type }, attrs: u.hp <= 0 ? { disabled: 'true' } : {} }, u.onMission ? 'Rimuovi' : 'Invia');
-            controls.append(minus, plus, mission);
-
-            li.append(info, controls);
+            const li = document.createElement('li'); const hpC = UI.hpClass(u.hp, u.initialHp);
+            li.innerHTML = `
+        <div class="unit-info-popup">
+          <img src="${u.imageUrl}" alt="${u.name}" class="unit-image-popup" onerror="this.onerror=null;this.src='https://placehold.co/60x60/cccccc/000000?text=IMG';">
+          <span class="${hpC}">${u.name} (HP: ${u.hp > 0 ? u.hp : 'Morto'})</span>
+        </div>
+        <div class="hp-controls">
+          <button class="hp-change btn" data-id="${u.id}" data-type="${type}" data-amount="-1" ${u.hp <= 0 ? 'disabled' : ''}>-</button>
+          <button class="hp-change btn" data-id="${u.id}" data-type="${type}" data-amount="1">+</button>
+          <button class="mission-button btn ${u.onMission ? 'on-mission' : ''}" data-id="${u.id}" data-type="${type}" ${u.hp <= 0 ? 'disabled' : ''}>${u.onMission ? 'Rimuovi' : 'Invia'}</button>
+        </div>`;
             return li;
         };
-
-        living.forEach(u => frag.append(createLi(u)));
-        if (dead.length && living.length) { const sepLi = el('li'); sepLi.append(el('hr', { attrs: { style: 'width:100%; border-color: var(--background-lighter); margin:.5rem 0;' } })); frag.append(sepLi); }
-        dead.forEach(u => frag.append(createLi(u)));
-
-        ul.append(frag);
+        const frag = document.createDocumentFragment();
+        living.forEach(u => frag.appendChild(createLi(u)));
+        if (dead.length && living.length) { const sep = document.createElement('li'); sep.innerHTML = `<hr style="width:100%; border-color: var(--background-lighter); margin:.5rem 0;">`; frag.appendChild(sep); }
+        dead.forEach(u => frag.appendChild(createLi(u)));
+        ul.appendChild(frag);
     }
     _toggle(type, id) {
         this.store.set(prev => {
@@ -679,8 +624,8 @@ class TitansView {
     bind() {
         this.btnAdd?.addEventListener('click', () => this._addTitan());
         this.grid?.addEventListener('click', (e) => {
-            const elx = e.target instanceof HTMLElement ? e.target : null; if (!elx) return;
-            const rm = elx.closest('.remove-titan-btn'); const cd = elx.closest('.cooldown-change'); const sw = elx.closest('.titan-type-switcher'); const hp = elx.closest('.hp-change');
+            const el = e.target instanceof HTMLElement ? e.target : null; if (!el) return;
+            const rm = el.closest('.remove-titan-btn'); const cd = el.closest('.cooldown-change'); const sw = el.closest('.titan-type-switcher'); const hp = el.closest('.hp-change');
             if (!rm && !cd && !sw && !hp) return;
             const id = toInt((rm || cd || sw || hp).dataset.id);
             if (rm) this._remove(id);
@@ -691,63 +636,44 @@ class TitansView {
     }
     render() {
         const s = this.store.get();
+        // Legend per missione
         this._renderSpawnLegend();
 
         if (!this.grid) return;
+        if (!s.titansData.length) { this.grid.innerHTML = `<p style="color:var(--text-secondary);text-align:center;grid-column:1/-1;margin:auto;">Nessun gigante in campo.</p>`; return; }
 
-        const frag = new DocumentFragment();
-        if (!s.titansData.length) {
-            frag.append(el('p', { style: { color: 'var(--text-secondary)', textAlign: 'center', gridColumn: '1/-1', margin: 'auto' }, text: 'Nessun gigante in campo.' }));
-        } else {
-            s.titansData.forEach(t => {
-                const isDead = t.hp <= 0; const hpC = UI.hpClass(t.hp, t.initialHp);
-
-                const card = el('div', { className: `unit-card ${isDead ? 'titan-dead' : `titan-${t.type.toLowerCase()}`}` });
-                const removeBtn = el('button', { className: 'remove-titan-btn', dataset: { id: t.id } }, '×');
-                const nameDiv = el('div', { className: 'name', text: isDead ? 'Sconfitto' : t.name });
-                const typeBtn = el('button', { className: 'titan-type-switcher', dataset: { id: t.id }, attrs: isDead ? { disabled: 'true' } : {} }, t.type);
-
-                const minus = el('button', { className: 'hp-change btn', dataset: { id: t.id, amount: -1 }, attrs: isDead ? { disabled: 'true' } : {} }, '-');
-                const hpSpan = el('span', { className: `label hp ${hpC}`, text: String(t.hp) });
-                const plus = el('button', { className: 'hp-change btn', dataset: { id: t.id, amount: 1 }, attrs: isDead ? { disabled: 'true' } : {} }, '+');
-                const hpControls = el('div', { className: 'controls' }, minus, hpSpan, plus);
-                const hpRow = el('div', { className: 'stat-row' }, hpControls);
-
-                const cdMinus = el('button', { className: 'cooldown-change btn', dataset: { id: t.id, amount: -1 } }, '-');
-                const cdLabel = el('span', { className: 'label', text: `R:${t.cooldown}` });
-                const cdPlus = el('button', { className: 'cooldown-change btn', dataset: { id: t.id, amount: 1 } }, '+');
-                const cdControls = el('div', { className: 'controls' }, cdMinus, cdLabel, cdPlus);
-                const cdRow = el('div', { className: 'stat-row' }, cdControls);
-
-                card.append(removeBtn, nameDiv, typeBtn, hpRow, cdRow);
-                frag.append(card);
-            });
-        }
-
-        this.grid.replaceChildren(frag);
+        const frag = document.createDocumentFragment();
+        s.titansData.forEach(t => {
+            const isDead = t.hp <= 0; const hpC = UI.hpClass(t.hp, t.initialHp);
+            const card = document.createElement('div');
+            card.className = `unit-card ${isDead ? 'titan-dead' : `titan-${t.type.toLowerCase()}`}`;
+            card.innerHTML = `
+        <button class="remove-titan-btn" data-id="${t.id}">&times;</button>
+        <div class="name">${isDead ? 'Sconfitto' : t.name}</div>
+        <button class="titan-type-switcher" data-id="${t.id}" ${isDead ? 'disabled' : ''}>${t.type}</button>
+        <div class="stat-row"><div class="controls">
+          <button class="hp-change btn" data-id="${t.id}" data-amount="-1" ${isDead ? 'disabled' : ''}>-</button>
+          <span class="label hp ${hpC}">${t.hp}</span>
+          <button class="hp-change btn" data-id="${t.id}" data-amount="1" ${isDead ? 'disabled' : ''}>+</button>
+        </div></div>
+        <div class="stat-row"><div class="controls">
+          <button class="cooldown-change btn" data-id="${t.id}" data-amount="-1">-</button>
+          <span class="label">R:${t.cooldown}</span>
+          <button class="cooldown-change btn" data-id="${t.id}" data-amount="1">+</button>
+        </div></div>`;
+            frag.appendChild(card);
+        });
+        this.grid.innerHTML = ''; this.grid.appendChild(frag);
     }
     _renderSpawnLegend() {
         if (!this.header) return;
         let legend = this.header.querySelector('.titan-spawn-legend');
-        if (!legend) { legend = el('div', { className: 'titan-spawn-legend' }); this.header.append(legend); }
-        Object.assign(legend.style, { display: 'flex', gap: '.75rem', fontSize: '1.5rem', alignItems: 'center' });
-
-        const s = this.store.get();
-        const spawn = s.__db.titanSpawnTable[s.currentMissionNumber] || s.__db.titanSpawnTable[1] || { Puro: '-', Anomalo: '-', Mutaforma: '-' };
-
-        const makeItem = (color, text) => el('div', { style: { display: 'flex', alignItems: 'center', gap: '.25rem' } },
-            el('div', { style: { width: '1rem', height: '1rem', borderRadius: '50%', backgroundColor: color } }),
-            el('span', { text })
-        );
-
-        const frag = new DocumentFragment();
-        frag.append(
-            makeItem('#a0aec0', spawn['Puro']),
-            makeItem('#ecc94b', spawn['Anomalo']),
-            makeItem('#f56565', spawn['Mutaforma'])
-        );
-
-        legend.replaceChildren(frag);
+        if (!legend) { legend = document.createElement('div'); legend.className = 'titan-spawn-legend'; legend.style.cssText = 'display:flex; gap:.75rem; font-size:1.5rem; align-items:center;'; this.header.appendChild(legend); }
+        const s = this.store.get(); const spawn = s.__db.titanSpawnTable[s.currentMissionNumber] || s.__db.titanSpawnTable[1] || { Puro: '-', Anomalo: '-', Mutaforma: '-' };
+        legend.innerHTML = `
+      <div style="display:flex;align-items:center;gap:.25rem;"><div style="width:1rem;height:1rem;border-radius:50%;background-color:#a0aec0;"></div><span>${spawn['Puro']}</span></div>
+      <div style="display:flex;align-items:center;gap:.25rem;"><div style="width:1rem;height:1rem;border-radius:50%;background-color:#ecc94b;"></div><span>${spawn['Anomalo']}</span></div>
+      <div style="display:flex;align-items:center;gap:.25rem;"><div style="width:1rem;height:1rem;border-radius:50%;background-color:#f56565;"></div><span>${spawn['Mutaforma']}</span></div>`;
     }
     _addTitan() {
         this.store.set(prev => {
@@ -798,7 +724,7 @@ class EventsDeckView {
     }
     render() { this._updateCount(); }
     _updateCount() { if (this.deckCount) this.deckCount.textContent = String(this.deck.count()); }
-    _open(card) { if (!this.popup) return; if (this.title) this.title.textContent = card.titolo; if (this.desc) this.desc.textContent = card.descrizione; if (this.type) this.type.textContent = card.tipo; this.popup.classList.add('show'); }
+    _open(card) { if (!this.popup) return; this.title.textContent = card.titolo; this.desc.textContent = card.descrizione; this.type.textContent = card.tipo; this.popup.classList.add('show'); }
     _close() { this.popup?.classList.remove('show'); this.current = null; }
     _action(kind) { if (!this.current) return; const c = this.current; if (kind === 'reshuffle') this.store.set(prev => ({ ...prev, eventDeck: [...prev.eventDeck, c] })); if (kind === 'discard') this.deck.discard(c); if (kind === 'remove') this.deck.remove(c); this.logger.add(`"${c.titolo}" ${kind === 'reshuffle' ? 'rimescolata' : kind === 'discard' ? 'scartata' : 'rimossa'}.`, 'info'); this._close(); this._updateCount(); }
 }
@@ -827,17 +753,20 @@ class App {
     }
 
     async start() {
+        // Start popup + audio (in gesto utente)
         const url = './assets/risorsa_audio_avvio_app.mp3';
         const proceeded = await StartOverlayView.show();
         if (!proceeded) return;
         await this.audio.play(url, { loop: true, volume: 1 });
 
+        // Load DB & saved
         const db = await this.dbRepo.load();
         const saved = this.storage.load();
         this.store = new Store(buildInitialState(db, saved));
         this.logger = new LogService(this.store);
         this.deck = new DeckService(this.store, () => this.store.get().__db.eventCards);
 
+        // Instantiate views
         this.header = new HeaderView(this.store);
         this.stats = new StatsView(this.store);
         this.logView = new LogView(this.store);
@@ -847,6 +776,7 @@ class App {
         this.events = new EventsDeckView(this.store, this.deck, this.logger);
         this.dice = new DiceView(this.logger);
 
+        // Bindings
         this.header.bind({ onReset: () => this._confirmReset(), onRestartTimer: () => this._restartTimer() });
         this.stats.bind();
         this.mission.bind();
@@ -855,11 +785,14 @@ class App {
         this.events.bind();
         this.dice.bind();
 
+        // HP queue listener (centralizes side-effects)
         document.addEventListener('hp:queue', (/** @type {CustomEvent} */ev) => this._queueHp(ev.detail));
 
+        // Render on state change + persist
         this.store.subscribe((next) => { this._renderAll(); this.storage.save(this._stripTransient(next)); });
         this._renderAll();
 
+        // Start timer
         this._restartTimer();
     }
 
@@ -915,23 +848,26 @@ class App {
         if (!delta) return;
         const s = this.store.get();
         if (kind === 'titan') {
+            // Find titan + apply, and compute rewards on death / resurrection
             const t = s.titansData.find(x => x.id === id); if (!t) return;
-            const wasAlive = t.hp > 0; const nextHp = Math.max(0, Math.min(t.initialHp, t.hp + delta));
+            const wasAlive = t.hp > 0; const oldHp = t.hp; const nextHp = clamp(t.hp + delta, 0, t.initialHp);
             const isNowDead = nextHp <= 0;
             const rewards = { 'Puro': { m: 1, xp: 1 }, 'Anomalo': { m: 2, xp: 2 }, 'Mutaforma': { m: 5, xp: 3 } };
             const reward = rewards[t.type];
 
             this.store.set(prev => ({ ...prev, titansData: prev.titansData.map(x => x.id === id ? { ...x, hp: nextHp, isDefeated: isNowDead ? true : x.isDefeated } : x) }));
 
+            // Logs & stats
             if (wasAlive && !isNowDead) { this.logger.add(`${t.name} ha ${delta < 0 ? `subito ${-delta} danni` : `recuperato ${delta} HP`}.`, delta < 0 ? 'damage' : 'info'); }
             if (wasAlive && isNowDead && reward) { this._applyStats(reward.m, reward.xp); this.logger.add(`${t.name} è stato sconfitto! (Morale +${reward.m}, XP +${reward.xp})`, 'mission'); }
             if (!wasAlive && nextHp > 0 && t.isDefeated && reward) { this._applyStats(-reward.m, -reward.xp); this.logger.add(`${t.name} è tornato in vita!`, 'info'); }
             return;
         }
 
+        // Units
         const key = kind === 'recruit' ? 'recruitsData' : 'commandersData';
         const list = s[key]; const u = list.find(x => x.id === id); if (!u) return;
-        const wasAlive = u.hp > 0; const nextHp = Math.max(0, Math.min(u.initialHp, u.hp + delta));
+        const wasAlive = u.hp > 0; const nextHp = clamp(u.hp + delta, 0, u.initialHp);
         this.store.set(prev => ({ ...prev, [key]: prev[key].map(x => x.id === id ? { ...x, hp: nextHp } : x) }));
 
         if (wasAlive && nextHp <= 0) {
@@ -948,8 +884,8 @@ class App {
     _applyStats(dmMorale, dmXp) {
         if (!dmMorale && !dmXp) return;
         this.store.set(prev => {
-            const m = Math.max(prev.__defaults.moraleMin, Math.min(prev.__defaults.moraleMax, prev.morale + (dmMorale || 0)));
-            const x = Math.max(prev.__defaults.xpMin, Math.min(prev.__defaults.xpMax, prev.xp + (dmXp || 0)));
+            const m = clamp(prev.morale + (dmMorale || 0), prev.__defaults.moraleMin, prev.__defaults.moraleMax);
+            const x = clamp(prev.xp + (dmXp || 0), prev.__defaults.xpMin, prev.__defaults.xpMax);
             return { ...prev, morale: m, xp: x };
         });
     }
@@ -968,3 +904,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         alert('Errore in avvio applicazione. Controlla la console.');
     }
 });
+
