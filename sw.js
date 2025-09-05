@@ -9,7 +9,8 @@ const ASSETS = [
   './manifest.json',
   './favicon.png',
   './icona_app_512.jpg',
-  './icona_app_192.jpg'
+  './icona_app_192.jpg',
+  './assets/risorsa_audio_avvio_app.mp3'
 ];
 
 // Installazione: cache iniziale

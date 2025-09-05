@@ -791,7 +791,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function main() {
 
         const url = './assets/risorsa_audio_avvio_app.mp3'; // <— metti qui il tuo default
-        await playAudioFromUrl(url, { loop: false, volume: 1 });
+        // avvia il suono dopo ~800 ms
+        setTimeout(() => {
+            playAudioFromUrl(url, { loop: false, volume: 1 });
+        }, 800);
 
         await loadDB();
 
