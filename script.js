@@ -792,8 +792,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const url = './assets/risorsa_audio_avvio_app.mp3'; // <— metti qui il tuo default
 
-        await playAudioFromUrl(url, { loop: false, volume: 1 });
-
         await loadDB();
 
         loadGameState();
@@ -843,6 +841,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.eventReshuffleBtn) elements.eventReshuffleBtn.addEventListener('click', () => handleEventCardAction('reshuffle'));
         if (elements.eventDiscardBtn) elements.eventDiscardBtn.addEventListener('click', () => handleEventCardAction('discard'));
         if (elements.eventRemoveBtn) elements.eventRemoveBtn.addEventListener('click', () => handleEventCardAction('remove'));
+
+        await playAudioFromUrl(url, { loop: false, volume: 1 });
     }
 
     /**
