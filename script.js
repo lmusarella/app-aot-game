@@ -791,10 +791,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function main() {
 
         const url = './assets/risorsa_audio_avvio_app.mp3'; // <— metti qui il tuo default
-        // avvia il suono dopo ~800 ms
-        setTimeout(() => {
-            playAudioFromUrl(url, { loop: false, volume: 1 });
-        }, 800);
+
+        await playAudioFromUrl(url, { loop: false, volume: 1 });
 
         await loadDB();
 
@@ -865,8 +863,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // questa riga aiuta. Per semplice playback non è strettamente necessaria.
         audio.crossOrigin = 'anonymous';
 
+
         try {
-            await audio.play();
+            setTimeout(() => {
+                audio.play();
+            }, 800);
         } catch (err) {
             // Autoplay probabilmente bloccato: mostro un pulsante per sbloccare
             if (err && (err.name === 'NotAllowedError' || err.name === 'AbortError')) {
