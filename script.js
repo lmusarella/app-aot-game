@@ -792,6 +792,7 @@ class App {
     const s = this.store.get();
     this.header?.setMission(s.currentMissionNumber);
     this.stats?.render();
+    this.popups?.render();
     this.mission?.render();
     this.titans?.render();
     this.events?.render();
