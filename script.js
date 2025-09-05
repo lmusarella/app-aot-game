@@ -792,6 +792,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const url = './assets/risorsa_audio_avvio_app.mp3'; // <— metti qui il tuo default
 
+        // Mostra popup e, al click su "Prosegui", parte l'audio (gesto utente)
+        const proceeded = await showStartPopupAndRun(
+            () => playAudioFromUrl(url, { loop: false, volume: 1 })
+        );
+        
+        if (!proceeded) return; // l’utente ha annullato
+
         await loadDB();
 
         loadGameState();
@@ -863,49 +870,88 @@ document.addEventListener('DOMContentLoaded', () => {
         // questa riga aiuta. Per semplice playback non è strettamente necessaria.
         audio.crossOrigin = 'anonymous';
 
-
         try {
-            setTimeout(() => {
-                audio.play();
-            }, 800);
+            audio.play();
         } catch (err) {
-            // Autoplay probabilmente bloccato: mostro un pulsante per sbloccare
-            if (err && (err.name === 'NotAllowedError' || err.name === 'AbortError')) {
-                showUnlockButton(audio);
-            } else {
-                console.error('Errore riproduzione:', err);
-                alert('Impossibile riprodurre l’audio: ' + (err?.message || err));
-            }
+            console.error('Errore riproduzione:', err);
         }
 
         return audio;
     }
 
-    function showUnlockButton(audio) {
-        const btn = document.createElement('button');
-        btn.textContent = 'Tocca per riprodurre';
-        Object.assign(btn.style, {
-            position: 'fixed',
-            inset: '0',
-            margin: 'auto',
-            width: 'min(320px, 90vw)',
-            height: '56px',
-            fontSize: '18px',
-            borderRadius: '12px',
-            border: 'none',
-            padding: '0 16px',
-            cursor: 'pointer',
-            boxShadow: '0 8px 24px rgba(0,0,0,.2)',
+
+    function showStartPopupAndRun(onProceed, {
+        title = 'Benvenuto su AOT Campain',
+        message = 'Sei pronto a difendere Eldia dalla minaccia dei Giganti?',
+        confirmText = 'Li sterminerò tutti!',
+        cancelText = 'Ho troppa paura!'
+    } = {}) {
+        return new Promise((resolve) => {
+            // overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+      position:fixed; inset:0; background:rgba(0,0,0,.6);
+      display:grid; place-items:center; z-index:999999;
+    `;
+
+            // modal
+            const modal = document.createElement('div');
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.style.cssText = `
+      width:min(480px, 92vw); background:#171a2b; color:#e7e9ef;
+      border-radius:16px; padding:20px; box-shadow:0 12px 40px rgba(0,0,0,.35);
+      font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    `;
+            modal.innerHTML = `
+      <h2 style="margin:0 0 8px; font-size:20px;">${title}</h2>
+      <p style="margin:0 0 16px; opacity:.9;">${message}</p>
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button id="start-cancel" class="btn-cancel" style="
+          padding:10px 14px; border-radius:10px; border:1px solid #2a2e45; background:#1d2240; color:#e7e9ef; cursor:pointer;">
+          ${cancelText}
+        </button>
+        <button id="start-confirm" class="btn-confirm" style="
+          padding:10px 14px; border-radius:10px; border:none; background:#4f46e5; color:#fff; cursor:pointer;">
+          ${confirmText}
+        </button>
+      </div>
+    `;
+
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+
+            const confirmBtn = modal.querySelector('#start-confirm');
+            const cancelBtn = modal.querySelector('#start-cancel');
+
+            const cleanup = (result) => {
+                document.removeEventListener('keydown', onKey);
+                overlay.remove();
+                resolve(result);
+            };
+
+            const onKey = (e) => {
+                if (e.key === 'Escape') cleanup(false);
+                if (e.key === 'Enter') confirmBtn.click();
+            };
+
+            cancelBtn.addEventListener('click', () => cleanup(false));
+
+            // ⚠️ avvia dentro il gesto utente
+            confirmBtn.addEventListener('click', async () => {
+                try {
+                    if (typeof onProceed === 'function') {
+                        await onProceed(); // qui puoi avviare l’audio
+                    }
+                } finally {
+                    cleanup(true);
+                }
+            });
+
+            document.addEventListener('keydown', onKey);
+            // focus iniziale
+            setTimeout(() => confirmBtn.focus(), 0);
         });
-        btn.addEventListener('click', async () => {
-            try {
-                await audio.play();
-                btn.remove();
-            } catch (e) {
-                alert('Non riesco a riprodurre: ' + (e?.message || e));
-            }
-        });
-        document.body.appendChild(btn);
     }
 
     main();
