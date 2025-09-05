@@ -546,7 +546,48 @@ class MissionView {
     }
 
     _completeMission() {
-        
+        const s = this.store.get();
+        const currentMission = s.__db.missions[s.currentMissionNumber];
+        if (!currentMission) return;
+
+        // Parse ricompensa (es. "+2 Morale, +3 XP")
+        const rewardStr = String(currentMission.reward || '');
+        const xpMatch = rewardStr.match(/\+(\d+)\s*XP/i);
+        const moraleMatch = rewardStr.match(/\+(\d+)\s*Morale/i);
+        const xpDelta = xpMatch ? toInt(xpMatch[1]) : 0;
+        const moraleDelta = moraleMatch ? toInt(moraleMatch[1]) : 0;
+
+        const hadTitans = s.titansData.length > 0;
+
+        // Applica modifiche in un unico set: stats, ritiro unità, rimozione titani
+        this.store.set(prev => {
+            const def = prev.__defaults;
+            const nextMorale = clamp(prev.morale + moraleDelta, def.moraleMin, def.moraleMax);
+            const nextXp = clamp(prev.xp + xpDelta, def.xpMin, def.xpMax);
+
+            return {
+                ...prev,
+                morale: nextMorale,
+                xp: nextXp,
+                recruitsData: prev.recruitsData.map(u => u.onMission ? { ...u, onMission: false } : u),
+                commandersData: prev.commandersData.map(u => u.onMission ? { ...u, onMission: false } : u),
+                titansData: hadTitans ? [] : prev.titansData
+            };
+        });
+
+        // Log coerenti con il resto del sistema
+        this.logger.add('Tutte le unità sono state richiamate.', 'info');
+        if (hadTitans) this.logger.add('Tutti i giganti sono stati rimossi.', 'info');
+
+        const extras = [];
+        if (moraleDelta) extras.push(`Morale +${moraleDelta}`);
+        if (xpDelta) extras.push(`XP +${xpDelta}`);
+        const suffix = extras.length ? ` (${extras.join(', ')})` : '';
+
+        this.logger.add(`Missione #${s.currentMissionNumber} completata!${suffix}`, 'mission');
+
+        // Passa alla missione successiva (usa già logger interno)
+        this._changeMission(1);
     }
 }
 
@@ -563,16 +604,16 @@ class UnitPopupsView {
         this.closeRecruits = document.getElementById('close-recruits-popup');
         this.openCommanders = document.getElementById('open-commanders-popup');
         this.closeCommanders = document.getElementById('close-commanders-popup');
-        this.openGrid = document.getElementById('open-grid-popup');
-        this.closeGrid = document.getElementById('close-grid-popup');
+        this.openGridPopup = document.getElementById('open-grid-popup');
+        this.closeGridPopup = document.getElementById('close-grid-popup');
     }
     bind() {
         this.openRecruits?.addEventListener('click', () => this.recruitsPopup?.classList.add('show'));
         this.closeRecruits?.addEventListener('click', () => this.recruitsPopup?.classList.remove('show'));
         this.openCommanders?.addEventListener('click', () => this.commandersPopup?.classList.add('show'));
         this.closeCommanders?.addEventListener('click', () => this.commandersPopup?.classList.remove('show'));
-        this.openGrid?.addEventListener('click', () => this.openGrid?.classList.add('show'));
-        this.closeGrid?.addEventListener('click', () => this.openGrid?.classList.remove('show'));
+        this.openGridPopup?.addEventListener('click', () => this.openGrid?.classList.add('show'));
+        this.closeGridPopup?.addEventListener('click', () => this.openGrid?.classList.remove('show'));
 
         const handle = (e) => {
             const btn = e.target instanceof HTMLElement ? e.target.closest('.hp-change, .mission-button') : null; if (!btn) return;
