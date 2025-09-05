@@ -794,9 +794,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Mostra popup e, al click su "Prosegui", parte l'audio (gesto utente)
         const proceeded = await showStartPopupAndRun(
-            () => playAudioFromUrl(url, { loop: false, volume: 1 })
+            () => playAudioFromUrl(url, { loop: true, volume: 1 })
         );
-        
+
         if (!proceeded) return; // l’utente ha annullato
 
         await loadDB();
@@ -879,53 +879,107 @@ document.addEventListener('DOMContentLoaded', () => {
         return audio;
     }
 
-
-    function showStartPopupAndRun(onProceed, {
-        title = 'Benvenuto su AOT Campain',
-        message = 'Sei pronto a difendere Eldia dalla minaccia dei Giganti?',
-        confirmText = 'Li sterminerò tutti!',
-        cancelText = 'Ho troppa paura!'
-    } = {}) {
+    function showStartPopupAndRun(
+        onProceed,
+        {
+            title = 'Benvenuto su AOT Campaign',
+            message = 'Sei pronto a difendere le mura dalla minaccia dei Giganti?',
+            confirmText = 'Li sterminerò tutti!',
+            cancelText = 'Mi rifugerò nei territori interni!',
+            imageUrl = 'corpo_di_ricerca.jpg',
+            imageAlt = 'Artwork AOT'
+        } = {}
+    ) {
         return new Promise((resolve) => {
-            // overlay
+            // overlay più scuro
             const overlay = document.createElement('div');
             overlay.style.cssText = `
-      position:fixed; inset:0; background:rgba(0,0,0,.6);
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.85);
+      backdrop-filter: blur(2px) saturate(0.9);
       display:grid; place-items:center; z-index:999999;
+      transition: opacity .2s ease;
+      opacity:0;
     `;
 
-            // modal
+            // modale AOT
             const modal = document.createElement('div');
             modal.setAttribute('role', 'dialog');
             modal.setAttribute('aria-modal', 'true');
             modal.style.cssText = `
-      width:min(480px, 92vw); background:#171a2b; color:#e7e9ef;
-      border-radius:16px; padding:20px; box-shadow:0 12px 40px rgba(0,0,0,.35);
-      font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      width:min(560px, 92vw);
+      background:linear-gradient(180deg,#121421 0%,#171a2b 100%);
+      color:#e7e9ef;
+      border:1px solid #2a2e45;
+      border-radius:16px;
+      padding:20px 20px 84px; /* spazio per i bottoni fissati in basso */
+      box-shadow:0 16px 48px rgba(0,0,0,.45);
+      font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      transform:translateY(8px);
+      transition: transform .2s ease, opacity .2s ease;
+      opacity:0;
+      position:relative; /* necessario per posizionare i bottoni */
     `;
-            modal.innerHTML = `
-      <h2 style="margin:0 0 8px; font-size:20px;">${title}</h2>
-      <p style="margin:0 0 16px; opacity:.9;">${message}</p>
-      <div style="display:flex; gap:10px; justify-content:flex-end;">
-        <button id="start-cancel" class="btn-cancel" style="
-          padding:10px 14px; border-radius:10px; border:1px solid #2a2e45; background:#1d2240; color:#e7e9ef; cursor:pointer;">
-          ${cancelText}
-        </button>
-        <button id="start-confirm" class="btn-confirm" style="
-          padding:10px 14px; border-radius:10px; border:none; background:#4f46e5; color:#fff; cursor:pointer;">
-          ${confirmText}
-        </button>
+
+            const accent = '#c53030';
+            const headerHTML = `
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <div style="width:6px; height:28px; border-radius:4px; background:${accent}; box-shadow:0 0 0 1px rgba(0,0,0,.25) inset;"></div>
+        <h2 style="margin:0; font-size:22px; letter-spacing:.3px;">
+          ${title}
+        </h2>
       </div>
+    `;
+
+            const imgHTML = imageUrl ? `
+      <img src="${imageUrl}" alt="${imageAlt}"
+           style="width:100%; aspect-ratio:16/9; object-fit:cover;
+                  border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.35);
+                  outline:1px solid rgba(255,255,255,.06); margin-bottom:14px;"
+           onerror="this.style.display='none'">
+    ` : '';
+
+            modal.innerHTML = `
+      ${headerHTML}
+      ${imgHTML}
+      <p style="margin:0; opacity:.95;">${message}</p>
+
+      <!-- Bottoni fissati agli angoli inferiori -->
+      <button id="start-cancel" class="btn-cancel" style="
+        position:absolute; left:20px; bottom:20px;
+        padding:10px 14px; border-radius:10px; border:1px solid #2a2e45;
+        background:#1d2240; color:#e7e9ef; cursor:pointer;">
+        ${cancelText}
+      </button>
+
+      <button id="start-confirm" class="btn-confirm" style="
+        position:absolute; right:20px; bottom:20px;
+        padding:10px 14px; border-radius:10px; border:none;
+        background:${accent}; color:#fff; cursor:pointer;">
+        ${confirmText}
+      </button>
     `;
 
             overlay.appendChild(modal);
             document.body.appendChild(overlay);
+
+            // blocca scroll sotto
+            const prevOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+
+            // animazione ingresso
+            requestAnimationFrame(() => {
+                overlay.style.opacity = '1';
+                modal.style.opacity = '1';
+                modal.style.transform = 'translateY(0)';
+            });
 
             const confirmBtn = modal.querySelector('#start-confirm');
             const cancelBtn = modal.querySelector('#start-cancel');
 
             const cleanup = (result) => {
                 document.removeEventListener('keydown', onKey);
+                document.body.style.overflow = prevOverflow;
                 overlay.remove();
                 resolve(result);
             };
@@ -937,11 +991,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             cancelBtn.addEventListener('click', () => cleanup(false));
 
-            // ⚠️ avvia dentro il gesto utente
+            // avvia dentro il gesto utente
             confirmBtn.addEventListener('click', async () => {
                 try {
                     if (typeof onProceed === 'function') {
-                        await onProceed(); // qui puoi avviare l’audio
+                        await onProceed(); // es. playAudioFromUrl(...)
                     }
                 } finally {
                     cleanup(true);
@@ -949,7 +1003,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             document.addEventListener('keydown', onKey);
-            // focus iniziale
             setTimeout(() => confirmBtn.focus(), 0);
         });
     }

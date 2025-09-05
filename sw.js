@@ -10,7 +10,8 @@ const ASSETS = [
   './favicon.png',
   './icona_app_512.jpg',
   './icona_app_192.jpg',
-  './assets/risorsa_audio_avvio_app.mp3'
+  './assets/risorsa_audio_avvio_app.mp3',
+  './corpo_di_ricerca.jpg'
 ];
 
 // Installazione: cache iniziale
