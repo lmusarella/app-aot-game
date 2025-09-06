@@ -595,7 +595,6 @@ class UnitPopupsView {
     /** @param {Store} store */
     constructor(store) {
         this.store = store;
-        this.openGrid = document.getElementById('grid-popup');
         this.recruitsPopup = document.getElementById('recruits-popup');
         this.commandersPopup = document.getElementById('commanders-popup');
         this.recruitsList = document.getElementById('recruits-list');
@@ -604,16 +603,12 @@ class UnitPopupsView {
         this.closeRecruits = document.getElementById('close-recruits-popup');
         this.openCommanders = document.getElementById('open-commanders-popup');
         this.closeCommanders = document.getElementById('close-commanders-popup');
-        this.openGridPopup = document.getElementById('open-grid-popup');
-        this.closeGridPopup = document.getElementById('close-grid-popup');
     }
     bind() {
         this.openRecruits?.addEventListener('click', () => this.recruitsPopup?.classList.add('show'));
         this.closeRecruits?.addEventListener('click', () => this.recruitsPopup?.classList.remove('show'));
         this.openCommanders?.addEventListener('click', () => this.commandersPopup?.classList.add('show'));
         this.closeCommanders?.addEventListener('click', () => this.commandersPopup?.classList.remove('show'));
-        this.openGridPopup?.addEventListener('click', () => this.openGrid?.classList.add('show'));
-        this.closeGridPopup?.addEventListener('click', () => this.openGrid?.classList.remove('show'));
 
         const handle = (e) => {
             const btn = e.target instanceof HTMLElement ? e.target.closest('.hp-change, .mission-button') : null; if (!btn) return;
@@ -663,12 +658,22 @@ class UnitPopupsView {
 class TitansView {
     /** @param {Store} store @param {LogService} logger */
     constructor(store, logger) {
-        this.store = store; this.logger = logger;
+        this.store = store;
+        this.logger = logger;
         this.btnAdd = document.getElementById('add-titan-btn');
+        this.openGrid = document.getElementById('grid-popup');
         this.grid = document.getElementById('titan-grid');
         this.header = document.querySelector('.titans-header');
+        this.openGridPopup = document.getElementById('open-grid-popup');
+        this.closeGridPopup = document.getElementById('close-grid-popup');
     }
     bind() {
+        this.openGridPopup?.addEventListener('click', () => {
+            console.log('test')
+            this.openGrid?.classList.add('show')
+        }
+        );
+        this.closeGridPopup?.addEventListener('click', () => this.openGrid?.classList.remove('show'));
         this.btnAdd?.addEventListener('click', () => this._addTitan());
         this.grid?.addEventListener('click', (e) => {
             const el = e.target instanceof HTMLElement ? e.target : null; if (!el) return;
