@@ -1,100 +1,3 @@
-'use strict';
-
-/**
- * AOT Companion — SOLID Refactor (single-file, no build step)
- * -----------------------------------------------------------
- * - Single Responsibility: domain models, data layer, services, views, and controllers are separated.
- * - Open/Closed: entities and views are extensible via small adapters/options (no core edits needed).
- * - Liskov: concrete types (Unit/Titan) follow the same behavioral contracts expected by the UI.
- * - Interface Segregation: small, focused interfaces (repositories/services) passed as dependencies.
- * - Dependency Inversion: high-level orchestration (App) depends on abstractions injected via ctor.
- *
- * Drop-in replacement for your previous script.js.
- * Keep your HTML as-is. No bundlers required.
- */
-
-/* ===========================
- * Utilities & Domain Types
- * =========================== */
-
-/** @template T */
-class Optional {
-    /** @param {T | undefined | null} v */
-    constructor(v) { this.v = v ?? undefined; }
-  /** @returns {boolean} */ isSome() { return this.v !== undefined; }
-  /** @returns {T} */ unwrap() { if (this.v === undefined) throw new Error('Optional empty'); return this.v; }
-  /** @template R @param {(t:T)=>R} fn */ map(fn) { return this.isSome() ? new Optional(fn(this.v)) : new Optional(undefined) }
-  /** @template R @param {R} fallback */ orElse(fallback) { return this.isSome() ? this.v : fallback }
-}
-
-const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-const toInt = (v, d = 0) => { const n = parseInt(String(v), 10); return Number.isFinite(n) ? n : d; };
-const safeStr = (v, fb = '') => (typeof v === 'string' && v.length ? v : fb);
-const nowTime = () => new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-
-/** @typedef {{ level:number, xpRequired:number, bonus:string }} XpLevel */
-/** @typedef {{ objective:string, reward:string, event:string }} Mission */
-/** @typedef {{ titolo:string, descrizione:string, tipo:string }} EventCard */
-/** @typedef {{ moraleMin:number, moraleMax:number, xpMin:number, xpMax:number, moraleDefault:number, xpDefault:number, missionTimerSeconds:number, wallDefaultHp:{maria:number, rose:number, sina:number} }} Settings */
-
-/** @typedef {'recruit'|'commander'} UnitType */
-/** @typedef {{ id:number, name:string, hp:number, initialHp:number, onMission:boolean, type:UnitType, imageUrl:string }} Unit */
-/** @typedef {{ id:number, name:string, hp:number, initialHp:number, cooldown:number, type:'Puro'|'Anomalo'|'Mutaforma', isDefeated:boolean, createdAt:number }} Titan */
-
-/** @typedef {ReturnType<typeof buildInitialState>} GameState */
-
-const TITAN_TYPES = ['Puro', 'Anomalo', 'Mutaforma'];
-
-/* ===========================
- * Repositories
- * =========================== */
-
-class DbRepository {
-    /** @returns {Promise<{ xpTable:XpLevel[], missions:Record<number, Mission>, titanSpawnTable:Record<number, Record<string,string>>, eventCards:EventCard[], settings:Partial<Settings>, units?:{ recruits?:Partial<Unit>[], commanders?:Partial<Unit>[], titans?:Partial<Titan>[], titanIdCounterStart?:number } }>} */
-    async load() {
-        const res = await fetch('./aot_db.json', { cache: 'no-cache' });
-        if (!res.ok) throw new Error('Impossibile caricare aot_db.json');
-        const json = await res.json();
-        return {
-            xpTable: Array.isArray(json.xpTable) ? json.xpTable : [],
-            missions: json.missions || {},
-            titanSpawnTable: json.titanSpawnTable || {},
-            eventCards: json.eventCards || [],
-            settings: json.settings || {},
-            units: json.units || undefined,
-        };
-    }
-}
-
-class StorageRepository {
-    constructor(key = 'aotGameState') { this.key = key; }
-    /** @returns {Partial<GameState>|null} */
-    load() {
-        const raw = localStorage.getItem(this.key);
-        return raw ? JSON.parse(raw) : null;
-    }
-    /** @param {GameState} state */
-    save(state) { localStorage.setItem(this.key, JSON.stringify(state)); }
-}
-
-/* ===========================
- * Store (simple pub/sub)
- * =========================== */
-
-class Store {
-    /** @param {GameState} initial */
-    constructor(initial) { this.state = initial; this.listeners = new Set(); }
-  /** @returns {GameState} */ get() { return this.state; }
-    /** @param {(prev:GameState)=>GameState} updater */
-    set(updater) { const prev = this.state; const next = updater(prev); this.state = next; this.listeners.forEach(l => l(next, prev)); }
-    /** @param {(next:GameState,prev:GameState)=>void} fn */
-    subscribe(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
-}
-
-/* ===========================
- * Services
- * =========================== */
-
 class AudioService {
     /** @param {string} url @param {{loop?:boolean, volume?:number}} [opts] */
     async play(url, opts = {}) {
@@ -105,171 +8,6 @@ class AudioService {
         return audio;
     }
 }
-
-class TimerService {
-    constructor() { this._int = null; this._remaining = 0; }
-    /** @param {number} seconds @param {(m:number,s:number)=>void} onTick @param {()=>void} onEnd */
-    start(seconds, onTick, onEnd) {
-        this.stop();
-        this._remaining = Math.max(0, toInt(seconds));
-        const tick = () => {
-            const m = Math.floor(this._remaining / 60), s = this._remaining % 60;
-            onTick(m, s);
-            if (this._remaining-- <= 0) { this.stop(); onEnd(); }
-        };
-        tick();
-        this._int = setInterval(tick, 1000);
-    }
-    stop() { if (this._int) clearInterval(this._int); this._int = null; }
-}
-
-class DeckService {
-    /** @param {Store} store @param {() => EventCard[]} getAll */
-    constructor(store, getAll) { this.store = store; this.getAll = getAll; }
-
-  /** @returns {number} */ count() { return this.store.get().eventDeck.length; }
-
-    /** Ensure the deck has cards, reshuffling from discard if empty. */
-    _ensureDeck() {
-        const state = this.store.get();
-        if (state.eventDeck.length === 0) {
-            if (state.eventDiscardPile.length > 0) {
-                this.store.set(prev => ({ ...prev, eventDeck: [...prev.eventDiscardPile], eventDiscardPile: [] }));
-            } else if (this.getAll().length > 0) {
-                this.store.set(prev => ({ ...prev, eventDeck: [...this.getAll()] }));
-            }
-        }
-    }
-
-    /** @returns {EventCard | null} */
-    draw() {
-        this._ensureDeck();
-        const state = this.store.get();
-        if (state.eventDeck.length === 0) return null;
-        const i = Math.floor(Math.random() * state.eventDeck.length);
-        const card = state.eventDeck[i];
-        const nextDeck = state.eventDeck.slice(0, i).concat(state.eventDeck.slice(i + 1));
-        this.store.set(prev => ({ ...prev, eventDeck: nextDeck }));
-        return card;
-    }
-
-  /** @param {EventCard} card */ discard(card) { this.store.set(prev => ({ ...prev, eventDiscardPile: [...prev.eventDiscardPile, card] })); }
-  /** @param {EventCard} card */ remove(card) { this.store.set(prev => ({ ...prev, removedEventCards: [...prev.removedEventCards, card] })); }
-}
-
-class LogService {
-    /** @param {Store} store */
-    constructor(store) { this.store = store; }
-    /** @param {string} message @param {'info'|'mission'|'damage'|'death'|'dice'} [type] */
-    add(message, type = 'info') {
-        const entry = { time: nowTime(), message, type };
-        this.store.set(prev => ({ ...prev, logData: [entry, ...(prev.logData || [])].slice(0, 100) }));
-    }
-}
-
-/* ===========================
- * Initial State Builder
- * =========================== */
-
-function normalizeUnit(u, fixedType) {
-    const initialHp = toInt(u.initialHp ?? (fixedType === 'commander' ? 18 : 10));
-    return {
-        id: toInt(u.id ?? 0),
-        name: safeStr(u.name, fixedType === 'recruit' ? 'Recluta' : 'Comandante'),
-        hp: clamp(toInt(u.hp ?? initialHp), 0, initialHp),
-        initialHp,
-        onMission: Boolean(u.onMission),
-        type: /** @type {UnitType} */(fixedType),
-        imageUrl: safeStr(u.imageUrl, 'https://placehold.co/60x60/cccccc/000000?text=IMG')
-    };
-}
-function normalizeTitan(t) {
-    const type = TITAN_TYPES.includes(t.type) ? t.type : 'Puro';
-    const initialHp = toInt(t.initialHp ?? 12);
-    return {
-        id: toInt(t.id ?? 0),
-        name: safeStr(t.name, 'Gigante'),
-        hp: clamp(toInt(t.hp ?? initialHp), 0, initialHp),
-        initialHp,
-        cooldown: Math.max(0, toInt(t.cooldown ?? 0)),
-        type: /** @type {any} */(type),
-        isDefeated: Boolean(t.isDefeated),
-        createdAt: Number.isFinite(t.createdAt) ? Number(t.createdAt) : Date.now()
-    };
-}
-
-function defaultsFromSettings(s) {
-    const moraleMin = toInt(s.moraleMin ?? 0), moraleMax = toInt(s.moraleMax ?? 15);
-    const xpMin = toInt(s.xpMin ?? 0), xpMax = toInt(s.xpMax ?? 70);
-    return {
-        moraleMin, moraleMax, xpMin, xpMax,
-        moraleDefault: clamp(toInt(s.moraleDefault ?? 15), moraleMin, moraleMax),
-        xpDefault: clamp(toInt(s.xpDefault ?? 0), xpMin, xpMax),
-        missionTimerSeconds: toInt(s.missionTimerSeconds ?? 20 * 60),
-        wallDefaultHp: s.wallDefaultHp ?? { maria: 15, rose: 5, sina: 3 }
-    };
-}
-
-function buildInitialState(db, saved) {
-    const def = defaultsFromSettings(db.settings || {});
-    const recruitsDb = db.units?.recruits ?? [];
-    const commandersDb = db.units?.commanders ?? [];
-    const titansDb = db.units?.titans ?? [];
-
-    /** @type {GameState} */
-    const base = {
-        currentMissionNumber: 1,
-        recruitsData: recruitsDb.map(u => normalizeUnit(u, 'recruit')),
-        commandersData: commandersDb.map(u => normalizeUnit(u, 'commander')),
-        titansData: titansDb.map(normalizeTitan),
-        titanIdCounter: db.units?.titanIdCounterStart ? toInt(db.units.titanIdCounterStart) : 0,
-        logData: [],
-        morale: def.moraleDefault,
-        xp: def.xpDefault,
-        wallHp: { ...def.wallDefaultHp },
-        eventDeck: [...db.eventCards],
-        eventDiscardPile: [],
-        removedEventCards: [],
-
-        // Non-DB but handy to carry along
-        __db: db,
-        __defaults: def
-    };
-
-    if (!saved) return base;
-
-    // Merge saved in (safe-ish)
-    return {
-        ...base,
-        ...saved,
-        wallHp: saved.wallHp ? { ...base.wallHp, ...saved.wallHp } : base.wallHp,
-        eventDeck: Array.isArray(saved.eventDeck) ? saved.eventDeck : base.eventDeck,
-        eventDiscardPile: Array.isArray(saved.eventDiscardPile) ? saved.eventDiscardPile : base.eventDiscardPile,
-        removedEventCards: Array.isArray(saved.removedEventCards) ? saved.removedEventCards : base.removedEventCards,
-    };
-}
-
-/* ===========================
- * View Helpers
- * =========================== */
-
-const UI = {
-    hpClass(hp, initial) { if (hp <= 0) return 'hp-dead'; const p = (hp / initial) * 100; return p > 60 ? 'hp-high' : p > 30 ? 'hp-medium' : 'hp-low'; },
-    sliderDecor(slider) {
-        const container = slider.closest('.slider-value-container');
-        const valueSpan = container?.querySelector('span');
-        if (valueSpan) { valueSpan.textContent = slider.id === 'xp' ? valueSpan.textContent : slider.value; }
-        const pct = (toInt(slider.value) / toInt(slider.max)) * 100;
-        let colorVar = 'var(--status-low)'; if (pct > 60) colorVar = 'var(--status-high)'; else if (pct > 30) colorVar = 'var(--status-medium)';
-        slider.style.setProperty('--slider-color', colorVar);
-        slider.style.setProperty('--range-progress', `${pct}%`);
-    },
-    levelFromXp(xp, xpTable) { const arr = xpTable.filter(l => xp >= l.xpRequired); return arr.length ? arr[arr.length - 1] : { level: 1, xpRequired: 0, bonus: '-' }; },
-};
-
-/* ===========================
- * Views (each has render + bind)
- * =========================== */
 
 class StartOverlayView {
     /** @param {{title?:string,message?:string,confirmText?:string,cancelText?:string,imageUrl?:string,imageAlt?:string}} [opts] */
@@ -316,644 +54,857 @@ class StartOverlayView {
     }
 }
 
-class HeaderView {
-    /** @param {Store} store */
-    constructor(store) {
-        this.store = store;
-        this.missionCount = document.getElementById('mission-count');
-        this.timerLabel = document.getElementById('mission-timer');
-        this.btnReset = document.getElementById('reset-game-btn');
-        this.btnRestartTimer = document.getElementById('restart-mission-btn');
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DATA & STATE MANAGEMENT ---
+    let db = {};                       // conterrà i dati di aot_db.json
+    let xpTable = [];                  // da db.xpTable
+    let missionData = {};              // da db.missions
+    let titanSpawnTable = {};          // da db.titanSpawnTable
+    let defaultMissionTimerSeconds = 20 * 60; // sovrascrivibile da db.settings.missionTimerSeconds
+
+    let gameState = {};
+    let missionTimerInterval;
+    let pendingHpChanges = {};
+    let hpChangeTimers = {};
+    let wallHpChangeTimers = {}; // Aggiunto per i danni alle mura
+    let allEventCards = [];
+    let currentEventCard = null;
+
+    const titanTypes = ['Puro', 'Anomalo', 'Mutaforma'];
+
+
+    const elements = {
+        moraleSlider: document.getElementById('morale'),
+        xpSlider: document.getElementById('xp'),
+        livingRecruitsSpan: document.getElementById('living-recruits'),
+        livingCommandersSpan: document.getElementById('living-commanders'),
+        openRecruitsPopupBtn: document.getElementById('open-recruits-popup'),
+        recruitsPopup: document.getElementById('recruits-popup'),
+        closeRecruitsPopupBtn: document.getElementById('close-recruits-popup'),
+        recruitsList: document.getElementById('recruits-list'),
+        openCommandersPopupBtn: document.getElementById('open-commanders-popup'),
+        commandersPopup: document.getElementById('commanders-popup'),
+        closeCommandersPopupBtn: document.getElementById('close-commanders-popup'),
+        commandersList: document.getElementById('commanders-list'),
+        missionCount: document.getElementById('mission-count'),
+        missionTimer: document.getElementById('mission-timer'),
+        missionObjectiveText: document.getElementById('mission-objective-text'),
+        missionRewardText: document.getElementById('mission-reward-text'),
+        missionEventText: document.getElementById('mission-event-text'),
+        missionUnitsGrid: document.getElementById('mission-units-grid'),
+        decreaseMissionBtn: document.getElementById('decrease-mission'),
+        increaseMissionBtn: document.getElementById('increase-mission'),
+        addTitanBtn: document.getElementById('add-titan-btn'),
+        openGridPopup: document.getElementById('open-grid-popup'),
+        closeGridPopup: document.getElementById('close-grid-popup'),
+        titanGrid: document.getElementById('titan-grid'),
+        completeMissionBtn: document.getElementById('complete-mission-btn'),
+        restartMissionBtn: document.getElementById('restart-mission-btn'),
+        resetGameBtn: document.getElementById('reset-game-btn'),
+        gridPopup: document.getElementById('grid-popup'),
+        resetConfirmModal: document.getElementById('reset-confirm-modal'),
+        confirmResetBtn: document.getElementById('confirm-reset-btn'),
+        cancelResetBtn: document.getElementById('cancel-reset-btn'),
+        diceRollerPanel: document.getElementById('dice-roller-panel'),
+        diceResultArea: document.getElementById('dice-result-area'),
+        wallHpSection: document.getElementById('wall-hp-section'),
+        logEntries: document.getElementById('log-entries'),
+        moraleDescription: document.getElementById('morale-description'),
+        xpBonuses: document.getElementById('xp-bonuses'),
+        bonusRecapText: document.getElementById('bonus-recap-text'),
+        drawEventBtn: document.getElementById('draw-event-btn'),
+        eventDeckCount: document.getElementById('event-deck-count'),
+        eventCardPopup: document.getElementById('event-card-popup'),
+        eventCardTitle: document.getElementById('event-card-title'),
+        eventCardDescription: document.getElementById('event-card-description'),
+        eventCardType: document.getElementById('event-card-type'),
+        eventReshuffleBtn: document.getElementById('event-reshuffle-btn'),
+        eventDiscardBtn: document.getElementById('event-discard-btn'),
+        eventRemoveBtn: document.getElementById('event-remove-btn'),
+    };
+
+    async function loadDB() {
+        // se aot_db.json è nella root accanto a index.html:
+        const res = await fetch('./aot_db.json', { cache: 'no-cache' });
+        if (!res.ok) throw new Error('Impossibile caricare aot_db.json');
+
+        db = await res.json();
+
+        // mappa tabelle/setting
+        xpTable = Array.isArray(db.xpTable) ? db.xpTable : [];
+        missionData = db.missions || {};
+        titanSpawnTable = db.titanSpawnTable || {};
+        allEventCards = db.eventCards || [];
+
+        if (db.settings?.missionTimerSeconds) {
+            defaultMissionTimerSeconds = db.settings.missionTimerSeconds;
+        }
     }
-    bind({ onReset, onRestartTimer }) {
-        this.btnReset?.addEventListener('click', onReset);
-        this.btnRestartTimer?.addEventListener('click', onRestartTimer);
-    }
-    setMission(n) { if (this.missionCount) this.missionCount.textContent = `Missione #${n}`; }
-    setTimer(m, s) { if (this.timerLabel) this.timerLabel.textContent = `${m}:${s < 10 ? '0' : ''}${s}`; }
-    setExpired() { if (this.timerLabel) this.timerLabel.textContent = 'SCADUTO'; }
-}
 
-class StatsView {
-    /** @param {Store} store */
-    constructor(store) {
-        this.store = store;
-        this.morale = /** @type {HTMLInputElement} */(document.getElementById('morale'));
-        this.xp = /** @type {HTMLInputElement} */(document.getElementById('xp'));
-        this.moraleDesc = document.getElementById('morale-description');
-        this.xpBonuses = document.getElementById('xp-bonuses');
-        this.bonusRecap = document.getElementById('bonus-recap-text');
-        this.wallHpSection = document.getElementById('wall-hp-section');
-    }
-    bind() {
-        this.morale?.addEventListener('input', () => {
-            const v = toInt(this.morale.value); UI.sliderDecor(this.morale);
-            this.store.set(prev => ({ ...prev, morale: clamp(v, prev.__defaults.moraleMin, prev.__defaults.moraleMax) }));
-        });
-        this.xp?.addEventListener('input', () => {
-            const v = toInt(this.xp.value); UI.sliderDecor(this.xp);
-            this.store.set(prev => ({ ...prev, xp: clamp(v, prev.__defaults.xpMin, prev.__defaults.xpMax) }));
-        });
-        this.renderWalls();
-    }
-    render() {
-        const s = this.store.get();
-        if (this.morale) { this.morale.value = String(s.morale); UI.sliderDecor(this.morale); }
-        if (this.xp) { this.xp.value = String(s.xp); UI.sliderDecor(this.xp); }
+    const initializeEventDeck = () => {
+        if (allEventCards && allEventCards.length > 0) {
+            if (!gameState.eventDeck || gameState.eventDeck.length === 0) {
+                gameState.eventDeck = [...allEventCards];
+                updateDeckCount();
+                saveGameState();
+            }
+        }
+    };
 
-        // Morale description
-        const m = s.morale;
-        let desc = 'Nessun malus';
-        if (m == 0) desc = 'AVETE PERSO'; else if (m <= 5) desc = 'Malus: -2 AGI, -1 STR, -1 TEC'; else if (m <= 9) desc = 'Malus: -1 AGI, -1 STR'; else if (m <= 12) desc = 'Malus: -1 AGI';
-        if (this.moraleDesc) this.moraleDesc.textContent = desc;
+    const addLogEntry = (message, type = 'info') => {
+        if (!gameState.logData) gameState.logData = [];
+        const timestamp = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        gameState.logData.unshift({ time: timestamp, message, type });
+        if (gameState.logData.length > 100) {
+            gameState.logData.pop();
+        }
+        renderLog();
+        saveGameState();
+    };
 
-        // XP bonus label
-        const lvl = UI.levelFromXp(s.xp, s.__db.xpTable);
-        if (this.xpBonuses) this.xpBonuses.textContent = `Bonus: ${lvl.bonus}`;
+    const renderLog = () => {
+        elements.logEntries.innerHTML = gameState.logData.map(entry =>
+            `<p class="log-${entry.type}"><strong>[${entry.time}]</strong> ${entry.message}</p>`
+        ).join('');
+    };
 
-        // Recap
-        this._renderBonusRecap(m, s.xp, s.__db.xpTable);
+    const updateSlider = (slider) => {
+        const container = slider.closest('.slider-value-container');
+        if (!container) return;
+        const valueSpan = container.querySelector('span');
+        if (valueSpan) {
+            if (slider.id === 'xp') {
+                const xp = parseInt(slider.value, 10);
+                const currentLevel = xpTable.filter(l => xp >= l.xpRequired).pop() || xpTable[0];
+                valueSpan.textContent = `Livello ${currentLevel.level} (XP: ${xp})`;
+            } else {
+                valueSpan.textContent = slider.value;
+            }
+        }
 
-        // Walls (values + slider color)
-        this._refreshWallSliders();
-    }
-    _renderBonusRecap(morale, xp, xpTable) {
-        /** @type {{AGI:number, STR:number, TEC:number}} */
-        const total = { AGI: 0, STR: 0, TEC: 0 };
-        if (morale <= 5) { total.AGI -= 2; total.STR -= 1; total.TEC -= 1; }
-        else if (morale <= 9) { total.AGI -= 1; total.STR -= 1; }
-        else if (morale <= 12) { total.AGI -= 1; }
+        const percentage = (slider.value / slider.max) * 100;
+        let colorVar = 'var(--status-low)';
+        if (percentage > 60) colorVar = 'var(--status-high)';
+        else if (percentage > 30) colorVar = 'var(--status-medium)';
 
-        const lvl = UI.levelFromXp(xp, xpTable);
-        if (lvl && lvl.bonus && lvl.bonus !== '-') {
-            lvl.bonus.split(',').map(s => s.trim()).forEach(part => {
-                const m = part.match(/([+-]\d+)\s(AGI|STR|TEC)/);
-                if (m) { total[/** @type {'AGI'|'STR'|'TEC'} */(m[2])] += toInt(m[1]); }
+        slider.style.setProperty('--slider-color', colorVar);
+        slider.style.setProperty('--range-progress', `${percentage}%`);
+    };
+
+    const getHpStatusClass = (hp, initialHp) => {
+        if (hp <= 0) return 'hp-dead';
+        const percentage = (hp / initialHp) * 100;
+        if (percentage > 60) return 'hp-high';
+        if (percentage > 30) return 'hp-medium';
+        return 'hp-low';
+    };
+
+    const updateMorale = () => {
+        updateSlider(elements.moraleSlider);
+        const morale = elements.moraleSlider.value;
+        if (morale == 0) elements.moraleDescription.textContent = "AVETE PERSO";
+        else if (morale <= 5) elements.moraleDescription.textContent = "Malus: -2 AGI, -1 STR, -1TEC";
+        else if (morale <= 9) elements.moraleDescription.textContent = "Malus: -1 AGI, -1 STR";
+        else if (morale <= 12) elements.moraleDescription.textContent = "Malus: -1 AGI";
+        else elements.moraleDescription.textContent = "Nessun malus";
+        updateBonusRecap();
+    };
+
+    const updateXP = () => {
+        updateSlider(elements.xpSlider);
+        const xp = parseInt(elements.xpSlider.value, 10);
+        const currentLevel = xpTable.filter(l => xp >= l.xpRequired).pop() || xpTable[0];
+        elements.xpBonuses.textContent = `Bonus: ${currentLevel.bonus}`;
+        updateBonusRecap();
+    };
+
+    const updateBonusRecap = () => {
+        const totalBonuses = { AGI: 0, STR: 0, TEC: 0 };
+        const morale = parseInt(elements.moraleSlider.value, 10);
+        if (morale <= 5) {
+            totalBonuses.AGI -= 2; totalBonuses.STR -= 1; totalBonuses.TEC -= 1;
+        } else if (morale <= 9) {
+            totalBonuses.AGI -= 1; totalBonuses.STR -= 1;
+        } else if (morale <= 12) {
+            totalBonuses.AGI -= 1;
+        }
+
+        const xp = parseInt(elements.xpSlider.value, 10);
+        const currentLevel = xpTable.filter(l => xp >= l.xpRequired).pop() || xpTable[0];
+        if (currentLevel && currentLevel.bonus !== "-") {
+            const parts = currentLevel.bonus.split(',').map(s => s.trim());
+            parts.forEach(part => {
+                const match = part.match(/([+-]\d+)\s(AGI|STR|TEC)/);
+                if (match) {
+                    totalBonuses[match[2]] += parseInt(match[1], 10);
+                }
             });
         }
-        const txt = Object.entries(total).filter(([, v]) => v !== 0).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${k}`).join(', ') || 'Nessun bonus/malus';
-        if (this.bonusRecap) this.bonusRecap.textContent = txt;
-    }
-    renderWalls() {
-        const container = this.wallHpSection; if (!container) return;
-        container.innerHTML = '<h3 class="stats-title">Mura</h3>';
-        const s = this.store.get();
-        const cfg = { maria: 15, rose: 5, sina: 3, ...s.__defaults.wallDefaultHp };
-        ['maria', 'rose', 'sina'].forEach(name => {
-            const labelMap = { maria: 'Wall Maria', rose: 'Wall Rose', sina: 'Wall Sina' };
-            const id = `wall-${name}-hp`;
-            const wrap = document.createElement('div'); wrap.className = 'stat';
-            wrap.innerHTML = `
-        <label for="${id}">${labelMap[name]}:</label>
-        <div class="slider-value-container">
-          <input type="range" id="${id}" data-wall-name="${name}" min="0" max="${cfg[name]}" value="${s.wallHp[name]}">
-          <span>${s.wallHp[name]}</span>
-        </div>`;
-            container.appendChild(wrap);
-        });
 
-        container.querySelectorAll('input[type="range"]').forEach(sl => {
-            UI.sliderDecor(/** @type {HTMLInputElement} */(sl));
-            sl.addEventListener('input', (e) => {
-                const el = /** @type {HTMLInputElement} */(e.currentTarget);
-                const wall = el.dataset.wallName; const newHp = toInt(el.value);
-                UI.sliderDecor(el);
-                this.store.set(prev => ({ ...prev, wallHp: { ...prev.wallHp, [wall]: newHp } }));
-            });
-        });
-    }
-    _refreshWallSliders() {
-        if (!this.wallHpSection) return; const s = this.store.get();
-        this.wallHpSection.querySelectorAll('input[type="range"]').forEach(sl => {
-            const el = /** @type {HTMLInputElement} */(sl);
-            const wall = el.dataset.wallName; const val = s.wallHp[wall];
-            if (toInt(el.value) !== val) { el.value = String(val); }
-            UI.sliderDecor(el);
-        });
-    }
-}
+        let bonusString = Object.entries(totalBonuses)
+            .filter(([, value]) => value !== 0)
+            .map(([stat, value]) => `${value > 0 ? '+' : ''}${value} ${stat}`)
+            .join(', ');
 
-class LogView {
-    /** @param {Store} store */
-    constructor(store) { this.store = store; this.wrap = document.getElementById('log-entries'); }
-    render() {
-        const s = this.store.get(); if (!this.wrap) return;
-        this.wrap.innerHTML = (s.logData || []).map(e => `<p class="log-${e.type}"><strong>[${e.time}]</strong> ${e.message}</p>`).join('');
-    }
-}
+        elements.bonusRecapText.textContent = bonusString || "Nessun bonus/malus";
+    };
 
-class DiceView {
-    /** @param {LogService} logger */
-    constructor(logger) { this.logger = logger; this.panel = document.getElementById('dice-roller-panel'); this.result = document.getElementById('dice-result-area'); }
-    bind() {
-        document.body.addEventListener('click', (e) => {
-            const btn = /** @type {HTMLElement|null} */(e.target instanceof HTMLElement ? e.target.closest('.roll-dice-btn') : null);
-            if (!btn) return; const sides = toInt(btn.dataset.sides), count = toInt(btn.dataset.count);
-            const rolls = Array.from({ length: count }, () => 1 + Math.floor(Math.random() * sides));
-            const sum = rolls.reduce((a, b) => a + b, 0);
-            if (this.result) this.result.innerHTML = `<p><strong>Tiri:</strong> ${rolls.join(', ')}</p><p><strong>Totale:</strong> ${sum}</p>`;
-            this.logger.add(`Lanciati ${count}D${sides}. Risultati: ${rolls.join(', ')}. Totale: ${sum}.`, 'dice');
-        });
-    }
-}
+    const updateUnitCounts = () => {
+        const livingRecruits = gameState.recruitsData.filter(r => r.hp > 0).length;
+        const totalRecruits = gameState.recruitsData.length;
+        elements.livingRecruitsSpan.textContent = `${livingRecruits}/${totalRecruits}`;
 
-class MissionView {
-    /** @param {Store} store @param {LogService} logger */
-    constructor(store, logger) {
-        this.store = store; this.logger = logger;
-        this.obj = document.getElementById('mission-objective-text');
-        this.reward = document.getElementById('mission-reward-text');
-        this.event = document.getElementById('mission-event-text');
-        this.btnDec = document.getElementById('decrease-mission');
-        this.btnInc = document.getElementById('increase-mission');
-        this.unitsGrid = document.getElementById('mission-units-grid');
-        this.recruitsCount = document.getElementById('living-recruits');
-        this.commandersCount = document.getElementById('living-commanders');
-        this.completeMission = document.getElementById('complete-mission-btn');
-    }
-    bind() {
-        this.btnDec?.addEventListener('click', () => this._changeMission(-1));
-        this.btnInc?.addEventListener('click', () => this._changeMission(1));
-        this.completeMission?.addEventListener('click', () => this._completeMission());
+        const livingCommanders = gameState.commandersData.filter(c => c.hp > 0).length;
+        const totalCommanders = gameState.commandersData.length;
+        elements.livingCommandersSpan.textContent = `${livingCommanders}/${totalCommanders}`;
+    };
 
-        // Mission grid interactions
-        this.unitsGrid?.addEventListener('click', (e) => {
-            const rmBtn = e.target instanceof HTMLElement ? e.target.closest('.remove-from-mission-btn') : null;
-            const hpBtn = e.target instanceof HTMLElement ? e.target.closest('.hp-change') : null;
-            if (!rmBtn && !hpBtn) return;
-
-            const id = toInt((rmBtn || hpBtn).dataset.id);
-            const type = /** @type {UnitType} */((rmBtn || hpBtn).dataset.type);
-            if (rmBtn) this._toggleMission(type, id);
-            if (hpBtn) this._queueHpChange(type, id, toInt(hpBtn.dataset.amount));
-        });
-    }
-    render() {
-        const s = this.store.get();
-        const m = s.__db.missions[s.currentMissionNumber] || { objective: 'N/D', reward: 'N/D', event: 'N/D' };
-        if (this.obj) this.obj.textContent = m.objective;
-        if (this.reward) this.reward.textContent = m.reward;
-        if (this.event) this.event.textContent = m.event;
-
-        const livingRecruits = s.recruitsData.filter(r => r.hp > 0).length;
-        const livingCommanders = s.commandersData.filter(c => c.hp > 0).length;
-        this.recruitsCount && (this.recruitsCount.textContent = `${livingRecruits}/${s.recruitsData.length}`);
-        this.commandersCount && (this.commandersCount.textContent = `${livingCommanders}/${s.commandersData.length}`);
-
-        const onMission = [...s.recruitsData, ...s.commandersData].filter(u => u.onMission && u.hp > 0);
-        if (!this.unitsGrid) return;
-        if (onMission.length === 0) { this.unitsGrid.innerHTML = `<p style="color:var(--text-secondary);text-align:center;grid-column:1/-1;margin:auto;">Nessuna unità in missione.</p>`; return; }
-
-        const frag = document.createDocumentFragment();
-        onMission.forEach(u => {
-            const card = document.createElement('div');
-            const hpC = UI.hpClass(u.hp, u.initialHp);
-            card.className = `unit-card ${u.type === 'commander' ? 'commander' : ''}`;
-            card.innerHTML = `
-        <button class="remove-from-mission-btn" data-id="${u.id}" data-type="${u.type}">&times;</button>
-        <img src="${u.imageUrl}" alt="${u.name}" class="unit-image" onerror="this.onerror=null;this.src='https://placehold.co/60x60/cccccc/000000?text=IMG';">
-        <div class="name">${u.name}</div>
-        <div class="stat-row">
-          <div class="controls">
-            <button class="hp-change btn" data-id="${u.id}" data-type="${u.type}" data-amount="-1">-</button>
-            <span class="label hp ${hpC}">${u.hp}</span>
-            <button class="hp-change btn" data-id="${u.id}" data-type="${u.type}" data-amount="1">+</button>
-          </div>
-        </div>`;
-            frag.appendChild(card);
-        });
-        this.unitsGrid.innerHTML = ''; this.unitsGrid.appendChild(frag);
-    }
-    _changeMission(delta) {
-        this.store.set(prev => {
-            const keys = Object.keys(prev.__db.missions);
-            const max = keys.length ? Math.max(...keys.map(k => toInt(k))) : 1;
-            let next = clamp(prev.currentMissionNumber + delta, 1, max);
-            if (next !== prev.currentMissionNumber) this.logger.add(`Passato alla Missione #${next}.`, 'mission');
-            return { ...prev, currentMissionNumber: next };
-        });
-    }
-    _toggleMission(type, id) {
-        this.store.set(prev => {
-            const listKey = type === 'recruit' ? 'recruitsData' : 'commandersData';
-            const nextList = prev[listKey].map(u => u.id === id ? { ...u, onMission: !u.onMission } : u);
-            return { ...prev, [listKey]: nextList };
-        });
-    }
-    _queueHpChange(type, id, amount) {
-        // delegated to App: emit custom event to centralize death/resurrect/morale/xp changes
-        document.dispatchEvent(new CustomEvent('hp:queue', { detail: { kind: type, id, amount } }));
-    }
-
-    _completeMission() {
-        const s = this.store.get();
-        const currentMission = s.__db.missions[s.currentMissionNumber];
-        if (!currentMission) return;
-
-        // Parse ricompensa (es. "+2 Morale, +3 XP")
-        const rewardStr = String(currentMission.reward || '');
-        const xpMatch = rewardStr.match(/\+(\d+)\s*XP/i);
-        const moraleMatch = rewardStr.match(/\+(\d+)\s*Morale/i);
-        const xpDelta = xpMatch ? toInt(xpMatch[1]) : 0;
-        const moraleDelta = moraleMatch ? toInt(moraleMatch[1]) : 0;
-
-        const hadTitans = s.titansData.length > 0;
-
-        // Applica modifiche in un unico set: stats, ritiro unità, rimozione titani
-        this.store.set(prev => {
-            const def = prev.__defaults;
-            const nextMorale = clamp(prev.morale + moraleDelta, def.moraleMin, def.moraleMax);
-            const nextXp = clamp(prev.xp + xpDelta, def.xpMin, def.xpMax);
-
-            return {
-                ...prev,
-                morale: nextMorale,
-                xp: nextXp,
-                recruitsData: prev.recruitsData.map(u => u.onMission ? { ...u, onMission: false } : u),
-                commandersData: prev.commandersData.map(u => u.onMission ? { ...u, onMission: false } : u),
-                titansData: hadTitans ? [] : prev.titansData
-            };
-        });
-
-        // Log coerenti con il resto del sistema
-        this.logger.add('Tutte le unità sono state richiamate.', 'info');
-        if (hadTitans) this.logger.add('Tutti i giganti sono stati rimossi.', 'info');
-
-        const extras = [];
-        if (moraleDelta) extras.push(`Morale +${moraleDelta}`);
-        if (xpDelta) extras.push(`XP +${xpDelta}`);
-        const suffix = extras.length ? ` (${extras.join(', ')})` : '';
-
-        this.logger.add(`Missione #${s.currentMissionNumber} completata!${suffix}`, 'mission');
-
-        // Passa alla missione successiva (usa già logger interno)
-        this._changeMission(1);
-    }
-}
-
-class UnitPopupsView {
-    /** @param {Store} store */
-    constructor(store) {
-        this.store = store;
-        this.recruitsPopup = document.getElementById('recruits-popup');
-        this.commandersPopup = document.getElementById('commanders-popup');
-        this.recruitsList = document.getElementById('recruits-list');
-        this.commandersList = document.getElementById('commanders-list');
-        this.openRecruits = document.getElementById('open-recruits-popup');
-        this.closeRecruits = document.getElementById('close-recruits-popup');
-        this.openCommanders = document.getElementById('open-commanders-popup');
-        this.closeCommanders = document.getElementById('close-commanders-popup');
-    }
-    bind() {
-        this.openRecruits?.addEventListener('click', () => this.recruitsPopup?.classList.add('show'));
-        this.closeRecruits?.addEventListener('click', () => this.recruitsPopup?.classList.remove('show'));
-        this.openCommanders?.addEventListener('click', () => this.commandersPopup?.classList.add('show'));
-        this.closeCommanders?.addEventListener('click', () => this.commandersPopup?.classList.remove('show'));
-
-        const handle = (e) => {
-            const btn = e.target instanceof HTMLElement ? e.target.closest('.hp-change, .mission-button') : null; if (!btn) return;
-            const id = toInt(btn.dataset.id); const type = /** @type {UnitType} */(btn.dataset.type);
-            if (btn.classList.contains('hp-change')) document.dispatchEvent(new CustomEvent('hp:queue', { detail: { kind: type, id, amount: toInt(btn.dataset.amount) } }));
-            if (btn.classList.contains('mission-button')) this._toggle(type, id);
-        };
-        this.recruitsList?.addEventListener('click', handle);
-        this.commandersList?.addEventListener('click', handle);
-    }
-    render() {
-        this._renderList('recruit', this.recruitsList);
-        this._renderList('commander', this.commandersList);
-    }
-    _renderList(type, ul) {
-        if (!ul) return; const s = this.store.get(); const data = type === 'recruit' ? s.recruitsData : s.commandersData; ul.innerHTML = '';
+    const renderUnitListInPopup = (listElement, data, type) => {
+        listElement.innerHTML = '';
         const living = data.filter(u => u.hp > 0).sort((a, b) => a.name.localeCompare(b.name));
         const dead = data.filter(u => u.hp <= 0).sort((a, b) => a.name.localeCompare(b.name));
-        const createLi = (u) => {
-            const li = document.createElement('li'); const hpC = UI.hpClass(u.hp, u.initialHp);
+
+        const createLi = (unit) => {
+            const li = document.createElement('li');
+            const hpClass = getHpStatusClass(unit.hp, unit.initialHp);
             li.innerHTML = `
-        <div class="unit-info-popup">
-          <img src="${u.imageUrl}" alt="${u.name}" class="unit-image-popup" onerror="this.onerror=null;this.src='https://placehold.co/60x60/cccccc/000000?text=IMG';">
-          <span class="${hpC}">${u.name} (HP: ${u.hp > 0 ? u.hp : 'Morto'})</span>
-        </div>
-        <div class="hp-controls">
-          <button class="hp-change btn" data-id="${u.id}" data-type="${type}" data-amount="-1" ${u.hp <= 0 ? 'disabled' : ''}>-</button>
-          <button class="hp-change btn" data-id="${u.id}" data-type="${type}" data-amount="1">+</button>
-          <button class="mission-button btn ${u.onMission ? 'on-mission' : ''}" data-id="${u.id}" data-type="${type}" ${u.hp <= 0 ? 'disabled' : ''}>${u.onMission ? 'Rimuovi' : 'Invia'}</button>
-        </div>`;
+                <div class="unit-info-popup">
+                    <img src="${unit.imageUrl}" alt="${unit.name}" class="unit-image-popup" onerror="this.onerror=null;this.src='https://placehold.co/60x60/cccccc/000000?text=IMG';">
+                    <span class="${hpClass}">${unit.name} (HP: ${unit.hp > 0 ? unit.hp : 'Morto'})</span>
+                </div>
+                <div class="hp-controls">
+                    <button class="hp-change btn" data-id="${unit.id}" data-type="${type}" data-amount="-1" ${unit.hp <= 0 ? 'disabled' : ''}>-</button>
+                    <button class="hp-change btn" data-id="${unit.id}" data-type="${type}" data-amount="1">+</button>
+                    <button class="mission-button btn ${unit.onMission ? 'on-mission' : ''}" data-id="${unit.id}" data-type="${type}" ${unit.hp <= 0 ? 'disabled' : ''}>
+                        ${unit.onMission ? 'Rimuovi' : 'Invia'}
+                    </button>
+                </div>`;
             return li;
         };
-        const frag = document.createDocumentFragment();
-        living.forEach(u => frag.appendChild(createLi(u)));
-        if (dead.length && living.length) { const sep = document.createElement('li'); sep.innerHTML = `<hr style="width:100%; border-color: var(--background-lighter); margin:.5rem 0;">`; frag.appendChild(sep); }
-        dead.forEach(u => frag.appendChild(createLi(u)));
-        ul.appendChild(frag);
-    }
-    _toggle(type, id) {
-        this.store.set(prev => {
-            const key = type === 'recruit' ? 'recruitsData' : 'commandersData';
-            return { ...prev, [key]: prev[key].map(u => u.id === id ? { ...u, onMission: !u.onMission } : u) };
-        });
-    }
-}
 
-class TitansView {
-    /** @param {Store} store @param {LogService} logger */
-    constructor(store, logger) {
-        this.store = store;
-        this.logger = logger;
-        this.btnAdd = document.getElementById('add-titan-btn');
-        this.openGrid = document.getElementById('grid-popup');
-        this.grid = document.getElementById('titan-grid');
-        this.header = document.querySelector('.titans-header');
-        this.openGridPopup = document.getElementById('open-grid-popup');
-        this.closeGridPopup = document.getElementById('close-grid-popup');
-    }
-    bind() {
-        this.openGridPopup?.addEventListener('click', () => {
-            console.log('test')
-            this.openGrid?.classList.add('show')
+        living.forEach(unit => listElement.appendChild(createLi(unit)));
+        if (dead.length > 0 && living.length > 0) {
+            const separator = document.createElement('li');
+            separator.innerHTML = `<hr style="width:100%; border-color: var(--background-lighter); margin: 0.5rem 0;">`;
+            listElement.appendChild(separator);
         }
-        );
-        this.closeGridPopup?.addEventListener('click', () => this.openGrid?.classList.remove('show'));
-        this.btnAdd?.addEventListener('click', () => this._addTitan());
-        this.grid?.addEventListener('click', (e) => {
-            const el = e.target instanceof HTMLElement ? e.target : null; if (!el) return;
-            const rm = el.closest('.remove-titan-btn'); const cd = el.closest('.cooldown-change'); const sw = el.closest('.titan-type-switcher'); const hp = el.closest('.hp-change');
-            if (!rm && !cd && !sw && !hp) return;
-            const id = toInt((rm || cd || sw || hp).dataset.id);
-            if (rm) this._remove(id);
-            if (cd) this._cooldown(id, toInt(cd.dataset.amount));
-            if (sw) this._switchType(id);
-            if (hp) document.dispatchEvent(new CustomEvent('hp:queue', { detail: { kind: 'titan', id, amount: toInt(hp.dataset.amount) } }));
-        });
-    }
-    render() {
-        const s = this.store.get();
-        // Legend per missione
-        this._renderSpawnLegend();
+        dead.forEach(unit => listElement.appendChild(createLi(unit)));
+    };
 
-        if (!this.grid) return;
-        if (!s.titansData.length) { this.grid.innerHTML = `<p style="color:var(--text-secondary);text-align:center;grid-column:1/-1;margin:auto;">Nessun gigante in campo.</p>`; return; }
+    const updateMissionView = () => {
+        elements.missionCount.textContent = `Missione #${gameState.currentMissionNumber}`;
+        const currentMission = missionData[gameState.currentMissionNumber] || { objective: "N/D", reward: "N/D", event: "N/D" };
+        elements.missionObjectiveText.textContent = currentMission.objective;
+        elements.missionRewardText.textContent = currentMission.reward;
+        elements.missionEventText.textContent = currentMission.event;
 
-        const frag = document.createDocumentFragment();
-        s.titansData.forEach(t => {
-            const isDead = t.hp <= 0; const hpC = UI.hpClass(t.hp, t.initialHp);
-            const card = document.createElement('div');
-            card.className = `unit-card ${isDead ? 'titan-dead' : `titan-${t.type.toLowerCase()}`}`;
-            card.innerHTML = `
-        <button class="remove-titan-btn" data-id="${t.id}">&times;</button>
-        <div class="name">${isDead ? 'Sconfitto' : t.name}</div>
-        <button class="titan-type-switcher" data-id="${t.id}" ${isDead ? 'disabled' : ''}>${t.type}</button>
-        <div class="stat-row"><div class="controls">
-          <button class="hp-change btn" data-id="${t.id}" data-amount="-1" ${isDead ? 'disabled' : ''}>-</button>
-          <span class="label hp ${hpC}">${t.hp}</span>
-          <button class="hp-change btn" data-id="${t.id}" data-amount="1" ${isDead ? 'disabled' : ''}>+</button>
-        </div></div>
-        <div class="stat-row"><div class="controls">
-          <button class="cooldown-change btn" data-id="${t.id}" data-amount="-1">-</button>
-          <span class="label">R:${t.cooldown}</span>
-          <button class="cooldown-change btn" data-id="${t.id}" data-amount="1">+</button>
-        </div></div>`;
-            frag.appendChild(card);
-        });
-        this.grid.innerHTML = ''; this.grid.appendChild(frag);
-    }
-    _renderSpawnLegend() {
-        if (!this.header) return;
-        let legend = this.header.querySelector('.titan-spawn-legend');
-        if (!legend) { legend = document.createElement('div'); legend.className = 'titan-spawn-legend'; legend.style.cssText = 'display:flex; gap:.75rem; font-size:1.5rem; align-items:center;'; this.header.appendChild(legend); }
-        const s = this.store.get(); const spawn = s.__db.titanSpawnTable[s.currentMissionNumber] || s.__db.titanSpawnTable[1] || { Puro: '-', Anomalo: '-', Mutaforma: '-' };
-        legend.innerHTML = `
-      <div style="display:flex;align-items:center;gap:.25rem;"><div style="width:1rem;height:1rem;border-radius:50%;background-color:#a0aec0;"></div><span>${spawn['Puro']}</span></div>
-      <div style="display:flex;align-items:center;gap:.25rem;"><div style="width:1rem;height:1rem;border-radius:50%;background-color:#ecc94b;"></div><span>${spawn['Anomalo']}</span></div>
-      <div style="display:flex;align-items:center;gap:.25rem;"><div style="width:1rem;height:1rem;border-radius:50%;background-color:#f56565;"></div><span>${spawn['Mutaforma']}</span></div>`;
-    }
-    _addTitan() {
-        this.store.set(prev => {
-            const id = (prev.titanIdCounter || 0) + 1;
-            const newT = { id, name: `Gigante #${id}`, hp: 12, initialHp: 12, cooldown: 0, type: 'Puro', isDefeated: false, createdAt: Date.now() };
-            this.logger.add(`${newT.name} è apparso.`, 'info');
-            return { ...prev, titanIdCounter: id, titansData: [...prev.titansData, newT] };
-        });
-    }
-    _remove(id) { this.store.set(prev => ({ ...prev, titansData: prev.titansData.filter(t => t.id !== id) })); }
-    _cooldown(id, d) { this.store.set(prev => ({ ...prev, titansData: prev.titansData.map(t => t.id === id ? { ...t, cooldown: Math.max(0, t.cooldown + d) } : t) })); }
-    _switchType(id) {
-        this.store.set(prev => ({
-            ...prev, titansData: prev.titansData.map(t => {
-                if (t.id !== id) return t; const i = TITAN_TYPES.indexOf(t.type); return { ...t, type: /** @type {any} */(TITAN_TYPES[(i + 1) % TITAN_TYPES.length]) };
-            })
-        }));
-    }
-}
+        elements.missionUnitsGrid.innerHTML = '';
+        const onMissionUnits = [...gameState.recruitsData, ...gameState.commandersData].filter(u => u.onMission && u.hp > 0);
 
-class EventsDeckView {
-    /** @param {Store} store @param {DeckService} deck @param {LogService} logger */
-    constructor(store, deck, logger) {
-        this.store = store; this.deck = deck; this.logger = logger;
-        this.drawBtn = document.getElementById('draw-event-btn');
-        this.deckCount = document.getElementById('event-deck-count');
-        this.popup = document.getElementById('event-card-popup');
-        this.title = document.getElementById('event-card-title');
-        this.desc = document.getElementById('event-card-description');
-        this.type = document.getElementById('event-card-type');
-        this.btnReshuffle = document.getElementById('event-reshuffle-btn');
-        this.btnDiscard = document.getElementById('event-discard-btn');
-        this.btnRemove = document.getElementById('event-remove-btn');
-
-    /** @type {EventCard|null} */ this.current = null;
-    }
-    bind() {
-        this.drawBtn?.addEventListener('click', () => {
-            const card = this.deck.draw();
-            if (!card) { this.logger.add('Carte evento non caricate.', 'info'); this._updateCount(); return; }
-            this.current = card; this._open(card);
-            this.logger.add(`Carta evento pescata: ${card.titolo}`, 'mission');
-            this._updateCount();
-        });
-        this.btnReshuffle?.addEventListener('click', () => this._action('reshuffle'));
-        this.btnDiscard?.addEventListener('click', () => this._action('discard'));
-        this.btnRemove?.addEventListener('click', () => this._action('remove'));
-    }
-    render() { this._updateCount(); }
-    _updateCount() { if (this.deckCount) this.deckCount.textContent = String(this.deck.count()); }
-    _open(card) { if (!this.popup) return; this.title.textContent = card.titolo; this.desc.textContent = card.descrizione; this.type.textContent = card.tipo; this.popup.classList.add('show'); }
-    _close() { this.popup?.classList.remove('show'); this.current = null; }
-    _action(kind) { if (!this.current) return; const c = this.current; if (kind === 'reshuffle') this.store.set(prev => ({ ...prev, eventDeck: [...prev.eventDeck, c] })); if (kind === 'discard') this.deck.discard(c); if (kind === 'remove') this.deck.remove(c); this.logger.add(`"${c.titolo}" ${kind === 'reshuffle' ? 'rimescolata' : kind === 'discard' ? 'scartata' : 'rimossa'}.`, 'info'); this._close(); this._updateCount(); }
-}
-
-/* ===========================
- * Application Orchestrator
- * =========================== */
-
-class App {
-    constructor() {
-        this.dbRepo = new DbRepository();
-        this.storage = new StorageRepository();
-        this.audio = new AudioService();
-        this.timer = new TimerService();
-
-    /** @type {Store} */ this.store = null;
-    /** @type {LogService} */ this.logger = null;
-    /** @type {DeckService} */ this.deck = null;
-
-        /** HP batching */
-        this.pending = new Map(); // key -> {amount:number}
-        this.pendingTimers = new Map();
-
-        // Views
-        this.header = null; this.stats = null; this.logView = null; this.mission = null; this.popups = null; this.titans = null; this.events = null; this.dice = null;
-    }
-
-    async start() {
-        // Start popup + audio (in gesto utente)
-        const url = './assets/risorsa_audio_avvio_app.mp3';
-        const proceeded = await StartOverlayView.show();
-        if (!proceeded) return;
-        await this.audio.play(url, { loop: true, volume: 1 });
-
-        // Load DB & saved
-        const db = await this.dbRepo.load();
-        const saved = this.storage.load();
-        this.store = new Store(buildInitialState(db, saved));
-        this.logger = new LogService(this.store);
-        this.deck = new DeckService(this.store, () => this.store.get().__db.eventCards);
-
-        // Instantiate views
-        this.header = new HeaderView(this.store);
-        this.stats = new StatsView(this.store);
-        this.logView = new LogView(this.store);
-        this.mission = new MissionView(this.store, this.logger);
-        this.popups = new UnitPopupsView(this.store);
-        this.titans = new TitansView(this.store, this.logger);
-        this.events = new EventsDeckView(this.store, this.deck, this.logger);
-        this.dice = new DiceView(this.logger);
-
-        // Bindings
-        this.header.bind({ onReset: () => this._confirmReset(), onRestartTimer: () => this._restartTimer() });
-        this.stats.bind();
-        this.mission.bind();
-        this.popups.bind();
-        this.titans.bind();
-        this.events.bind();
-        this.dice.bind();
-
-        // HP queue listener (centralizes side-effects)
-        document.addEventListener('hp:queue', (/** @type {CustomEvent} */ev) => this._queueHp(ev.detail));
-
-        // Render on state change + persist
-        this.store.subscribe((next) => { this._renderAll(); this.storage.save(this._stripTransient(next)); });
-        this._renderAll();
-
-        // Start timer
-        this._restartTimer();
-    }
-
-    _stripTransient(s) { const { __db, __defaults, ...rest } = s; return rest; }
-
-    _renderAll() {
-        const s = this.store.get();
-        this.header?.setMission(s.currentMissionNumber);
-        this.stats?.render();
-        this.popups?.render();
-        this.mission?.render();
-        this.titans?.render();
-        this.events?.render();
-        this.logView?.render();
-    }
-
-    _restartTimer() {
-        const seconds = this.store.get().__defaults.missionTimerSeconds || 20 * 60;
-        this.timer.start(seconds, (m, s) => this.header.setTimer(m, s), () => this.header.setExpired());
-        this.logger.add('Timer della missione riavviato.', 'mission');
-    }
-
-    _confirmReset() {
-        const modal = document.getElementById('reset-confirm-modal');
-        const cancel = document.getElementById('cancel-reset-btn');
-        const confirm = document.getElementById('confirm-reset-btn');
-        modal?.classList.add('show');
-        const close = () => modal?.classList.remove('show');
-        cancel?.addEventListener('click', close, { once: true });
-        confirm?.addEventListener('click', () => { close(); this._resetGame(); }, { once: true });
-    }
-
-    _resetGame() {
-        this.timer.stop();
-        const db = this.store.get().__db;
-        const init = buildInitialState(db, null);
-        this.store.set(() => init);
-        this.logger.add('Partita resettata.', 'info');
-        this._restartTimer();
-    }
-
-    /** @param {{kind:'recruit'|'commander'|'titan', id:number, amount:number}} detail */
-    _queueHp(detail) {
-        const key = `${detail.kind}-${detail.id}`;
-        clearTimeout(this.pendingTimers.get(key));
-        const cur = this.pending.get(key) || { amount: 0 };
-        cur.amount += detail.amount; this.pending.set(key, cur);
-        const t = setTimeout(() => { this._applyHp(detail.kind, detail.id, cur.amount); this.pending.delete(key); }, 400);
-        this.pendingTimers.set(key, t);
-    }
-
-    _applyHp(kind, id, delta) {
-        if (!delta) return;
-        const s = this.store.get();
-        if (kind === 'titan') {
-            // Find titan + apply, and compute rewards on death / resurrection
-            const t = s.titansData.find(x => x.id === id); if (!t) return;
-            const wasAlive = t.hp > 0; const oldHp = t.hp; const nextHp = clamp(t.hp + delta, 0, t.initialHp);
-            const isNowDead = nextHp <= 0;
-            const rewards = { 'Puro': { m: 1, xp: 1 }, 'Anomalo': { m: 2, xp: 2 }, 'Mutaforma': { m: 5, xp: 3 } };
-            const reward = rewards[t.type];
-
-            this.store.set(prev => ({ ...prev, titansData: prev.titansData.map(x => x.id === id ? { ...x, hp: nextHp, isDefeated: isNowDead ? true : x.isDefeated } : x) }));
-
-            // Logs & stats
-            if (wasAlive && !isNowDead) { this.logger.add(`${t.name} ha ${delta < 0 ? `subito ${-delta} danni` : `recuperato ${delta} HP`}.`, delta < 0 ? 'damage' : 'info'); }
-            if (wasAlive && isNowDead && reward) { this._applyStats(reward.m, reward.xp); this.logger.add(`${t.name} è stato sconfitto! (Morale +${reward.m}, XP +${reward.xp})`, 'mission'); }
-            if (!wasAlive && nextHp > 0 && t.isDefeated && reward) { this._applyStats(-reward.m, -reward.xp); this.logger.add(`${t.name} è tornato in vita!`, 'info'); }
+        if (onMissionUnits.length === 0) {
+            elements.missionUnitsGrid.innerHTML = `<p style="color: var(--text-secondary); text-align: center; grid-column: 1 / -1; margin: auto;">Nessuna unità in missione.</p>`;
             return;
         }
 
-        // Units
-        const key = kind === 'recruit' ? 'recruitsData' : 'commandersData';
-        const list = s[key]; const u = list.find(x => x.id === id); if (!u) return;
-        const wasAlive = u.hp > 0; const nextHp = clamp(u.hp + delta, 0, u.initialHp);
-        this.store.set(prev => ({ ...prev, [key]: prev[key].map(x => x.id === id ? { ...x, hp: nextHp } : x) }));
-
-        if (wasAlive && nextHp <= 0) {
-            this.logger.add(`${u.name} è stato sconfitto!`, 'death');
-            this._applyStats(u.type === 'recruit' ? -3 : -5, 0);
-        } else if (!wasAlive && nextHp > 0) {
-            this.logger.add(`${u.name} è tornato in vita!`, 'info');
-            this._applyStats(u.type === 'recruit' ? 3 : 5, 0);
-        } else {
-            this.logger.add(`${u.name} ${delta < 0 ? `ha subito ${-delta} danni` : `è stato curato di ${delta} HP`}.`, delta < 0 ? 'damage' : 'info');
-        }
-    }
-
-    _applyStats(dmMorale, dmXp) {
-        if (!dmMorale && !dmXp) return;
-        this.store.set(prev => {
-            const m = clamp(prev.morale + (dmMorale || 0), prev.__defaults.moraleMin, prev.__defaults.moraleMax);
-            const x = clamp(prev.xp + (dmXp || 0), prev.__defaults.xpMin, prev.__defaults.xpMax);
-            return { ...prev, morale: m, xp: x };
+        onMissionUnits.forEach(unit => {
+            const card = document.createElement('div');
+            const hpClass = getHpStatusClass(unit.hp, unit.initialHp);
+            card.className = `unit-card ${unit.type === 'commander' ? 'commander' : ''}`;
+            card.innerHTML = `
+                <button class="remove-from-mission-btn" data-id="${unit.id}" data-type="${unit.type}">&times;</button>
+                <img src="${unit.imageUrl}" alt="${unit.name}" class="unit-image" onerror="this.onerror=null;this.src='https://placehold.co/60x60/cccccc/000000?text=IMG';">
+                <div class="name">${unit.name}</div>
+                <div class="stat-row">
+                    <div class="controls">
+                        <button class="hp-change btn" data-id="${unit.id}" data-type="${unit.type}" data-amount="-1">-</button>
+                        <span class="label hp ${hpClass}">${unit.hp}</span>
+                        <button class="hp-change btn" data-id="${unit.id}" data-type="${unit.type}" data-amount="1">+</button>
+                    </div>
+                </div>`;
+            elements.missionUnitsGrid.appendChild(card);
         });
-    }
-}
+    };
 
-/* ===========================
- * Boot
- * =========================== */
+    const renderTitanSpawnLegend = () => {
+        const header = document.querySelector('.titans-header');
+        if (!header) return;
 
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const app = new App();
-        await app.start();
-    } catch (err) {
-        console.error(err);
-        alert('Errore in avvio applicazione. Controlla la console.');
+        let legend = header.querySelector('.titan-spawn-legend');
+        if (!legend) {
+            legend = document.createElement('div');
+            legend.className = 'titan-spawn-legend';
+            legend.style.cssText = 'display:flex; gap: 0.75rem; font-size: 1.5rem; align-items:center;';
+            header.appendChild(legend);
+        }
+
+        const currentSpawnData = titanSpawnTable[gameState.currentMissionNumber] || titanSpawnTable[1];
+        legend.innerHTML = `
+            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#a0aec0;"></div><span>${currentSpawnData['Puro']}</span></div>
+            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#ecc94b;"></div><span>${currentSpawnData['Anomalo']}</span></div>
+            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#f56565;"></div><span>${currentSpawnData['Mutaforma']}</span></div>
+        `;
+    };
+
+    const renderTitans = () => {
+        elements.titanGrid.innerHTML = '';
+        const allTitans = [...gameState.titansData];
+
+        if (allTitans.length === 0) {
+            elements.titanGrid.innerHTML = `<p style="color: var(--text-secondary); text-align: center; grid-column: 1 / -1; margin: auto;">Nessun gigante in campo.</p>`;
+            return;
+        }
+
+        allTitans.forEach(titan => {
+            const card = document.createElement('div');
+            const isDead = titan.hp <= 0;
+            const hpClass = getHpStatusClass(titan.hp, titan.initialHp);
+            card.className = `unit-card ${isDead ? 'titan-dead' : `titan-${titan.type.toLowerCase()}`}`;
+
+            card.innerHTML = `
+                <button class="remove-titan-btn" data-id="${titan.id}">&times;</button>
+                <div class="name">${isDead ? 'Sconfitto' : titan.name}</div>
+                <button class="titan-type-switcher" data-id="${titan.id}" ${isDead ? 'disabled' : ''}>${titan.type}</button>
+                <div class="stat-row">
+                    <div class="controls">
+                        <button class="hp-change btn" data-id="${titan.id}" data-type="titan" data-amount="-1" ${isDead ? 'disabled' : ''}>-</button>
+                        <span class="label hp ${hpClass}">${titan.hp}</span>
+                        <button class="hp-change btn" data-id="${titan.id}" data-type="titan" data-amount="1" ${isDead ? 'disabled' : ''}>+</button>
+                    </div>
+                </div>
+                 <div class="stat-row">
+                    <div class="controls">
+                        <button class="cooldown-change btn" data-id="${titan.id}" data-amount="-1">-</button>
+                        <span class="label">R:${titan.cooldown}</span>
+                        <button class="cooldown-change btn" data-id="${titan.id}" data-amount="1">+</button>
+                    </div>
+                </div>`;
+            elements.titanGrid.appendChild(card);
+        });
+    };
+
+    const handleHpChange = (e) => {
+        const target = e.target.closest('.hp-change');
+        if (!target) return;
+        const { id, type, amount } = target.dataset;
+        const key = `${type}-${id}`;
+
+        clearTimeout(hpChangeTimers[key]);
+
+        if (!pendingHpChanges[key]) {
+            let data, unit;
+            if (type === 'titan') data = gameState.titansData;
+            else if (type === 'recruit') data = gameState.recruitsData;
+            else data = gameState.commandersData;
+            unit = data.find(u => u.id == id);
+            if (!unit) return;
+            pendingHpChanges[key] = { amount: 0, unit };
+        }
+
+        pendingHpChanges[key].amount += parseInt(amount, 10);
+
+        hpChangeTimers[key] = setTimeout(() => {
+            if (pendingHpChanges[key]) {
+                processHpChange(pendingHpChanges[key].unit, pendingHpChanges[key].amount);
+                delete pendingHpChanges[key];
+                delete hpChangeTimers[key];
+            }
+        }, 1000);
+    };
+
+    const processHpChange = (unit, totalAmount) => {
+        if (!unit || totalAmount === 0) return;
+
+        const oldHp = unit.hp;
+        const wasAlive = oldHp > 0;
+
+        unit.hp = Math.max(0, unit.hp + totalAmount);
+        const isNowDead = unit.hp <= 0;
+
+        if (wasAlive && !isNowDead) {
+            if (totalAmount < 0) {
+                addLogEntry(`${unit.name} ha subito ${-totalAmount} danni.`, 'damage');
+            } else {
+                addLogEntry(`${unit.name} è stato curato di ${totalAmount} HP.`, 'info');
+            }
+        }
+
+        if (wasAlive && isNowDead) {
+            handleUnitDeath(unit);
+        } else if (!wasAlive && unit.hp > 0) {
+            handleUnitResurrection(unit);
+        }
+
+        updateAllUIElements();
+        saveGameState();
+    };
+
+    const handleUnitDeath = (unit) => {
+        let moraleChange = 0;
+        let xpChange = 0;
+
+        if (titanTypes.includes(unit.type)) {
+            const rewards = { 'Puro': { m: 1, xp: 1 }, 'Anomalo': { m: 2, xp: 2 }, 'Mutaforma': { m: 5, xp: 3 } };
+            const reward = rewards[unit.type];
+            if (reward) {
+                moraleChange = reward.m;
+                xpChange = reward.xp;
+                unit.isDefeated = true;
+                addLogEntry(`${unit.name} è stato sconfitto! (Morale +${reward.m}, XP +${reward.xp})`, 'mission');
+            }
+        } else {
+            addLogEntry(`${unit.name} è stato sconfitto!`, 'death');
+            if (unit.type === 'recruit') moraleChange = -3;
+            else if (unit.type === 'commander') moraleChange = -5;
+        }
+        applyStatChanges(moraleChange, xpChange);
+    };
+
+    const handleUnitResurrection = (unit) => {
+        addLogEntry(`${unit.name} è tornato in vita!`, 'info');
+        let moraleChange = 0;
+        let xpChange = 0;
+        if (unit.type === 'recruit') moraleChange = 3;
+        else if (unit.type === 'commander') moraleChange = 5;
+        else if (titanTypes.includes(unit.type) && unit.isDefeated) {
+            const rewards = { 'Puro': { m: 1, xp: 1 }, 'Anomalo': { m: 2, xp: 2 }, 'Mutaforma': { m: 5, xp: 3 } };
+            const reward = rewards[unit.type];
+            if (reward) {
+                moraleChange = -reward.m;
+                xpChange = -reward.xp;
+                unit.isDefeated = false;
+            }
+        }
+        applyStatChanges(moraleChange, xpChange);
+    };
+
+    const applyStatChanges = (moraleChange, xpChange) => {
+        if (moraleChange !== 0) {
+            const newMorale = Math.max(0, Math.min(15, parseInt(elements.moraleSlider.value, 10) + moraleChange));
+            elements.moraleSlider.value = newMorale;
+            gameState.morale = newMorale;
+            updateMorale();
+        }
+        if (xpChange !== 0) {
+            const newXP = Math.max(0, Math.min(70, parseInt(elements.xpSlider.value, 10) + xpChange));
+            elements.xpSlider.value = newXP;
+            gameState.xp = newXP;
+            updateXP();
+        }
+    };
+
+    const updateAllUIElements = () => {
+        updateMorale();
+        updateXP();
+        renderUnitListInPopup(elements.recruitsList, gameState.recruitsData, 'recruit');
+        renderUnitListInPopup(elements.commandersList, gameState.commandersData, 'commander');
+        updateUnitCounts();
+        updateMissionView();
+        renderTitans();
+        renderLog();
+        updateDeckCount();
+    };
+
+    // --- FIX: Aggiunto updateAllUIElements() per aggiornare la vista ---
+    const handleMissionToggle = (e) => {
+        const target = e.target.closest('.mission-button, .remove-from-mission-btn');
+        if (!target) return;
+        const { id, type } = target.dataset;
+        const data = type === 'recruit' ? gameState.recruitsData : gameState.commandersData;
+        const unit = data.find(u => u.id == id);
+        if (unit) {
+            unit.onMission = !unit.onMission;
+            updateAllUIElements(); // <-- BUG FIX
+            saveGameState();
+        }
+    };
+
+    const handleTitanActions = (e) => {
+        const target = e.target;
+
+        if (target.closest('.hp-change')) {
+            handleHpChange(e);
+            return;
+        }
+
+        const id = target.dataset.id;
+        if (!id) return;
+        const titan = gameState.titansData.find(t => t.id == id);
+        if (!titan) return;
+
+        if (target.matches('.remove-titan-btn')) {
+            gameState.titansData = gameState.titansData.filter(t => t.id != id);
+        } else if (target.matches('.cooldown-change')) {
+            titan.cooldown = Math.max(0, titan.cooldown + parseInt(target.dataset.amount, 10));
+        } else if (target.matches('.titan-type-switcher')) {
+            const currentIndex = titanTypes.indexOf(titan.type);
+            titan.type = titanTypes[(currentIndex + 1) % titanTypes.length];
+        }
+        renderTitans();
+        saveGameState();
+    };
+
+    const addTitan = () => {
+        const newId = (gameState.titanIdCounter || 0) + 1;
+        gameState.titanIdCounter = newId;
+        const newTitan = {
+            id: newId, name: `Gigante #${newId}`,
+            hp: 12, initialHp: 12, cooldown: 0, type: 'Puro',
+            isDefeated: false, createdAt: Date.now()
+        };
+        gameState.titansData.push(newTitan);
+        addLogEntry(`${newTitan.name} è apparso.`, 'info');
+        renderTitans();
+        saveGameState();
+    };
+
+    const changeMission = (amount) => {
+        let newMissionNumber = gameState.currentMissionNumber + amount;
+        const missionKeys = Object.keys(missionData);
+        if (newMissionNumber < 1) newMissionNumber = 1;
+        if (newMissionNumber > missionKeys.length) newMissionNumber = missionKeys.length;
+
+        if (gameState.currentMissionNumber !== newMissionNumber) {
+            gameState.currentMissionNumber = newMissionNumber;
+            addLogEntry(`Passato alla Missione #${gameState.currentMissionNumber}.`, 'mission');
+        }
+        updateMissionView();
+        renderTitanSpawnLegend();
+        saveGameState();
+    };
+
+    const completeMission = () => {
+        const currentMission = missionData[gameState.currentMissionNumber];
+        if (!currentMission) return;
+
+        const rewardString = currentMission.reward;
+        const xpMatch = rewardString.match(/\+(\d+)\s*XP/);
+        if (xpMatch) applyStatChanges(0, parseInt(xpMatch[1], 10));
+        const moraleMatch = rewardString.match(/\+(\d+)\s*Morale/);
+        if (moraleMatch) applyStatChanges(parseInt(moraleMatch[1], 10), 0);
+
+        gameState.recruitsData.forEach(u => u.onMission = false);
+        gameState.commandersData.forEach(u => u.onMission = false);
+        addLogEntry("Tutte le unità sono state richiamate.", "info");
+
+        if (gameState.titansData.length > 0) {
+            gameState.titansData = [];
+            addLogEntry("Tutti i giganti sono stati rimossi.", "info");
+        }
+
+        addLogEntry(`Missione #${gameState.currentMissionNumber} completata!`, 'mission');
+
+        changeMission(1);
+        updateAllUIElements();
+    };
+
+    const startMissionTimer = () => {
+        clearInterval(missionTimerInterval);
+        let time = Number.isFinite(defaultMissionTimerSeconds) ? defaultMissionTimerSeconds : 20 * 60;
+        missionTimerInterval = setInterval(() => {
+            const minutes = Math.floor(time / 60);
+            let seconds = time % 60;
+            elements.missionTimer.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            if (--time < 0) {
+                clearInterval(missionTimerInterval);
+                elements.missionTimer.textContent = "SCADUTO";
+            }
+        }, 1000);
+    };
+
+    const restartMissionTimer = () => {
+        startMissionTimer();
+        addLogEntry("Timer della missione riavviato.", "mission");
+    };
+
+    const saveGameState = () => {
+        gameState.morale = parseInt(elements.moraleSlider.value, 10);
+        gameState.xp = parseInt(elements.xpSlider.value, 10);
+        localStorage.setItem('aotGameState', JSON.stringify(gameState));
+    };
+
+    const loadGameState = () => {
+        const savedState = localStorage.getItem('aotGameState');
+        gameState = savedState ? JSON.parse(savedState) : initializeDefaultState();
+        if (!gameState.eventDeck || !gameState.eventDiscardPile || !gameState.removedEventCards) {
+            gameState.eventDeck = [];
+            gameState.eventDiscardPile = [];
+            gameState.removedEventCards = [];
+        }
+        // Aggiunto per compatibilità con salvataggi vecchi
+        if (!gameState.wallHp) {
+            gameState.wallHp = { maria: 15, rose: 5, sina: 3 };
+        }
+    };
+
+    function clampInt(n, min, max) { return Math.max(min, Math.min(max, parseInt(n, 10))); }
+    // --- helpers usati sopra (aggiungili se non già presenti) ---
+    function clampInt(n, min, max) { return Math.max(min, Math.min(max, parseInt(n, 10))); }
+    function safeString(v, fallback = '') { return (typeof v === 'string' && v.length ? v : fallback); }
+    function defaultInitialHpFor(type) { return type === 'commander' ? 18 : 10; }
+
+    function normalizeUnit(u, fixedType) {
+        const id = Number.isFinite(u.id) ? parseInt(u.id, 10) : genUnitId(fixedType);
+        const initialHp = Number.isFinite(u.initialHp) ? parseInt(u.initialHp, 10) : defaultInitialHpFor(fixedType);
+        const hp = clampInt(Number.isFinite(u.hp) ? parseInt(u.hp, 10) : initialHp, 0, initialHp);
+        return {
+            id,
+            name: safeString(u.name, fixedType === 'recruit' ? 'Recluta' : 'Comandante'),
+            hp,
+            initialHp,
+            onMission: Boolean(u.onMission),
+            type: fixedType,
+            imageUrl: safeString(u.imageUrl, 'https://placehold.co/60x60/cccccc/000000?text=IMG')
+        };
     }
+
+    function normalizeTitan(t) {
+        const legal = ['Puro', 'Anomalo', 'Mutaforma'];
+        const type = legal.includes(t.type) ? t.type : 'Puro';
+        const initialHp = Number.isFinite(t.initialHp) ? parseInt(t.initialHp, 10) : 12;
+        const hp = clampInt(Number.isFinite(t.hp) ? parseInt(t.hp, 10) : initialHp, 0, initialHp);
+        return {
+            id: Number.isFinite(t.id) ? parseInt(t.id, 10) : genTitanId(),
+            name: safeString(t.name, 'Gigante'),
+            hp,
+            initialHp,
+            cooldown: Math.max(0, Number.isFinite(t.cooldown) ? parseInt(t.cooldown, 10) : 0),
+            type,
+            isDefeated: Boolean(t.isDefeated),
+            createdAt: Number.isFinite(t.createdAt) ? Number(t.createdAt) : Date.now()
+        };
+    }
+
+    function genUnitId(type) {
+        const arr = type === 'commander' ? (gameState.commandersData || []) : (gameState.recruitsData || []);
+        const maxId = arr.reduce((m, u) => Math.max(m, Number(u.id) || 0), 0);
+        return maxId + 1;
+    }
+    function genTitanId() {
+        gameState.titanIdCounter = (gameState.titanIdCounter || 0) + 1;
+        return gameState.titanIdCounter;
+    }
+
+    const initializeDefaultState = () => {
+        const moraleMin = db.settings?.moraleMin ?? 0;
+        const moraleMax = db.settings?.moraleMax ?? 15;
+        const xpMin = db.settings?.xpMin ?? 0;
+        const xpMax = db.settings?.xpMax ?? 70;
+        const wallDefaultHp = db.settings?.wallDefaultHp;
+
+        const moraleDefault = clampInt(db.settings?.moraleDefault ?? 15, moraleMin, moraleMax);
+        const xpDefault = clampInt(db.settings?.xpDefault ?? 0, xpMin, xpMax);
+
+        // Se il DB fornisce le unità, usale; altrimenti fallback agli array esistenti
+        const recruitsFromDb = Array.isArray(db.units?.recruits) ? db.units.recruits : [];
+        const commandersFromDb = Array.isArray(db.units?.commanders) ? db.units.commanders : [];
+        const titansFromDb = Array.isArray(db.units?.titans) ? db.units.titans : [];
+        const titanIdCounter = Number.isFinite(db.units?.titanIdCounterStart)
+            ? db.units.titanIdCounterStart
+            : 0;
+
+        const titans = titansFromDb.length ? titansFromDb : [];
+
+        return {
+            currentMissionNumber: 1,
+            recruitsData: recruitsFromDb.map(u => normalizeUnit(u, 'recruit')),
+            commandersData: commandersFromDb.map(u => normalizeUnit(u, 'commander')),
+            titansData: titans.map(normalizeTitan),
+            titanIdCounter,
+            logData: [],
+            morale: moraleDefault,
+            xp: xpDefault,
+            wallHp: { maria: wallDefaultHp.maria, rose: wallDefaultHp.rose, sina: wallDefaultHp.sina },
+            eventDeck: [],
+            eventDiscardPile: [],
+            removedEventCards: []
+        };
+    };
+
+    const resetGame = () => {
+        clearInterval(missionTimerInterval);
+        gameState = initializeDefaultState();
+        if (allEventCards && allEventCards.length > 0) {
+            gameState.eventDeck = [...allEventCards];
+        }
+        addLogEntry("Partita resettata.", "info");
+        fullRender();
+        startMissionTimer();
+        saveGameState();
+    };
+
+    const fullRender = () => {
+        elements.moraleSlider.value = gameState.morale;
+        elements.xpSlider.value = gameState.xp;
+        updateAllUIElements();
+        renderTitanSpawnLegend();
+        renderWallHP();
+    };
+
+    // --- NUOVA LOGICA PER DANNI ALLE MURA ---
+    const processWallHpChange = (wallName, finalHp) => {
+        const oldHp = gameState.wallHp[wallName];
+        const damage = oldHp - finalHp;
+
+        if (damage > 0) {
+            const label = { maria: 'Maria', rose: 'Rose', sina: 'Sina' }[wallName];
+            addLogEntry(`Wall ${label} ha subito ${damage} danni.`, 'damage');
+        }
+
+        gameState.wallHp[wallName] = finalHp;
+        saveGameState();
+    };
+
+    const handleWallHpChange = (e) => {
+        const slider = e.target;
+        const wallName = slider.dataset.wallName;
+        const newHp = parseInt(slider.value, 10);
+
+        updateSlider(slider);
+
+        clearTimeout(wallHpChangeTimers[wallName]);
+
+        wallHpChangeTimers[wallName] = setTimeout(() => {
+            processWallHpChange(wallName, newHp);
+        }, 1000);
+    };
+
+    const renderWallHP = () => {
+        elements.wallHpSection.innerHTML = '<h3 class="stats-title">Mura</h3>';
+        ['maria', 'rose', 'sina'].forEach(wall => {
+            const maxHp = { maria: 15, rose: 5, sina: 3 }[wall];
+            const label = { maria: 'Wall Maria', rose: 'Wall Rose', sina: 'Wall Sina' }[wall];
+            const currentHp = gameState.wallHp ? gameState.wallHp[wall] : maxHp;
+
+            const statDiv = document.createElement('div');
+            statDiv.className = 'stat';
+            statDiv.innerHTML = `
+                <label for="wall-${wall}-hp">${label}:</label>
+                <div class="slider-value-container">
+                    <input type="range" id="wall-${wall}-hp" data-wall-name="${wall}" min="0" max="${maxHp}" value="${currentHp}">
+                    <span>${currentHp}</span>
+                </div>`;
+            elements.wallHpSection.appendChild(statDiv);
+            const slider = statDiv.querySelector('input');
+            slider.addEventListener('input', handleWallHpChange);
+            updateSlider(slider);
+        });
+    };
+
+    const updateDeckCount = () => {
+        if (elements.eventDeckCount) {
+            elements.eventDeckCount.textContent = gameState.eventDeck ? gameState.eventDeck.length : 0;
+        }
+    };
+
+    const drawEventCard = () => {
+        if (!gameState.eventDeck || gameState.eventDeck.length === 0) {
+            if (!gameState.eventDiscardPile || gameState.eventDiscardPile.length === 0) {
+                if (!allEventCards || allEventCards.length === 0) {
+                    addLogEntry("Carte evento non caricate.", "info");
+                    return;
+                }
+                gameState.eventDeck = [...allEventCards];
+            } else {
+                gameState.eventDeck = [...gameState.eventDiscardPile];
+                gameState.eventDiscardPile = [];
+                addLogEntry("Mazzo degli eventi rimescolato.", "info");
+            }
+        }
+
+        const randomIndex = Math.floor(Math.random() * gameState.eventDeck.length);
+        currentEventCard = gameState.eventDeck.splice(randomIndex, 1)[0];
+
+        elements.eventCardTitle.textContent = currentEventCard.titolo;
+        elements.eventCardDescription.textContent = currentEventCard.descrizione;
+        elements.eventCardType.textContent = currentEventCard.tipo;
+
+        elements.eventCardPopup.classList.add('show');
+        addLogEntry(`Carta evento pescata: ${currentEventCard.titolo}`, 'mission');
+        updateDeckCount();
+        saveGameState();
+    };
+
+    const handleEventCardAction = (action) => {
+        if (!currentEventCard) return;
+
+        switch (action) {
+            case 'reshuffle':
+                gameState.eventDeck.push(currentEventCard);
+                addLogEntry(`"${currentEventCard.titolo}" rimescolata.`, 'info');
+                break;
+            case 'discard':
+                gameState.eventDiscardPile.push(currentEventCard);
+                addLogEntry(`"${currentEventCard.titolo}" scartata.`, 'info');
+                break;
+            case 'remove':
+                gameState.removedEventCards.push(currentEventCard);
+                addLogEntry(`"${currentEventCard.titolo}" rimossa.`, 'info');
+                break;
+        }
+        currentEventCard = null;
+        elements.eventCardPopup.classList.remove('show');
+        updateDeckCount();
+        saveGameState();
+    };
+
+    async function main() {
+
+        const audio = new AudioService();
+        const proceeded = await StartOverlayView.show();
+        if (!proceeded) return;
+        await audio.play(url, { loop: true, volume: 1 });
+
+        await loadDB();
+
+        loadGameState();
+        initializeEventDeck();
+        fullRender();
+        startMissionTimer();
+
+        const setupPopup = (openBtn, closeBtn, popupEl) => {
+            if (openBtn) openBtn.addEventListener('click', () => popupEl.classList.add('show'));
+            if (closeBtn) closeBtn.addEventListener('click', () => popupEl.classList.remove('show'));
+        };
+        setupPopup(elements.openRecruitsPopupBtn, elements.closeRecruitsPopupBtn, elements.recruitsPopup);
+        setupPopup(elements.openCommandersPopupBtn, elements.closeCommandersPopupBtn, elements.commandersPopup);
+        setupPopup(elements.openGridPopup, elements.closeGridPopup, elements.gridPopup);
+        setupPopup(elements.logPanelTrigger, elements.closeLogPanel, elements.logPanel);
+
+        elements.moraleSlider.addEventListener('input', () => { updateMorale(); saveGameState(); });
+        elements.xpSlider.addEventListener('input', () => { updateXP(); saveGameState(); });
+        elements.completeMissionBtn.addEventListener('click', completeMission);
+        if (elements.restartMissionBtn) elements.restartMissionBtn.addEventListener('click', restartMissionTimer);
+        elements.decreaseMissionBtn.addEventListener('click', () => changeMission(-1));
+        elements.increaseMissionBtn.addEventListener('click', () => changeMission(1));
+
+        document.body.addEventListener('click', (e) => {
+            if (e.target.closest('.hp-change')) handleHpChange(e);
+            if (e.target.closest('.mission-button') || e.target.closest('.remove-from-mission-btn')) handleMissionToggle(e);
+            if (e.target.matches('.roll-dice-btn')) {
+                const sides = parseInt(e.target.dataset.sides);
+                const count = parseInt(e.target.dataset.count);
+                let rolls = []; let sum = 0;
+                for (let i = 0; i < count; i++) { const roll = Math.floor(Math.random() * sides) + 1; rolls.push(roll); sum += roll; }
+                elements.diceResultArea.innerHTML = `<p><strong>Tiri:</strong> ${rolls.join(', ')}</p><p><strong>Totale:</strong> ${sum}</p>`;
+                addLogEntry(`Lanciati ${count}D${sides}. Risultati: ${rolls.join(', ')}. Totale: ${sum}.`, 'dice');
+            }
+        });
+
+        elements.addTitanBtn.addEventListener('click', addTitan);
+        elements.titanGrid.addEventListener('click', handleTitanActions);
+
+        elements.resetGameBtn.addEventListener('click', () => elements.resetConfirmModal.classList.add('show'));
+        elements.cancelResetBtn.addEventListener('click', () => elements.resetConfirmModal.classList.remove('show'));
+        elements.confirmResetBtn.addEventListener('click', () => {
+            elements.resetConfirmModal.classList.remove('show');
+            resetGame();
+        });
+
+        if (elements.drawEventBtn) elements.drawEventBtn.addEventListener('click', drawEventCard);
+        if (elements.eventReshuffleBtn) elements.eventReshuffleBtn.addEventListener('click', () => handleEventCardAction('reshuffle'));
+        if (elements.eventDiscardBtn) elements.eventDiscardBtn.addEventListener('click', () => handleEventCardAction('discard'));
+        if (elements.eventRemoveBtn) elements.eventRemoveBtn.addEventListener('click', () => handleEventCardAction('remove'));
+    }
+
+    main();
 });
-
