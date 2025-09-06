@@ -1,3 +1,4 @@
+const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 class AudioService {
     /** @param {string} url @param {{loop?:boolean, volume?:number}} [opts] */
     async play(url, opts = {}) {
