@@ -848,7 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     async function main() {
-
+         const url = './assets/risorsa_audio_avvio_app.mp3';
         const audio = new AudioService();
         const proceeded = await StartOverlayView.show();
         if (!proceeded) return;
