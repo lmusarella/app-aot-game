@@ -11,7 +11,10 @@ const ASSETS = [
   './icona_app_512.jpg',
   './icona_app_192.jpg',
   './assets/risorsa_audio_avvio_app.mp3',
-  './corpo_di_ricerca.jpg'
+  './corpo_di_ricerca.jpg',
+  './gigante_puro.jpg',
+  './anomalo.png',
+  '/.mutaforma.jpg'
 ];
 
 // Installazione: cache iniziale

@@ -73,6 +73,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const titanTypes = ['Puro', 'Anomalo', 'Mutaforma'];
 
+    /* =======================
+   DATI DI ESEMPIO
+   ======================= */
+    const benchUnits = [
+        { id: "u1", name: "Gigante Anomalo", img: "anomalo.png", color: "yellow" },
+        { id: "u2", name: "Gigante Mutaforma", img: "mutaforma.jpg", color: "red" },
+        { id: "u3", name: "Gigante Puro", img: "gigante_puro.jpg", color: "silver" },
+    ];
+
+    const spawns = [
+        { row: 2, col: 5, unitId: "u1" },
+        { row: 4, col: 1, unitId: "u2" },
+        { row: 1, col: 6, unitId: "u2" },
+        { row: 2, col: 3, unitId: "u3" },
+    ];
+
+    /* indice rapido delle unità */
+    const unitById = new Map(benchUnits.map(u => [u.id, u]));
+
 
     const elements = {
         moraleSlider: document.getElementById('morale'),
@@ -503,6 +522,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTitans();
         renderLog();
         updateDeckCount();
+        /* =======================
+        RENDER GRIGLIA 6×6
+        ======================= */
+        const grid = document.getElementById("hex-grid");
+        renderGrid(grid, 6, 6, spawns);
     };
 
     // --- FIX: Aggiunto updateAllUIElements() per aggiornare la vista ---
@@ -849,8 +873,250 @@ document.addEventListener('DOMContentLoaded', () => {
         saveGameState();
     };
 
+    function renderGrid(container, rows = 6, cols = 6, occupancy = []) {
+        container.textContent = "";
+
+        // mappa (row,col) -> unitId
+        const occKey = (r, c) => `${r},${c}`;
+        const occMap = new Map(occupancy.map(s => [occKey(s.row, s.col), s.unitId]));
+
+        for (let r = 1; r <= rows; r++) {
+            const rowEl = document.createElement("div");
+            rowEl.className = "hex-row";
+            rowEl.dataset.row = r;
+
+            for (let c = 1; c <= cols; c++) {
+                const hex = createHexagon(r, c, occMap.get(occKey(r, c)));
+                rowEl.appendChild(hex);
+            }
+            container.appendChild(rowEl);
+        }
+    }
+
+    /* -------- API minima per aggiornare dinamicamente -------- */
+    // Esempio: aggiungere/sostituire uno spawn in (3,3)
+    function upsertSpawn(spawnsArr, r, c, unit) {
+        const idx = spawnsArr.findIndex(s => s.row === r && s.col === c);
+        const newSpawn = { row: r, col: c, unit };
+        if (idx >= 0) spawnsArr[idx] = newSpawn; else spawnsArr.push(newSpawn);
+        renderGrid(grid, 6, 6, spawnsArr);
+    }
+
+    function createHexagon(row, col, unitId) {
+        const hex = document.createElement("div");
+        hex.className = "hexagon";
+        hex.dataset.row = row;
+        hex.dataset.col = col;
+
+        const unit = unitId ? unitById.get(unitId) : null;
+
+        if (!unit) {
+            hex.classList.add("is-empty");
+        } else {
+            if (unit.color) hex.setAttribute("data-color", unit.color);
+            const content = document.createElement("div");
+            content.className = "hex-content";
+            content.draggable = true;               // si può trascinare l’unità dalla cella
+            content.dataset.unitId = unit.id;
+
+            // cerchio immagine
+            const circle = document.createElement("div");
+            circle.className = "hex-circle";
+            const img = document.createElement("img");
+            img.src = unit.img; img.alt = unit.name;
+            circle.appendChild(img);
+
+            // titolo + sub
+            /*const title = document.createElement("span");
+            title.className = "hex-title"; 
+            title.textContent = unit.name;
+            const sub = document.createElement("span");
+            sub.className = "hex-sub"; sub.textContent = unit.subtitle || "";*/
+
+            content.append(circle/*, title, sub*/);
+            hex.appendChild(content);
+
+
+            // --- Tooltip handlers ---
+            hex.addEventListener("mouseenter", (e) => {
+                const html = getUnitTooltipHTML(unit);
+                showTooltip(html, e.clientX, e.clientY);
+            });
+            hex.addEventListener("mousemove", (e) => {
+                positionTooltip(e.clientX, e.clientY);
+            });
+            hex.addEventListener("mouseleave", () => {
+                hideTooltip();
+            });
+
+            // DnD start (da cella)
+            content.addEventListener("dragstart", (e) => {
+                content.classList.add("dragging");
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("application/json", JSON.stringify({
+                    type: "from-cell",
+                    unitId: unit.id,
+                    from: { row, col }
+                }));
+            });
+            content.addEventListener("dragend", () => content.classList.remove("dragging"));
+        }
+
+        // Target DnD: evidenziazione & drop
+        hex.addEventListener("dragover", (e) => {
+            // consenti drop su tutte le celle (vuote o piene — gestiremo swap in drop)
+            e.preventDefault();
+            hex.classList.add("drop-ok");
+        });
+        hex.addEventListener("dragleave", () => {
+            hex.classList.remove("drop-ok");
+        });
+        hex.addEventListener("drop", (e) => {
+            e.preventDefault();
+            hex.classList.remove("drop-ok");
+
+            const payloadRaw = e.dataTransfer.getData("application/json");
+            if (!payloadRaw) return;
+            let payload;
+            try { payload = JSON.parse(payloadRaw); } catch { return; }
+
+            const target = { row, col };
+            handleDrop(payload, target);
+        });
+
+        return hex;
+    }
+
+    /* =======================
+       LOGICA DROP: move/swap
+       ======================= */
+    function handleDrop(payload, target) {
+        if (payload.type === "from-bench") {
+            // aggiungo unità dalla panchina alla cella (move se vuota, swap se piena)
+            placeOrSwapUnit(target, payload.unitId);
+            renderGrid(grid, 6, 6, spawns);
+        }
+        else if (payload.type === "from-cell") {
+            const from = payload.from;
+            // se stessa cella: nulla
+            if (from.row === target.row && from.col === target.col) return;
+
+            // sposta o scambia
+            moveOrSwapCells(from, target, payload.unitId);
+            renderGrid(grid, 6, 6, spawns);
+        }
+    }
+
+    /* Trova indice dello spawn in (r,c) */
+    function findSpawnIndex(r, c) {
+        return spawns.findIndex(s => s.row === r && s.col === c);
+    }
+
+    /* Ritorna unitId in (r,c) o null */
+    function getUnitAt(r, c) {
+        const i = findSpawnIndex(r, c);
+        return i >= 0 ? spawns[i].unitId : null;
+    }
+
+    /* Inserisci unitId in target (r,c) se vuoto, altrimenti swap con occupante */
+    function placeOrSwapUnit(target, unitId) {
+        const existing = getUnitAt(target.row, target.col);
+        if (!existing) {
+            // place
+            const i = spawns.findIndex(s => s.unitId === unitId);
+            if (i < 0) spawns.push({ row: target.row, col: target.col, unitId });
+            else spawns[i] = { row: target.row, col: target.col, unitId }; // nel caso l’unit fosse già in campo
+        } else {
+            // swap tra unitId e existing
+            const srcIdx = spawns.findIndex(s => s.unitId === unitId);
+            if (srcIdx < 0) {
+                // unit dalla panchina → scambia con occupante: occupante torna in panchina
+                const tgtIdx = findSpawnIndex(target.row, target.col);
+                if (tgtIdx >= 0) spawns.splice(tgtIdx, 1);
+                spawns.push({ row: target.row, col: target.col, unitId });
+            } else {
+                // unit già in campo: scambia posizioni
+                const tgtIdx = findSpawnIndex(target.row, target.col);
+                const fromPos = { ...spawns[srcIdx] };
+                const toPos = { ...spawns[tgtIdx] };
+                spawns[srcIdx] = { row: toPos.row, col: toPos.col, unitId: fromPos.unitId };
+                spawns[tgtIdx] = { row: fromPos.row, col: fromPos.col, unitId: toPos.unitId };
+            }
+        }
+    }
+
+    /* Move o swap tra due celle del campo */
+    function moveOrSwapCells(from, to, movingUnitId) {
+        const fromIdx = findSpawnIndex(from.row, from.col);
+        if (fromIdx < 0) return;
+
+        const targetUnitId = getUnitAt(to.row, to.col);
+        if (!targetUnitId) {
+            // move
+            spawns[fromIdx] = { row: to.row, col: to.col, unitId: movingUnitId };
+        } else {
+            // swap
+            const toIdx = findSpawnIndex(to.row, to.col);
+            const a = spawns[fromIdx];
+            const b = spawns[toIdx];
+            spawns[fromIdx] = { row: to.row, col: to.col, unitId: a.unitId };
+            spawns[toIdx] = { row: from.row, col: from.col, unitId: b.unitId };
+        }
+    }
+
+    // Tooltip element
+    const tooltipEl = document.getElementById("tooltip");
+
+    /** Costruisce l'HTML del tooltip per un'unità */
+    function getUnitTooltipHTML(unit) {
+        const name = unit.name ?? "Unità";
+        const sub = unit.subtitle ?? "";
+        const hp = unit.hp ?? "—";
+        const atk = unit.atk ?? "—";
+        const abi = unit.abi ?? "Nessuna";
+        // NB: contenuto generato da dati interni, non da input utente → ok innerHTML
+        return `
+    <div class="tt-title">${name}</div>
+    ${sub ? `<div class="tt-sub">${sub}</div>` : ``}
+    <div class="tt-stats">
+      <div class="tt-label">HP</div><div class="tt-value">${hp}</div>
+      <div class="tt-label">ATK</div><div class="tt-value">${atk}</div>
+       <div class="tt-label">SKILL</div><div class="tt-value">${abi}</div>
+    </div>
+  `;
+    }
+
+    /** Mostra il tooltip con l'HTML dato e lo posiziona vicino al mouse */
+    function showTooltip(html, x, y) {
+        tooltipEl.innerHTML = html;
+        tooltipEl.style.display = "block";
+        positionTooltip(x, y);
+    }
+
+    /** Nasconde tooltip */
+    function hideTooltip() {
+        tooltipEl.style.display = "none";
+    }
+
+    /** Posizionamento (evita che esca dallo schermo) */
+    function positionTooltip(mouseX, mouseY) {
+        const offset = 14;
+        const { innerWidth: vw, innerHeight: vh } = window;
+        const rect = tooltipEl.getBoundingClientRect();
+        let left = mouseX + offset;
+        let top = mouseY + offset;
+
+        if (left + rect.width > vw) left = mouseX - rect.width - offset;
+        if (top + rect.height > vh) top = mouseY - rect.height - offset;
+
+        tooltipEl.style.left = left + "px";
+        tooltipEl.style.top = top + "px";
+    }
+
+
+
     async function main() {
-         const url = './assets/risorsa_audio_avvio_app.mp3';
+        const url = './assets/risorsa_audio_avvio_app.mp3';
         const audio = new AudioService();
         const proceeded = await StartOverlayView.show();
         if (!proceeded) return;
