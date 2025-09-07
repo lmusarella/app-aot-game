@@ -782,15 +782,12 @@ Griglia
 */
 
 .grid-container {
-    background: #000;
-    min-height: 100vh;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: auto;
 }
 
 .wrapper {
     position: relative;
-    min-height: 100vh;
-    overflow: hidden;
     animation: animate 10s linear infinite;
     padding: 50px;
 }
