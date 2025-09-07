@@ -141,6 +141,8 @@ document.addEventListener('DOMContentLoaded', () => {
         eventReshuffleBtn: document.getElementById('event-reshuffle-btn'),
         eventDiscardBtn: document.getElementById('event-discard-btn'),
         eventRemoveBtn: document.getElementById('event-remove-btn'),
+        hexGrid: document.getElementById("hex-grid"),
+        hexTooltip: document.getElementById("tooltip")
     };
 
     async function loadDB() {
@@ -522,8 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTitans();
         renderLog();
         updateDeckCount();       
-        const grid = document.getElementById("hex-grid");
-        renderGrid(grid, 8, 6, spawns);
+        renderGrid(elements.hexGrid, 8, 6, spawns);
     };
 
     // --- FIX: Aggiunto updateAllUIElements() per aggiornare la vista ---
@@ -896,7 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const idx = spawnsArr.findIndex(s => s.row === r && s.col === c);
         const newSpawn = { row: r, col: c, unit };
         if (idx >= 0) spawnsArr[idx] = newSpawn; else spawnsArr.push(newSpawn);
-        renderGrid(grid, 8, 6, spawnsArr);
+        renderGrid(elements.hexGrid, 8, 6, spawnsArr);
     }
 
     function createHexagon(row, col, unitId) {
@@ -991,7 +992,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (payload.type === "from-bench") {
             // aggiungo unità dalla panchina alla cella (move se vuota, swap se piena)
             placeOrSwapUnit(target, payload.unitId);
-            renderGrid(grid, 8, 6, spawns);
+            renderGrid(elements.hexGrid, 8, 6, spawns);
         }
         else if (payload.type === "from-cell") {
             const from = payload.from;
@@ -1000,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // sposta o scambia
             moveOrSwapCells(from, target, payload.unitId);
-            renderGrid(grid, 8, 6, spawns);
+            renderGrid(elements.hexGrid, 8, 6, spawns);
         }
     }
 
@@ -1061,8 +1062,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Tooltip element
-    const tooltipEl = document.getElementById("tooltip");
 
     /** Costruisce l'HTML del tooltip per un'unità */
     function getUnitTooltipHTML(unit) {
@@ -1085,29 +1084,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Mostra il tooltip con l'HTML dato e lo posiziona vicino al mouse */
     function showTooltip(html, x, y) {
-        tooltipEl.innerHTML = html;
-        tooltipEl.style.display = "block";
+        elements.hexTooltip.innerHTML = html;
+        elements.hexTooltip.style.display = "block";
         positionTooltip(x, y);
     }
 
     /** Nasconde tooltip */
     function hideTooltip() {
-        tooltipEl.style.display = "none";
+        elements.hexTooltip.style.display = "none";
     }
 
     /** Posizionamento (evita che esca dallo schermo) */
     function positionTooltip(mouseX, mouseY) {
         const offset = 14;
         const { innerWidth: vw, innerHeight: vh } = window;
-        const rect = tooltipEl.getBoundingClientRect();
+        const rect = elements.hexTooltip.getBoundingClientRect();
         let left = mouseX + offset;
         let top = mouseY + offset;
 
         if (left + rect.width > vw) left = mouseX - rect.width - offset;
         if (top + rect.height > vh) top = mouseY - rect.height - offset;
 
-        tooltipEl.style.left = left + "px";
-        tooltipEl.style.top = top + "px";
+        elements.hexTooltip.style.left = left + "px";
+        elements.hexTooltip.style.top = top + "px";
     }
 
 
