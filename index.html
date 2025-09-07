@@ -57,11 +57,10 @@
                             <button id="decrease-mission" class="btn">-</button>
                             <div class="mission-main-actions">
                                 <button id="restart-mission-btn" class="btn btn-restart">Riavvia Timer</button>
-                                <button id="complete-mission-btn" class="btn btn-complete">Missione Completata</button>                                
+                                <button id="complete-mission-btn" class="btn btn-complete">Missione Completata</button>
                             </div>
                             <button id="increase-mission" class="btn">+</button>
                         </div>
-                         <button id="open-grid-popup" class="btn btn-open-grid">Visualizza Griglia Battaglia</button>
                         <button id="draw-event-btn" class="btn btn-event">Pesca Evento (<span
                                 id="event-deck-count">0</span>)</button>
                         <h3 class="sub-title">Unità in Missione</h3>
@@ -83,7 +82,8 @@
                 <div class="grid-item titan-box">
                     <h2 class="grid-item-title titans-header">Giganti in Campo</h2>
 
-                    <div class="grid-item-content">                    
+                    <div class="grid-item-content">
+                        <button id="open-grid-popup" class="btn btn-open-grid">Visualizza Griglia Battaglia</button>
                         <button id="add-titan-btn" class="btn btn-add-titan">Aggiungi Gigante</button>
                         <div id="titan-grid" class="mission-units-grid"></div>
                     </div>
@@ -175,158 +175,56 @@
             </div>
             <div class="grid-container">
 
-                <ul id="hexGrid">
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                          
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                          
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                            
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                    <li class="hex">
-                        <div class="hexIn">
-                           
-                        </div>
-                    </li>
-                </ul>
+                <div class="wrapper">
+                    <div class="hex">
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                    </div>
+                    <div class="hex">
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                    </div>
+                    <div class="hex">
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                    </div>
+                    <div class="hex">
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                    </div>
+                    <div class="hex">
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                    </div>
+                    <div class="hex">
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                        <div class="hexagon"></div>
+                    </div>
+                </div>
 
 
             </div>
