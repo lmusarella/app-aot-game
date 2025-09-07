@@ -545,6 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const addTitan = () => {
+        console.log('aggiunto titano')
         const newId = (gameState.titanIdCounter || 0) + 1;
         gameState.titanIdCounter = newId;
         const newTitan = {
