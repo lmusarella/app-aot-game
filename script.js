@@ -521,12 +521,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateMissionView();
         renderTitans();
         renderLog();
-        updateDeckCount();
-        /* =======================
-        RENDER GRIGLIA 6×6
-        ======================= */
+        updateDeckCount();       
         const grid = document.getElementById("hex-grid");
-        renderGrid(grid, 6, 6, spawns);
+        renderGrid(grid, 8, 6, spawns);
     };
 
     // --- FIX: Aggiunto updateAllUIElements() per aggiornare la vista ---
@@ -873,7 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveGameState();
     };
 
-    function renderGrid(container, rows = 6, cols = 6, occupancy = []) {
+    function renderGrid(container, rows = 8, cols = 6, occupancy = []) {
         container.textContent = "";
 
         // mappa (row,col) -> unitId
@@ -899,7 +896,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const idx = spawnsArr.findIndex(s => s.row === r && s.col === c);
         const newSpawn = { row: r, col: c, unit };
         if (idx >= 0) spawnsArr[idx] = newSpawn; else spawnsArr.push(newSpawn);
-        renderGrid(grid, 6, 6, spawnsArr);
+        renderGrid(grid, 8, 6, spawnsArr);
     }
 
     function createHexagon(row, col, unitId) {
@@ -994,7 +991,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (payload.type === "from-bench") {
             // aggiungo unità dalla panchina alla cella (move se vuota, swap se piena)
             placeOrSwapUnit(target, payload.unitId);
-            renderGrid(grid, 6, 6, spawns);
+            renderGrid(grid, 8, 6, spawns);
         }
         else if (payload.type === "from-cell") {
             const from = payload.from;
@@ -1003,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // sposta o scambia
             moveOrSwapCells(from, target, payload.unitId);
-            renderGrid(grid, 6, 6, spawns);
+            renderGrid(grid, 8, 6, spawns);
         }
     }
 
