@@ -84,8 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
         "Mutaforma": "mutaforma.jpg"
     }
 
-    const spawns = [];
-
     const elements = {
         moraleSlider: document.getElementById('morale'),
         xpSlider: document.getElementById('xp'),
@@ -518,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTitans();
         renderLog();
         updateDeckCount();
-        renderGrid(elements.hexGrid, 8, 6, spawns);
+        renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
     };
 
     // --- FIX: Aggiunto updateAllUIElements() per aggiornare la vista ---
@@ -546,12 +544,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = target.dataset.id;
         if (!id) return;
         const titan = gameState.titansData.find(t => t.id == id);
-        const titanOnGrid = spawns.find(t => t.unitId == id);
+        const titanOnGrid = gameState.spawns.find(t => t.unitId == id);
         if (!titan) return;
 
         if (target.matches('.remove-titan-btn')) {
             gameState.titansData = gameState.titansData.filter(t => t.id != id);
-            spawns = spawns.filter(t => t.unitId != id);
+            gameState.spawns = spawns.filter(t => t.unitId != id);
         } else if (target.matches('.cooldown-change')) {
             titan.cooldown = Math.max(0, titan.cooldown + parseInt(target.dataset.amount, 10));
         } else if (target.matches('.titan-type-switcher')) {
@@ -562,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
             titanOnGrid.img = dataImg[titan.type];
         }
         renderTitans();
-        renderGrid(elements.hexGrid, 8, 6, spawns);
+        renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
         saveGameState();
     };
 
@@ -601,11 +599,11 @@ document.addEventListener('DOMContentLoaded', () => {
             row: roll6x,
             col: roll6y
         }
-        spawns.push(spawnObj);
+        gameState.spawns.push(spawnObj);
 
         addLogEntry(`${newTitan.name} è apparso. In ${roll6x} - ${roll6y} `, 'info');
         renderTitans();
-        renderGrid(elements.hexGrid, 8, 6, spawns);
+        renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
         saveGameState();
     };
 
@@ -680,7 +678,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveGameState = () => {
         gameState.morale = parseInt(elements.moraleSlider.value, 10);
         gameState.xp = parseInt(elements.xpSlider.value, 10);
-        gameState.spawns = spawns;
         localStorage.setItem('aotGameState', JSON.stringify(gameState));
     };
 
@@ -778,7 +775,8 @@ document.addEventListener('DOMContentLoaded', () => {
             wallHp: { maria: wallDefaultHp.maria, rose: wallDefaultHp.rose, sina: wallDefaultHp.sina },
             eventDeck: [],
             eventDiscardPile: [],
-            removedEventCards: []
+            removedEventCards: [],
+            spawns: []
         };
     };
 
@@ -929,22 +927,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /* -------- API minima per aggiornare dinamicamente -------- */
-    // Esempio: aggiungere/sostituire uno spawn in (3,3)
-    function upsertSpawn(spawnsArr, r, c, unit) {
-        const idx = spawnsArr.findIndex(s => s.row === r && s.col === c);
-        const newSpawn = { row: r, col: c, unit };
-        if (idx >= 0) spawnsArr[idx] = newSpawn; else spawnsArr.push(newSpawn);
-        renderGrid(elements.hexGrid, 8, 6, spawnsArr);
-    }
-
     function createHexagon(row, col, unitId) {
         const hex = document.createElement("div");
         hex.className = "hexagon";
         hex.dataset.row = row;
         hex.dataset.col = col;
 
-        const unit = unitId ? new Map(spawns.map(u => [u.unitId, u])).get(unitId) : null;
+        const unit = unitId ? new Map(gameState.spawns.map(u => [u.unitId, u])).get(unitId) : null;
 
         if (!unit) {
             hex.classList.add("is-empty");
@@ -1030,26 +1019,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (payload.type === "from-cell") {
             const from = payload.from;
             // se stessa cella: nulla
-            if (from.row === target.row && from.col === target.col) return;
-            console.log('from', from);
-            console.log('target', target);
+            if (from.row === target.row && from.col === target.col) return;          
             // sposta o scambia
             moveOrSwapCells(from, target);
-
-            console.log('spawns', spawns);
-            renderGrid(elements.hexGrid, 8, 6, spawns);
+            renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
         }
     }
 
     /* Trova indice dello spawn in (r,c) */
     function findSpawnIndex(r, c) {
-        return spawns.findIndex(s => s.row === r && s.col === c);
+        return gameState.spawns.findIndex(s => s.row === r && s.col === c);
     }
 
     /* Ritorna unitId in (r,c) o null */
     function getUnitAt(r, c) {
         const i = findSpawnIndex(r, c);
-        return i >= 0 ? spawns[i].unitId : null;
+        return i >= 0 ? gameState.spawns[i].unitId : null;
     }
 
     /* Move o swap tra due celle del campo */
@@ -1060,14 +1045,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetUnitId = getUnitAt(to.row, to.col);
         if (!targetUnitId) {
             // move           
-            const a = spawns[fromIdx];
+            const a = gameState.spawns[fromIdx];
             a.row = to.row;
             a.col = to.col;
         } else {
             // swap
             const toIdx = findSpawnIndex(to.row, to.col);
-            const a = spawns[fromIdx];
-            const b = spawns[toIdx];
+            const a = gameState.spawns[fromIdx];
+            const b = gameState.spawns[toIdx];
             a.row = to.row;
             a.col = to.col;
             b.row = from.row;
