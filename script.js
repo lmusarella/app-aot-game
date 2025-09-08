@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (target.matches('.remove-titan-btn')) {
             gameState.titansData = gameState.titansData.filter(t => t.id != id);
-            gameState.spawns = spawns.filter(t => t.unitId != id);
+            gameState.spawns = gameState.spawns.filter(t => t.unitId != id);
         } else if (target.matches('.cooldown-change')) {
             titan.cooldown = Math.max(0, titan.cooldown + parseInt(target.dataset.amount, 10));
         } else if (target.matches('.titan-type-switcher')) {
