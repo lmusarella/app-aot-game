@@ -1021,18 +1021,13 @@ document.addEventListener('DOMContentLoaded', () => {
        LOGICA DROP: move/swap
        ======================= */
     function handleDrop(payload, target) {
-        if (payload.type === "from-bench") {
-            // aggiungo unità dalla panchina alla cella (move se vuota, swap se piena)
-            placeOrSwapUnit(target, payload.unitId);
-            renderGrid(elements.hexGrid, 8, 6, spawns);
-        }
-        else if (payload.type === "from-cell") {
+      if (payload.type === "from-cell") {
             const from = payload.from;
             // se stessa cella: nulla
             if (from.row === target.row && from.col === target.col) return;
 
             // sposta o scambia
-            moveOrSwapCells(from, target, payload.unitId);
+            moveOrSwapCells(from, target);
             renderGrid(elements.hexGrid, 8, 6, spawns);
         }
     }
@@ -1055,7 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // place
             const i = spawns.findIndex(s => s.unitId === unitId);
             if (i < 0) spawns.push({ row: target.row, col: target.col, unitId });
-            else spawns[i] = { row: target.row, col: target.col, unitId }; // nel caso l’unit fosse già in campo
+            else spawns[i] = { row: target.row, col: target.col, ...spawns[i] }; // nel caso l’unit fosse già in campo
         } else {
             // swap tra unitId e existing
             const srcIdx = spawns.findIndex(s => s.unitId === unitId);
@@ -1069,28 +1064,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tgtIdx = findSpawnIndex(target.row, target.col);
                 const fromPos = { ...spawns[srcIdx] };
                 const toPos = { ...spawns[tgtIdx] };
-                spawns[srcIdx] = { row: toPos.row, col: toPos.col, unitId: fromPos.unitId };
-                spawns[tgtIdx] = { row: fromPos.row, col: fromPos.col, unitId: toPos.unitId };
+                spawns[srcIdx] = { row: toPos.row, col: toPos.col, ...fromPos };
+                spawns[tgtIdx] = { row: fromPos.row, col: fromPos.col, ...toPos };
             }
         }
     }
 
     /* Move o swap tra due celle del campo */
-    function moveOrSwapCells(from, to, movingUnitId) {
+    function moveOrSwapCells(from, to) {
         const fromIdx = findSpawnIndex(from.row, from.col);
         if (fromIdx < 0) return;
 
         const targetUnitId = getUnitAt(to.row, to.col);
         if (!targetUnitId) {
             // move
-            spawns[fromIdx] = { row: to.row, col: to.col, unitId: movingUnitId };
+            spawns[fromIdx] = { row: to.row, col: to.col, ...spawns[fromIdx] };
         } else {
             // swap
             const toIdx = findSpawnIndex(to.row, to.col);
             const a = spawns[fromIdx];
             const b = spawns[toIdx];
-            spawns[fromIdx] = { row: to.row, col: to.col, unitId: a.unitId };
-            spawns[toIdx] = { row: from.row, col: from.col, unitId: b.unitId };
+            spawns[fromIdx] = { row: to.row, col: to.col, ...a };
+            spawns[toIdx] = { row: from.row, col: from.col, ...b };
         }
     }
 
