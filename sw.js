@@ -12,10 +12,13 @@ const ASSETS = [
   './icona_app_192.jpg',
   './assets/risorsa_audio_avvio_app.mp3',
   './corpo_di_ricerca.jpg',
-  './gigante_puro.jpg',
-  './anomalo.png',
-  '/.mutaforma.jpg',
-  './assets/ape_titan_sound.mp3', './assets/commander_march_sound.mp3', './assets/flash_effect_sound.mp3', './assets/mutaform_sound.mp3'
+  './assets/gigante_puro.jpg',
+  './assets/anomalo.png',
+  './assets/gigante_carro.jpg',
+  './assets/ape_titan_sound.mp3', './assets/commander_march_sound.mp3', './assets/flash_effect_sound.mp3', './assets/mutaform_sound.mp3',
+  './assets/gigante_bestia.jpg', './assets/gigante_colossale.png', './assets/gigante_corazzato.png', './assets/gigante_femmina.jpg',
+   './assets/gigante_martello.png', './assets/gigante_mascella.png',
+   './assets/anomalo_1.png', './assets/anomalo_2.png', './assets/anomalo_3.png', './assets/anomalo_4.png'
 ];
 
 // Installazione: cache iniziale
