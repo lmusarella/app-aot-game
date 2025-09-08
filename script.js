@@ -635,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 break
         }
 
-        const backgroundSound = await audioService.play(url, { loop: loop, volume: 1 });
+        const backgroundSound = await audioService.play(url, { loop: flagLoop, volume: 1 });
         gameSoundTrack.backgroundSound = backgroundSound;
     };
 
