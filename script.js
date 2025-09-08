@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (unit.onMission && type !== 'recruit') {
                 const url = './assets/commander_march_sound.mp3';
                 const audioService = new AudioService();
-               
+                gameSoundTrack.backgroundSound.pause();
                 const backgroundSound = await audioService.play(url, { loop: true, volume: 1 });
                 gameSoundTrack.backgroundSound = backgroundSound;
             }
@@ -620,18 +620,22 @@ document.addEventListener('DOMContentLoaded', () => {
         saveGameState();
 
         let url = './assets/flash_effect_sound.mp3';
+        let flagLoop = false;
+         const audioService = new AudioService();
         switch (newTitan.type) {
             case "Anomalo":
+                flagLoop = true;
                 url = './assets/ape_titan_sound.mp3';
+                gameSoundTrack.backgroundSound.pause();
                 break;
             case "Mutaforma":
+                flagLoop = true;
                 url = './assets/mutaform_sound.mp3';
+                gameSoundTrack.backgroundSound.pause();
                 break
         }
 
-        const audioService = new AudioService();
-        
-        const backgroundSound = await audioService.play(url, { loop: true, volume: 1 });
+        const backgroundSound = await audioService.play(url, { loop: loop, volume: 1 });
         gameSoundTrack.backgroundSound = backgroundSound;
     };
 
@@ -1126,7 +1130,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { innerWidth: vw, innerHeight: vh } = window;
         const rect = elements.hexTooltip.getBoundingClientRect();
         let left = mouseX + offset;
-        
+
         let top = mouseY + offset;
 
         if (left + rect.width > vw) left = mouseX - rect.width - offset;
