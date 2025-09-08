@@ -621,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let url = './assets/flash_effect_sound.mp3';
         let flagLoop = false;
-         const audioService = new AudioService();
+        const audioService = new AudioService();
         switch (newTitan.type) {
             case "Anomalo":
                 flagLoop = true;
@@ -636,7 +636,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const backgroundSound = await audioService.play(url, { loop: flagLoop, volume: 1 });
-        gameSoundTrack.backgroundSound = backgroundSound;
+
+        if (newTitan.type !== "Puro")
+            gameSoundTrack.backgroundSound = backgroundSound;
     };
 
     function getTitanType(roll, row) {
