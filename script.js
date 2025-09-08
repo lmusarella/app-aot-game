@@ -579,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getRandomTitan = (row, col, unitId, type) => {
         const titanList = db.units[type];
-        const randomIndex = Math.floor(Math.random() * titanList.length) + 1;
+        const randomIndex = Math.floor(Math.random() * titanList.length);
         const titan = titanList[randomIndex];
         return  {
             unitId,
