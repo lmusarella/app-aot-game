@@ -14,7 +14,8 @@ const ASSETS = [
   './corpo_di_ricerca.jpg',
   './gigante_puro.jpg',
   './anomalo.png',
-  '/.mutaforma.jpg'
+  '/.mutaforma.jpg',
+  './assets/ape_titan_sound.mp3', './assets/commander_march_sound.mp3', './assets/flash_effect_sound.mp3', './assets/mutaform_sound.mp3'
 ];
 
 // Installazione: cache iniziale

@@ -63,6 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let titanSpawnTable = {};          // da db.titanSpawnTable
     let defaultMissionTimerSeconds = 20 * 60; // sovrascrivibile da db.settings.missionTimerSeconds
 
+    let gameSoundTrack = {
+
+    };
     let gameState = {};
     let missionTimerInterval;
     let pendingHpChanges = {};
@@ -520,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- FIX: Aggiunto updateAllUIElements() per aggiornare la vista ---
-    const handleMissionToggle = (e) => {
+    const handleMissionToggle = async (e) => {
         const target = e.target.closest('.mission-button, .remove-from-mission-btn');
         if (!target) return;
         const { id, type } = target.dataset;
@@ -530,7 +533,17 @@ document.addEventListener('DOMContentLoaded', () => {
             unit.onMission = !unit.onMission;
             updateAllUIElements(); // <-- BUG FIX
             saveGameState();
+
+            if (unit.onMission && type !== 'recruit') {
+                const url = './assets/commander_march_sound.mp3';
+                const audioService = new AudioService();
+                gameSoundTrack.backgroundSound.stop();
+                const backgroundSound = await audioService.play(url, { loop: true, volume: 1 });
+                gameSoundTrack.backgroundSound = backgroundSound;
+            }
         }
+
+
     };
 
     const handleTitanActions = (e) => {
@@ -564,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveGameState();
     };
 
-    const addTitan = () => {
+    const addTitan = async () => {
 
         const newId = (gameState.titanIdCounter || 0) + 1;
         gameState.titanIdCounter = newId;
@@ -605,6 +618,21 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTitans();
         renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
         saveGameState();
+
+        let url = './assets/flash_effect_sound.mp3';
+        switch (newTitan.type) {
+            case "Anomalo":
+                url = './assets/ape_titan_sound.mp3';
+                break;
+            case "Mutaforma":
+                url = './assets/mutaform_sound.mp3';
+                break
+        }
+
+        const audioService = new AudioService();
+        gameSoundTrack.backgroundSound.stop();
+        const backgroundSound = await audioService.play(url, { loop: true, volume: 1 });
+        gameSoundTrack.backgroundSound = backgroundSound;
     };
 
     function getTitanType(roll, row) {
@@ -1019,7 +1047,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (payload.type === "from-cell") {
             const from = payload.from;
             // se stessa cella: nulla
-            if (from.row === target.row && from.col === target.col) return;          
+            if (from.row === target.row && from.col === target.col) return;
             // sposta o scambia
             moveOrSwapCells(from, target);
             renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
@@ -1111,10 +1139,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function main() {
         const url = './assets/risorsa_audio_avvio_app.mp3';
-        const audio = new AudioService();
+        const audioService = new AudioService();
         const proceeded = await StartOverlayView.show();
         if (!proceeded) return;
-        await audio.play(url, { loop: true, volume: 1 });
+        const backgroundSound = await audioService.play(url, { loop: true, volume: 1 });
+        gameSoundTrack.backgroundSound = backgroundSound;
 
         await loadDB();
 
