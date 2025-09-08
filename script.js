@@ -73,16 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const titanTypes = ['Puro', 'Anomalo', 'Mutaforma'];
 
-    const spawns = [
-        { row: 2, col: 5, unitId: "u1" },
-        { row: 4, col: 1, unitId: "u2" },
-        { row: 1, col: 6, unitId: "u2" },
-        { row: 2, col: 3, unitId: "u3" },
-    ];
-
-    /* indice rapido delle unità */
-    const unitById = new Map(spawns.map(u => [u.id, u]));
-
+    const spawns = [   ];
 
     const elements = {
         moraleSlider: document.getElementById('morale'),
@@ -597,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const spawnObj = {
-            id: newId,
+            unitId: newId,
             name: newTitan.type,
             color: dataColor[newTitan.type],
             img: dataImg[newTitan.type],
@@ -947,7 +938,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hex.dataset.row = row;
         hex.dataset.col = col;
 
-        const unit = unitId ? unitById.get(unitId) : null;
+        const unit = unitId ? new Map(spawns.map(u => [u.unitId, u])).get(unitId) : null;
 
         if (!unit) {
             hex.classList.add("is-empty");
@@ -956,7 +947,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const content = document.createElement("div");
             content.className = "hex-content";
             content.draggable = true;               // si può trascinare l’unità dalla cella
-            content.dataset.unitId = unit.id;
+            content.dataset.unitId = unit.unitId;
 
             // cerchio immagine
             const circle = document.createElement("div");
@@ -994,7 +985,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.dataTransfer.effectAllowed = "move";
                 e.dataTransfer.setData("application/json", JSON.stringify({
                     type: "from-cell",
-                    unitId: unit.id,
+                    unitId: unit.unitId,
                     from: { row, col }
                 }));
             });
