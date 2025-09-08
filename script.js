@@ -606,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         spawns.push(spawnObj);
         
-        addLogEntry(`${newTitan.name} è apparso.`, 'info');
+        addLogEntry(`${newTitan.name} è apparso. In ${roll6x} - ${roll6y} `, 'info');
         renderTitans();
         renderGrid(elements.hexGrid, 8, 6, spawns);
         saveGameState();
