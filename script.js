@@ -1077,8 +1077,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const targetUnitId = getUnitAt(to.row, to.col);
         if (!targetUnitId) {
-            // move
-            spawns[fromIdx] = { row: to.row, col: to.col, ...spawns[fromIdx] };
+            // move           
+            spawns[fromIdx] = { row: to.row, col: to.col, name: from.name, img: from.img, color: from.color, unitId: from.unitId };
         } else {
             // swap
             const toIdx = findSpawnIndex(to.row, to.col);
