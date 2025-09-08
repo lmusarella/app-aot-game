@@ -40,15 +40,15 @@
     "8": { "objective": "Uccidi tutti i Giganti Mutaforma.", "reward": "+6 XP", "event": "Spawn di 2 Giganti Mutaforma e 3 Giganti" }
   },
   "titanSpawnTable": {
-    "1": { "Puro": "1-16", "Anomalo": "17-19", "Mutaforma": "20" },
-    "2": { "Puro": "1-15", "Anomalo": "16-18", "Mutaforma": "19-20" },
-    "3": { "Puro": "1-14", "Anomalo": "15-17", "Mutaforma": "18-20" },
-    "4": { "Puro": "1-13", "Anomalo": "14-16", "Mutaforma": "17-20" },
-    "5": { "Puro": "1-12", "Anomalo": "13-15", "Mutaforma": "16-20" },
-    "6": { "Puro": "1-11", "Anomalo": "12-14", "Mutaforma": "15-20" },
-    "7": { "Puro": "1-9",  "Anomalo": "10-13", "Mutaforma": "14-20" },
-    "8": { "Puro": "1-8",  "Anomalo": "9-12",  "Mutaforma": "13-20" }
-  },
+	"1": { "Puro": { "min": 1, "max": 16 }, "Anomalo": { "min": 17, "max": 19 }, "Mutaforma": { "min": 20, "max": 20 } },
+	"2": { "Puro": { "min": 1, "max": 15 }, "Anomalo": { "min": 16, "max": 18 }, "Mutaforma": { "min": 19, "max": 20 } },
+	"3": { "Puro": { "min": 1, "max": 14 }, "Anomalo": { "min": 15, "max": 17 }, "Mutaforma": { "min": 18, "max": 20 } },
+	"4": { "Puro": { "min": 1, "max": 13 }, "Anomalo": { "min": 14, "max": 16 }, "Mutaforma": { "min": 17, "max": 20 } },
+	"5": { "Puro": { "min": 1, "max": 12 }, "Anomalo": { "min": 13, "max": 15 }, "Mutaforma": { "min": 16, "max": 20 } },
+	"6": { "Puro": { "min": 1, "max": 11 }, "Anomalo": { "min": 12, "max": 14 }, "Mutaforma": { "min": 15, "max": 20 } },
+	"7": { "Puro": { "min": 1, "max": 9 },  "Anomalo": { "min": 10, "max": 13 }, "Mutaforma": { "min": 14, "max": 20 } },
+	"8": { "Puro": { "min": 1, "max": 8 },  "Anomalo": { "min": 9, "max": 12 },  "Mutaforma": { "min": 13, "max": 20 } }
+	},
   "eventCards": [
 	  { "id": 1,  "titolo": "Rifornimenti Inattesi", "descrizione": "Le tue squadre trovano una cassa di rifornimenti. Tutti i giocatori pescano una carta equipaggiamento.", "tipo": "Evento" },
 	  { "id": 2,  "titolo": "Maltempo Improvviso",   "descrizione": "Una pioggia torrenziale riduce la visibilità. Malus di -1 a tutti i tiri di dado per questo turno.", "tipo": "Malus" },

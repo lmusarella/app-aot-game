@@ -73,15 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const titanTypes = ['Puro', 'Anomalo', 'Mutaforma'];
 
-    /* =======================
-   DATI DI ESEMPIO
-   ======================= */
-    const benchUnits = [
-        { id: "u1", name: "Gigante Anomalo", img: "anomalo.png", color: "yellow" },
-        { id: "u2", name: "Gigante Mutaforma", img: "mutaforma.jpg", color: "red" },
-        { id: "u3", name: "Gigante Puro", img: "gigante_puro.jpg", color: "silver" },
-    ];
-
     const spawns = [
         { row: 2, col: 5, unitId: "u1" },
         { row: 4, col: 1, unitId: "u2" },
@@ -90,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     /* indice rapido delle unità */
-    const unitById = new Map(benchUnits.map(u => [u.id, u]));
+    const unitById = new Map(spawns.map(u => [u.id, u]));
 
 
     const elements = {
@@ -360,10 +351,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const currentSpawnData = titanSpawnTable[gameState.currentMissionNumber] || titanSpawnTable[1];
+        const m = currentSpawnData['Mutaforma'].min === 20 ? currentSpawnData['Mutaforma'].min : currentSpawnData['Mutaforma'].min + "-" + currentSpawnData['Mutaforma'].max;
         legend.innerHTML = `
-            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#a0aec0;"></div><span>${currentSpawnData['Puro']}</span></div>
-            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#ecc94b;"></div><span>${currentSpawnData['Anomalo']}</span></div>
-            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#f56565;"></div><span>${currentSpawnData['Mutaforma']}</span></div>
+            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#a0aec0;"></div><span>${currentSpawnData['Puro'].min}-${currentSpawnData['Puro'].max}</span></div>
+            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#ecc94b;"></div><span>${currentSpawnData['Anomalo'].min}-${currentSpawnData['Puro'].max}</span></div>
+            <div style="display:flex; align-items:center; gap: 0.25rem;"><div style="width:1rem; height:1rem; border-radius:50%; background-color:#f56565;"></div><span>${m}</span></div>
         `;
     };
 
@@ -523,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateMissionView();
         renderTitans();
         renderLog();
-        updateDeckCount();       
+        updateDeckCount();
         renderGrid(elements.hexGrid, 8, 6, spawns);
     };
 
@@ -567,19 +559,67 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const addTitan = () => {
-        console.log('aggiunto titano')
+
         const newId = (gameState.titanIdCounter || 0) + 1;
         gameState.titanIdCounter = newId;
+
+        const currentSpawnData = titanSpawnTable[gameState.currentMissionNumber] || titanSpawnTable[1];
+        const roll20 = Math.floor(Math.random() * 20) + 1;
+        const titanType = getTitanType(roll20, currentSpawnData);
+
         const newTitan = {
             id: newId, name: `Gigante #${newId}`,
-            hp: 12, initialHp: 12, cooldown: 0, type: 'Puro',
+            hp: 12, initialHp: 12, cooldown: 0, type: titanType,
             isDefeated: false, createdAt: Date.now()
         };
+
         gameState.titansData.push(newTitan);
+
+
+        let roll6x = Math.floor(Math.random() * 6) + 1;
+        let roll6y = Math.floor(Math.random() * 6) + 1;
+
+        while (!getUnitAt(roll6x, roll6y)) {
+            roll6x = Math.floor(Math.random() * 6) + 1;
+            roll6y = Math.floor(Math.random() * 6) + 1;
+        }
+
+        const dataColor = {
+            "Puro": "silver",
+            "Anomalo": "yellow",
+            "Mutaforma": "red"
+        }
+
+        const dataImg = {
+            "Puro": "gigante_puro.jpg",
+            "Anomalo": "anomalo.png",
+            "Mutaforma": "mutaforma.jpg"
+        }
+
+        const spawnObj = {
+            id: newId,
+            name: newTitan.type,
+            color: dataColor[newTitan.type],
+            img: dataImg[newTitan.type],
+            row: roll6x,
+            col: roll6y
+        }
+        spawns.push(spawnObj);
+        
         addLogEntry(`${newTitan.name} è apparso.`, 'info');
         renderTitans();
+        renderGrid(elements.hexGrid, 8, 6, spawns);
         saveGameState();
     };
+
+    function getTitanType(roll, row) {
+        for (const [type, range] of Object.entries(row)) {
+            if (roll >= range.min && roll <= range.max) {
+                return type;
+            }
+        }
+        return null; // non dovrebbe mai succedere
+    }
 
     const changeMission = (amount) => {
         let newMissionNumber = gameState.currentMissionNumber + amount;
@@ -643,6 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveGameState = () => {
         gameState.morale = parseInt(elements.moraleSlider.value, 10);
         gameState.xp = parseInt(elements.xpSlider.value, 10);
+        gameState.spawns = spawns;
         localStorage.setItem('aotGameState', JSON.stringify(gameState));
     };
 
