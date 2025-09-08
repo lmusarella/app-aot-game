@@ -596,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
             col: roll6y
         }
         spawns.push(spawnObj);
-        
+
         addLogEntry(`${newTitan.name} è apparso. In ${roll6x} - ${roll6y} `, 'info');
         renderTitans();
         renderGrid(elements.hexGrid, 8, 6, spawns);
@@ -1021,13 +1021,16 @@ document.addEventListener('DOMContentLoaded', () => {
        LOGICA DROP: move/swap
        ======================= */
     function handleDrop(payload, target) {
-      if (payload.type === "from-cell") {
+        if (payload.type === "from-cell") {
             const from = payload.from;
             // se stessa cella: nulla
             if (from.row === target.row && from.col === target.col) return;
-
+            console.log('from', from);
+            console.log('target', target);
             // sposta o scambia
             moveOrSwapCells(from, target);
+
+            console.log('spawns', spawns);
             renderGrid(elements.hexGrid, 8, 6, spawns);
         }
     }
@@ -1078,6 +1081,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetUnitId = getUnitAt(to.row, to.col);
         if (!targetUnitId) {
             // move           
+            console.log('ti muovo', { row: to.row, col: to.col, name: from.name, img: from.img, color: from.color, unitId: from.unitId });
             spawns[fromIdx] = { row: to.row, col: to.col, name: from.name, img: from.img, color: from.color, unitId: from.unitId };
         } else {
             // swap
