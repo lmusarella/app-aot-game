@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const titanTypes = ['Puro', 'Anomalo', 'Mutaforma'];
 
-    const spawns = [   ];
+    const spawns = [];
 
     const elements = {
         moraleSlider: document.getElementById('morale'),
@@ -570,10 +570,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let roll6x = Math.floor(Math.random() * 6) + 1;
         let roll6y = Math.floor(Math.random() * 6) + 1;
 
-        while (!getUnitAt(roll6x, roll6y)) {
+        /*while (!getUnitAt(roll6x, roll6y)) {
             roll6x = Math.floor(Math.random() * 6) + 1;
             roll6y = Math.floor(Math.random() * 6) + 1;
-        }
+        }*/
 
         const dataColor = {
             "Puro": "silver",
