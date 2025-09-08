@@ -72,6 +72,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEventCard = null;
 
     const titanTypes = ['Puro', 'Anomalo', 'Mutaforma'];
+    const dataColor = {
+        "Puro": "silver",
+        "Anomalo": "yellow",
+        "Mutaforma": "red"
+    }
+
+    const dataImg = {
+        "Puro": "gigante_puro.jpg",
+        "Anomalo": "anomalo.png",
+        "Mutaforma": "mutaforma.jpg"
+    }
 
     const spawns = [];
 
@@ -535,17 +546,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = target.dataset.id;
         if (!id) return;
         const titan = gameState.titansData.find(t => t.id == id);
+        const titanOnGrid = spawns.find(t => t.unitId == id);
         if (!titan) return;
 
         if (target.matches('.remove-titan-btn')) {
             gameState.titansData = gameState.titansData.filter(t => t.id != id);
+            spawns = spawns.filter(t => t.unitId != id);
         } else if (target.matches('.cooldown-change')) {
             titan.cooldown = Math.max(0, titan.cooldown + parseInt(target.dataset.amount, 10));
         } else if (target.matches('.titan-type-switcher')) {
             const currentIndex = titanTypes.indexOf(titan.type);
             titan.type = titanTypes[(currentIndex + 1) % titanTypes.length];
+            titanOnGrid.name = titan.type;
+            titanOnGrid.color = dataColor[titan.type];
+            titanOnGrid.img = dataImg[titan.type];
         }
         renderTitans();
+        renderGrid(elements.hexGrid, 8, 6, spawns);
         saveGameState();
     };
 
@@ -575,23 +592,12 @@ document.addEventListener('DOMContentLoaded', () => {
             roll6y = Math.floor(Math.random() * 6) + 1;
         }
 
-        const dataColor = {
-            "Puro": "silver",
-            "Anomalo": "yellow",
-            "Mutaforma": "red"
-        }
-
-        const dataImg = {
-            "Puro": "gigante_puro.jpg",
-            "Anomalo": "anomalo.png",
-            "Mutaforma": "mutaforma.jpg"
-        }
-
         const spawnObj = {
             unitId: newId,
             name: newTitan.type,
             color: dataColor[newTitan.type],
             img: dataImg[newTitan.type],
+            hp: newTitan.hp,
             row: roll6x,
             col: roll6y
         }
@@ -1044,33 +1050,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function getUnitAt(r, c) {
         const i = findSpawnIndex(r, c);
         return i >= 0 ? spawns[i].unitId : null;
-    }
-
-    /* Inserisci unitId in target (r,c) se vuoto, altrimenti swap con occupante */
-    function placeOrSwapUnit(target, unitId) {
-        const existing = getUnitAt(target.row, target.col);
-        if (!existing) {
-            // place
-            const i = spawns.findIndex(s => s.unitId === unitId);
-            if (i < 0) spawns.push({ row: target.row, col: target.col, unitId });
-            else spawns[i] = { row: target.row, col: target.col, ...spawns[i] }; // nel caso l’unit fosse già in campo
-        } else {
-            // swap tra unitId e existing
-            const srcIdx = spawns.findIndex(s => s.unitId === unitId);
-            if (srcIdx < 0) {
-                // unit dalla panchina → scambia con occupante: occupante torna in panchina
-                const tgtIdx = findSpawnIndex(target.row, target.col);
-                if (tgtIdx >= 0) spawns.splice(tgtIdx, 1);
-                spawns.push({ row: target.row, col: target.col, unitId });
-            } else {
-                // unit già in campo: scambia posizioni
-                const tgtIdx = findSpawnIndex(target.row, target.col);
-                const fromPos = { ...spawns[srcIdx] };
-                const toPos = { ...spawns[tgtIdx] };
-                spawns[srcIdx] = { row: toPos.row, col: toPos.col, ...fromPos };
-                spawns[tgtIdx] = { row: fromPos.row, col: fromPos.col, ...toPos };
-            }
-        }
     }
 
     /* Move o swap tra due celle del campo */
