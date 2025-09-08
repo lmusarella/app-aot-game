@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isDefeated: false, createdAt: Date.now()
         };
 
-        gameState.titansData.push(newTitan);
+        
 
 
         let roll6x = Math.floor(Math.random() * 6) + 1;
@@ -620,7 +620,12 @@ document.addEventListener('DOMContentLoaded', () => {
             roll6y = Math.floor(Math.random() * 6) + 1;
         }
 
-        const spawnObj = getRandomTitan(roll6x, roll6y, newId, newTitan.type) 
+        const spawnObj = getRandomTitan(roll6x, roll6y, newId, newTitan.type);
+
+        newTitan.name = spawnObj.name;
+        newTitan.hp = spawnObj.hp;
+        
+        gameState.titansData.push(newTitan);
         gameState.spawns.push(spawnObj);
 
         addLogEntry(`${spawnObj.name} è apparso. In ${roll6x} - ${roll6y} `, 'info');
