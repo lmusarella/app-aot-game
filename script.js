@@ -1081,15 +1081,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetUnitId = getUnitAt(to.row, to.col);
         if (!targetUnitId) {
             // move           
-            console.log('ti muovo', { row: to.row, col: to.col, name: from.name, img: from.img, color: from.color, unitId: from.unitId });
-            spawns[fromIdx] = { row: to.row, col: to.col, name: from.name, img: from.img, color: from.color, unitId: from.unitId };
+            const a = spawns[fromIdx];
+            a.row = to.row;
+            a.col = to.col;
         } else {
             // swap
             const toIdx = findSpawnIndex(to.row, to.col);
             const a = spawns[fromIdx];
             const b = spawns[toIdx];
-            spawns[fromIdx] = { row: to.row, col: to.col, ...a };
-            spawns[toIdx] = { row: from.row, col: from.col, ...b };
+            a.row = to.row;
+            a.col = to.col;
+            b.row = from.row;
+            b.col = from.col;
         }
     }
 
