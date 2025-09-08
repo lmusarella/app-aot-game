@@ -578,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const getRandomTitan = (row, col, unitId, type) => {
-        const titanList = db[type];
+        const titanList = db.units[type];
         const randomIndex = Math.floor(Math.random() * titanList.length) + 1;
         const titan = titanList[randomIndex];
         return  {
@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         newTitan.name = spawnObj.name;
         newTitan.hp = spawnObj.hp;
-        
+
         gameState.titansData.push(newTitan);
         gameState.spawns.push(spawnObj);
 
