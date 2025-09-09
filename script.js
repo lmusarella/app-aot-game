@@ -609,15 +609,28 @@ document.addEventListener('DOMContentLoaded', () => {
             isDefeated: false, createdAt: Date.now()
         };
 
+        let roll6x = 0;
+        let roll6y = 0;
+        // costruisco tutte le coordinate valide
+        const allCoords = [];
+        for (let x = 2; x <= 7; x++) {       // da 2 a 7 = 6 colonne
+            for (let y = 1; y <= 6; y++) {     // da 1 a 6 = 6 righe
+                if (!getUnitAt(x, y)) {
+                    allCoords.push({ x, y });
+                }
+            }
+        }
 
+        // se non ci sono celle libere -> esci
+        if (allCoords.length === 0) {           
+            addLogEntry(`Nessuna cella disponibile!`, 'death');
+            return;
+        } else {
+            // scelgo una cella casuale tra quelle libere
+            const chosen = allCoords[Math.floor(Math.random() * allCoords.length)];
+            roll6x = chosen.x;
+            roll6y = chosen.y;
 
-
-        let roll6x = Math.floor(Math.random() * 6) + 2; //prima row è il mare
-        let roll6y = Math.floor(Math.random() * 6) + 1;
-
-        while (getUnitAt(roll6x, roll6y)) {
-            roll6x = Math.floor(Math.random() * 6) + 2; //prima row è il mare
-            roll6y = Math.floor(Math.random() * 6) + 1;
         }
 
         const spawnObj = getRandomTitan(roll6x, roll6y, newId, newTitan.type);
