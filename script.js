@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.innerHTML = `
                 <button class="remove-titan-btn" data-id="${titan.id}">&times;</button>
                 <div class="name">${isDead ? 'Sconfitto' : titan.name}</div>
-                <button class="titan-type-switcher" data-id="${titan.id}" ${isDead ? 'disabled' : ''}>${titan.type}</button>
+                <button class="titan-type-switcher" data-id="${titan.id}" disabled>${titan.type}</button>
                 <div class="stat-row">
                     <div class="controls">
                         <button class="hp-change btn" data-id="${titan.id}" data-type="titan" data-amount="-1" ${isDead ? 'disabled' : ''}>-</button>
@@ -612,11 +612,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-        let roll6x = Math.floor(Math.random() * 6) + 2; //prima row è il mare
+        let roll6x = Math.floor(Math.random() * 7) + 2; //prima row è il mare
         let roll6y = Math.floor(Math.random() * 6) + 1;
 
         while (getUnitAt(roll6x, roll6y)) {
-            roll6x = Math.floor(Math.random() * 6) + 1;
+            roll6x = Math.floor(Math.random() * 7) + 2; //prima row è il mare
             roll6y = Math.floor(Math.random() * 6) + 1;
         }
 
