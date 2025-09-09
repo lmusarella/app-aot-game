@@ -550,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = e.target;
 
         if (target.closest('.hp-change')) {
-            handleHpChange(e);
+            //handleHpChange(e);
             return;
         }
 
