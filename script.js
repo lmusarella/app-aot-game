@@ -577,6 +577,23 @@ document.addEventListener('DOMContentLoaded', () => {
         saveGameState();
     };
 
+    const getRandomTitan = (row, col, unitId, type) => {
+        const titanList = db.units[type];
+        const randomIndex = Math.floor(Math.random() * titanList.length);
+        const titan = titanList[randomIndex];
+        return  {
+            unitId,
+            name: titan.name,
+            color: dataColor[type],
+            img: titan.img,
+            hp: titan.hp,
+            atk: titan.atk,
+            skill: titan.skill,
+            row,
+            col
+        };
+    }
+
     const addTitan = async () => {
 
         const newId = (gameState.titanIdCounter || 0) + 1;
@@ -592,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isDefeated: false, createdAt: Date.now()
         };
 
-        gameState.titansData.push(newTitan);
+        
 
 
         let roll6x = Math.floor(Math.random() * 6) + 1;
@@ -603,18 +620,15 @@ document.addEventListener('DOMContentLoaded', () => {
             roll6y = Math.floor(Math.random() * 6) + 1;
         }
 
-        const spawnObj = {
-            unitId: newId,
-            name: newTitan.type,
-            color: dataColor[newTitan.type],
-            img: dataImg[newTitan.type],
-            hp: newTitan.hp,
-            row: roll6x,
-            col: roll6y
-        }
+        const spawnObj = getRandomTitan(roll6x, roll6y, newId, newTitan.type);
+
+        newTitan.name = spawnObj.name;
+        newTitan.hp = spawnObj.hp;
+
+        gameState.titansData.push(newTitan);
         gameState.spawns.push(spawnObj);
 
-        addLogEntry(`${newTitan.name} è apparso. In ${roll6x} - ${roll6y} `, 'info');
+        addLogEntry(`${spawnObj.name} è apparso. In ${roll6x} - ${roll6y} `, 'info');
         renderTitans();
         renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
         saveGameState();
@@ -1101,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sub = unit.subtitle ?? "";
         const hp = unit.hp ?? "—";
         const atk = unit.atk ?? "—";
-        const abi = unit.abi ?? "Nessuna";
+        const abi = unit.skill ?? "Nessuna";
         // NB: contenuto generato da dati interni, non da input utente → ok innerHTML
         return `
     <div class="tt-title">${name}</div>

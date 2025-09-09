@@ -177,6 +177,23 @@
       { "id": 4, "name": "Levi Ackerman",  "hp": 20, "initialHp": 20, "onMission": false, "type": "commander", "imageUrl": "https://media.printler.com/media/photo/144700.jpg?rmode=crop&width=725&height=1024" },
 	  { "id": 5, "name": "Keith Shadis",   "hp": 17, "initialHp": 17, "onMission": false, "type": "commander", "imageUrl": "https://static.wikia.nocookie.net/shingekinokyojin/images/e/e6/Keith.png/revision/latest?cb=20130930182018&path-prefix=it" }	
     ],
+	"Mutaforma": [
+		{"name": "Gigante Femmina", "img": "assets/gigante_femmina.jpg", "hp":12, "atk": 4, "cd": 14, "skill": "Test"},
+		{"name": "Gigante Bestia", "img": "assets/gigante_bestia.jpg", "hp":12, "atk": 4, "cd": 14,"skill": "Test"},
+		{"name": "Gigante Carro", "img": "assets/gigante_carro.jpg", "hp":12, "atk": 4, "cd": 14,"skill": "Test"},
+		{"name": "Gigante Martello", "img": "assets/gigante_martello.png", "hp":12, "atk": 4, "cd": 14,"skill": "Test"},
+		{"name": "Gigante Mascella", "img": "assets/gigante_mascella.png", "hp":12, "atk": 4, "cd": 14,"skill": "Test"},
+		{"name": "Gigante Colossale", "img": "assets/gigante_colossale.png", "hp":12, "atk": 4, "cd": 14,"skill": "Test"},
+		{"name": "Gigante Corazzato", "img": "assets/gigante_corazzato.png", "hp":12, "atk": 4, "cd": 14,"skill": "Test"}
+	],
+	"Anomalo": [
+		{"name": "Gigante Anomalo", "img": "assets/anomalo.png", "hp":12, "atk": 4, "cd": 14, "skill": "Test"},
+		{"name": "Gigante Anomalo", "img": "assets/anomalo_1.png", "hp":12, "atk": 4, "cd": 14,"skill": "Test"},
+		{"name": "Gigante Anomalo", "img": "assets/anomalo_2.png", "hp":12, "atk": 4, "cd": 14,"skill": "Test"},
+		{"name": "Gigante Anomalo", "img": "assets/anomalo_3.png", "hp":12, "atk": 4, "cd": 14,"skill": "Test"},
+		{"name": "Gigante Anomalo", "img": "assets/anomalo_4.png", "hp":12, "atk": 4, "cd": 14,"skill": "Test"}
+	],
+	"Puro": [{"name": "Gigante Nano", "img": "assets/gigante_puro.jpg", "hp":12, "atk": 2, "cd": 12, "skill": "Nessuna"}],
     "titans": [],
     "titanIdCounterStart": 0
   }
