@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTitans();
         renderLog();
         updateDeckCount();
-        renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
+        renderGrid(elements.hexGrid, 9, 6, gameState.spawns);
     };
 
     // --- FIX: Aggiunto updateAllUIElements() per aggiornare la vista ---
@@ -573,7 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
             titanOnGrid.img = dataImg[titan.type];
         }
         renderTitans();
-        renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
+        renderGrid(elements.hexGrid, 9, 6, gameState.spawns);
         saveGameState();
     };
 
@@ -581,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const titanList = db.units[type];
         const randomIndex = Math.floor(Math.random() * titanList.length);
         const titan = titanList[randomIndex];
-        return  {
+        return {
             unitId,
             name: titan.name,
             color: dataColor[type],
@@ -609,10 +609,10 @@ document.addEventListener('DOMContentLoaded', () => {
             isDefeated: false, createdAt: Date.now()
         };
 
-        
 
 
-        let roll6x = Math.floor(Math.random() * 6) + 1;
+
+        let roll6x = Math.floor(Math.random() * 6) + 2; //prima row è il mare
         let roll6y = Math.floor(Math.random() * 6) + 1;
 
         while (getUnitAt(roll6x, roll6y)) {
@@ -630,7 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addLogEntry(`${spawnObj.name} è apparso. In ${roll6x} - ${roll6y} `, 'info');
         renderTitans();
-        renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
+        renderGrid(elements.hexGrid, 9, 6, gameState.spawns);
         saveGameState();
 
         let url = './assets/flash_effect_sound.mp3';
@@ -955,7 +955,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveGameState();
     };
 
-    function renderGrid(container, rows = 8, cols = 6, occupancy = []) {
+    function renderGrid(container, rows = 9, cols = 6, occupancy = []) {
         container.textContent = "";
 
         // mappa (row,col) -> unitId
@@ -980,7 +980,8 @@ document.addEventListener('DOMContentLoaded', () => {
         hex.className = "hexagon";
         hex.dataset.row = row;
         hex.dataset.col = col;
-
+        if (row === 1) hex.setAttribute("data-color", "blu");
+        if (row === 8 || row === 9) hex.setAttribute("data-color", "gray");
         const unit = unitId ? new Map(gameState.spawns.map(u => [u.unitId, u])).get(unitId) : null;
 
         if (!unit) {
@@ -1070,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (from.row === target.row && from.col === target.col) return;
             // sposta o scambia
             moveOrSwapCells(from, target);
-            renderGrid(elements.hexGrid, 8, 6, gameState.spawns);
+            renderGrid(elements.hexGrid, 9, 6, gameState.spawns);
         }
     }
 

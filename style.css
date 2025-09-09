@@ -806,6 +806,7 @@ Griglia
     --oro: #CF9439;
     --argento: #C0C0C0;
     --grigio: #545454;
+    --blu: #192299;
 }
 
 
@@ -985,6 +986,19 @@ Griglia
     background-color: var(--grigio);
     outline-offset: -2px;
     cursor: pointer;
+}
+
+.hexagon[data-color="blu"] {
+    outline-offset: -2px;
+    background-color: var(--blu);
+}
+
+.hexagon[data-color="gray"].drop-ok {
+    background-color: #4caf50;
+}
+
+.hexagon[data-color="blu"].drop-ok {
+    background-color: #4caf50;
 }
 
 #tooltip {
