@@ -612,11 +612,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-        let roll6x = Math.floor(Math.random() * 7) + 2; //prima row è il mare
+        let roll6x = Math.floor(Math.random() * 6) + 2; //prima row è il mare
         let roll6y = Math.floor(Math.random() * 6) + 1;
 
         while (getUnitAt(roll6x, roll6y)) {
-            roll6x = Math.floor(Math.random() * 7) + 2; //prima row è il mare
+            roll6x = Math.floor(Math.random() * 6) + 2; //prima row è il mare
             roll6y = Math.floor(Math.random() * 6) + 1;
         }
 
