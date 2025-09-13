@@ -2,19 +2,12 @@
 <html lang="it">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#111827">
-    <title>Tracker Gioco da Tavolo - AoT</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;700&display=swap"
-        rel="stylesheet">
+    <title>AOT Companion</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
-
-    <link href='https://fonts.googleapis.com/css?family=Raleway:300' rel='stylesheet' type='text/css'>
+    <link rel="icon" type="image/png" sizes="40x40" href="assets/img/logo.jpg">
 </head>
 <script>
     if ('serviceWorker' in navigator) {
@@ -25,199 +18,239 @@
         });
     }
 </script>
-
 <body>
 
-    <div class="app-container">
-        <main>
-            <header>
-                <div class="header-title">
-                    <h1>AOT Companion</h1>
-                </div>
-                <div class="header-controls">
-                    <div class="mission-counter">
-                        <span id="mission-count">Missione #1</span>
-                        <span id="mission-timer">20:00</span>
-                    </div>
-                    <button id="reset-game-btn" class="btn btn-reset">Reset</button>
-                </div>
-            </header>
+    <!-- ===== HEADER minimal ===== -->
+    <header>
+        <div class="topbar">
+            <!-- Logo / Icona -->
+            <div class="logo-box">
+                <img src="assets/img/logo.jpg" alt="Logo" />
+            </div>
 
-            <div class="main-grid">
-                <!-- MISSION BOX -->
-                <div class="grid-item mission-box">
-                    <h2 class="grid-item-title">Quadro Missione</h2>
-                    <div class="grid-item-content">
-                        <div class="mission-details-box">
-                            <p><strong>Obiettivo:</strong> <span id="mission-objective-text"></span></p>
-                            <p><strong>Ricompensa:</strong> <span id="mission-reward-text"></span></p>
-                            <p><strong>Evento:</strong> <span id="mission-event-text"></span></p>
-                        </div>
-                        <div class="mission-controls">
-                            <button id="decrease-mission" class="btn">-</button>
-                            <div class="mission-main-actions">
-                                <button id="restart-mission-btn" class="btn btn-restart">Riavvia Timer</button>
-                                <button id="complete-mission-btn" class="btn btn-complete">Missione Completata</button>
-                            </div>
-                            <button id="increase-mission" class="btn">+</button>
-                        </div>
-                        <button id="draw-event-btn" class="btn btn-event">Pesca Evento (<span
-                                id="event-deck-count">0</span>)</button>
-                        <h3 class="sub-title">Unità in Missione</h3>
-                        <div class="squad-management">
-                            <div class="unit-counts">
-                                <p>Reclute Vive: <span id="living-recruits">0/0</span></p>
-                                <p>Comandanti Vivi: <span id="living-commanders">0/0</span></p>
-                            </div>
-                            <div class="buttons">
-                                <button id="open-recruits-popup" class="btn">Gestisci Reclute</button>
-                                <button id="open-commanders-popup" class="btn">Gestisci Comandanti</button>
-                            </div>
-                        </div>
-                        <div id="mission-units-grid" class="mission-units-grid"></div>
+            <!-- Brand -->
+            <div class="brand">AOT Companion</div>
+
+            <!-- Centro: Missione + Timer -->
+            <div class="center-box">
+                <!-- Missione -->
+                <div class="mission-ctrl">
+                    <div class="mc-box">
+                        <span class="mc-label">Missione Corrente</span>
+                        <button id="m-dec" class="mc-btn" type="button" title="Missione precedente">−</button>
+                        <span id="m-num" class="mc-num">1</span>
+                        <button id="m-inc" class="mc-btn" type="button" title="Missione successiva">+</button>
                     </div>
                 </div>
 
-                <!-- TITAN BOX -->
-                <div class="grid-item titan-box">
-                    <h2 class="grid-item-title titans-header">Giganti in Campo</h2>
-
-                    <div class="grid-item-content">
-                        <button id="open-grid-popup" class="btn btn-open-grid">Visualizza Griglia Battaglia</button>
-                        <button id="add-titan-btn" class="btn btn-add-titan">Aggiungi Gigante</button>
-                        <div id="titan-grid" class="mission-units-grid"></div>
-                    </div>
+                <!-- Timer missione -->
+                <div class="timer" title="Timer missione">
+                    <span class="mc-label">Timer Missione</span>
+                    <button id="t-play" class="t-btn" aria-label="Play/Pausa">▶</button>
+                    <span id="t-time" class="t-time">00:00</span>
+                    <button id="t-reset" class="t-btn" aria-label="Azzera timer">⟲</button>
                 </div>
+            </div>
 
-                <!-- RIGHT COLUMN (DICE + LOG) -->
-                <div class="grid-item right-column">
-                    <div class="grid-item dice-box">
-                        <h2 class="grid-item-title">Lancio Dadi</h2>
-                        <div id="dice-roller-panel">
-                            <div class="dice-group">
-                                <label>D20</label>
-                                <div class="dice-button-group">
-                                    <button class="roll-dice-btn" data-sides="20" data-count="1">1</button>
-                                    <button class="roll-dice-btn" data-sides="20" data-count="2">2</button>
-                                    <button class="roll-dice-btn" data-sides="20" data-count="3">3</button>
-                                    <button class="roll-dice-btn" data-sides="20" data-count="4">4</button>
-                                    <button class="roll-dice-btn" data-sides="20" data-count="5">5</button>
-                                </div>
-                            </div>
-                            <div class="dice-group">
-                                <label>D4</label>
-                                <div class="dice-button-group">
-                                    <button class="roll-dice-btn" data-sides="4" data-count="1">1</button>
-                                    <button class="roll-dice-btn" data-sides="4" data-count="2">2</button>
-                                    <button class="roll-dice-btn" data-sides="4" data-count="3">3</button>
-                                    <button class="roll-dice-btn" data-sides="4" data-count="4">4</button>
-                                    <button class="roll-dice-btn" data-sides="4" data-count="5">5</button>
-                                </div>
-                            </div>
-                            <div id="dice-result-area">
-                                <p>Risultati...</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="grid-item log-box">
-                        <h2 class="grid-item-title">Cronologia Eventi</h2>
-                        <div id="log-entries"></div>
-                    </div>
+            <!-- Reset partita (a destra) -->
+            <button id="btn-reset-game" class="reset-hdr-btn" title="Reset Partita">
+                RESET PARTITA
+            </button>
+        </div>
+    </header>
+
+
+    <!-- ===== MENU LATERALE SINISTRO ===== -->
+    <nav class="leftbar" aria-label="Pannello laterale">
+        <!-- Missione corrente (card pulsante) -->
+        <section class="left-section">
+            <div class="left-head">
+                <h4>Obiettivo Missione</h4>
+            </div>
+            <div id="missione-corrente" class="left-content" style="padding-right:0;">
+                <div id="mission-card" class="mission-card" role="button" tabindex="0"
+                    aria-label="Apri dettagli missione corrente">
+                    <p style="margin:0 0 8px; opacity:.9;"><strong>#<span id="mc-num">3</span> — Scorta
+                            rifornimenti</strong></p>
+                    <ul style="margin:0 0 10px 18px; padding:0; opacity:.9">
+                        <li>Proteggi il convoglio per 5 turni</li>
+                        <li>Evita che più di 2 carri vengano distrutti</li>
+                    </ul>
+                    <p style="margin:0; font-size:12px; opacity:.8">Ricompensa: +2 Morale, +200 XP</p>
                 </div>
+            </div>
 
-                <!-- STATS GRID - BOTTOM ROW -->
-                <div class="stats-grid">
-                    <div class="grid-item stats-box">
-                        <h3 class="stats-title">Morale</h3>
-                        <div class="slider-value-container">
-                            <input type="range" id="morale" min="0" max="15" value="15">
-                            <span id="morale-value">15</span>
-                        </div>
-                        <p id="morale-description"></p>
-                    </div>
-                    <div class="grid-item stats-box">
-                        <h3 class="stats-title">Esperienza</h3>
-                        <div class="slider-value-container">
-                            <input type="range" id="xp" min="0" max="70" value="0">
-                            <span id="xp-value">Livello 1 (XP: 0)</span>
-                        </div>
-                        <p id="xp-bonuses"></p>
-                    </div>
-                    <div class="grid-item stats-box" id="bonus-box">
-                        <h3 class="stats-title">Bonus/Malus Attivi</h3>
-                        <p id="bonus-recap-text"></p>
-                    </div>
-                    <div class="grid-item stats-box" id="wall-hp-section">
-                        <h3 class="stats-title">Mura</h3>
-                        <!-- Wall HP sliders will be injected by JS -->
+        </section>
+
+        <!-- Stato Squadra: Morale / XP + Bonus/Malus -->
+        <section class="left-section">
+            <div class="left-head">
+                <h4>Bonus / Malus</h4>
+            </div>
+            <div class="left-content" style="padding-right:0;">
+
+                <div style="margin-top:10px;">
+                    <div style="font-size:12px; opacity:.85; margin-bottom:6px;"></div>
+                    <div id="bm-box" class="pillbox">
+                        <span class="pill bonus">+1 Ricognizione</span>
+                        <span class="pill malus">-1 Meteo</span>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </section>
 
-    <!-- POPUPS -->
-    <div id="recruits-popup" class="popup">
-        <div class="popup-content">
-            <div class="popup-header">
-                <h2>Reclute</h2><button class="close-button" id="close-recruits-popup">&times;</button>
+        <!-- Lancio Dadi (restyle) -->
+        <section class="left-section dice-wrap">
+            <div class="left-head">
+                <h4>Lancio Dadi</h4>
             </div>
-            <div class="unit-list-container">
-                <ul id="recruits-list"></ul>
+            <div id="dice-box" class="left-content">
+                <div class="dice-actions">
+                    <button id="roll-d20" class="die-btn" title="Tira d20">d20</button>
+                    <button id="roll-d4" class="die-btn" title="Tira d4">d4</button>
+                    <span id="dice-res" class="dice-res" aria-live="polite"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Log partita (restyle) -->
+        <section class="left-section log-wrap">
+            <div class="left-head">
+                <h4>Log partita</h4>
+            </div>
+            <div id="log-box" class="left-content"></div>
+        </section>
+    </nav>
+
+    <!-- ===== COLONNA PANCHINE (DESTRA) ===== -->
+    <aside>
+        <section class="bench-section">
+            <div class="bench-head">
+                <h4>Squadra in missione</h4>
+                <span id="count-allies" class="bench-count"></span>
+            </div>
+            <div id="bench-allies" class="bench" data-section="ally"></div>
+        </section>
+
+        <section class="bench-section" id="giants-section">
+            <div class="bench-head">
+                <h4>Giganti</h4>
+                <span id="count-enemies" class="bench-count"></span>
+            </div>
+            <div id="bench-enemies" class="bench" data-section="enemy"></div>
+        </section>
+
+        <section class="bench-section" id="walls-section">
+            <div class="bench-head">
+                <h4>Mura</h4>
+                <span id="count-walls" class="bench-count"></span>
+            </div>
+            <div id="bench-walls" class="bench" data-section="wall"></div>
+        </section>
+    </aside>
+
+    <!-- ===== Tooltip ===== -->
+    <div id="tooltip"></div>
+
+
+
+    <!-- ===== CAMPO ===== -->
+    <main>
+        <div class="grid-wrapper">
+            <div id="hex-grid"></div>
+        </div>
+    </main>
+
+    <div id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
+
+
+    <!-- === FAB DOCK === -->
+    <div class="fab-dock" aria-label="Azioni rapide">
+        <!-- SPAWN -->
+        <div id="fab-spawn" class="fab spawn" aria-expanded="false">
+            <button class="fab-main spawn" type="button" title="Spawna un gigante">SPAWN</button>
+            <div class="fab-options" aria-hidden="true">
+                <button class="fab-option" data-type="Puro" title="Gigante Puro" style="--angle:-65deg">Gigante
+                    Puro</button>
+                <button class="fab-option" data-type="Anomalo" title="Gigante Anomalo" style="--angle:-35deg">Gigante
+                    Anomalo</button>
+                <button class="fab-option" data-type="Mutaforma" title="Gigante Mutaforma" style="--angle:35deg">Gigante
+                    Mutaforma</button>
+                <button class="fab-option" data-type="Casuale" title="Gigante Casuale" style="--angle:65deg">Evento
+                    Spawn</button>
             </div>
         </div>
+        <!-- EVENTO -->
+        <div id="fab-event" class="fab event" aria-expanded="false">
+            <button class="fab-main event" type="button" title="Mazzo Carte">MAZZO</button>
+            <div class="fab-options" aria-hidden="true">
+                <button class="fab-option" data-ev="evento" title="Pesca Evento" style="--angle:-50deg">Pesca
+                    Evento  <span class="deck-badge" data-deck-badge="event"></span></button>
+                <button class="fab-option" data-ev="reshuffle" title="Rimescola gli scarti di tutti i mazzi"
+                    style="--angle:0deg">
+                    Rimescola Mazzi
+                </button>
+                <button class="fab-option" data-ev="consumabile" title="Pesca Consumabile" style="--angle:50deg">Pesca
+                    Consumabile  <span class="deck-badge" data-deck-badge="consumable"></span> </button>
+            </div>
+        </div>
+        <!-- ARRUOLA -->
+        <div id="fab-arruola" class="fab arruola" aria-expanded="false">
+            <button class="fab-main arruola" type="button" title="Arruola unità">SQUADRA</button>
+            <div class="fab-options" aria-hidden="true">
+                <button class="fab-option" data-role="recruit" title="Arruola Reclute" style="--angle:-40deg">Arruola
+                    Reclute</button>
+                <button class="fab-option" data-role="commander" title="Arruola Comandanti"
+                    style="--angle:40deg">Arruola Comandanti</button>
+            </div>
+        </div>
+
+
     </div>
 
-    <div id="grid-popup" class="popup">
-        <div id="tooltip"></div>
-        <div class="popup-content">
-            <div class="popup-header">
-                <h2>Griglia Combattimento</h2><button class="close-button" id="close-grid-popup">&times;</button>
-            </div>
-            <div class="grid-container">
-                <div class="wrapper">
-                    <div id="hex-grid"></div>
+    <!-- ===== FOOTER overlay ===== -->
+    <footer class="app-footer" aria-label="Footer">
+        <!-- Barre compatte nel footer -->
+        <div class="footer-bars" role="group" aria-label="Stato Squadra">
+            <!-- Morale -->
+            <div class="bar-row mini" id="morale-row">
+                <span class="br-label">Morale</span>
+                <button class="bbtn" data-target="morale" data-delta="-1" title="-1%">−</button>
+                <div class="bar morale">
+                    <div id="morale-fill" class="fill" style="width:65%"></div>
                 </div>
+                <button class="bbtn" data-target="morale" data-delta="1" title="+1%">+</button>
 
             </div>
-        </div>
-    </div>
 
-    <div id="commanders-popup" class="popup">
-        <div class="popup-content">
-            <div class="popup-header">
-                <h2>Comandanti</h2><button class="close-button" id="close-commanders-popup">&times;</button>
-            </div>
-            <div class="unit-list-container">
-                <ul id="commanders-list"></ul>
-            </div>
-        </div>
-    </div>
-    <div id="reset-confirm-modal" class="confirm-modal">
-        <div class="confirm-modal-content">
-            <p>Sei sicuro di voler resettare l'intera partita?</p>
-            <div class="confirm-modal-buttons"><button id="cancel-reset-btn" class="btn">Annulla</button><button
-                    id="confirm-reset-btn" class="btn btn-reset">Conferma</button></div>
-        </div>
-    </div>
-
-
-
-    <!-- EVENT CARD POPUP -->
-    <div id="event-card-popup" class="popup">
-        <div class="event-card">
-            <h2 id="event-card-title" class="event-card-title"></h2>
-            <div id="event-card-description" class="event-card-description"></div>
-            <p id="event-card-type" class="event-card-type"></p>
-            <div class="event-card-actions">
-                <button id="event-reshuffle-btn" class="btn">Rimescola</button>
-                <button id="event-discard-btn" class="btn">Scarta</button>
-                <button id="event-remove-btn" class="btn btn-reset">Rimuovi</button>
+            <!-- Esperienza -->
+            <div class="bar-row mini" id="xp-row">
+                <span class="br-label">
+                    Exp <span id="lvl-val" style="margin-left:6px; opacity:.75; font-size:11px;">Lv. 1</span>
+                </span>
+                <button class="bbtn" data-target="xp" data-xp="-1" title="-1 XP">−</button>
+                <div class="bar xp">
+                    <div id="xp-fill" class="fill" style="width:40%"></div>
+                </div>
+                <button class="bbtn" data-target="xp" data-xp="+1" title="+1 XP">+</button>
+                <!-- non serve più il br-val a destra -->
             </div>
         </div>
-    </div>
+    </footer>
+
+
+    <button id="toggle-left" class="collapse-handle left" aria-expanded="true" title="Comprimi/espandi menu sinistro">
+        <span class="arrow">⟨</span>
+
+    </button>
+
+    <button id="toggle-right" class="collapse-handle right" aria-expanded="true" title="Comprimi/espandi menu destro">
+
+        <span class="arrow">⟩</span>
+    </button>
 
     <script src="script.js"></script>
+    <!--<script type="module" src="src/app.js"></script>-->
 </body>
 
 </html>

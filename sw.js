@@ -5,21 +5,58 @@ const ASSETS = [
   './index.html',
   './style.css',
   './script.js',
-  './aot_db.json',
   './manifest.json',
-  './favicon.png',
-  './icona_app_512.jpg',
-  './icona_app_192.jpg',
-  './assets/risorsa_audio_avvio_app.mp3',
-  './corpo_di_ricerca.jpg',
-  './assets/gigante_puro.jpg',
-  './assets/anomalo.png',
-  './assets/gigante_carro.jpg',
-  './assets/ape_titan_sound.mp3', './assets/commander_march_sound.mp3', './assets/flash_effect_sound.mp3', './assets/mutaform_sound.mp3',
-  './assets/gigante_bestia.jpg', './assets/gigante_colossale.png', './assets/gigante_corazzato.png', './assets/gigante_femmina.jpg',
-   './assets/gigante_martello.png', './assets/gigante_mascella.png',
-   './assets/anomalo_1.png', './assets/anomalo_2.png', './assets/anomalo_3.png', './assets/anomalo_4.png'
+
+  // === img/cards ===
+  './assets/img/cards/fulmine.jpg',
+  './assets/img/cards/logo.jpg',
+
+  // === img/giganti ===
+  './assets/img/giganti/anomalo_1.png',
+  './assets/img/giganti/anomalo_2.png',
+  './assets/img/giganti/anomalo_3.png',
+  './assets/img/giganti/anomalo_4.png',
+  './assets/img/giganti/anomalo_6.png',
+  './assets/img/giganti/anomalo_7.png',
+  './assets/img/giganti/anomalo_8.png',
+  './assets/img/giganti/anomalo.png',
+  './assets/img/giganti/gigante_bestia.jpg',
+  './assets/img/giganti/gigante_carro.jpg',
+  './assets/img/giganti/gigante_colossale.png',
+  './assets/img/giganti/gigante_corazzato.png',
+  './assets/img/giganti/gigante_femmina.jpg',
+  './assets/img/giganti/gigante_martello.png',
+  './assets/img/giganti/gigante_mascella.png',
+  './assets/img/giganti/gigante_puro_1.png',
+  './assets/img/giganti/gigante_puro_2.png',
+  './assets/img/giganti/gigante_puro_3.png',
+  './assets/img/giganti/gigante_puro_4.png',
+  './assets/img/giganti/gigante_puro_5.png',
+  './assets/img/giganti/gigante_puro_6.png',
+  './assets/img/giganti/gigante_puro_7.png',
+  './assets/img/giganti/gigante_puro_8.png',
+  './assets/img/giganti/gigante_puro.jpg',
+
+  // === img root ===
+  './assets/img/erwin_popup_benvenuto.jpg',
+  './assets/img/icona_app_192.jpg',
+  './assets/img/icona_app_512.jpg',
+  './assets/img/logo.jpg',
+  './assets/img/wall_maria.png',
+  './assets/img/wall_rose.jpg',
+  './assets/img/wall_sina.jpg',
+  // === sounds/carte ===
+  './assets/sounds/carte/carta_consumabile.mp3',
+  './assets/sounds/carte/carta_evento.mp3',
+
+  // === sounds root ===
+  './assets/sounds/ape_titan_sound.mp3',
+  './assets/sounds/commander_march_sound.mp3',
+  './assets/sounds/flash_effect_sound.mp3',
+  './assets/sounds/mutaform_sound.mp3',
+  './assets/sounds/risorsa_audio_avvio_app.mp3'
 ];
+
 
 // Installazione: cache iniziale
 self.addEventListener('install', (event) => {
