@@ -668,14 +668,14 @@ async function spawnGiant(type = null) {
             gameSoundTrack.background = music;
         }
 
-           if (type === "Anomalo") {
+        if (type === "Anomalo") {
             const url_mutaform = './assets/sounds/ape_titan_sound.mp3';
             gameSoundTrack.background.pause();
             const music = await play(url_mutaform, { loop: true, volume: 1 });
             gameSoundTrack.background = music;
         }
-        
-        
+
+
         log(`Gigante ${tipo} appare in ${cell.row}-${cell.col}`, 'warning');
         const url = './assets/sounds/flash_effect_sound.mp3';
         await play(url, { loop: false, volume: 1 });
@@ -750,8 +750,12 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
 
         const avatar = document.createElement("div");
         avatar.className = "unit-avatar";
+
         const img = document.createElement("img");
-        img.src = u.img; img.alt = u.name;
+        img.src = u.img;
+        img.alt = "";                 // decorativa
+        img.draggable = false;
+        img.setAttribute('aria-hidden', 'true');
         avatar.appendChild(img);
 
         const info = document.createElement("div");
@@ -1025,7 +1029,12 @@ function createHexagon(row, col, unitIds = []) {
             const circle = document.createElement("div");
             circle.className = "hex-circle";
             const img = document.createElement("img");
-            img.src = unit.img; img.alt = unit.name;
+            img.src = unit.img;
+            //img.alt = unit.name;
+
+            img.alt = "";                 // decorativa
+            img.draggable = false;
+            img.setAttribute('aria-hidden', 'true');
             circle.appendChild(img);
 
             content.appendChild(circle);
@@ -1092,6 +1101,8 @@ function hasWallInCell(r, c) {
     const stack = getStack(r, c);
     return stack.some(id => (unitById.get(id)?.role === 'wall'));
 }
+const sameCell = (a, b) => a && b && a.row === b.row && a.col === b.col;
+
 /* =======================
    DROP LOGIC
    ======================= */
@@ -1102,6 +1113,13 @@ function handleDrop(payload, target) {
         placeFromBench(target, payload.unitId);
         renderGrid(grid, 12, 6, spawns);
     } else if (payload.type === "from-cell") {
+        // stesso esagono → non spostare né duplicare
+        if (sameCell(payload.from, target)) {
+            // opzionale: porta solo in cima allo stack per “focus”
+            bringToFront(target, payload.unitId);
+            renderGrid(grid, 12, 6, spawns);
+            return;
+        }
         const u = unitById.get(payload.unitId);
         if (u?.role === 'wall') return;
         moveOneUnitBetweenStacks(payload.from, target, payload.unitId);
@@ -1127,6 +1145,8 @@ function placeFromBench(target, unitId) {
 
 function moveOneUnitBetweenStacks(from, to, unitId) {
     if (hasWallInCell(to.row, to.col)) return;
+      // se per qualsiasi motivo source/target coincidono, non fare nulla
+    if (sameCell(from, to)) return;
     const src = getStack(from.row, from.col);
     const idx = src.indexOf(unitId);
     if (idx < 0) return;
@@ -1550,6 +1570,26 @@ function openDialog({ title, message, confirmText = 'OK', cancelText = 'Annulla'
     });
 }
 function confirmDialog(opts) { return openDialog({ ...opts, cancellable: true }); }
+
+(function injectTouchGuardsCSS() {
+    if (document.getElementById('touch-guards-css')) return;
+    const css = document.createElement('style');
+    css.id = 'touch-guards-css';
+    css.textContent = `
+    /* niente click/long-press/drag sulle immagini */
+    .hex-content img,
+    .unit-avatar img,
+    .cardmodal__media img{
+      pointer-events: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+  `;
+    document.head.appendChild(css);
+})();
+
 // --- una volta sola: stile per la chip ---
 (function injectCardChipCSS() {
     if (document.getElementById('card-chip-css')) return;
@@ -2964,6 +3004,15 @@ function getLastSaveInfo() {
         return sameDay ? `oggi alle ${hhmm}` : d.toLocaleString('it-IT');
     } catch { return null; }
 }
+
+[grid, alliesEl, enemiesEl, wallsEl].forEach(el => {
+    el?.addEventListener('contextmenu', e => e.preventDefault(), { passive: false });
+});
+document.addEventListener('selectstart', (e) => {
+    if (!e.target.closest('input, textarea, [contenteditable], .allow-select')) {
+        e.preventDefault();
+    }
+}, { passive: false });
 
 
 rebuildUnitIndex();
