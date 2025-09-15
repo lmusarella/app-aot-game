@@ -2630,36 +2630,41 @@
  .unit-card.is-selected {
    border-color: var(--ring, var(--oro));
    box-shadow:
-     0 0 0 2px var(--ring, var(--oro)),
-     0 0 16px color-mix(in srgb, var(--ring, #cfa439) 35%, transparent 65%);
+     0 0 0 4px var(--ring, var(--oro)),
+     0 0 16px color-mix(in srgb, var(--ring, #fff) 35%, transparent 65%);
  }
 
  @supports not (color-mix(in srgb, black, white)) {
    .unit-card.is-selected {
-     box-shadow: 0 0 16px rgba(207, 164, 57, .35);
+     box-shadow: 0 0 16px var(--ring, #fff);
    }
  }
 
  /* Effetto focus-ring sull’avatar (quando seleziono) */
  .unit-card.is-selected .unit-avatar,
  .unit-avatar.focus-ring {
-   animation: focusPulse 1.2s ease-out 0s 2;
+   animation: focusPulse 1.2s ease-out 0s infinite;
    border-color: var(--ring, #fff) !important;
  }
 
- /* Optional: piccolo “pulse” quando selezioni da panchina */
- @keyframes benchPulse {
-
-   0%,
-   100% {
-     box-shadow: 0 0 0 4px var(--ring, var(--oro)), 0 0 12px rgba(0, 0, 0, .0);
-   }
-
-   50% {
-     box-shadow: 0 0 0 7px var(--ring, var(--oro)), 0 0 22px rgba(0, 0, 0, .25);
-   }
- }
-
  .unit-card.pulse .unit-avatar {
-   animation: benchPulse 1s ease-in-out 1;
+   animation: focusPulse 1s ease-in-out infinite;
+   border-color: var(--ring, #fff);
+   box-shadow: 0 0 0 3px var(--ring, rgba(255, 255, 255, .55)), 0 0 0 6px rgba(0, 0, 0, .4);
  }
+
+ /* bordo di default = tinta dell’unità (con fallback) */
+.unit-card { border: 1px solid var(--ring, #2a2a2a); }
+
+.unit-avatar { border: 2px solid var(--ring, #444); }
+
+/* stato selezionato: glow nel colore dell’unità */
+.unit-card.is-selected{
+  border-color: var(--ring, #cfa439);
+  box-shadow:
+    0 0 0 2px var(--ring, #cfa439),
+    0 0 16px color-mix(in srgb, var(--ring, #cfa439) 35%, transparent 65%);
+}
+@supports not (color-mix(in srgb, black, white)) {
+  .unit-card.is-selected { box-shadow: 0 0 16px rgba(207,164,57,.35); }
+}

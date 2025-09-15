@@ -802,7 +802,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
         // Colore per bordo card/avatar (riuso palette esistente)
         const colVar = COLOR_VAR[u.color] || '#444';
         card.style.setProperty('--ring', colVar);
-
+        card.style.setProperty('--sel', colVar);
         // Stato selezione sulle card della panchina
         if (u.id === selectedUnitId) {
             card.classList.add('is-selected');
