@@ -753,9 +753,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
 
         const img = document.createElement("img");
         img.src = u.img;
-        img.alt = "";                 // decorativa
-        img.draggable = false;
-        img.setAttribute('aria-hidden', 'true');
+        img.alt = u.name;                 // decorativa
         avatar.appendChild(img);
 
         const info = document.createElement("div");
@@ -1030,11 +1028,7 @@ function createHexagon(row, col, unitIds = []) {
             circle.className = "hex-circle";
             const img = document.createElement("img");
             img.src = unit.img;
-            //img.alt = unit.name;
-
-            img.alt = "";                 // decorativa
-            img.draggable = false;
-            img.setAttribute('aria-hidden', 'true');
+            img.alt = unit.name;
             circle.appendChild(img);
 
             content.appendChild(circle);
@@ -1119,23 +1113,12 @@ function handleDrop(payload, target) {
     if (payload.type === "from-bench") {
         // stesso esagono → non spostare né duplicare    
         if (sameId(payload.unitId, target)) {
-            console.log('stessa cella')
-            // opzionale: porta solo in cima allo stack per “focus”
-            bringToFront(target, payload.unitId);
             renderGrid(grid, ROWS, COLS, spawns);
             return;
         }
         placeFromBench(target, payload.unitId);
         renderGrid(grid, ROWS, COLS, spawns);
     } else if (payload.type === "from-cell") {
-        // stesso esagono → non spostare né duplicare
-        if (sameCell(payload.from, target)) {
-           
-            // opzionale: porta solo in cima allo stack per “focus”
-            bringToFront(target, payload.unitId);
-            renderGrid(grid, ROWS, COLS, spawns);
-            return;
-        }
         const u = unitById.get(payload.unitId);
         if (u?.role === 'wall') return;
         moveOneUnitBetweenStacks(payload.from, target, payload.unitId);
@@ -1162,7 +1145,7 @@ function placeFromBench(target, unitId) {
 function moveOneUnitBetweenStacks(from, to, unitId) {
     if (hasWallInCell(to.row, to.col)) return;
     // se per qualsiasi motivo source/target coincidono, non fare nulla
-    if (sameCell(from, to)) return;
+    //if (sameCell(from, to)) return;
     const src = getStack(from.row, from.col);
     const idx = src.indexOf(unitId);
     if (idx < 0) return;
@@ -1586,25 +1569,6 @@ function openDialog({ title, message, confirmText = 'OK', cancelText = 'Annulla'
     });
 }
 function confirmDialog(opts) { return openDialog({ ...opts, cancellable: true }); }
-
-(function injectTouchGuardsCSS() {
-    if (document.getElementById('touch-guards-css')) return;
-    const css = document.createElement('style');
-    css.id = 'touch-guards-css';
-    css.textContent = `
-    /* niente click/long-press/drag sulle immagini */
-    .hex-content img,
-    .unit-avatar img,
-    .cardmodal__media img{
-      pointer-events: none;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-user-drag: none;
-    }
-  `;
-    document.head.appendChild(css);
-})();
 
 // --- una volta sola: stile per la chip ---
 (function injectCardChipCSS() {
@@ -3020,16 +2984,6 @@ function getLastSaveInfo() {
         return sameDay ? `oggi alle ${hhmm}` : d.toLocaleString('it-IT');
     } catch { return null; }
 }
-
-[grid, alliesEl, enemiesEl, wallsEl].forEach(el => {
-    el?.addEventListener('contextmenu', e => e.preventDefault(), { passive: false });
-});
-document.addEventListener('selectstart', (e) => {
-    if (!e.target.closest('input, textarea, [contenteditable], .allow-select')) {
-        e.preventDefault();
-    }
-}, { passive: false });
-
 
 rebuildUnitIndex();
 // BOOT: prova restore; se non c'è, fai seed mura

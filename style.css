@@ -2178,33 +2178,3 @@ body{ padding-bottom: 59px; }  /* regola se serve in base all’altezza del foot
     gap:6px;
   }
 }
-/* Blocca selezione/long-press quasi ovunque */
-html, body, #app {
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;      /* iOS: niente menu immagine/testo */
-  -webkit-tap-highlight-color: transparent; /* iOS: niente highlight */
-}
-
-/* Consenti selezione dove serve digitare o copiare */
-input, textarea, [contenteditable="true"], .allow-select, .picker__search {
-  -webkit-user-select: text;
-  user-select: text;
-  -webkit-touch-callout: default;
-}
-
-/* Immagini: non cliccabili/trascinabili nativamente (DnD custom ok) */
-.hex-content img,
-.unit-card img {
-  pointer-events: none;
-  -webkit-user-drag: none;
-  user-drag: none;
-}
-
-/* Migliora tap su touch senza rompere drag&drop dei wrapper */
-.hex-content,
-.unit-card {
-  touch-action: manipulation;
-  pointer-events: auto;
-}
