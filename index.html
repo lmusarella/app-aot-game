@@ -8,6 +8,12 @@
     <title>AOT Companion</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" sizes="40x40" href="assets/img/logo.jpg">
+
+    <!-- iPad/iPhone: icona Home -->
+    <link rel="apple-touch-icon" href="assets/img/logo.jpg">
+    <!-- Avvio a schermo intero + status bar -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <script>
     if ('serviceWorker' in navigator) {
@@ -18,6 +24,7 @@
         });
     }
 </script>
+
 <body>
 
     <!-- ===== HEADER minimal ===== -->
@@ -140,13 +147,26 @@
             <div id="bench-enemies" class="bench" data-section="enemy"></div>
         </section>
 
-        <section class="bench-section" id="walls-section">
-            <div class="bench-head">
-                <h4>Mura</h4>
-                <span id="count-walls" class="bench-count"></span>
+        <section class="bench-section accordion-section" id="walls-section" data-open="1">
+            <div class="accordion-header">
+                <button id="walls-toggle" class="accordion-trigger" type="button" aria-expanded="true"
+                    aria-controls="walls-panel">
+                    <h4 class="accordion-title">Mura</h4>
+                    <span id="count-walls" class="bench-count"></span>
+                    <span class="accordion-caret" aria-hidden="true">▾</span>
+                </button>
             </div>
-            <div id="bench-walls" class="bench" data-section="wall"></div>
+
+            <!-- wrapper = necessario per animazione fluida -->
+            <div class="accordion-panel" id="walls-panel" role="region" aria-labelledby="walls-toggle"
+                aria-hidden="false">
+                <div class="accordion-inner">
+                    <div id="bench-walls" class="bench" data-section="wall"></div>
+                </div>
+            </div>
         </section>
+
+
     </aside>
 
     <!-- ===== Tooltip ===== -->
@@ -185,13 +205,13 @@
             <button class="fab-main event" type="button" title="Mazzo Carte">MAZZO</button>
             <div class="fab-options" aria-hidden="true">
                 <button class="fab-option" data-ev="evento" title="Pesca Evento" style="--angle:-50deg">Pesca
-                    Evento  <span class="deck-badge" data-deck-badge="event"></span></button>
+                    Evento <span class="deck-badge" data-deck-badge="event"></span></button>
                 <button class="fab-option" data-ev="reshuffle" title="Rimescola gli scarti di tutti i mazzi"
                     style="--angle:0deg">
                     Rimescola Mazzi
                 </button>
                 <button class="fab-option" data-ev="consumabile" title="Pesca Consumabile" style="--angle:50deg">Pesca
-                    Consumabile  <span class="deck-badge" data-deck-badge="consumable"></span> </button>
+                    Consumabile <span class="deck-badge" data-deck-badge="consumable"></span> </button>
             </div>
         </div>
         <!-- ARRUOLA -->

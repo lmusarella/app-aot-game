@@ -586,7 +586,7 @@
    height: 34px;
    border-radius: 50%;
    overflow: hidden;
-   border: 2px solid #444;
+   border: 3px solid var(--sel, #fff);
    flex: 0 0 auto;
  }
 
@@ -818,7 +818,7 @@
    height: auto;
    border-radius: 50%;
    overflow: hidden;
-   border: 2px solid #000;
+   border: 3px solid var(--sel, #fff);
    background: #0b0b0b;
    display: flex;
    align-items: center;
@@ -2177,4 +2177,75 @@ body{ padding-bottom: 59px; }  /* regola se serve in base all’altezza del foot
   .modal .modal-actions .card-actions{
     gap:6px;
   }
+}
+
+/* ========== Accordion (Mura) ========== */
+.accordion-section {
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  background: #0f111a;
+}
+
+/* Header */
+.accordion-header { padding: 0; }
+
+/* ===== Accordion (Mura) — versione migliorata ===== */
+.accordion-trigger{
+  all: unset;
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  cursor: pointer;
+  padding: 12px 18px;                 /* più respiro */
+  user-select: none; -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.accordion-title{ margin:0; font-size: 15px; font-weight: 600; }
+
+.accordion-trigger .bench-count{
+  margin-left: auto;
+  opacity: .85;
+  font-size: 12px;
+}
+
+/* caret più grande, non attaccato al bordo */
+.accordion-caret{
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;          /* target ampio */
+  border-radius: 8px;
+  margin-left: 10px;
+  margin-right: 20px;                  /* stacca dal bordo destro */
+  font-size: 16px;                    /* caret più leggibile */
+  opacity: .85;
+  background: rgba(255,255,255,.05);  /* leggero chip */
+  transition: transform .18s ease, background .18s ease;
+}
+.accordion-trigger:hover .accordion-caret{
+  background: rgba(255,255,255,.08);
+}
+.accordion-trigger[aria-expanded="true"] .accordion-caret{
+  transform: rotate(180deg);
+}
+
+/* pannello animato */
+.accordion-panel{
+  display: grid;
+  overflow: auto;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows .22s ease;
+  border-top: 1px solid #2a2a2a;
+}
+
+/* 👇 scroll interno che rimane */
+.accordion-inner{
+  overflow: auto;                     /* mantieni lo scroll interno */
+  min-height: 0;
+  max-height: var(--walls-max-h, 44vh); /* regola qui l’altezza del riquadro scrollabile */
+}
+
+/* stato chiuso */
+.accordion-section[data-open="0"] .accordion-panel{
+  grid-template-rows: 0fr;
+  border-top-color: transparent;
 }

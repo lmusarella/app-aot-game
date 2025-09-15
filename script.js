@@ -8,6 +8,15 @@ async function play(url, opts = {}) {
 const gameSoundTrack = {
     background: null
 }
+// DB unico globale in memoria
+let DB = {
+  allies: null,
+  giants: null,
+  event: null,
+  consumable: null,
+  missions: null,
+  settings: null
+};
 
 const MAX_PER_HEX = 12;
 const DISPLAY_LIMIT = 8;
@@ -2529,53 +2538,6 @@ function updateFabDeckCounters() {
     if (consBadge) consBadge.textContent = consDraw;
 }
 
-
-/* Carica mazzi da JSON: { events: [...], consumables: [...] } */
-async function loadDecksFromJSON(url) {
-    const res = await fetch(url);
-    const data = await res.json();
-    eventPool.length = 0;
-    (data.events || []).forEach(c => eventPool.push({
-        id: c.id, name: c.name, img: c.img, desc: c.desc
-    }));
-    consumablePool.length = 0;
-    (data.consumables || []).forEach(c => consumablePool.push({
-        id: c.id, name: c.name, img: c.img, desc: c.desc
-    }));
-    resetDeckFromPool('event');
-    resetDeckFromPool('consumable');
-}
-
-async function loadAlliesFromJSON(url) {
-    const res = await fetch(url);
-    const data = await res.json(); // { recruits: [...], commanders: [...] }
-    alliesPool.length = 0;
-    [...(data.recruits || []), ...(data.commanders || [])].forEach(u => {
-        alliesPool.push({ ...u, currHp: u.currHp ?? u.hp, template: true });
-    });
-    alliesRoster.length = 0; // opzionale: riparti da panchina vuota
-    rebuildUnitIndex();
-    renderBenches();
-}
-
-async function loadGiantsFromJSON(url) {
-    const res = await fetch(url);
-    const data = await res.json(); // es: { giants: [{id,name,img,type,hp,atk,abi,color?}, ...] }
-    giantsPool.length = 0;
-    (data.giants || []).forEach(u => {
-        giantsPool.push({
-            role: 'enemy',
-            id: u.id, name: u.name, img: u.img,
-            type: u.type, color: u.color || (u.type === 'Puro' ? 'silver' : u.type === 'Mutaforma' ? 'red' : 'yellow'),
-            hp: u.hp, atk: u.atk, abi: u.abi,
-            currHp: u.currHp ?? u.hp, template: true
-        });
-    });
-    giantsCatalog.length = 0;    // panchina vuota all’avvio
-    rebuildUnitIndex();
-    renderBenches();
-}
-
 /* =========================================================
    SOSTITUISCI il wiring dei bottoni Arruola con il picker
    (al posto di arruola(role) diretto)
@@ -3008,7 +2970,89 @@ function getLastSaveInfo() {
     } catch { return null; }
 }
 
+// utility per caricare un json
+async function loadJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Errore fetch ${url}: ${res.status}`);
+  return res.json();
+}
+
+async function bootDataApplication() {
+  // Config delle sorgenti JSON
+  const BOOT_CONFIG = {
+    allies: 'assets/data/unita.json',
+    giants: 'assets/data/giganti.json',
+    events: 'assets/data/carte_evento.json',
+    consumable: 'assets/data/carte_consumabili.json',
+    missions: 'assets/data/missioni.json',
+    settings: 'assets/data/settings_app.json'
+  };
+
+  try {
+    // carico in parallelo
+    const [allies, giants, events, consumable, missions, settings] = await Promise.all([
+      loadJSON(BOOT_CONFIG.allies),
+      loadJSON(BOOT_CONFIG.giants),
+      loadJSON(BOOT_CONFIG.events),
+      loadJSON(BOOT_CONFIG.consumable),
+      loadJSON(BOOT_CONFIG.missions),
+      loadJSON(BOOT_CONFIG.settings)
+    ]);
+
+    // merge in un DB unico
+    DB = { allies, giants, events, consumable, missions, settings };
+
+    console.log('[boot] DB inizializzato:', DB);
+    return DB;
+  } catch (e) {
+    console.warn('Caricamento JSON fallito, uso i fallback locali:', e);
+    // fallback: qui puoi mettere i tuoi array hardcoded
+    DB = {
+      allies: alliesPool ?? [],
+      giants: giantsPool ?? [],
+      event: eventPool ?? [],
+      consumable: consumablePool ?? [],
+      missions: MISSIONS ?? [],
+      settings: {}
+    };
+    return DB;
+  }
+}
+
+(function setupWallsAccordion(){
+  const sec   = document.getElementById('walls-section');
+  const btn   = document.getElementById('walls-toggle');
+  const panel = document.getElementById('walls-panel');
+  if (!sec || !btn || !panel) return;
+
+  const KEY = 'ui:walls-accordion-open';
+
+  // stato iniziale (persistito)
+  const saved = localStorage.getItem(KEY);
+  const startOpen = saved == null ? true : saved === '1';
+  apply(startOpen);
+
+  btn.addEventListener('click', () => {
+    const next = btn.getAttribute('aria-expanded') !== 'true';
+    apply(next);
+  });
+
+  function apply(isOpen){
+    sec.dataset.open = isOpen ? '1' : '0';
+    btn.setAttribute('aria-expanded', String(isOpen));
+    panel.setAttribute('aria-hidden', String(!isOpen));
+    localStorage.setItem(KEY, isOpen ? '1' : '0');
+  }
+})();
+
+
 rebuildUnitIndex();
+
+async function init() {
+    await bootDataApplication();
+}
+
+init();
 // BOOT: prova restore; se non c'è, fai seed mura
 const booted = loadFromLocal();
 
@@ -3016,7 +3060,7 @@ if (!booted) {
 
     seedWallRows();              // crea segmenti mura 10/11/12
     renderBenches();
-    renderGrid(grid, 12, 6, spawns);
+    renderGrid(grid, ROWS, COLS, spawns);
 
     resetDeckFromPool('event');
     resetDeckFromPool('consumable');
