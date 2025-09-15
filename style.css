@@ -2666,5 +2666,5 @@
     0 0 16px color-mix(in srgb, var(--ring, #cfa439) 35%, transparent 65%);
 }
 @supports not (color-mix(in srgb, black, white)) {
-  .unit-card.is-selected { box-shadow: 0 0 16px rgba(207,164,57,.35); }
+  .unit-card.is-selected { box-shadow: 0 0 16px var(--ring, #cfa439); }
 }
