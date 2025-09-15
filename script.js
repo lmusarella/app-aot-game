@@ -1102,6 +1102,13 @@ function hasWallInCell(r, c) {
     return stack.some(id => (unitById.get(id)?.role === 'wall'));
 }
 const sameCell = (a, b) => a && b && a.row === b.row && a.col === b.col;
+/** Ritorna true se l'unità è già nello stack della cella target ({row,col}). */
+const sameId = (unitId, target) => {
+  if (!target || target.row == null || target.col == null) return false;
+  const wanted = String(unitId);
+  const stack = getStack(+target.row, +target.col); // array di id in quella cella
+  return stack.some(id => String(id) === wanted);
+};
 
 /* =======================
    DROP LOGIC
@@ -1110,20 +1117,29 @@ function handleDrop(payload, target) {
     // blocca drop se nella cella target c'è una Muraglia
     if (hasWallInCell(target.row, target.col)) return;
     if (payload.type === "from-bench") {
+        // stesso esagono → non spostare né duplicare    
+        if (sameId(payload.unitId, target)) {
+            console.log('stessa cella')
+            // opzionale: porta solo in cima allo stack per “focus”
+            bringToFront(target, payload.unitId);
+            renderGrid(grid, ROWS, COLS, spawns);
+            return;
+        }
         placeFromBench(target, payload.unitId);
-        renderGrid(grid, 12, 6, spawns);
+        renderGrid(grid, ROWS, COLS, spawns);
     } else if (payload.type === "from-cell") {
         // stesso esagono → non spostare né duplicare
         if (sameCell(payload.from, target)) {
+           
             // opzionale: porta solo in cima allo stack per “focus”
             bringToFront(target, payload.unitId);
-            renderGrid(grid, 12, 6, spawns);
+            renderGrid(grid, ROWS, COLS, spawns);
             return;
         }
         const u = unitById.get(payload.unitId);
         if (u?.role === 'wall') return;
         moveOneUnitBetweenStacks(payload.from, target, payload.unitId);
-        renderGrid(grid, 12, 6, spawns);
+        renderGrid(grid, ROWS, COLS, spawns);
         renderBenches();
     }
 }
@@ -1145,7 +1161,7 @@ function placeFromBench(target, unitId) {
 
 function moveOneUnitBetweenStacks(from, to, unitId) {
     if (hasWallInCell(to.row, to.col)) return;
-      // se per qualsiasi motivo source/target coincidono, non fare nulla
+    // se per qualsiasi motivo source/target coincidono, non fare nulla
     if (sameCell(from, to)) return;
     const src = getStack(from.row, from.col);
     const idx = src.indexOf(unitId);
