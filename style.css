@@ -103,11 +103,31 @@
    /* migliora layout quando appare la scrollbar */
    overscroll-behavior: contain;
  }
-.log-entry { font-family: monospace; }
-.log-info    { color: #5bc0de; }  /* azzurrino */
-.log-success { color: #5cb85c; }  /* verde */
-.log-warning { color: #f0ad4e; }  /* giallo/arancio */
-.log-error   { color: #d9534f; }  /*
+
+ .log-entry {
+   font-family: monospace;
+ }
+
+ .log-info {
+   color: #5bc0de;
+ }
+
+ /* azzurrino */
+ .log-success {
+   color: #5cb85c;
+ }
+
+ /* verde */
+ .log-warning {
+   color: #f0ad4e;
+ }
+
+ /* giallo/arancio */
+ .log-error {
+   color: #d9534f;
+ }
+
+ /*
 
  /* ===== Header minimal (solo Missione + Timer + Reset) ===== */
  header {
@@ -564,7 +584,7 @@
    opacity: 1;
  }
 
-  .unit-card.is-destroyed {
+ .unit-card.is-destroyed {
    opacity: 0.6;
  }
 
@@ -687,34 +707,72 @@
    /* sta sotto ai pannelli laterali */
  }
 
-.deck-badge{
-  display:inline-flex; align-items:center; justify-content:center;
-  min-width:20px; height:20px; margin-left:8px; padding:0 6px;
-  border-radius:999px; font-size:12px; font-weight:600;
-  background:var(--blu, #2b7bff); color:#fff;
-}
+ .deck-badge {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   min-width: 20px;
+   height: 20px;
+   margin-left: 8px;
+   padding: 0 6px;
+   border-radius: 999px;
+   font-size: 12px;
+   font-weight: 600;
+   background: var(--blu, #2b7bff);
+   color: #fff;
+ }
 
-.welcome{
-  display:grid; grid-template-columns: 1fr 280px; gap:18px; align-items:center;
-}
-.welcome__txt{ min-width:0; }
-.welcome__media{
-  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
-}
-.welcome__media img{
-  max-width:100%; height:auto; border-radius:10px; display:block;
-  box-shadow: 0 6px 18px rgba(0,0,0,.35);
-}
-.welcome__ph{
-  width:100%; aspect-ratio: 4/3; border-radius:10px;
-  background: repeating-linear-gradient(45deg,#2a2a2a,#2a2a2a 10px,#1b1b1b 10px,#1b1b1b 20px);
-  display:flex; align-items:center; justify-content:center; color:#bbb; font-size:14px;
-  box-shadow: 0 6px 18px rgba(0,0,0,.35);
-}
-@media (max-width: 760px){
-  .welcome{ grid-template-columns: 1fr; }
-  .welcome__media{ order: -1; } /* l’immagine va sopra al testo su mobile, NON nascosta */
-}
+ .welcome {
+   display: grid;
+   grid-template-columns: 1fr 280px;
+   gap: 18px;
+   align-items: center;
+ }
+
+ .welcome__txt {
+   min-width: 0;
+ }
+
+ .welcome__media {
+   width: 100%;
+   height: 100%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+ }
+
+ .welcome__media img {
+   max-width: 100%;
+   height: auto;
+   border-radius: 10px;
+   display: block;
+   box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+ }
+
+ .welcome__ph {
+   width: 100%;
+   aspect-ratio: 4/3;
+   border-radius: 10px;
+   background: repeating-linear-gradient(45deg, #2a2a2a, #2a2a2a 10px, #1b1b1b 10px, #1b1b1b 20px);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   color: #bbb;
+   font-size: 14px;
+   box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+ }
+
+ @media (max-width: 760px) {
+   .welcome {
+     grid-template-columns: 1fr;
+   }
+
+   .welcome__media {
+     order: -1;
+   }
+
+   /* l’immagine va sopra al testo su mobile, NON nascosta */
+ }
 
  /* (opzionale) per sicurezza, mantieni #hex-grid dimensionamento naturale */
  #hex-grid {
@@ -1140,7 +1198,7 @@
 
  .log-wrap {
    background: #0f0f12;
-  
+
    border-radius: 12px;
    padding: 10px;
    display: flex;
@@ -1248,7 +1306,7 @@
  }
 
  .modal-header {
-  font-size: large;
+   font-size: large;
    padding: 14px 16px 8px;
    font-weight: 800;
    letter-spacing: .3px;
@@ -1264,7 +1322,7 @@
    gap: 8px;
    justify-content: space-between;
    border-top: 1px solid #1b1f2d;
-  padding-top: 16px;
+   padding-top: 16px;
  }
 
  .modal-btn {
@@ -1647,605 +1705,961 @@
  }
 
  /* --- dentro il tuo blocco css.textContent --- */
-.pick-hprow{
-  display:flex; align-items:center; gap:8px;
-  margin-top:6px;
-}
-.pick-hprow .hpbar{
-  flex:1 1 auto; height:6px;
-  background:#0c0c0c; border:1px solid #222; border-radius:999px; overflow:hidden;
-}
-.pick-hprow .hpbar-fill{ height:100%; width:100%; transition:width .25s ease, background-color .25s ease, filter .25s ease; }
-.pick-hprow .hp-inline-right{ font-size:12px; opacity:.9; white-space:nowrap; }
-/* badge teschio + stato morto */
-.pick-card.is-dead{
-  position:relative;
-  filter: grayscale(0.65);
-  opacity: .65;
-  cursor: default;
-  animation: none;
-  box-shadow: none;
-}
-.pick-card.is-dead:hover{ box-shadow: none; }
-.pick-dead-badge{
-  position:absolute; top:6px; left:6px;
-  font-size:18px; line-height:1;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,.5));
-}
+ .pick-hprow {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   margin-top: 6px;
+ }
 
-/* bottone resuscita */
-.btn-resurrect {
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid #2a2a2a;
-  background: #162218;
-  color: #d9ffd9;
-  cursor: pointer;
+ .pick-hprow .hpbar {
+   flex: 1 1 auto;
+   height: 6px;
+   background: #0c0c0c;
+   border: 1px solid #222;
+   border-radius: 999px;
+   overflow: hidden;
+ }
 
-  position: relative;
-  z-index: 0;
-  overflow: hidden;
-  box-shadow: 0 0 8px rgba(180, 255, 200, .4);
-  animation: divinePulse 2.4s ease-in-out infinite;
-}
+ .pick-hprow .hpbar-fill {
+   height: 100%;
+   width: 100%;
+   transition: width .25s ease, background-color .25s ease, filter .25s ease;
+ }
 
-.btn-resurrect::after {
-  content: "";
-  position: absolute;
-  inset: -8px; /* leggermente più grande del bottone */
-  border-radius: inherit;
-  background: radial-gradient(circle at center,
-              rgba(212, 255, 170, 0.4) 0%,
-              rgba(170, 255, 212, 0.1) 40%,
-              transparent 80%);
-  z-index: -1;
-  opacity: 0;
-  animation: divineGlow 2.4s ease-in-out infinite;
-}
+ .pick-hprow .hp-inline-right {
+   font-size: 12px;
+   opacity: .9;
+   white-space: nowrap;
+ }
 
-@keyframes divinePulse {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(180, 255, 200, .4),
-                0 0 16px rgba(180, 255, 200, .2);
-    transform: scale(1);
-  }
-  50% {
-    box-shadow: 0 0 14px rgba(230, 255, 200, .6),
-                0 0 28px rgba(230, 255, 200, .4);
-    transform: scale(1.04);
-  }
-}
+ /* badge teschio + stato morto */
+ .pick-card.is-dead {
+   position: relative;
+   filter: grayscale(0.65);
+   opacity: .65;
+   cursor: default;
+   animation: none;
+   box-shadow: none;
+ }
 
-@keyframes divineGlow {
-  0%, 100% { opacity: 0; transform: scale(1); }
-  50%      { opacity: 1; transform: scale(1.15); }
-}
+ .pick-card.is-dead:hover {
+   box-shadow: none;
+ }
 
-.picker__live{ font-size:12px; opacity:.9; }
-.btn-mini.is-disabled,
-.btn-mini:disabled{
-  opacity:.5;
-  cursor:not-allowed;
-  filter:grayscale(0.5);
-}
-/* --- Missione più alta / più "importante" --- */
-#missione-corrente .mission-card{          /* aumenta l’altezza percepita */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;     /* centra il contenuto verticalmente */
-  padding: 14px 12px;
-}
+ .pick-dead-badge {
+   position: absolute;
+   top: 6px;
+   left: 6px;
+   font-size: 18px;
+   line-height: 1;
+   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .5));
+ }
 
-/* Titolo sezione più compatto */
-.left-section .left-head h4{
-  margin: 0 0 8px;
-}
+ /* bottone resuscita */
+ .btn-resurrect {
+   padding: 6px 10px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #162218;
+   color: #d9ffd9;
+   cursor: pointer;
 
-/* --- Barre compatte: label, - , barra, + , valore --- */
-.bar-row{
-  display: grid;
-  grid-template-columns: auto 28px 1fr 28px auto;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0;
-}
+   position: relative;
+   z-index: 0;
+   overflow: hidden;
+   box-shadow: 0 0 8px rgba(180, 255, 200, .4);
+   animation: divinePulse 2.4s ease-in-out infinite;
+ }
 
-/* Label e valore allineati e non ingombranti */
-.br-label{ 
-  font-size: 13px; 
-  opacity:.9; 
-  white-space: nowrap;
-}
-.br-val{
-  font-size: 12px; 
-  opacity:.85; 
-  white-space: nowrap;
-  min-width: 42px; 
-  text-align: right;
-}
+ .btn-resurrect::after {
+   content: "";
+   position: absolute;
+   inset: -8px;
+   /* leggermente più grande del bottone */
+   border-radius: inherit;
+   background: radial-gradient(circle at center,
+       rgba(212, 255, 170, 0.4) 0%,
+       rgba(170, 255, 212, 0.1) 40%,
+       transparent 80%);
+   z-index: -1;
+   opacity: 0;
+   animation: divineGlow 2.4s ease-in-out infinite;
+ }
 
-/* Bottoni +/- compatti */
-.bbtn{
-  width: 28px; height: 24px;
-  line-height: 24px;
-  border-radius: 8px;
-  border: 1px solid #2a2a2a;
-  background: linear-gradient(180deg,#10121a,#0c0e15);
-  color:#eaeaea; cursor:pointer;
-  display: grid; place-items: center;
-  padding: 0;
-}
+ @keyframes divinePulse {
 
-/* Barra più sottile per risparmiare spazio (puoi regolare var(--bar-h) se già esiste) */
-.bar{
-  height: 14px;                 /* più slim */
-  border-radius: 10px;
-  background: #171923;
-  border: 1px solid #242632;
-  overflow: hidden;
-}
-.bar .fill{
-  height: 100%;
-  background: linear-gradient(180deg,#2b6cb0,#2a4365);
-}
+   0%,
+   100% {
+     box-shadow: 0 0 8px rgba(180, 255, 200, .4),
+       0 0 16px rgba(180, 255, 200, .2);
+     transform: scale(1);
+   }
 
-/* Variante per XP (se vuoi un tono diverso) */
-.bar.xp .fill{
-  background: linear-gradient(180deg,#9b59b6,#6b46c1);
-}
+   50% {
+     box-shadow: 0 0 14px rgba(230, 255, 200, .6),
+       0 0 28px rgba(230, 255, 200, .4);
+     transform: scale(1.04);
+   }
+ }
 
-/* Micro-responsività: se lo spazio è strettissimo, stringi i gap */
-@media (max-width: 900px){
-  .bar-row{ gap:6px; grid-template-columns: auto 24px 1fr 24px auto; }
-  .bbtn{ width:24px; height:22px; line-height:22px; border-radius:6px; }
-}
-.bar.morale .fill {
-  background: linear-gradient(180deg,#8b7307,#ca770a); /* verde */
-}
-/* Footer overlay compatto */
-.app-footer{
-  position: fixed; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(180deg,#0b0d14,#090b12);
-  border-top: 1px solid #1f2230;
-  padding: 10px 12px 18px; /* extra padding in basso per la label */
-  display: flex; justify-content: center; align-items: center;
-  z-index: 9999;
-}
+ @keyframes divineGlow {
 
-/* Contenitore delle barre nel footer */
-.footer-bars{
-  display:flex;
-  flex-direction:row;
-  align-items:center;      /* centra verticalmente i contenuti delle righe */
-  justify-content:center;  /* centrate orizzontalmente nel footer */
-  gap:22px;
-  flex-wrap:nowrap;        /* tienile su una riga */
-}
+   0%,
+   100% {
+     opacity: 0;
+     transform: scale(1);
+   }
 
+   50% {
+     opacity: 1;
+     transform: scale(1.15);
+   }
+ }
 
-/* Variante "mini" per le righe barra: più strette e compatte */
-.bar-row.mini{
-  display:grid;
-  grid-template-columns:auto 24px min(36vw, 250px) 24px auto;
-  align-items:center;      /* centra verticalmente label, bottoni e barra */
-  gap:8px;
-}
+ .picker__live {
+   font-size: 12px;
+   opacity: .9;
+ }
 
-/* Barre più sottili nel footer */
-.footer-bars .bar{
-  height: 10px;                          /* <- più stretta */
-  border-radius: 10px;
-  background: #171923; border: 1px solid #242632; overflow: hidden;
-}
-.footer-bars .bar .fill{ height:100%; }
+ .btn-mini.is-disabled,
+ .btn-mini:disabled {
+   opacity: .5;
+   cursor: not-allowed;
+   filter: grayscale(0.5);
+ }
 
-/* Bottoni compatti nel footer */
-.footer-bars .bbtn{
-  width: 24px; height: 20px; line-height: 20px;
-  border-radius: 6px; padding: 0;
-}
+ /* --- Missione più alta / più "importante" --- */
+ #missione-corrente .mission-card {
+   /* aumenta l’altezza percepita */
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   /* centra il contenuto verticalmente */
+   padding: 14px 12px;
+ }
 
-/* Testi compatti nel footer */
-.footer-bars .br-label{ font-size: 12px; opacity: .9; white-space: nowrap; }
-.footer-bars .br-val{ font-size: 11px; opacity: .85; min-width: 40px; text-align: right; white-space: nowrap; }
+ /* Titolo sezione più compatto */
+ .left-section .left-head h4 {
+   margin: 0 0 8px;
+ }
 
-/* Colori riempimenti (se vuoi differenziarli) */
-.bar.morale .fill{ background: linear-gradient(180deg, #fb923c, #ef4444); }
-.bar.xp .fill{ background: linear-gradient(180deg,#9b59b6,#6b46c1); }
+ /* --- Barre compatte: label, - , barra, + , valore --- */
+ .bar-row {
+   display: grid;
+   grid-template-columns: auto 28px 1fr 28px auto;
+   align-items: center;
+   gap: 8px;
+   margin: 8px 0;
+ }
 
-/* Etichetta footer in basso a destra, piccola */
-.app-footer .foot-text{
-  position: absolute; right: 10px; bottom: 6px;
-  font-size: 8px; opacity: .65; letter-spacing: .2px;
-}
+ /* Label e valore allineati e non ingombranti */
+ .br-label {
+   font-size: 13px;
+   opacity: .9;
+   white-space: nowrap;
+ }
 
-/* Evita che il footer copra i contenuti: aggiungi spazio in fondo alla pagina */
-body{ padding-bottom: 59px; }  /* regola se serve in base all’altezza del footer */
+ .br-val {
+   font-size: 12px;
+   opacity: .85;
+   white-space: nowrap;
+   min-width: 42px;
+   text-align: right;
+ }
 
-/* Piccolo tuning per schermi stretti */
-@media (max-width: 900px){
-  .bar-row.mini{
-    grid-template-columns: auto 22px min(70vw, 250px) 22px auto;
-    gap: 6px;
-  }
-  .footer-bars .bbtn{ width:22px; height:20px; }
-}
-#xp-row .br-label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-#xp-row #lvl-val {
-  font-size: 11px;
-  opacity: .75;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 4px 8px;
-  background: linear-gradient(180deg,#111,#0b0b12);
- 
-}
-
-/* Logo box */
-.logo-box {
-  width: 40px; height: 40px;
-  display: flex; justify-content: center; align-items: center;
- 
-}
-.logo-box img {
-  max-width: 100%; max-height: 100%;
-  object-fit: contain;
+ /* Bottoni +/- compatti */
+ .bbtn {
+   width: 28px;
+   height: 24px;
+   line-height: 24px;
    border-radius: 8px;
-}
+   border: 1px solid #2a2a2a;
+   background: linear-gradient(180deg, #10121a, #0c0e15);
+   color: #eaeaea;
+   cursor: pointer;
+   display: grid;
+   place-items: center;
+   padding: 0;
+ }
 
-/* Brand */
-.brand {
-  font-weight: 600;
-  font-size: 16px;
-  margin-right: 12px;
-}
+ /* Barra più sottile per risparmiare spazio (puoi regolare var(--bar-h) se già esiste) */
+ .bar {
+   height: 14px;
+   /* più slim */
+   border-radius: 10px;
+   background: #171923;
+   border: 1px solid #242632;
+   overflow: hidden;
+ }
 
-/* Centro missione+timer */
-.center-box {
-  flex: 1;                         /* occupa spazio centrale */
-  display: flex;
-  flex-direction: row;
-  justify-content: center;         /* centrato orizzontalmente */
-  align-items: center;
-  gap: 28px;                       /* spazio tra missione e timer */
-}
+ .bar .fill {
+   height: 100%;
+   background: linear-gradient(180deg, #2b6cb0, #2a4365);
+ }
 
-/* Missione e Timer con testo allineato */
-.mc-box, .timer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+ /* Variante per XP (se vuoi un tono diverso) */
+ .bar.xp .fill {
+   background: linear-gradient(180deg, #9b59b6, #6b46c1);
+ }
 
-.mc-label {
-  font-size: 13px;
-  opacity: .85;
-}
+ /* Micro-responsività: se lo spazio è strettissimo, stringi i gap */
+ @media (max-width: 900px) {
+   .bar-row {
+     gap: 6px;
+     grid-template-columns: auto 24px 1fr 24px auto;
+   }
 
-.mc-btn, .t-btn {
-  background: #1c1e29;
-  border: 1px solid #2a2d3a;
-  color: #e6e6e6;
-  padding: 2px 6px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.mc-btn:hover, .t-btn:hover { filter: brightness(1.2); }
+   .bbtn {
+     width: 24px;
+     height: 22px;
+     line-height: 22px;
+     border-radius: 6px;
+   }
+ }
 
-/* ===== Tooltip popup ===== */
-/* ===== Tooltip popup ===== */
-#tooltip{
-  position: fixed; z-index: 999999;
-  pointer-events: none;
-}
-#tooltip .tt-card{
-  width: 260px;
-  background: linear-gradient(180deg, #10121a, #0d0f16);
-  border: 1px solid gray;
-  border-radius: 14px;
-  box-shadow: 0 12px 40px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
-  overflow: hidden;
-  text-align: center;
-  animation: ttPop .12s ease-out;
-  padding: 14px 12px 16px;
-}
-@keyframes ttPop{ from{ transform: scale(.96); opacity: 0 } to{ transform: scale(1); opacity: 1 } }
+ .bar.morale .fill {
+   background: linear-gradient(180deg, #8b7307, #ca770a);
+   /* verde */
+ }
 
-/* titolo + badge ruolo */
-.tt-title{
-  font-weight: 700; font-size: 15px; margin-bottom: 4px;
-}
-.tt-badge{
-  display:inline-block;
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid #31374a;
-  background: #141827;
-  opacity:.9;
-  margin-bottom: 10px;
-}
+ /* Footer overlay compatto */
+ .app-footer {
+   position: fixed;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   background: linear-gradient(180deg, #0b0d14, #090b12);
+   border-top: 1px solid #1f2230;
+   padding: 10px 12px 18px;
+   /* extra padding in basso per la label */
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   z-index: 9999;
+ }
 
-/* barra HP */
-.tt-hp{
-  margin: 0 auto 10px; padding: 0 10px; text-align: left;
-}
-.tt-hp-top{
-  display:flex; align-items:center; justify-content:space-between;
-  font-size:12px; opacity:.9; margin-bottom:4px;
-}
-.tt-hpbar{
-  width:100%; height: 10px; border-radius: 6px; overflow:hidden;
-  background: #1a1d29; border: 1px solid #24293a;
-}
-.tt-hpfill{
-  height:100%;
-  background: linear-gradient(180deg, #22c55e, #15803d);
-  transition: width .18s ease;
-}
+ /* Contenitore delle barre nel footer */
+ .footer-bars {
+   display: flex;
+   flex-direction: row;
+   align-items: center;
+   /* centra verticalmente i contenuti delle righe */
+   justify-content: center;
+   /* centrate orizzontalmente nel footer */
+   gap: 22px;
+   flex-wrap: nowrap;
+   /* tienile su una riga */
+ }
 
-/* stats grid */
-.tt-stats{
-  display:grid; grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
-  padding-top: 10px;
-  border-top: 1px solid #1c2030;
-}
-.tt-stat{ display:flex; flex-direction:column; gap:4px; text-align: center; }
-.tt-label{ font-size: 11px; opacity:.7; letter-spacing:.3px; }
-.tt-value{ font-size: 13px; font-weight: 600; }
 
-/* accenti per ruolo */
-.tt-card[data-role="recruit"]{ box-shadow: inset 0 2px 0 #2563eb; }
-.tt-card[data-role="commander"]{ box-shadow: inset 0 2px 0 #f59e0b; }
-.tt-card[data-role="enemy"]{ box-shadow: inset 0 2px 0 #ef4444; }
-.tt-card[data-role="wall"]{ box-shadow: inset 0 2px 0 #9ca3af; }
+ /* Variante "mini" per le righe barra: più strette e compatte */
+ .bar-row.mini {
+   display: grid;
+   grid-template-columns: auto 24px min(36vw, 250px) 24px auto;
+   align-items: center;
+   /* centra verticalmente label, bottoni e barra */
+   gap: 8px;
+ }
 
-/* consenti interazioni nel tooltip (serve per il bottone "Mostra tutto") */
-#tooltip{ position:fixed; z-index:999999; pointer-events:auto; }
+ /* Barre più sottili nel footer */
+ .footer-bars .bar {
+   height: 10px;
+   /* <- più stretta */
+   border-radius: 10px;
+   background: #171923;
+   border: 1px solid #242632;
+   overflow: hidden;
+ }
 
-/* blocco abilità con anteprima + espansione */
-.tt-ability {
-  padding: 10px 12px 12px;
-  border-top: 1px solid #1c2030;
-}
+ .footer-bars .bar .fill {
+   height: 100%;
+ }
 
-.tt-ability .tt-label {
-  display:block;
-  font-size:11px; opacity:.7; letter-spacing:.3px; margin-bottom:6px;
-}
+ /* Bottoni compatti nel footer */
+ .footer-bars .bbtn {
+   width: 24px;
+   height: 20px;
+   line-height: 20px;
+   border-radius: 6px;
+   padding: 0;
+ }
 
-/* contenuto testuale abilità */
-.tt-ability-text{
-  font-size:13px; line-height:1.35;
-  white-space:pre-wrap;             /* preserva \n */
-  overflow-wrap:anywhere;           /* spezza parole lunghissime */
-  max-height: 4.8em;                /* ~3.5-4 righe */
-  overflow:hidden;
-  position:relative;
-}
+ /* Testi compatti nel footer */
+ .footer-bars .br-label {
+   font-size: 12px;
+   opacity: .9;
+   white-space: nowrap;
+ }
 
-/* sfumatura in fondo quando è collassato */
-.tt-ability[data-collapsed="true"] .tt-ability-text::after{
-  content:"";
-  position:absolute; left:0; right:0; bottom:0; height:1.6em;
-  background: linear-gradient(180deg, rgba(16,18,26,0), rgba(16,18,26,1));
-}
+ .footer-bars .br-val {
+   font-size: 11px;
+   opacity: .85;
+   min-width: 40px;
+   text-align: right;
+   white-space: nowrap;
+ }
 
-/* stato espanso: rimuove i limiti */
-.tt-ability[data-collapsed="false"] .tt-ability-text{
-  max-height:none;
-}
-.tt-ability[data-collapsed="false"] .tt-ability-text::after{ display:none; }
+ /* Colori riempimenti (se vuoi differenziarli) */
+ .bar.morale .fill {
+   background: linear-gradient(180deg, #fb923c, #ef4444);
+ }
 
-/* Avatar circolare già centrato (se non l'hai: aggiungilo) */
-.tt-avatar{
-  width: 120px; height: 120px;
-  border-radius: 50%;
-  overflow: hidden;
-  margin: 0 auto 10px;
-  border: 3px solid gray;
-  box-shadow: 0 0 12px rgba(0,0,0,.4);
-}
-.tt-avatar img{ width:100%; height:100%; object-fit:cover; }
+ .bar.xp .fill {
+   background: linear-gradient(180deg, #9b59b6, #6b46c1);
+ }
 
-/* Abilità SEMPRE visibile, a capo su testi lunghi */
-.tt-ability{
-  padding: 10px 12px 12px;
-  border-top: 1px solid #1c2030;
-}
-.tt-ability .tt-label{ display:block; font-size:11px; opacity:.7; letter-spacing:.3px; margin-bottom:6px; }
-.tt-ability-text{
-  font-size:13px; line-height:1.35;
-  white-space: pre-wrap;      /* rispetta \n */
-  overflow-wrap: anywhere;    /* spezza parole lunghissime */
-}
-/* Riga stats più ariosa */
-.tt-row{
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;    /* larghezza aderente al contenuto */
-  align-items: center;
-  justify-content: center;           /* centra la riga nella card */
-  column-gap: 12px;                  /* spazio base tra TUTTE le celle */
-  row-gap: 0;
-  padding: 4px 2px;                  /* respiro verticale minimo */
-  text-align: center;
-}
+ /* Etichetta footer in basso a destra, piccola */
+ .app-footer .foot-text {
+   position: absolute;
+   right: 10px;
+   bottom: 6px;
+   font-size: 8px;
+   opacity: .65;
+   letter-spacing: .2px;
+ }
 
-/* Etichette e valori leggibili */
-.tt-row .tt-label{
-  font-size: 11px;
-  opacity: .75;
-  margin-right: 2px;                 /* microscopico spazio prima del valore */
-}
-.tt-row .tt-value{
-  font-size: 13px;
-  font-weight: 600;
-  min-width: 28px;                   /* evita che valori piccoli si schiaccino troppo */
-  line-height: 1.2;
-}
+ /* Evita che il footer copra i contenuti: aggiungi spazio in fondo alla pagina */
+ body {
+   padding-bottom: 59px;
+ }
 
-/* Separatore tra coppie (ATK|TEC|AGI) o (ATK|CD)
+ /* regola se serve in base all’altezza del footer */
+
+ /* Piccolo tuning per schermi stretti */
+ @media (max-width: 900px) {
+   .bar-row.mini {
+     grid-template-columns: auto 22px min(70vw, 250px) 22px auto;
+     gap: 6px;
+   }
+
+   .footer-bars .bbtn {
+     width: 22px;
+     height: 20px;
+   }
+ }
+
+ #xp-row .br-label {
+   display: flex;
+   align-items: center;
+   gap: 4px;
+ }
+
+ #xp-row #lvl-val {
+   font-size: 11px;
+   opacity: .75;
+ }
+
+ .topbar {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 12px;
+   padding: 4px 8px;
+   background: linear-gradient(180deg, #111, #0b0b12);
+
+ }
+
+ /* Logo box */
+ .logo-box {
+   width: 40px;
+   height: 40px;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+
+ }
+
+ .logo-box img {
+   max-width: 100%;
+   max-height: 100%;
+   object-fit: contain;
+   border-radius: 8px;
+ }
+
+ /* Brand */
+ .brand {
+   font-weight: 600;
+   font-size: 16px;
+   margin-right: 12px;
+ }
+
+ /* Centro missione+timer */
+ .center-box {
+   flex: 1;
+   /* occupa spazio centrale */
+   display: flex;
+   flex-direction: row;
+   justify-content: center;
+   /* centrato orizzontalmente */
+   align-items: center;
+   gap: 28px;
+   /* spazio tra missione e timer */
+ }
+
+ /* Missione e Timer con testo allineato */
+ .mc-box,
+ .timer {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+ }
+
+ .mc-label {
+   font-size: 13px;
+   opacity: .85;
+ }
+
+ .mc-btn,
+ .t-btn {
+   background: #1c1e29;
+   border: 1px solid #2a2d3a;
+   color: #e6e6e6;
+   padding: 2px 6px;
+   border-radius: 6px;
+   cursor: pointer;
+ }
+
+ .mc-btn:hover,
+ .t-btn:hover {
+   filter: brightness(1.2);
+ }
+
+ /* ===== Tooltip popup ===== */
+ /* ===== Tooltip popup ===== */
+ #tooltip {
+   position: fixed;
+   z-index: 999999;
+   pointer-events: none;
+ }
+
+ #tooltip .tt-card {
+   width: 260px;
+   background: linear-gradient(180deg, #10121a, #0d0f16);
+   border: 1px solid gray;
+   border-radius: 14px;
+   box-shadow: 0 12px 40px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .04);
+   overflow: hidden;
+   text-align: center;
+   animation: ttPop .12s ease-out;
+   padding: 14px 12px 16px;
+ }
+
+ @keyframes ttPop {
+   from {
+     transform: scale(.96);
+     opacity: 0
+   }
+
+   to {
+     transform: scale(1);
+     opacity: 1
+   }
+ }
+
+ /* titolo + badge ruolo */
+ .tt-title {
+   font-weight: 700;
+   font-size: 15px;
+   margin-bottom: 4px;
+ }
+
+ .tt-badge {
+   display: inline-block;
+   font-size: 11px;
+   padding: 3px 10px;
+   border-radius: 999px;
+   border: 1px solid #31374a;
+   background: #141827;
+   opacity: .9;
+   margin-bottom: 10px;
+ }
+
+ /* barra HP */
+ .tt-hp {
+   margin: 0 auto 10px;
+   padding: 0 10px;
+   text-align: left;
+ }
+
+ .tt-hp-top {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   font-size: 12px;
+   opacity: .9;
+   margin-bottom: 4px;
+ }
+
+ .tt-hpbar {
+   width: 100%;
+   height: 10px;
+   border-radius: 6px;
+   overflow: hidden;
+   background: #1a1d29;
+   border: 1px solid #24293a;
+ }
+
+ .tt-hpfill {
+   height: 100%;
+   background: linear-gradient(180deg, #22c55e, #15803d);
+   transition: width .18s ease;
+ }
+
+ /* stats grid */
+ .tt-stats {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: 10px 14px;
+   padding-top: 10px;
+   border-top: 1px solid #1c2030;
+ }
+
+ .tt-stat {
+   display: flex;
+   flex-direction: column;
+   gap: 4px;
+   text-align: center;
+ }
+
+ .tt-label {
+   font-size: 11px;
+   opacity: .7;
+   letter-spacing: .3px;
+ }
+
+ .tt-value {
+   font-size: 13px;
+   font-weight: 600;
+ }
+
+ /* accenti per ruolo */
+ .tt-card[data-role="recruit"] {
+   box-shadow: inset 0 2px 0 #2563eb;
+ }
+
+ .tt-card[data-role="commander"] {
+   box-shadow: inset 0 2px 0 #f59e0b;
+ }
+
+ .tt-card[data-role="enemy"] {
+   box-shadow: inset 0 2px 0 #ef4444;
+ }
+
+ .tt-card[data-role="wall"] {
+   box-shadow: inset 0 2px 0 #9ca3af;
+ }
+
+ /* consenti interazioni nel tooltip (serve per il bottone "Mostra tutto") */
+ #tooltip {
+   position: fixed;
+   z-index: 999999;
+   pointer-events: auto;
+ }
+
+ /* blocco abilità con anteprima + espansione */
+ .tt-ability {
+   padding: 10px 12px 12px;
+   border-top: 1px solid #1c2030;
+ }
+
+ .tt-ability .tt-label {
+   display: block;
+   font-size: 11px;
+   opacity: .7;
+   letter-spacing: .3px;
+   margin-bottom: 6px;
+ }
+
+ /* contenuto testuale abilità */
+ .tt-ability-text {
+   font-size: 13px;
+   line-height: 1.35;
+   white-space: pre-wrap;
+   /* preserva \n */
+   overflow-wrap: anywhere;
+   /* spezza parole lunghissime */
+   max-height: 4.8em;
+   /* ~3.5-4 righe */
+   overflow: hidden;
+   position: relative;
+ }
+
+ /* sfumatura in fondo quando è collassato */
+ .tt-ability[data-collapsed="true"] .tt-ability-text::after {
+   content: "";
+   position: absolute;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   height: 1.6em;
+   background: linear-gradient(180deg, rgba(16, 18, 26, 0), rgba(16, 18, 26, 1));
+ }
+
+ /* stato espanso: rimuove i limiti */
+ .tt-ability[data-collapsed="false"] .tt-ability-text {
+   max-height: none;
+ }
+
+ .tt-ability[data-collapsed="false"] .tt-ability-text::after {
+   display: none;
+ }
+
+ /* Avatar circolare già centrato (se non l'hai: aggiungilo) */
+ .tt-avatar {
+   width: 120px;
+   height: 120px;
+   border-radius: 50%;
+   overflow: hidden;
+   margin: 0 auto 10px;
+   border: 3px solid gray;
+   box-shadow: 0 0 12px rgba(0, 0, 0, .4);
+ }
+
+ .tt-avatar img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+ }
+
+ /* Abilità SEMPRE visibile, a capo su testi lunghi */
+ .tt-ability {
+   padding: 10px 12px 12px;
+   border-top: 1px solid #1c2030;
+ }
+
+ .tt-ability .tt-label {
+   display: block;
+   font-size: 11px;
+   opacity: .7;
+   letter-spacing: .3px;
+   margin-bottom: 6px;
+ }
+
+ .tt-ability-text {
+   font-size: 13px;
+   line-height: 1.35;
+   white-space: pre-wrap;
+   /* rispetta \n */
+   overflow-wrap: anywhere;
+   /* spezza parole lunghissime */
+ }
+
+ /* Riga stats più ariosa */
+ .tt-row {
+   display: grid;
+   grid-auto-flow: column;
+   grid-auto-columns: max-content;
+   /* larghezza aderente al contenuto */
+   align-items: center;
+   justify-content: center;
+   /* centra la riga nella card */
+   column-gap: 12px;
+   /* spazio base tra TUTTE le celle */
+   row-gap: 0;
+   padding: 4px 2px;
+   /* respiro verticale minimo */
+   text-align: center;
+ }
+
+ /* Etichette e valori leggibili */
+ .tt-row .tt-label {
+   font-size: 11px;
+   opacity: .75;
+   margin-right: 2px;
+   /* microscopico spazio prima del valore */
+ }
+
+ .tt-row .tt-value {
+   font-size: 13px;
+   font-weight: 600;
+   min-width: 28px;
+   /* evita che valori piccoli si schiaccino troppo */
+   line-height: 1.2;
+ }
+
+ /* Separatore tra coppie (ATK|TEC|AGI) o (ATK|CD)
    I label sono in posizione 1,3,5,...: aggiungiamo un bordo a quelli dopo il primo */
-.tt-row .tt-label:nth-child(n+3){
-  border-left: 1px solid #1c2030;
-  padding-left: 12px;                /* spazio dopo il separatore */
-  margin-left: 4px;
-}
+ .tt-row .tt-label:nth-child(n+3) {
+   border-left: 1px solid #1c2030;
+   padding-left: 12px;
+   /* spazio dopo il separatore */
+   margin-left: 4px;
+ }
 
-/* Compatta un filo sugli schermi stretti, ma mantiene respiro */
-@media (max-width: 420px){
-  .tt-row{
-    column-gap: 10px;
-    padding: 4px 0;
-  }
-  .tt-row .tt-label:nth-child(n+3){
-    padding-left: 10px;
-    margin-left: 2px;
-  }
-}
+ /* Compatta un filo sugli schermi stretti, ma mantiene respiro */
+ @media (max-width: 420px) {
+   .tt-row {
+     column-gap: 10px;
+     padding: 4px 0;
+   }
 
-/* ---- Card in modale ---- */
-.cardmodal{
-  display:flex; flex-direction:column; gap:12px;
-  max-height:70vh; overflow:auto; padding-right:2px;
-}
-.cardmodal__media{
-  width:100%;
-  display:flex; justify-content:center; align-items:center;
-  background:#0d0d0d; border:1px solid #222; border-radius:10px;
-  overflow:hidden;
-}
-.cardmodal__media img{
-  display:block; width:100%; height:auto; max-height:42vh; object-fit:cover;
-}
-.cardmodal__desc{
-  line-height:1.45; font-size:14px; opacity:.95;
-  background:#111; border:1px solid #222; border-radius:10px; padding:10px;
-}
+   .tt-row .tt-label:nth-child(n+3) {
+     padding-left: 10px;
+     margin-left: 2px;
+   }
+ }
 
-/* Pulsanti della modale (già esistenti, ma aggiungo coerenza) */
+ /* ---- Card in modale ---- */
+ .cardmodal {
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+   max-height: 70vh;
+   overflow: auto;
+   padding-right: 2px;
+ }
 
-.modal .modal-btn.rimescola { background:#5a045a; border-color:#49293c; }
-.modal .modal-btn.rimescola:hover { background:#5a045a; }
+ .cardmodal__media {
+   width: 100%;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   background: #0d0d0d;
+   border: 1px solid #222;
+   border-radius: 10px;
+   overflow: hidden;
+ }
 
-.is-hidden{ display:none !important; }
-.modal-header{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:8px; padding:10px 12px; border-bottom:1px solid #222;
-}
-.modal-title{ font-weight:600; }
-.modal-close{
-  appearance:none; border:none; background:transparent; color:#bbb;
-  font-size:20px; line-height:1; padding:4px 8px; cursor:pointer; border-radius:8px;
-}
-.modal-close:hover{ color:#fff; background:#1f1f1f; }
-.modal-close:focus{ outline:2px solid #555; outline-offset:2px; }
+ .cardmodal__media img {
+   display: block;
+   width: 100%;
+   height: auto;
+   max-height: 42vh;
+   object-fit: cover;
+ }
+
+ .cardmodal__desc {
+   line-height: 1.45;
+   font-size: 14px;
+   opacity: .95;
+   background: #111;
+   border: 1px solid #222;
+   border-radius: 10px;
+   padding: 10px;
+ }
+
+ /* Pulsanti della modale (già esistenti, ma aggiungo coerenza) */
+
+ .modal .modal-btn.rimescola {
+   background: #5a045a;
+   border-color: #49293c;
+ }
+
+ .modal .modal-btn.rimescola:hover {
+   background: #5a045a;
+ }
+
+ .is-hidden {
+   display: none !important;
+ }
+
+ .modal-header {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 8px;
+   padding: 10px 12px;
+   border-bottom: 1px solid #222;
+ }
+
+ .modal-title {
+   font-weight: 600;
+ }
+
+ .modal-close {
+   appearance: none;
+   border: none;
+   background: transparent;
+   color: #bbb;
+   font-size: 20px;
+   line-height: 1;
+   padding: 4px 8px;
+   cursor: pointer;
+   border-radius: 8px;
+ }
+
+ .modal-close:hover {
+   color: #fff;
+   background: #1f1f1f;
+ }
+
+ .modal-close:focus {
+   outline: 2px solid #555;
+   outline-offset: 2px;
+ }
 
 
-/* Per i popup carte: il contenitore temporaneo prende tutta la riga
+ /* Per i popup carte: il contenitore temporaneo prende tutta la riga
    e distribuisce i 3 bottoni: sinistra / centro / destra */
-.modal .modal-actions .card-actions{
-  flex:1 1 auto;          /* occupa tutta la larghezza disponibile */
-  display:grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap:8px;
-  width:100%;
-}
+ .modal .modal-actions .card-actions {
+   flex: 1 1 auto;
+   /* occupa tutta la larghezza disponibile */
+   display: grid;
+   grid-template-columns: 1fr 1fr 1fr;
+   gap: 8px;
+   width: 100%;
+ }
 
-.modal .modal-actions .card-actions .modal-btn:nth-child(1){
-  justify-self:start;     /* sinistra */
-}
-.modal .modal-actions .card-actions .modal-btn:nth-child(2){
-  justify-self:center;    /* centro */
-}
-.modal .modal-actions .card-actions .modal-btn:nth-child(3){
-  justify-self:end;       /* destra */
-}
-/* (opzionale) su schermi stretti, tienili sempre allineati ma senza stretching eccessivo */
-@media (max-width: 420px){
-  .modal .modal-actions .card-actions{
-    gap:6px;
-  }
-}
+ .modal .modal-actions .card-actions .modal-btn:nth-child(1) {
+   justify-self: start;
+   /* sinistra */
+ }
 
-/* ========== Accordion (Mura) ========== */
-.accordion-section {
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
-  background: #0f111a;
-}
+ .modal .modal-actions .card-actions .modal-btn:nth-child(2) {
+   justify-self: center;
+   /* centro */
+ }
 
-/* Header */
-.accordion-header { padding: 0; }
+ .modal .modal-actions .card-actions .modal-btn:nth-child(3) {
+   justify-self: end;
+   /* destra */
+ }
 
-/* ===== Accordion (Mura) — versione migliorata ===== */
-.accordion-trigger{
-  all: unset;
-  display: flex; align-items: center; gap: 12px;
-  width: 100%;
-  cursor: pointer;
-  padding: 12px 18px;                 /* più respiro */
-  user-select: none; -webkit-user-select: none;
-  touch-action: manipulation;
-}
+ /* (opzionale) su schermi stretti, tienili sempre allineati ma senza stretching eccessivo */
+ @media (max-width: 420px) {
+   .modal .modal-actions .card-actions {
+     gap: 6px;
+   }
+ }
 
-.accordion-title{ margin:0; font-size: 15px; font-weight: 600; }
+ /* ========== Accordion (Mura) ========== */
+ .accordion-section {
+   border: 1px solid #2a2a2a;
+   border-radius: 12px;
+   background: #0f111a;
+ }
 
-.accordion-trigger .bench-count{
-  margin-left: auto;
-  opacity: .85;
-  font-size: 12px;
-}
+ /* Header */
+ .accordion-header {
+   padding: 0;
+ }
 
-/* caret più grande, non attaccato al bordo */
-.accordion-caret{
-  flex: 0 0 auto;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px;          /* target ampio */
-  border-radius: 8px;
-  margin-left: 10px;
-  margin-right: 20px;                  /* stacca dal bordo destro */
-  font-size: 16px;                    /* caret più leggibile */
-  opacity: .85;
-  background: rgba(255,255,255,.05);  /* leggero chip */
-  transition: transform .18s ease, background .18s ease;
-}
-.accordion-trigger:hover .accordion-caret{
-  background: rgba(255,255,255,.08);
-}
-.accordion-trigger[aria-expanded="true"] .accordion-caret{
-  transform: rotate(180deg);
-}
+ /* ===== Accordion (Mura) — versione migliorata ===== */
+ .accordion-trigger {
+   all: unset;
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   width: 100%;
+   cursor: pointer;
+   padding: 12px 18px;
+   /* più respiro */
+   user-select: none;
+   -webkit-user-select: none;
+   touch-action: manipulation;
+ }
 
-/* pannello animato */
-.accordion-panel{
-  display: grid;
-  overflow: auto;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows .22s ease;
-  border-top: 1px solid #2a2a2a;
-}
+ .accordion-title {
+   margin: 0;
+   font-size: 15px;
+   font-weight: 600;
+ }
 
-/* 👇 scroll interno che rimane */
-.accordion-inner{
-  overflow: auto;                     /* mantieni lo scroll interno */
-  min-height: 0;
-  max-height: var(--walls-max-h, 44vh); /* regola qui l’altezza del riquadro scrollabile */
-}
+ .accordion-trigger .bench-count {
+   margin-left: auto;
+   opacity: .85;
+   font-size: 12px;
+ }
 
-/* stato chiuso */
-.accordion-section[data-open="0"] .accordion-panel{
-  grid-template-rows: 0fr;
-  border-top-color: transparent;
-}
+ /* caret più grande, non attaccato al bordo */
+ .accordion-caret {
+   flex: 0 0 auto;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   width: 28px;
+   height: 28px;
+   /* target ampio */
+   border-radius: 8px;
+   margin-left: 10px;
+   margin-right: 20px;
+   /* stacca dal bordo destro */
+   font-size: 16px;
+   /* caret più leggibile */
+   opacity: .85;
+   background: rgba(255, 255, 255, .05);
+   /* leggero chip */
+   transition: transform .18s ease, background .18s ease;
+ }
+
+ .accordion-trigger:hover .accordion-caret {
+   background: rgba(255, 255, 255, .08);
+ }
+
+ .accordion-trigger[aria-expanded="true"] .accordion-caret {
+   transform: rotate(180deg);
+ }
+
+ /* pannello animato */
+ .accordion-panel {
+   display: grid;
+   overflow: auto;
+   grid-template-rows: 1fr;
+   transition: grid-template-rows .22s ease;
+   border-top: 1px solid #2a2a2a;
+ }
+
+ /* 👇 scroll interno che rimane */
+ .accordion-inner {
+   overflow: auto;
+   /* mantieni lo scroll interno */
+   min-height: 0;
+   max-height: var(--walls-max-h, 44vh);
+   /* regola qui l’altezza del riquadro scrollabile */
+ }
+
+ /* stato chiuso */
+ .accordion-section[data-open="0"] .accordion-panel {
+   grid-template-rows: 0fr;
+   border-top-color: transparent;
+ }
+
+ /* Le card in panchina ereditano il colore da --ring (impostato in JS) */
+ .unit-card {
+   border: 1px solid var(--ring, #2a2a2a);
+   transition: box-shadow .18s ease, border-color .18s ease;
+ }
+
+ /* Avatar con bordo colorato come il tipo unità */
+ .unit-avatar {
+   border: 2px solid var(--ring, #444);
+ }
+
+ /* Stato selezionato: glow + bordo del colore della unità */
+ .unit-card.is-selected {
+   border-color: var(--ring, var(--oro));
+   box-shadow:
+     0 0 0 2px var(--ring, var(--oro)),
+     0 0 16px color-mix(in srgb, var(--ring, #cfa439) 35%, transparent 65%);
+ }
+
+ @supports not (color-mix(in srgb, black, white)) {
+   .unit-card.is-selected {
+     box-shadow: 0 0 16px rgba(207, 164, 57, .35);
+   }
+ }
+
+ /* Effetto focus-ring sull’avatar (quando seleziono) */
+ .unit-card.is-selected .unit-avatar,
+ .unit-avatar.focus-ring {
+   animation: focusPulse 1.2s ease-out 0s 2;
+   border-color: var(--ring, #fff) !important;
+ }
+
+ /* Optional: piccolo “pulse” quando selezioni da panchina */
+ @keyframes benchPulse {
+
+   0%,
+   100% {
+     box-shadow: 0 0 0 4px var(--ring, var(--oro)), 0 0 12px rgba(0, 0, 0, .0);
+   }
+
+   50% {
+     box-shadow: 0 0 0 7px var(--ring, var(--oro)), 0 0 22px rgba(0, 0, 0, .25);
+   }
+ }
+
+ .unit-card.pulse .unit-avatar {
+   animation: benchPulse 1s ease-in-out 1;
+ }

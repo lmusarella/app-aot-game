@@ -719,10 +719,12 @@ function applyHpBar(fillEl, unit) {
     fillEl.style.filter = `saturate(${0.5 + 0.5 * pct})`;
     fillEl.parentElement.title = `${cur}/${max} HP`;
 }
-function benchClickFocusAndTop(u, cardEl) {
+function benchClickFocusAndTop(u, card) {
     const unitId = u.id;
     const cell = findUnitCell(unitId);
+
     if (cell) {
+        // È in campo: porta davanti e seleziona come già fai
         bringToFront(cell, unitId);
         selectedUnitId = unitId;
         renderGrid(grid, ROWS, COLS, spawns);
@@ -739,14 +741,31 @@ function benchClickFocusAndTop(u, cardEl) {
             setTimeout(() => circle.classList.remove('focus-ring'), 1600);
         });
     } else {
-        // Non è in campo: tooltip su card + flash
+        // NON è in campo: seleziona la card in panchina + tooltip + micro-animazione
+        selectedUnitId = unitId;
+        renderBenches();
+
+        // Trova la nuova card (re-render) e applica pulse ring all’avatar
+        requestAnimationFrame(() => {
+            const newCard = document.querySelector(`.unit-card[data-unit-id="${CSS.escape(unitId)}"]`);
+            const avatar = newCard?.querySelector('.unit-avatar');
+            if (avatar) {
+                avatar.classList.add('focus-ring');
+                newCard.classList.add('pulse');
+                setTimeout(() => {
+                    avatar.classList.remove('focus-ring');
+                    newCard.classList.remove('pulse');
+                }, 1100);
+            }
+        });
+
+        // Mostra tooltip come prima
         const html = getUnitTooltipHTML(u);
-        const rect = cardEl.getBoundingClientRect();
+        const rect = card.getBoundingClientRect();
         showTooltip(html, rect.right + 6, rect.top + rect.height / 2);
-        cardEl.classList.add('flash');
-        setTimeout(() => cardEl.classList.remove('flash'), 450);
     }
 }
+
 (function injectTouchGuardsCSS() {
     if (document.getElementById('touch-guards-css')) return;
     const css = document.createElement('style');
@@ -780,8 +799,14 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
         const avatar = document.createElement("div");
         avatar.className = "unit-avatar";
 
-        const colVar = COLOR_VAR[u.color] || '#fff';
-        card.style.setProperty('--sel', colVar);
+        // Colore per bordo card/avatar (riuso palette esistente)
+        const colVar = COLOR_VAR[u.color] || '#444';
+        card.style.setProperty('--ring', colVar);
+
+        // Stato selezione sulle card della panchina
+        if (u.id === selectedUnitId) {
+            card.classList.add('is-selected');
+        }
 
         const img = document.createElement("img");
         img.src = u.img;
@@ -1082,6 +1107,8 @@ function createHexagon(row, col, unitIds = []) {
                     selectedUnitId = unit.id;
                     bringToFront({ row, col }, unit.id);
                     renderGrid(grid, 12, 6, spawns);
+                    // NOVITÀ: evidenzia anche la card in panchina
+                    focusBenchCard(unit.id, { scroll: true, pulse: true });
                 },
                 onLongPress: (e) => {
                     selectedUnitId = unit.id;
@@ -1222,6 +1249,31 @@ function focusUnitOnField(unitId) {
         setTimeout(() => circle.classList.remove('focus-ring'), 1600);
     });
 }
+function focusBenchCard(unitId, { scroll = true, pulse = true } = {}) {
+    // marca come selezionato e ridisegna panchine
+    selectedUnitId = unitId;
+    renderBenches();
+
+    // dopo il render, applica pulse e porta in vista
+    requestAnimationFrame(() => {
+        const sel = `.unit-card[data-unit-id="${CSS.escape(unitId)}"]`;
+        const card = document.querySelector(sel);
+        if (!card) return;
+
+        card.classList.add('is-selected');
+        if (scroll) card.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+
+        const avatar = card.querySelector('.unit-avatar');
+        if (pulse) {
+            card.classList.add('pulse');
+            avatar?.classList.add('focus-ring');
+            setTimeout(() => {
+                card.classList.remove('pulse');
+                avatar?.classList.remove('focus-ring');
+            }, 1200);
+        }
+    });
+}
 
 /* =======================
    TOOLTIP
@@ -1323,10 +1375,15 @@ function positionTooltip(mouseX, mouseY) {
 }
 
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('.hex-member') && !e.target.closest('.btn-icon')) {
+    if (
+        !e.target.closest('.hex-member') &&
+        !e.target.closest('.btn-icon') &&
+        !e.target.closest('.unit-card')    // <— aggiungi panchina
+    ) {
         selectedUnitId = null;
-        document.querySelectorAll('.hex-member.is-selected').forEach(el => el.classList.remove('is-selected'));
         hideTooltip();
+        renderGrid(grid, ROWS, COLS, spawns); // rimuove highlight in campo
+        renderBenches();                      // rimuove highlight in panchina
     }
 });
 
