@@ -10,12 +10,12 @@ const gameSoundTrack = {
 }
 // DB unico globale in memoria
 let DB = {
-  allies: null,
-  giants: null,
-  event: null,
-  consumable: null,
-  missions: null,
-  settings: null
+    allies: null,
+    giants: null,
+    event: null,
+    consumable: null,
+    missions: null,
+    settings: null
 };
 
 const MAX_PER_HEX = 12;
@@ -771,6 +771,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
     units.forEach(u => {
         const card = document.createElement("div");
         card.className = "unit-card";
+
         card.dataset.role = u.role;
         if (isOnField(u.id)) card.classList.add("is-fielded");
         if (!readOnly) card.draggable = true;
@@ -778,6 +779,9 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
 
         const avatar = document.createElement("div");
         avatar.className = "unit-avatar";
+
+        const colVar = COLOR_VAR[u.color] || '#fff';
+        card.style.setProperty('--sel', colVar);
 
         const img = document.createElement("img");
         img.src = u.img;
@@ -2972,77 +2976,77 @@ function getLastSaveInfo() {
 
 // utility per caricare un json
 async function loadJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Errore fetch ${url}: ${res.status}`);
-  return res.json();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Errore fetch ${url}: ${res.status}`);
+    return res.json();
 }
 
 async function bootDataApplication() {
-  // Config delle sorgenti JSON
-  const BOOT_CONFIG = {
-    allies: 'assets/data/unita.json',
-    giants: 'assets/data/giganti.json',
-    events: 'assets/data/carte_evento.json',
-    consumable: 'assets/data/carte_consumabili.json',
-    missions: 'assets/data/missioni.json',
-    settings: 'assets/data/settings_app.json'
-  };
-
-  try {
-    // carico in parallelo
-    const [allies, giants, events, consumable, missions, settings] = await Promise.all([
-      loadJSON(BOOT_CONFIG.allies),
-      loadJSON(BOOT_CONFIG.giants),
-      loadJSON(BOOT_CONFIG.events),
-      loadJSON(BOOT_CONFIG.consumable),
-      loadJSON(BOOT_CONFIG.missions),
-      loadJSON(BOOT_CONFIG.settings)
-    ]);
-
-    // merge in un DB unico
-    DB = { allies, giants, events, consumable, missions, settings };
-
-    console.log('[boot] DB inizializzato:', DB);
-    return DB;
-  } catch (e) {
-    console.warn('Caricamento JSON fallito, uso i fallback locali:', e);
-    // fallback: qui puoi mettere i tuoi array hardcoded
-    DB = {
-      allies: alliesPool ?? [],
-      giants: giantsPool ?? [],
-      event: eventPool ?? [],
-      consumable: consumablePool ?? [],
-      missions: MISSIONS ?? [],
-      settings: {}
+    // Config delle sorgenti JSON
+    const BOOT_CONFIG = {
+        allies: 'assets/data/unita.json',
+        giants: 'assets/data/giganti.json',
+        events: 'assets/data/carte_evento.json',
+        consumable: 'assets/data/carte_consumabili.json',
+        missions: 'assets/data/missioni.json',
+        settings: 'assets/data/settings_app.json'
     };
-    return DB;
-  }
+
+    try {
+        // carico in parallelo
+        const [allies, giants, events, consumable, missions, settings] = await Promise.all([
+            loadJSON(BOOT_CONFIG.allies),
+            loadJSON(BOOT_CONFIG.giants),
+            loadJSON(BOOT_CONFIG.events),
+            loadJSON(BOOT_CONFIG.consumable),
+            loadJSON(BOOT_CONFIG.missions),
+            loadJSON(BOOT_CONFIG.settings)
+        ]);
+
+        // merge in un DB unico
+        DB = { allies, giants, events, consumable, missions, settings };
+
+        console.log('[boot] DB inizializzato:', DB);
+        return DB;
+    } catch (e) {
+        console.warn('Caricamento JSON fallito, uso i fallback locali:', e);
+        // fallback: qui puoi mettere i tuoi array hardcoded
+        DB = {
+            allies: alliesPool ?? [],
+            giants: giantsPool ?? [],
+            event: eventPool ?? [],
+            consumable: consumablePool ?? [],
+            missions: MISSIONS ?? [],
+            settings: {}
+        };
+        return DB;
+    }
 }
 
-(function setupWallsAccordion(){
-  const sec   = document.getElementById('walls-section');
-  const btn   = document.getElementById('walls-toggle');
-  const panel = document.getElementById('walls-panel');
-  if (!sec || !btn || !panel) return;
+(function setupWallsAccordion() {
+    const sec = document.getElementById('walls-section');
+    const btn = document.getElementById('walls-toggle');
+    const panel = document.getElementById('walls-panel');
+    if (!sec || !btn || !panel) return;
 
-  const KEY = 'ui:walls-accordion-open';
+    const KEY = 'ui:walls-accordion-open';
 
-  // stato iniziale (persistito)
-  const saved = localStorage.getItem(KEY);
-  const startOpen = saved == null ? true : saved === '1';
-  apply(startOpen);
+    // stato iniziale (persistito)
+    const saved = localStorage.getItem(KEY);
+    const startOpen = saved == null ? true : saved === '1';
+    apply(startOpen);
 
-  btn.addEventListener('click', () => {
-    const next = btn.getAttribute('aria-expanded') !== 'true';
-    apply(next);
-  });
+    btn.addEventListener('click', () => {
+        const next = btn.getAttribute('aria-expanded') !== 'true';
+        apply(next);
+    });
 
-  function apply(isOpen){
-    sec.dataset.open = isOpen ? '1' : '0';
-    btn.setAttribute('aria-expanded', String(isOpen));
-    panel.setAttribute('aria-hidden', String(!isOpen));
-    localStorage.setItem(KEY, isOpen ? '1' : '0');
-  }
+    function apply(isOpen) {
+        sec.dataset.open = isOpen ? '1' : '0';
+        btn.setAttribute('aria-expanded', String(isOpen));
+        panel.setAttribute('aria-hidden', String(!isOpen));
+        localStorage.setItem(KEY, isOpen ? '1' : '0');
+    }
 })();
 
 
