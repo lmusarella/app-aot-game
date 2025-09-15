@@ -738,6 +738,25 @@ function benchClickFocusAndTop(u, cardEl) {
         setTimeout(() => cardEl.classList.remove('flash'), 450);
     }
 }
+(function injectTouchGuardsCSS() {
+    if (document.getElementById('touch-guards-css')) return;
+    const css = document.createElement('style');
+    css.id = 'touch-guards-css';
+    css.textContent = `
+    /* niente click/long-press/drag sulle immagini */
+    .hex-content img,
+    .unit-avatar img,
+    .cardmodal__media img{
+      pointer-events: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+  `;
+    document.head.appendChild(css);
+})();
+
 function renderBenchSection(container, units, acceptRoles, readOnly = false) {
     container.textContent = "";
     units.forEach(u => {
@@ -753,7 +772,9 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
 
         const img = document.createElement("img");
         img.src = u.img;
-        img.alt = u.name;                 // decorativa
+        img.alt = "";                 // decorativa
+        img.draggable = false;
+        img.setAttribute('aria-hidden', 'true');               // decorativa
         avatar.appendChild(img);
 
         const info = document.createElement("div");
@@ -1028,7 +1049,9 @@ function createHexagon(row, col, unitIds = []) {
             circle.className = "hex-circle";
             const img = document.createElement("img");
             img.src = unit.img;
-            img.alt = unit.name;
+            img.alt = "";                 // decorativa
+            img.draggable = false;
+            img.setAttribute('aria-hidden', 'true');
             circle.appendChild(img);
 
             content.appendChild(circle);
@@ -1098,10 +1121,10 @@ function hasWallInCell(r, c) {
 const sameCell = (a, b) => a && b && a.row === b.row && a.col === b.col;
 /** Ritorna true se l'unità è già nello stack della cella target ({row,col}). */
 const sameId = (unitId, target) => {
-  if (!target || target.row == null || target.col == null) return false;
-  const wanted = String(unitId);
-  const stack = getStack(+target.row, +target.col); // array di id in quella cella
-  return stack.some(id => String(id) === wanted);
+    if (!target || target.row == null || target.col == null) return false;
+    const wanted = String(unitId);
+    const stack = getStack(+target.row, +target.col); // array di id in quella cella
+    return stack.some(id => String(id) === wanted);
 };
 
 /* =======================
