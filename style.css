@@ -2979,6 +2979,10 @@ body.collapse-both  { grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-
   display:grid; grid-auto-flow:column; grid-auto-columns:var(--card-w);
   gap:16px; overflow-x:auto; padding:6px 10px 12px;
   scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;
+  background-image: url("assets/img/cards/sfondo_carte.png");
+  background-position: center; /* Center the image */
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 .hand-strip::before,.hand-strip::after{ content:""; width:12px; }
 
