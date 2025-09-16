@@ -1439,7 +1439,7 @@ function showDrawnCard(deckType, card) {
         }
         if (deckType === 'event') {
             GAME_STATE.decks[deckType]?.discard.push(card);
-            log(`Carta Evento "${card.name} è stata attivata!.`, 'warning');
+            log(`Carta Evento "${card.name}" è stata attivata!.`, 'warning');
             updateFabDeckCounters();
         }
     };
@@ -1452,7 +1452,7 @@ function showDrawnCard(deckType, card) {
         }
         if (deckType === 'event') {
             GAME_STATE.decks[deckType]?.discard.push(card);
-            log(`Carta Evento "${card.name} è stata attivata!.`, 'warning');
+            log(`Carta Evento "${card.name}" è stata attivata!.`, 'warning');
             updateFabDeckCounters();
         }
     };
