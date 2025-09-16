@@ -651,13 +651,18 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
 
         // CLICK = focus/porta in cima. LONG-PRESS = tooltip (senza trascinare)
         addLongPress(card, {
-            onClick: () => { if (!isDraggingNow) benchClickFocusAndTop(u, card); },
+            onClick: () => {
+                if (!isDraggingNow) {
+                    benchClickFocusAndTop(u, card);
+                    const html = getUnitTooltipHTML(u);
+                    const rect = card.getBoundingClientRect();
+                    showTooltip(html, rect.right + 6, rect.top + rect.height / 2);
+                    // piccolo flash visivo
+                    card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
+                }
+            },
             onLongPress: () => {
-                const html = getUnitTooltipHTML(u);
-                const rect = card.getBoundingClientRect();
-                showTooltip(html, rect.right + 6, rect.top + rect.height / 2);
-                // piccolo flash visivo
-                card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
+                hideTooltip();
             }
         });
 
@@ -672,6 +677,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             card.addEventListener("dragstart", (e) => {
                 if (e.target.closest('.btn-detail, .btn-trash')) { e.preventDefault(); return; }
                 isDraggingNow = true;
+                hideTooltip();
                 card.classList.add("dragging");
                 e.dataTransfer.effectAllowed = "move";
                 e.dataTransfer.setData("application/json", JSON.stringify({
@@ -838,19 +844,24 @@ function createHexagon(row, col, unitIds = []) {
             // Long-press sul membro in campo: mostra tooltip; click breve = focus + bringToFront
             addLongPress(member, {
                 onClick: (e) => {
-                    selectedUnitId = unit.id;
-                    bringToFront({ row, col }, unit.id);
-                    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-                    focusBenchCard(unit.id, { scroll: true, pulse: true });
+                    if (!isDraggingNow) {
+                        selectedUnitId = unit.id;
+                        bringToFront({ row, col }, unit.id);
+                        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+                        focusBenchCard(unit.id, { scroll: true, pulse: true });
+                        const html = getUnitTooltipHTML(unit);
+                        
+                        showTooltip(html, e.clientX, e.clientY);
+                    }
                 },
                 onLongPress: (e) => {
-                    selectedUnitId = unit.id;
-                    const html = getUnitTooltipHTML(unit);
-                    showTooltip(html, e.clientX, e.clientY);
+                    hideTooltip();
                 }
             });
 
             content.addEventListener("dragstart", (e) => {
+                isDraggingNow = true;
+                hideTooltip();
                 selectedUnitId = unit.id;
                 member.classList.add('is-selected');
                 content.classList.add("dragging");
@@ -861,7 +872,10 @@ function createHexagon(row, col, unitIds = []) {
                     from: { row, col, stackIndex: i }
                 }));
             });
-            content.addEventListener("dragend", () => content.classList.remove("dragging"));
+            content.addEventListener("dragend", () => {
+                content.classList.remove("dragging")
+                isDraggingNow = false;
+            });
 
             return member;
         });
@@ -1094,7 +1108,7 @@ tooltipEl.addEventListener('click', (e) => {
 function showTooltip(html, x, y) {
     tooltipEl.innerHTML = html;
     tooltipEl.style.display = "block";
-    positionTooltip(x, y);
+    positionTooltip(0, 45);
 }
 function hideTooltip() { tooltipEl.style.display = "none"; }
 function positionTooltip(mouseX, mouseY) {
@@ -1191,6 +1205,7 @@ function closeAllFabs() { fabs.forEach(f => { f.classList.remove('open'); f.setA
 fabs.forEach(fab => {
     const mainBtn = fab.querySelector('.fab-main');
     mainBtn.addEventListener('click', (e) => {
+        hideTooltip();
         e.stopPropagation();
         const willOpen = !fab.classList.contains('open');
         closeAllFabs();
@@ -2838,7 +2853,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     rebuildUnitIndex();
     // BOOT dati
     const booted = await loadDataAndStateFromLocal();
-   
+
     if (!booted) {
         seedWallRows();              // crea segmenti mura 10/11/12
         renderBenches();
