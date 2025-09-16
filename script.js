@@ -424,6 +424,7 @@ async function spawnGiant(type = null) {
         const url = './assets/sounds/flash_effect_sound.mp3';
         await play(url, { loop: false, volume: 1 });
         focusUnitOnField(unit.id);
+        openAccordionForRole(unit.role);
     } else {
         log('Campo pieno nelle zone consentite. Il gigante è in panchina.', 'warning');
     }
@@ -2082,6 +2083,7 @@ async function openAlliesPicker(role) {
     setTimeout(() => bench.style.boxShadow = '', 350);
 
     log(moved.length === 1 ? `Aggiunto in panchina ${moved[0].name}` : `Aggiunte ${moved.length} unità in panchina.`);
+    openAccordionForRole(moved[0].role);
     scheduleSave();
 }
 
