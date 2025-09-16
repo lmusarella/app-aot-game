@@ -496,8 +496,7 @@ function benchClickFocusAndTop(u, card) {
 
         // Mostra tooltip come prima
         const html = getUnitTooltipHTML(u);
-        const rect = card.getBoundingClientRect();
-        showTooltip(html, rect.right + 6, rect.top + rect.height / 2);
+        showTooltip(html);
     }
 }
 
@@ -829,9 +828,9 @@ function createHexagon(row, col, unitIds = []) {
                         selectedUnitId = unit.id;
                         bringToFront({ row, col }, unit.id);
                         renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+                        openAccordionForRole(unit.role);
                         focusBenchCard(unit.id, { scroll: true, pulse: true });
                         const html = getUnitTooltipHTML(unit);
-                        
                         showTooltip(html, e.clientX, e.clientY);
                     }
                 },
@@ -1086,9 +1085,10 @@ tooltipEl.addEventListener('click', (e) => {
 });
 
 
-function showTooltip(html, x, y) {
+function showTooltip(html) {
     tooltipEl.innerHTML = html;
     tooltipEl.style.display = "block";
+    //posizione fissa
     positionTooltip(0, 45);
 }
 function hideTooltip() { tooltipEl.style.display = "none"; }
@@ -1673,69 +1673,37 @@ function applyClasses() {
     btnR.textContent = R ? '⟨' : '⟩';
 }
 
-function setCollapsed(side, collapsed, manual = true) {
+function setCollapsed(side, collapsed) {
     if (side === 'left') {
         leftEl.classList.toggle('collapsed', collapsed);
     } else {
         rightEl.classList.toggle('collapsed', collapsed);
-    }
-    if (manual) {
-        document.body.classList.add('manual-layout'); // blocca auto-resize fino a reload
-        // persisti preferenza
-        localStorage.setItem('aotLayout', JSON.stringify({
-            left: leftEl.classList.contains('collapsed'),
-            right: rightEl.classList.contains('collapsed')
-        }));
     }
     applyClasses();
 }
 
 // Toggle via maniglie
 btnL.addEventListener('click', () => {
-    setCollapsed('left', !leftEl.classList.contains('collapsed'), true);
+    setCollapsed('left', !leftEl.classList.contains('collapsed'));
 });
 btnR.addEventListener('click', () => {
-    setCollapsed('right', !rightEl.classList.contains('collapsed'), true);
+    setCollapsed('right', !rightEl.classList.contains('collapsed'));
 });
 
 // Click sull’area collassata riapre (UX comodo)
 leftEl.addEventListener('click', (e) => {
-    if (leftEl.classList.contains('collapsed')) setCollapsed('left', false, true);
+    if (leftEl.classList.contains('collapsed')) setCollapsed('left', false);
 });
 rightEl.addEventListener('click', (e) => {
-    if (rightEl.classList.contains('collapsed')) setCollapsed('right', false, true);
+    if (rightEl.classList.contains('collapsed')) setCollapsed('right', false);
 });
 
 // Ripristina preferenza utente (se esiste)
 function restoreLayout() {
-    const saved = localStorage.getItem('aotLayout');
-    if (saved) {
-        const st = JSON.parse(saved);
-        leftEl.classList.toggle('collapsed', !!st.left);
-        rightEl.classList.toggle('collapsed', !!st.right);
-        document.body.classList.add('manual-layout');
-        applyClasses();
-    } else {
-        // Auto-collapse iniziale in base alla larghezza
-        const w = window.innerWidth;
-        if (w <= 900) {
-            leftEl.classList.add('collapsed');
-            rightEl.classList.add('collapsed');
-        } else if (w <= 1200) {
-            rightEl.classList.add('collapsed');
-        }
-        applyClasses();
-    }
-};
-
-// Aggiorna lo stato quando la finestra cambia (solo se non manuale)
-window.addEventListener('resize', () => {
-    if (document.body.classList.contains('manual-layout')) return;
-    const w = window.innerWidth;
-    leftEl.classList.toggle('collapsed', w <= 900);
-    rightEl.classList.toggle('collapsed', w <= 1200);
+    leftEl.classList.add('collapsed');
+    rightEl.classList.add('collapsed');
     applyClasses();
-});
+};
 
 function createSnack({ message, type = 'info', duration = 3000, actionText = null, onAction = null }) {
     const el = document.createElement('div');
@@ -1913,7 +1881,9 @@ function pickAlliesDialog(role) {
             card.classList.toggle('is-dead', !!base.dead);
             card.setAttribute('aria-disabled', String(!!base.dead));
             card.setAttribute('tabindex', base.dead ? '-1' : '0');
-
+            const colVar = COLOR_VAR[base.color] || '#444';
+            card.style.setProperty('--ring', colVar);
+            card.style.setProperty('--sel', colVar);
             // Badge / Bottone
             const actions = card.querySelector('.unit-actions');
             if (base.dead) {
@@ -1951,11 +1921,9 @@ function pickAlliesDialog(role) {
             }
 
             addLongPress(card, {
-                onLongPress: (e) => {
+                onLongPress: () => {
                     const html = getUnitTooltipHTML(base);
-                    const rect = card.getBoundingClientRect();
-                    // Mostra appena fuori a destra del picker card
-                    showTooltip(html, rect.right + 8, rect.top + rect.height / 2);
+                    showTooltip(html);
                 }
             });
         });
@@ -1967,12 +1935,9 @@ function pickAlliesDialog(role) {
             liveEl.textContent = `Vivi: ${countAlive(role)} / ${totalByRole(role)}`;
         }
     };
-
-
     paintPicker();
     const selected = new Set();
     const updateCount = () => { countEl.textContent = `Selezionate: ${selected.size}`; };
-
     const updateAria = (card) => {
         card.setAttribute('aria-pressed', String(card.classList.contains('is-selected')));
     };
@@ -1992,7 +1957,6 @@ function pickAlliesDialog(role) {
         if (yes) selected.add(card.dataset.id); else selected.delete(card.dataset.id);
         updateAria(card); updateCount();
     };
-
     const applyFilter = () => {
         const q = (search.value || '').toLowerCase().trim();
         grid.querySelectorAll('.pick-card').forEach(card => {
@@ -2001,8 +1965,6 @@ function pickAlliesDialog(role) {
         });
     };
     search.addEventListener('input', applyFilter);
-
-
     tools.addEventListener('click', (e) => {
         const b = e.target.closest('button[data-act]'); if (!b) return;
         const act = b.dataset.act;
@@ -2563,8 +2525,6 @@ elInc?.addEventListener('click', () => {
 // === Welcome popup @ startup (immagine a destra) ============================
 const WELCOME_PREF_KEY = 'aot-hide-welcome';
 
-
-
 function getLastSaveInfo() {
     try {
         const raw = localStorage.getItem(SAVE_KEY);
@@ -2602,7 +2562,7 @@ async function showWelcomePopup(isFirstRun, imgUrl) {
         if (okSrc) break;
     }
 
-    const last = getLastSaveInfo?.() || null;
+    const last = getLastSaveInfo() || null;
     const mediaHTML = okSrc
         ? `<img src="${okSrc}" alt="${isFirstRun ? 'Benvenuto' : 'Bentornato'}">`
         : `<div class="welcome__ph">Immagine non disponibile</div>`;
@@ -2640,22 +2600,6 @@ async function showWelcomePopup(isFirstRun, imgUrl) {
         const backgroundSound = await play(url, { loop: true, volume: 1 });
         GAME_SOUND_TRACK.background = backgroundSound;
     }
-}
-
-
-function getLastSaveInfo() {
-    try {
-        const raw = localStorage.getItem(SAVE_KEY);
-        if (!raw) return null;
-        const data = JSON.parse(raw);
-        if (!data?.savedAt) return null;
-        const d = new Date(data.savedAt);
-        // es: "oggi alle 14:05" / fallback: data e ora locale
-        const now = new Date();
-        const sameDay = d.toDateString() === now.toDateString();
-        const hhmm = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-        return sameDay ? `oggi alle ${hhmm}` : d.toLocaleString('it-IT');
-    } catch { return null; }
 }
 
 // utility per caricare un json
@@ -2704,31 +2648,94 @@ async function bootDataApplication() {
     }
 }
 
-(function setupWallsAccordion() {
-    const sec = document.getElementById('walls-section');
-    const btn = document.getElementById('walls-toggle');
-    const panel = document.getElementById('walls-panel');
-    if (!sec || !btn || !panel) return;
+(function setupRightAccordions() {
+  const aside = document.querySelector('aside');
+  if (!aside) return;
 
-    const KEY = 'ui:walls-accordion-open';
+  const sections = Array.from(aside.querySelectorAll('.accordion-section'));
 
-    // stato iniziale (persistito)
-    const saved = localStorage.getItem(KEY);
-    const startOpen = saved == null ? true : saved === '1';
-    apply(startOpen);
+  // Applica lo stato iniziale letto da data-open (0/1)
+  sections.forEach(sec => {
+    const btn   = sec.querySelector('.accordion-trigger');
+    const panel = sec.querySelector('.accordion-panel');
+    const open  = sec.dataset.open === '1';
+    btn?.setAttribute('aria-expanded', String(open));
+    panel?.setAttribute('aria-hidden', String(!open));
+  });
 
-    btn.addEventListener('click', () => {
-        const next = btn.getAttribute('aria-expanded') !== 'true';
-        apply(next);
+  function expandMax(sec) {
+    // Calcola lo spazio disponibile totale dentro <aside>
+    const styleAside = getComputedStyle(aside);
+    const gap   = parseFloat(styleAside.gap) || 0;
+    const padT  = parseFloat(styleAside.paddingTop) || 0;
+    const padB  = parseFloat(styleAside.paddingBottom) || 0;
+    const total = aside.clientHeight;
+
+    // Somma le altezze delle intestazioni di TUTTE le sezioni
+    let consumed = padT + padB + gap * Math.max(0, sections.length - 1);
+    sections.forEach(s => {
+      const hdr = s.querySelector('.accordion-header');
+      consumed += hdr ? hdr.offsetHeight : 0;
     });
 
-    function apply(isOpen) {
-        sec.dataset.open = isOpen ? '1' : '0';
-        btn.setAttribute('aria-expanded', String(isOpen));
-        panel.setAttribute('aria-hidden', String(!isOpen));
-        localStorage.setItem(KEY, isOpen ? '1' : '0');
-    }
+    const max = Math.max(120, total - consumed - 8); // margine di sicurezza
+    const inner = sec.querySelector('.accordion-inner');
+    if (inner) inner.style.maxHeight = `${max}px`;
+  }
+
+  function openOne(target) {
+    sections.forEach(sec => {
+      const isTarget = sec === target;
+      const btn   = sec.querySelector('.accordion-trigger');
+      const panel = sec.querySelector('.accordion-panel');
+
+      sec.dataset.open = isTarget ? '1' : '0';
+      btn?.setAttribute('aria-expanded', String(isTarget));
+      panel?.setAttribute('aria-hidden', String(!isTarget));
+
+      if (isTarget) expandMax(sec);
+    });
+  }
+
+  // Click: apertura esclusiva. Se clicchi su quello già aperto: lo chiude.
+  sections.forEach(sec => {
+    const btn = sec.querySelector('.accordion-trigger');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const isOpen = sec.dataset.open === '1';
+      if (isOpen) {
+        sec.dataset.open = '0';
+        sec.querySelector('.accordion-panel')?.setAttribute('aria-hidden', 'true');
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        openOne(sec);
+      }
+    });
+  });
+
+  // Se una sezione è già aperta all’avvio (es. "Mura"), calcola subito l’altezza massima
+  const initialOpen = sections.find(s => s.dataset.open === '1');
+  if (initialOpen) expandMax(initialOpen);
+
+
+   window.openRightAccordionById = function(id) {
+    const sec = sections.find(s => s.id === id);
+    if (sec) openOne(sec);
+  };
 })();
+
+function openAccordionForRole(role) {
+  const id = (role === 'enemy')
+    ? 'giants-section'
+    : (role === 'wall')
+      ? 'walls-section'
+      : 'allies-section'; // recruit/commander (default)
+
+  if (typeof window.openRightAccordionById === 'function') {
+    window.openRightAccordionById(id);
+  }
+}
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     rebuildUnitIndex();

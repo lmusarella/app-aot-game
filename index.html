@@ -131,20 +131,39 @@
 
     <!-- ===== COLONNA PANCHINE (DESTRA) ===== -->
     <aside>
-        <section class="bench-section">
-            <div class="bench-head">
-                <h4>Squadra in missione</h4>
-                <span id="count-allies" class="bench-count"></span>
+        <section class="bench-section accordion-section" id="allies-section" data-open="0">
+            <div class="accordion-header">
+                <button id="allies-toggle" class="accordion-trigger" type="button" aria-expanded="false"
+                    aria-controls="allies-panel">
+                    <h4 class="accordion-title">Squadra in missione</h4>
+                    <span id="count-allies" class="bench-count"></span>
+                    <span class="accordion-caret" aria-hidden="true">▾</span>
+                </button>
             </div>
-            <div id="bench-allies" class="bench" data-section="ally"></div>
+            <div class="accordion-panel" id="allies-panel" role="region" aria-labelledby="allies-toggle"
+                aria-hidden="true">
+                <div class="accordion-inner">
+                    <div id="bench-allies" class="bench" data-section="ally"></div>
+                </div>
+            </div>
         </section>
 
-        <section class="bench-section" id="giants-section">
-            <div class="bench-head">
-                <h4>Giganti</h4>
-                <span id="count-enemies" class="bench-count"></span>
+
+        <section class="bench-section accordion-section" id="giants-section" data-open="0">
+            <div class="accordion-header">
+                <button id="giants-toggle" class="accordion-trigger" type="button" aria-expanded="false"
+                    aria-controls="giants-panel">
+                    <h4 class="accordion-title">Giganti</h4>
+                    <span id="count-enemies" class="bench-count"></span>
+                    <span class="accordion-caret" aria-hidden="true">▾</span>
+                </button>
             </div>
-            <div id="bench-enemies" class="bench" data-section="enemy"></div>
+            <div class="accordion-panel" id="giants-panel" role="region" aria-labelledby="giants-toggle"
+                aria-hidden="true">
+                <div class="accordion-inner">
+                    <div id="bench-enemies" class="bench" data-section="enemy"></div>
+                </div>
+            </div>
         </section>
 
         <section class="bench-section accordion-section" id="walls-section" data-open="1">

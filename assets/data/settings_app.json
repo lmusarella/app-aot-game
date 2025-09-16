@@ -1,8 +1,8 @@
 {
     "malusTable": [
         { "range": { "min": 75, "max": 90 }, "text": "Tensione crescente", "bonus": { "agi": -1, "tec": 0, "atk": 0 }, "type": "warning" },
-        { "range": { "min": 50, "max": 75 }, "text": "Scarsa disciplina", "bonus": { "agi": 0, "tec": -1, "atk": 0 }, "type": "warning" },
-        { "range": { "min": 25, "max": 50 }, "text": "Catena di comando instabile", "bonus": { "agi": 0, "tec": 0, "atk": -1 }, "type": "error" },
+        { "range": { "min": 50, "max": 75 }, "text": "Scarsa disciplina", "bonus": { "agi": -1, "tec": -1, "atk": 0 }, "type": "warning" },
+        { "range": { "min": 25, "max": 50 }, "text": "Catena di comando instabile", "bonus": { "agi":-1, "tec":-1, "atk": -1 }, "type": "error" },
         { "range": { "min": 1, "max": 25 }, "text": "Panico tra la popolazione", "bonus": { "agi": -1, "tec": -1, "atk": -1 }, "type": "error" },
         { "range": { "min": 0, "max": 1 }, "text": "Umanità sterminata", "bonus": { "agi": 0, "tec": 0, "atk": 0 }, "type": "error" }
     ],
