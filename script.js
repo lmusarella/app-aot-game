@@ -37,6 +37,7 @@ const GAME_STATE = {
         intervalId: null
     },
     spawns: [],
+    hand: [],
     decks: {
         event: { draw: [], discard: [], removed: [] },
         consumable: { draw: [], discard: [], removed: [] },
@@ -127,6 +128,8 @@ function snapshot() {
         giantsPool: structuredClone(GAME_STATE.giantsPool),
         giantsRoster: structuredClone(GAME_STATE.giantsRoster),
         walls: structuredClone(GAME_STATE.walls), // base walls (w1,w2,w3)
+        //mano
+        hand: structuredClone(GAME_STATE.hand),
         // mazzi
         decks: structuredClone(GAME_STATE.decks),
         // UI/stati
@@ -174,6 +177,8 @@ function restore(save) {
     GAME_STATE.decks.consumable.discard = save.decks?.consumable?.discard ?? [];
     GAME_STATE.decks.consumable.removed = save.decks?.consumable?.removed ?? [];
     GAME_STATE.logs = save.logs ?? [];
+    //mano
+    GAME_STATE.hand = Array.isArray(save.hand) ? save.hand : [];
 
     // 3) stati
     Object.assign(GAME_STATE.xpMoraleState, save.xpMoraleState || {});
@@ -1198,6 +1203,7 @@ fabs.forEach(fab => {
 
 document.addEventListener('click', (e) => { if (!e.target.closest('.fab')) closeAllFabs(); });
 
+
 document.querySelectorAll('#fab-spawn .fab-option').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -1225,6 +1231,12 @@ document.querySelectorAll('#fab-event .fab-option').forEach(btn => {
             return;
         }
 
+        if (t === 'showhand') {
+            openHandOverlay();
+            closeAllFabs();
+            return;
+        }
+
         const type = (t === 'evento') ? 'event' : 'consumable';
         const card = drawCard(type);
 
@@ -1233,11 +1245,8 @@ document.querySelectorAll('#fab-event .fab-option').forEach(btn => {
             closeAllFabs();
             return;
         }
-
         log(`Pescata carta ${t}: "${card.name}".`);
-        const act = await showCardPopup(type, card);
-        if (act) applyCardAction(type, card, act);
-
+        showDrawnCard(type, card);
         closeAllFabs();
     });
 });
@@ -1315,6 +1324,213 @@ function addLongPress(el, { onLongPress, onClick }) {
     el.addEventListener('pointercancel', clear);
 }
 
+function cardChipHTML(kind) {
+    const label = kind === 'consumable' ? 'Consumabile' : 'Evento';
+    const cls = kind === 'consumable' ? 'card-chip--consumable' : 'card-chip--event';
+    return `<span class="card-chip ${cls}">${label}</span>`;
+}
+
+function cardSheetHTML(deck, card, actions) {
+    const name = card?.name || 'Carta';
+    const img = card?.img || '';
+    const desc = card?.desc || '';
+    const chip = cardChipHTML(deck);
+
+    // actions = array di { key:'use'|'discard'|'add'|'remove'|'close', label:'...' , kind:'primary'|'danger'|'' }
+    const actBtns = (actions || []).map(a =>
+        `<button class="card-btn ${a.kind || ''}" data-act="${a.key}">${a.label}</button>`
+    ).join('');
+
+    return `
+  <article class="tt-card card-sheet" data-deck="${deck}">
+    <div class="tt-title">${name}</div>
+    <div>${chip}</div>
+    <div class="tt-avatar">${img ? `<img src="${img}" alt="${name}">` : ''}</div>
+    <div class="tt-ability" data-collapsed="false">
+      <span class="tt-label">DESCRIZIONE</span>
+      <div class="tt-ability-text">${desc}</div>
+    </div>
+    <div class="picker__live"></div>
+    <div class="card-actions">${actBtns}</div>
+  </article>`;
+}
+
+function handCardMiniHTML(entry) {
+    const { deck, card } = entry;
+    const name = card?.name || 'Carta';
+    const img = card?.img || '';
+    return `
+  <div class="tt-card">
+    <div class="tt-avatar">${img ? `<img src="${img}" alt="${name}">` : ''}</div>
+    <div class="tt-title">${name}</div>
+  </div>`;
+}
+
+function handCardFocusHTML(entry) {
+    const { deck, card } = entry;
+    const name = card?.name || 'Carta';
+    const img = card?.img || '';
+    const desc = card?.desc || '';
+    const chip = cardChipHTML(deck);
+    return `
+  <div class="tt-card" data-role="event">
+    <div class="tt-avatar" style="width:100%; height:220px; border-radius:12px; border:none;">
+      ${img ? `<img src="${img}" alt="${name}">` : ''}
+    </div>
+    <div class="tt-title" style="margin-top:8px; display:flex; align-items:center; gap:8px; justify-content:center;">
+      ${name} ${chip}
+    </div>
+    <div class="tt-ability" data-collapsed="false">
+      <span class="tt-label">DESCRIZIONE</span>
+      <div class="tt-ability-text">${desc}</div>
+    </div>
+  </div>`;
+}
+
+function showDrawnCard(deckType, card) {
+    const root = document.getElementById('hand-overlay');
+    const strip = document.getElementById('hand-strip');
+    const stage = root?.querySelector('.hand-stage');
+    if (!root || !strip || !stage) return;
+    //stage.classList.add('hand-stage--single');
+
+    strip.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'hand-card';
+
+    const actionCard = [
+        { key: 'discard', label: 'Scarta', kind: 'primary' },
+        { key: 'shuffle', label: 'Rimescola', kind: 'danger' }
+    ];
+
+    wrap.innerHTML = cardSheetHTML(deckType, card, actionCard);
+
+    wrap.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('.card-btn'); if (!btn) return;
+        const act = btn.dataset.act;
+        if (act === 'discard') {
+            GAME_STATE.decks[deckType]?.discard.push(card);
+            log(`Scartata "${card.name}".`, 'info');
+        }
+        if (act === 'shuffle') {
+            GAME_STATE.decks[deckType]?.draw.push(card);
+            log(`Rimescolata ${card.name} nel mazzo "${deckType}".`, 'info');
+        }
+        updateFabDeckCounters();
+        closeOverlay();
+    }, { passive: true });
+
+    strip.appendChild(wrap);
+
+    function closeOverlay() {
+        root.setAttribute('hidden', '');
+        root.querySelector('.hand-backdrop').onclick = null;
+        root.querySelector('.hand-close').onclick = null;
+        document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) { if (e.key === 'Escape') closeOverlay(); }
+
+    root.querySelector('.hand-backdrop').onclick = () => {
+        closeOverlay();
+        if (deckType === 'consumable') {
+            GAME_STATE.hand.push({ deck: deckType, card: structuredClone(card) });
+            log(`Aggiunta in mano: "${card.name}".`, 'success');
+            updateFabDeckCounters();
+        }
+        if (deckType === 'event') {
+            GAME_STATE.decks[deckType]?.discard.push(card);
+            log(`Carta Evento "${card.name} è stata attivata!.`, 'warning');
+            updateFabDeckCounters();
+        }
+    };
+    root.querySelector('.hand-close').onclick = () => {
+        closeOverlay();
+        if (deckType === 'consumable') {
+            GAME_STATE.hand.push({ deck: deckType, card: structuredClone(card) });
+            log(`Aggiunta in mano: "${card.name}".`, 'success');
+            updateFabDeckCounters();
+        }
+        if (deckType === 'event') {
+            GAME_STATE.decks[deckType]?.discard.push(card);
+            log(`Carta Evento "${card.name} è stata attivata!.`, 'warning');
+            updateFabDeckCounters();
+        }
+    };
+    document.addEventListener('keydown', onKey);
+
+    root.removeAttribute('hidden');
+}
+
+
+
+function openHandOverlay() {
+    const root = document.getElementById('hand-overlay');
+    const strip = document.getElementById('hand-strip');
+    const stage = root?.querySelector('.hand-stage');
+    if (!root || !strip || !stage) return;
+    stage.classList.remove('hand-stage--single');
+
+    if (!GAME_STATE.hand.length) { log('La mano è vuota.', 'info'); return; }
+
+    // render
+    strip.innerHTML = '';
+    GAME_STATE.hand.forEach((entry, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'hand-card';
+        wrap.innerHTML = cardSheetHTML(entry.deck, entry.card, [
+            { key: 'discard-one', label: 'Scarta', kind: 'primary' },
+            { key: 'use-one', label: 'Usa', kind: 'danger' }
+        ]);
+        // delega click pulsanti di questa carta
+        wrap.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('.card-btn'); if (!btn) return;
+            const act = btn.dataset.act;
+
+            if (act === 'discard-one') {
+                const it = GAME_STATE.hand.splice(i, 1)[0];
+                if (it) {
+                    GAME_STATE.decks[it.deck]?.discard.push(it.card);
+                    log(`Scartata "${it.card.name}".`, 'info');
+                    updateFabDeckCounters();
+                }
+            }
+            if (act === 'use-one') {
+                const it = GAME_STATE.hand.splice(i, 1)[0];
+                if (it) {
+                    let handled = false;
+                    try { handled = !!window.onUseCard?.(it.deck, it.card); } catch { }
+                    if (!handled) {
+                        if (it.deck === 'consumable') GAME_STATE.decks[it.deck]?.discard.push(it.card);
+                        else GAME_STATE.decks[it.deck]?.discard.push(it.card);
+                    }
+                    log(`Usata "${it.card.name}".`, 'success');
+                    updateFabDeckCounters();
+                }
+            }
+
+            // refresh/chiudi
+            if (!GAME_STATE.hand.length) { closeOverlay(); return; }
+            openHandOverlay(); // rerender semplice
+        }, { passive: true });
+
+        strip.appendChild(wrap);
+    });
+
+    function closeOverlay() {
+        root.setAttribute('hidden', '');
+        root.querySelector('.hand-backdrop').onclick = null;
+        root.querySelector('.hand-close').onclick = null;
+        document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) { if (e.key === 'Escape') closeOverlay(); }
+
+    root.querySelector('.hand-backdrop').onclick = closeOverlay;
+    root.querySelector('.hand-close').onclick = closeOverlay;
+
+    document.addEventListener('keydown', onKey);
+
+    root.removeAttribute('hidden');
+}
 
 function ensureModal() {
     if (_modalEls) return _modalEls;
@@ -1392,89 +1608,6 @@ function openDialog({ title, message, confirmText = 'OK', cancelText = 'Annulla'
 }
 function confirmDialog(opts) { return openDialog({ ...opts, cancellable: true }); }
 
-
-
-async function showCardPopup(deckType, card) {
-    const url = deckType === 'consumable' ? './assets/sounds/carte/carta_consumabile.mp3' : './assets/sounds/carte/carta_evento.mp3';
-    await play(url, { loop: false, volume: 1 });
-
-
-    const { backdrop, modal, title, msg, btnClose, btnCancel, btnConfirm } = ensureModal();
-
-    // --- prepara chip tipo carta ---
-    const rawKind = String(card.type || '').toLowerCase();
-    const known = new Set(['spawn', 'event', 'malus', 'bonus']);
-    const kind = known.has(rawKind) ? rawKind : (deckType === 'consumable' ? 'consumable' : 'event');
-    const label =
-        kind === 'spawn' ? 'Spawn' :
-            kind === 'malus' ? 'Malus' :
-                kind === 'bonus' ? 'Bonus' :
-                    kind === 'consumable' ? 'Consumabile' : 'Evento';
-
-    // header: titolo + chip
-    title.textContent = card.name || 'Carta';
-    const chip = document.createElement('span');
-    chip.className = `card-chip card-chip--${kind}`;
-    chip.setAttribute('aria-label', `Tipo: ${label}`);
-    chip.textContent = label;
-    title.appendChild(chip);
-
-    // corpo
-    msg.innerHTML = `
-    <div class="cardmodal">
-      <div class="cardmodal__media">
-        <img src="${card.img || ''}" alt="${card.name || 'Carta'}" onerror="this.style.display='none'">
-      </div>
-      <div class="cardmodal__desc">${card.desc || ''}</div>
-    </div>
-  `;
-
-    // Nascondi i bottoni standard e aggiungi le azioni temporanee
-    btnCancel.classList.add('is-hidden');
-    btnConfirm.classList.add('is-hidden');
-
-    const actions = modal.querySelector('.modal-actions');
-    actions.querySelector('.card-actions')?.remove();
-    const temp = document.createElement('div');
-    temp.className = 'card-actions';
-    temp.innerHTML = `
-    <button class="modal-btn" data-act="discard">Scarta</button>
-    <button class="modal-btn rimescola" data-act="reshuffle">Rimescola</button>
-    <button class="modal-btn danger" data-act="remove">Rimuovi</button>
-  `;
-    actions.appendChild(temp);
-
-    // la X è sempre visibile
-    btnClose.style.display = '';
-
-    return new Promise(resolve => {
-        const cleanup = () => {
-            actions.querySelector('.card-actions')?.remove();
-            btnCancel.classList.remove('is-hidden');
-            btnConfirm.classList.remove('is-hidden');
-            btnClose.onclick = null;
-            actions.removeEventListener('click', onClick);
-            document.removeEventListener('keydown', onKey);
-        };
-        const close = (result) => {
-            backdrop.classList.remove('show'); modal.classList.remove('show');
-            setTimeout(() => { cleanup(); resolve(result); }, 100);
-        };
-        const onKey = (e) => { if (e.key === 'Escape') close(null); };
-        const onClick = (e) => {
-            const b = e.target.closest('button[data-act]');
-            if (b) close(b.dataset.act);
-        };
-
-        document.addEventListener('keydown', onKey);
-        actions.addEventListener('click', onClick);
-        btnClose.onclick = () => close(null);
-
-        requestAnimationFrame(() => {
-            backdrop.classList.add('show'); modal.classList.add('show');
-        });
-    });
-}
 
 function adjustUnitHp(unitId, delta) {
     const u = unitById.get(unitId);
@@ -1675,23 +1808,23 @@ function applyClasses() {
     btnL.textContent = L ? '⟩' : '⟨';
     btnR.textContent = R ? '⟨' : '⟩';
 }
-function toggleSide(side){
-  // ⚠️ disattiva i media query "auto" dopo il primo intervento dell’utente
-  document.body.classList.add('manual-layout');
+function toggleSide(side) {
+    // ⚠️ disattiva i media query "auto" dopo il primo intervento dell’utente
+    document.body.classList.add('manual-layout');
 
-  const el = (side === 'left') ? leftEl : rightEl;
-  el.classList.toggle('collapsed');
-  applyClasses();
+    const el = (side === 'left') ? leftEl : rightEl;
+    el.classList.toggle('collapsed');
+    applyClasses();
 }
 
 // init: default chiusi (come richiesto), nessuna persistenza
-(function initSidebars(){
-  leftEl.classList.add('collapsed');
-  rightEl.classList.add('collapsed');
-  applyClasses();
+(function initSidebars() {
+    leftEl.classList.add('collapsed');
+    rightEl.classList.add('collapsed');
+    applyClasses();
 
-  document.getElementById('toggle-left')?.addEventListener('click', () => toggleSide('left'));
-  document.getElementById('toggle-right')?.addEventListener('click', () => toggleSide('right'));
+    document.getElementById('toggle-left')?.addEventListener('click', () => toggleSide('left'));
+    document.getElementById('toggle-right')?.addEventListener('click', () => toggleSide('right'));
 })();
 
 
@@ -2125,26 +2258,6 @@ function drawCard(type /* 'event' | 'consumable' */) {
     return pop; // pesca dal top
 }
 
-function applyCardAction(type, card, action) {
-    const d = GAME_STATE.decks[type];
-    if (!d || !card) return;
-
-    if (action === 'discard') {
-        d.discard.push(card);
-        log(`Carta "${card.name}" scartata.`);
-    } else if (action === 'reshuffle') {
-        // rimetti nel draw e rimescola
-        d.draw.push(card);
-        shuffle(d.draw);
-        log(`Carta "${card.name}" rimescolata nel mazzo.`);
-    } else if (action === 'remove') {
-        d.removed.push(card);
-        log(`Carta "${card.name}" rimossa dal gioco.`);
-    }
-    scheduleSave();
-    updateFabDeckCounters();
-}
-
 function reshuffleDiscardsOf(type /* 'event' | 'consumable' */) {
     const d = GAME_STATE.decks[type];
     if (!d) return 0;
@@ -2188,12 +2301,14 @@ function reshuffleAllDiscards() {
 function updateFabDeckCounters() {
     const evDraw = GAME_STATE.decks.event?.draw?.length || 0;
     const consDraw = GAME_STATE.decks.consumable?.draw?.length || 0;
+    const handDraw = GAME_STATE.hand?.length || 0;
 
     const evBadge = document.querySelector('[data-deck-badge="event"]');
     const consBadge = document.querySelector('[data-deck-badge="consumable"]');
-
+    const handBadge = document.querySelector('[data-deck-badge="showhand"]');
     if (evBadge) evBadge.textContent = evDraw;
     if (consBadge) consBadge.textContent = consDraw;
+    if (handBadge) handBadge.textContent = handDraw;
 }
 
 /* =========================================================
@@ -2655,92 +2770,122 @@ async function bootDataApplication() {
 }
 
 (function setupRightAccordions() {
-  const aside = document.querySelector('aside');
-  if (!aside) return;
+    const aside = document.querySelector('aside');
+    if (!aside) return;
 
-  const sections = Array.from(aside.querySelectorAll('.accordion-section'));
+    const sections = Array.from(aside.querySelectorAll('.accordion-section'));
 
-  // Applica lo stato iniziale letto da data-open (0/1)
-  sections.forEach(sec => {
-    const btn   = sec.querySelector('.accordion-trigger');
-    const panel = sec.querySelector('.accordion-panel');
-    const open  = sec.dataset.open === '1';
-    btn?.setAttribute('aria-expanded', String(open));
-    panel?.setAttribute('aria-hidden', String(!open));
-  });
-
-  function expandMax(sec) {
-    // Calcola lo spazio disponibile totale dentro <aside>
-    const styleAside = getComputedStyle(aside);
-    const gap   = parseFloat(styleAside.gap) || 0;
-    const padT  = parseFloat(styleAside.paddingTop) || 0;
-    const padB  = parseFloat(styleAside.paddingBottom) || 0;
-    const total = aside.clientHeight;
-
-    // Somma le altezze delle intestazioni di TUTTE le sezioni
-    let consumed = padT + padB + gap * Math.max(0, sections.length - 1);
-    sections.forEach(s => {
-      const hdr = s.querySelector('.accordion-header');
-      consumed += hdr ? hdr.offsetHeight : 0;
-    });
-
-    const max = Math.max(120, total - consumed - 8); // margine di sicurezza
-    const inner = sec.querySelector('.accordion-inner');
-    if (inner) inner.style.maxHeight = `${max}px`;
-  }
-
-  function openOne(target) {
+    // Applica lo stato iniziale letto da data-open (0/1)
     sections.forEach(sec => {
-      const isTarget = sec === target;
-      const btn   = sec.querySelector('.accordion-trigger');
-      const panel = sec.querySelector('.accordion-panel');
-
-      sec.dataset.open = isTarget ? '1' : '0';
-      btn?.setAttribute('aria-expanded', String(isTarget));
-      panel?.setAttribute('aria-hidden', String(!isTarget));
-
-      if (isTarget) expandMax(sec);
+        const btn = sec.querySelector('.accordion-trigger');
+        const panel = sec.querySelector('.accordion-panel');
+        const open = sec.dataset.open === '1';
+        btn?.setAttribute('aria-expanded', String(open));
+        panel?.setAttribute('aria-hidden', String(!open));
     });
-  }
 
-  // Click: apertura esclusiva. Se clicchi su quello già aperto: lo chiude.
-  sections.forEach(sec => {
-    const btn = sec.querySelector('.accordion-trigger');
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-      const isOpen = sec.dataset.open === '1';
-      if (isOpen) {
-        sec.dataset.open = '0';
-        sec.querySelector('.accordion-panel')?.setAttribute('aria-hidden', 'true');
-        btn.setAttribute('aria-expanded', 'false');
-      } else {
-        openOne(sec);
-      }
+    function expandMax(sec) {
+        // Calcola lo spazio disponibile totale dentro <aside>
+        const styleAside = getComputedStyle(aside);
+        const gap = parseFloat(styleAside.gap) || 0;
+        const padT = parseFloat(styleAside.paddingTop) || 0;
+        const padB = parseFloat(styleAside.paddingBottom) || 0;
+        const total = aside.clientHeight;
+
+        // Somma le altezze delle intestazioni di TUTTE le sezioni
+        let consumed = padT + padB + gap * Math.max(0, sections.length - 1);
+        sections.forEach(s => {
+            const hdr = s.querySelector('.accordion-header');
+            consumed += hdr ? hdr.offsetHeight : 0;
+        });
+
+        const max = Math.max(120, total - consumed - 8); // margine di sicurezza
+        const inner = sec.querySelector('.accordion-inner');
+        if (inner) inner.style.maxHeight = `${max}px`;
+    }
+
+    function openOne(target) {
+        sections.forEach(sec => {
+            const isTarget = sec === target;
+            const btn = sec.querySelector('.accordion-trigger');
+            const panel = sec.querySelector('.accordion-panel');
+
+            sec.dataset.open = isTarget ? '1' : '0';
+            btn?.setAttribute('aria-expanded', String(isTarget));
+            panel?.setAttribute('aria-hidden', String(!isTarget));
+
+            if (isTarget) expandMax(sec);
+        });
+    }
+
+    // Click: apertura esclusiva. Se clicchi su quello già aperto: lo chiude.
+    sections.forEach(sec => {
+        const btn = sec.querySelector('.accordion-trigger');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            const isOpen = sec.dataset.open === '1';
+            if (isOpen) {
+                sec.dataset.open = '0';
+                sec.querySelector('.accordion-panel')?.setAttribute('aria-hidden', 'true');
+                btn.setAttribute('aria-expanded', 'false');
+            } else {
+                openOne(sec);
+            }
+        });
     });
-  });
 
-  // Se una sezione è già aperta all’avvio (es. "Mura"), calcola subito l’altezza massima
-  const initialOpen = sections.find(s => s.dataset.open === '1');
-  if (initialOpen) expandMax(initialOpen);
+    // Se una sezione è già aperta all’avvio (es. "Mura"), calcola subito l’altezza massima
+    const initialOpen = sections.find(s => s.dataset.open === '1');
+    if (initialOpen) expandMax(initialOpen);
 
 
-   window.openRightAccordionById = function(id) {
-    const sec = sections.find(s => s.id === id);
-    if (sec) openOne(sec);
-  };
+    window.openRightAccordionById = function (id) {
+        const sec = sections.find(s => s.id === id);
+        if (sec) openOne(sec);
+    };
 })();
 
 function openAccordionForRole(role) {
-  const id = (role === 'enemy')
-    ? 'giants-section'
-    : (role === 'wall')
-      ? 'walls-section'
-      : 'allies-section'; // recruit/commander (default)
+    const id = (role === 'enemy')
+        ? 'giants-section'
+        : (role === 'wall')
+            ? 'walls-section'
+            : 'allies-section'; // recruit/commander (default)
 
-  if (typeof window.openRightAccordionById === 'function') {
-    window.openRightAccordionById(id);
-  }
+    if (typeof window.openRightAccordionById === 'function') {
+        window.openRightAccordionById(id);
+    }
 }
+
+// logica mano
+function addCardToHand(deckType, card) {
+    if (!card) return;
+    GAME_STATE.hand.push({ deck: deckType, card: structuredClone(card) });
+    scheduleSave();
+}
+
+function removeCardFromHand(index) {
+    if (index < 0 || index >= GAME_STATE.hand.length) return null;
+    const [it] = GAME_STATE.hand.splice(index, 1);
+    scheduleSave();
+    return it;
+}
+
+/** Scarta tutta la mano nei rispettivi scarti */
+function discardFullHand() {
+    let e = 0, c = 0;
+    for (let i = GAME_STATE.hand.length - 1; i >= 0; i--) {
+        const it = removeCardFromHand(i);
+        if (!it) continue;
+        const d = GAME_STATE.decks[it.deck];
+        if (!d) continue;
+        d.discard.push(it.card);
+        if (it.deck === 'event') e++; else c++;
+    }
+    updateFabDeckCounters();
+    if (e || c) log(`Scartate ${e ? `${e} Evento` : ''}${e && c ? ' e ' : ''}${c ? `${c} Consumabile` : ''} dalla mano.`, 'info');
+}
+window.addCardToHand = addCardToHand; // opzionale, comodo da console / altre parti
 
 
 document.addEventListener('DOMContentLoaded', async () => {

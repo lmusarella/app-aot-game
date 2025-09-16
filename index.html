@@ -221,16 +221,19 @@
         <div id="fab-event" class="fab event" aria-expanded="false">
             <button class="fab-main event" type="button" title="Mazzo Carte">MAZZO</button>
             <div class="fab-options" aria-hidden="true">
-                <button class="fab-option" data-ev="evento" title="Pesca Evento" style="--angle:-50deg">Pesca
+                <button class="fab-option" data-ev="evento" title="Pesca Evento" style="--angle:-65deg">Pesca
                     Evento <span class="deck-badge" data-deck-badge="event"></span></button>
                 <button class="fab-option" data-ev="reshuffle" title="Rimescola gli scarti di tutti i mazzi"
-                    style="--angle:0deg">
+                    style="--angle:-35deg">
                     Rimescola Mazzi
                 </button>
-                <button class="fab-option" data-ev="consumabile" title="Pesca Consumabile" style="--angle:50deg">Pesca
+                <button class="fab-option" data-ev="showhand" title="Carte in mano" style="--angle:35deg">Carte in
+                    mano <span class="deck-badge" data-deck-badge="showhand"></span></button>
+                <button class="fab-option" data-ev="consumabile" title="Pesca Consumabile" style="--angle:65deg">Pesca
                     Consumabile <span class="deck-badge" data-deck-badge="consumable"></span> </button>
             </div>
         </div>
+
         <!-- ARRUOLA -->
         <div id="fab-arruola" class="fab arruola" aria-expanded="false">
             <button class="fab-main arruola" type="button" title="Arruola unità">SQUADRA</button>
@@ -275,14 +278,22 @@
         </div>
     </footer>
 
+    <!-- Overlay Mano (creato/riempito via JS) -->
+    <!-- Overlay Carte (mano / pesca) -->
+    <div id="hand-overlay" class="hand-overlay" hidden>
+        <div class="hand-backdrop"></div>
+        <div class="hand-stage hand-stage--strip" role="dialog" aria-modal="true" aria-label="Carte">
+            <div class="hand-strip" id="hand-strip" tabindex="0" aria-live="polite"></div>
+            <button class="hand-close" title="Chiudi" aria-label="Chiudi">×</button>
+        </div>
+    </div>
+
 
     <button id="toggle-left" class="collapse-handle left" aria-expanded="true" title="Comprimi/espandi menu sinistro">
         <span class="arrow">⟨</span>
-
     </button>
 
     <button id="toggle-right" class="collapse-handle right" aria-expanded="true" title="Comprimi/espandi menu destro">
-
         <span class="arrow">⟩</span>
     </button>
 

@@ -2939,3 +2939,76 @@ body.collapse-both { transition: grid-template-columns .18s ease; }
 body.collapse-left  { grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-w) !important; }
 body.collapse-right { grid-template-columns: var(--sidebar-w) 1fr var(--sidebar-c) !important; }
 body.collapse-both  { grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-c) !important; }
+
+
+/* ==== Overlay mano – auto width + tools ==== */
+.hand-overlay[hidden]{ display:none!important; }
+.hand-overlay{
+  --card-w: clamp(260px, 30ch, 340px);  /* larghezza carta base */
+  position:fixed; inset:0; z-index:100002; display:grid; place-items:center;
+}
+.hand-backdrop{ position:absolute; inset:0; background:rgba(8,10,14,.64); backdrop-filter:blur(6px) saturate(120%); }
+
+/* lo stage ora shrink-wrappa al contenuto (max 96vw) */
+.hand-stage{
+  position:relative;
+  display:inline-block;               /* <-- fa shrink-wrap */
+  width:fit-content(96vw);            /* <-- si adatta alle carte */
+  max-width:600px;                     /* cap a viewport */
+  max-height:88vh;
+  padding:18px;
+  border-radius:16px;
+  border:1px solid #1f2230;
+  background:linear-gradient(180deg,#0e1017,#0c0e14);
+  box-shadow:0 18px 44px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+  animation:ttPop .12s ease-out;
+  overflow:hidden;
+}
+
+/* toolbar (close + rimescola) */
+.hand-close,.hand-shuffle{
+  position:absolute; top:10px; width:34px; height:34px; border-radius:10px;
+  border:1px solid #2a2a2a; background:#13151d; color:#ddd; cursor:pointer;
+}
+.hand-close{ right:10px; }
+.hand-shuffle{ right:52px; }           /* icona a sinistra della X */
+.hand-close:hover,.hand-shuffle:hover{ filter:brightness(1.08); }
+
+/* strip carte: grid in colonne => larghezza intrinseca = somma carte */
+.hand-strip{
+  display:grid; grid-auto-flow:column; grid-auto-columns:var(--card-w);
+  gap:16px; overflow-x:auto; padding:6px 10px 12px;
+  scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;
+}
+.hand-strip::before,.hand-strip::after{ content:""; width:12px; }
+
+/* carta */
+.hand-card{ scroll-snap-align:center; }
+.tt-card.card-sheet{
+  height:100%; display:flex; flex-direction:column; align-items:stretch; padding:14px;
+  border-radius:16px; border:3px solid gray;
+  background:linear-gradient(180deg,#121524,#0d101b);
+  box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  text-align:center;
+}
+.card-sheet .tt-title{ display:flex; justify-content:center; gap:10px; margin:0 0 6px; font:700 16px/1.1 system-ui; }
+.card-sheet .tt-avatar{ width:180px; height:180px; margin:6px auto 8px; border-radius:50%; overflow:hidden; border:3px solid gray; background:#0b0d12; box-shadow:0 0 12px rgba(0,0,0,.4); }
+.card-sheet .tt-ability{ margin-top:6px; padding-top:8px; border-top:1px solid #20253a; }
+.card-sheet .tt-ability .tt-label{ display:block; font-size:11px; opacity:.7; letter-spacing:.3px; margin-bottom:6px; }
+.card-sheet .tt-ability-text{ font-size:13px; line-height:1.35; white-space:pre-wrap; overflow-wrap:anywhere; max-height:7.5em; overflow:auto; }
+.card-actions{ margin-top:12px; display:flex; gap:8px; justify-content:center; }
+.card-btn{ padding:8px 12px; border-radius:10px; border:1px solid #2a2f43; background:#14192b; color:#e6e6e6; font-weight:800; cursor:pointer; }
+.card-btn.primary{ background:#193256; border-color:#254066; color:#cfe8ff; }
+.card-btn.danger{ background:linear-gradient(180deg,#b83131,#7a1f1f); border-color:#3f1111; color:#fff; }
+.card-btn:hover{ filter:brightness(1.08); }
+.card-btn:active{ transform:translateY(1px); }
+
+/* micro-interazione */
+@media (hover:hover){ .hand-card{ transition:transform .18s cubic-bezier(.2,.8,.2,1), filter .18s; } .hand-card:hover{ transform:translateY(-8px); filter:brightness(1.06); } }
+
+/* vista singola (quando peschi): carte più larghe */
+.hand-stage--single{ --card-w: clamp(300px, 42vw, 440px); }
+@media (max-width:720px){
+  .hand-overlay{ --card-w: clamp(260px, 78vw, 320px); }
+  .card-sheet .tt-avatar{ width:112px; height:112px; }
+}
