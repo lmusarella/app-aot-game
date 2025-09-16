@@ -1,0 +1,37 @@
+{
+    "malusTable": [
+        { "range": { "min": 75, "max": 90 }, "text": "Tensione crescente", "bonus": { "agi": -1, "tec": 0, "atk": 0 }, "type": "warning" },
+        { "range": { "min": 50, "max": 75 }, "text": "Scarsa disciplina", "bonus": { "agi": 0, "tec": -1, "atk": 0 }, "type": "warning" },
+        { "range": { "min": 25, "max": 50 }, "text": "Catena di comando instabile", "bonus": { "agi": 0, "tec": 0, "atk": -1 }, "type": "error" },
+        { "range": { "min": 1, "max": 25 }, "text": "Panico tra la popolazione", "bonus": { "agi": -1, "tec": -1, "atk": -1 }, "type": "error" },
+        { "range": { "min": 0, "max": 1 }, "text": "Umanità sterminata", "bonus": { "agi": 0, "tec": 0, "atk": 0 }, "type": "error" }
+    ],
+    "bonusTable": [    
+        { "lvl": 2, "text": "+1 AGI", "bonus": { "agi": 1, "tec": 0, "atk": 0 } },
+        { "lvl": 3, "text": "+1 TEC", "bonus": { "agi": 0, "tec": 1, "atk": 0 } },
+        { "lvl": 4, "text": "+1 ATK", "bonus": { "agi": 0, "tec": 0, "atk": 1 } },
+        { "lvl": 5, "text": "Cura le tue reclute di 5 HP complessivi.", "bonus": { "agi": 1, "tec": 1, "atk": 1 } },
+        { "lvl": 6, "text": "Ogni giocatore può pescare una carta equipaggiamento.", "bonus": { "agi": 1, "tec": 1, "atk": 1 } },
+        { "lvl": 7, "text": "Ripara le tue attuali mura di 5 HP.", "bonus": { "agi": 1, "tec": 1, "atk": 1 } },
+        { "lvl": 8, "text": "Cura i tuoi comandanti di 8 HP complessivi.", "bonus": { "agi": 1, "tec": 1, "atk": 1 } },
+        { "lvl": 9, "text": "Cura le tue reclute di 10 HP complessivi.", "bonus": { "agi": 1, "tec": 1, "atk": 1 } },
+        { "lvl": 10, "text": "Le tue reclute subiscono un danno in meno da tutte le fonti.", "bonus": { "agi": 1, "tec": 1, "atk": 1 } }
+    ],
+    "gridSettings": {
+        "wall": {"10": "w1", "11": "w2", "12": "w3"},
+        "rows": 12,
+        "cols": 6,
+        "maxUnitHexagon": 12,
+        "dispalyLimit": 8
+    },
+    "xpTable": [2, 4, 8, 16, 64, 128, 256, 512, 1024],
+    "xpMoralDefault": {
+        "xp": 0,
+        "moralePct": 100,
+        "effectiveBonus": {
+                "agi": 0,
+                "tec": 0,
+                "atk": 0
+        }
+    }
+}

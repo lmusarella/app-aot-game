@@ -1,0 +1,702 @@
+[
+  {
+    "id": "e1",
+    "type": "event",
+    "name": "Rifornimenti Inattesi",
+    "desc": "Le tue squadre trovano una cassa di rifornimenti. Tutti i giocatori pescano una carta equipaggiamento.",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e2",
+    "type": "malus",
+    "name": "Maltempo Improvviso",
+    "desc": "Una pioggia torrenziale riduce la visibilità. Malus di -1 a tutti i tiri di dado per questo turno.",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e3",
+    "type": "event",
+    "name": "Kit di sopravvivenza",
+    "desc": "Le tue squadre trovano una cassa di rifornimenti. Tutti i giocatori pescano una carta consumabile.",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e4",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e5",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e6",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e7",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e8",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e9",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e10",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e11",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e12",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e13",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e14",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e15",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e16",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e17",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e18",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e19",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e20",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e21",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e22",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e23",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e24",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e25",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e26",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e27",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e28",
+    "type": "spawn",
+    "name": "Discesa del Gigante!",
+    "desc": "Si sente un rombo di tuono in lontananza...",
+    "img": "assets/img/cards/fulmine.jpg"
+  },
+  {
+    "id": "e29",
+    "type": "event",
+    "name": "Duello",
+    "desc": "Scegli una recluta e muovila in un esagono adiacente ad un gigante. La recluta e il gigante combattono solo con i bonus da essi generati lanciando regolarmente i dadi finchè uno dei due non muore.",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e30",
+    "type": "malus",
+    "name": "Tremore",
+    "desc": "Il comandante ha avvertito un tremore e ordina a tutte le squadre di non muoversi. Tutti i personaggi saltano il turno di movimento per questo turno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e31",
+    "type": "bonus",
+    "name": "Accelerazione",
+    "desc": "Il comandante ordina di accelerare la missione. Tutti i personaggi devono compiere un'azione di movimento aggiuntiva per questo turno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e32",
+    "type": "spawn",
+    "name": "Mutazione!",
+    "desc": "Appare un gigante mutaforma nell'ultima fila di esagoni. Lancia un d6 per stabilire la colonna.",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e33",
+    "type": "malus",
+    "name": "Processo truccato",
+    "desc": "Conserva questa carta fino alla fine della missione. Per ogni recluta di ritorno dalla missione puoi decidere se infliggerle 2 danni oppure perdere 1 morale",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e34",
+    "type": "malus",
+    "name": "Mutazione d'attacco",
+    "desc": "I giganti sembrano avere denti più affilati del solito. Ogniqualvolta un gigante dovrebbe infliggere danno in questa missione, egli infligge un danno aggiuntivo",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e35",
+    "type": "malus",
+    "name": "Mutazione di difesa",
+    "desc": "I giganti sembrano avere una pelle più dura del solito. Ogniqualvolta un gigante dovrebbe subire danno in questa missione, egli subisce un danno in meno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e36",
+    "type": "event",
+    "name": "Assedio alle mura",
+    "desc": "Ogni gigante entro le prime due file di esagoni infligge il proprio danno alle mura. Se non ci sono giganti in questa zona, tutti i giganti non in combattimento avanzano verso le mura di 1 esagono",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e37",
+    "type": "event",
+    "name": "Imboscata",
+    "desc": "Se un gigante entra in combattimento contro un personaggio il prossimo turno anche un altro gigante entro tre esagoni da esso viene spostato in un esagono ad egli adiacente e si unisce al combattimento ",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e38",
+    "type": "event",
+    "name": "Mutilazione",
+    "desc": "Il comandante ha perso un braccio. Perde 5HP e non può attaccare il prossimo turno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e39",
+    "type": "event",
+    "name": "Rifugio nella torre",
+    "desc": "Se una recluta si reca nella torre nel prossimo turno, quella recluta può pescare 1 carta equipaggiamento",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e40",
+    "type": "event",
+    "name": "Corsia laterale",
+    "desc": "Tutte le reclute nei due esagoni laterali di ogni fila possono compiere un'azione movimento bonus il prossimo turno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e41",
+    "type": "event",
+    "name": "Guerra",
+    "desc": "Questa missione è considerata completata solo se tutti i giganti presenti sulla mappa sono stati uccisi",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e42",
+    "type": "event",
+    "name": "Corruzione della Gendarmeria",
+    "desc": "Senza il corpo di ricerca in città serpeggia la corruzione. Puoi scegliere se pescare un'altra carta evento oppure perdere 2 morale",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e43",
+    "type": "event",
+    "name": "Obiettivo: Mare",
+    "desc": "Questa missione può essere completata solo raggiungendo il mare",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e44",
+    "type": "event",
+    "name": "Sovrappopolazione",
+    "desc": "La popolazione all'interno delle mura è troppa e affamata. Se è caduto il Wall Maria perdi 2 morale. Se è caduto il Wall Rose perdi 5 morale",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e45",
+    "type": "event",
+    "name": "Breccia nelle mura",
+    "desc": "Tutti i giganti non in combattimento entro la quarta fila di esagoni si muovono di due esagoni verso le mura",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e46",
+    "type": "event",
+    "name": "Ritirata strategica",
+    "desc": "Puoi riposizionare le truppe non in combattimento entro due esagoni, ma non possono avanzare",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e47",
+    "type": "event",
+    "name": "Quiete",
+    "desc": "Non succede nulla",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e48",
+    "type": "event",
+    "name": "Sacrificio",
+    "desc": "Il morale sale a 15. Il comandante non in missione cone meno HP viene sacrificato e rimosso dal gioco",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e49",
+    "type": "spawn",
+    "name": "Pioggia di giganti",
+    "desc": "Riattiva l'ultima carta 'Discesa del Gigante' pescata, due volte. Verranno evocati due giganti dello stesso tipo di quello evocato in precedenza e nella stessa posizione",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e50",
+    "type": "event",
+    "name": "Disarcionamento",
+    "desc": "La recluta più arretrata viene disarcionata da cavallo per il resto della missione. E' considerata immobilizzata per questo turno ma potrà comunque attaccare",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e51",
+    "type": "event",
+    "name": "Resistenza",
+    "desc": "Nessuna recluta può morire il prossimo turno. Una recluta che dovrebbe subire danni che la porterebbero alla morte, previene quei danni e può essere riposizionata entro due esagoni",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e52",
+    "type": "event",
+    "name": "Carica!",
+    "desc": "Nel prossimo turno si può compiere um'azione di movimento bonus",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e53",
+    "type": "event",
+    "name": "Amuleto della fortuna",
+    "desc": "La recluta con meno HP sceglie un numero. Durante questa missione ogni volta che il risultato di qualsiasi d20 è pari a quel numero, la recluta recupera 1HP",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e54",
+    "type": "event",
+    "name": "Maledizione",
+    "desc": "La recluta con più HP sceglie un numero. Durante questa missione ogni volta che il risultato di qualsiasi d20 è pari a quel numero, la recluta perde 1HP",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e55",
+    "type": "event",
+    "name": "Boato della terra",
+    "desc": "Tutti i giganti sulla mappa si muovono di due esagoni verso le mura. Ogni soldato presente sul loro cammino deve effettuare un tiro salvezza CD=13 o subire 3 danni. I personaggi immobilizzati non possono effettuare tiri salvezza",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e56",
+    "type": "event",
+    "name": "Linfa vitale",
+    "desc": "Ogni recluta che mette a segno un attacco il prossimo turno, si cura di 1HP",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e57",
+    "type": "event",
+    "name": "Attacco coordinato",
+    "desc": "Il comandante ordina di mirare ai legamenti delle caviglie. Durante il prossimo turno ogni attacco che ottiene 15+ naturale immobilizza il gigante",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e58",
+    "type": "bonus",
+    "name": "Rifugio nel bosco",
+    "desc": "Durante il prossimo turno è possibile nascondersi nel bosco senza tirare i dadi. Ogni attacco sferrato dal bosco infligge 2 danni aggiuntivi per questo turno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e59",
+    "type": "event",
+    "name": "Linfa vitale",
+    "desc": "Ogni recluta che mette a segno un attacco il prossimo turno, si cura di 1HP",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e60",
+    "type": "malus",
+    "name": "Avvelenamento",
+    "desc": "Il morso di un gigante ha avvelenato un compagno. La prima recluta a subire danno nel prossimo turno viene avvelenata e subisce 1 danno ogni turno passato in combattimento per il resto della missione",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e61",
+    "type": "event",
+    "name": "Urlo del  Bestia",
+    "desc": "Tutti i giganti puri avanzano immediatamente di 1 esagono. Tutti i giganti anomali avanzano di 1 esagono e guadagnano +1 danni al prossimo attacco",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e62",
+    "type": "malus",
+    "name": "Nebbia fitta",
+    "desc": "La visibilità cala drasticamente. Tutti i tiri salvezza hanno svantaggio al prossimo turno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e63",
+    "type": "bonus",
+    "name": "Furia disperata",
+    "desc": "La recluta con meno HP guadagna +2 danni al prossimo attacco",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e64",
+    "type": "malus",
+    "name": "Sabotaggio armature",
+    "desc": "Un infiltrato sabota la missione e manomette un equipaggiamento: Una recluta deve scartare un equipaggiamento",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e65",
+    "type": "event",
+    "name": "Furia di Hange",
+    "desc": "Una recluta può spostarsi rapidamente con movimento tridimensionale per tutta la mappa. Può effettuare un attacco contro ognuno dei giganti in missione, prima di morire",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e66",
+    "type": "event",
+    "name": "Pioggia di fuoco",
+    "desc": "I giganti vengono colpiti da catapulte. Ogni gigante entro le prime due file di esagoni subisce 2 danni",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e67",
+    "type": "event",
+    "name": "Ruggito paralizzante",
+    "desc": "Il prossimo attacco di un gigante infligge il doppio dei danni ma non potrà muoversi nel turno successivo",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e68",
+    "type": "bonus",
+    "name": "Indurimento parziale",
+    "desc": "Per il prossimo turno tutti i danni inferiori a 3 vengono prevenuti, tutti i dannu superiori a 3 vengono raddoppiati",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e69",
+    "type": "malus",
+    "name": "Crollo improvviso",
+    "desc": "Un edificio cede nell'incrocio di 2d6: quell'esagono diventa non calpestabile per il resto della missione. Se un gigante era presente sull'esagono subisce 3 danni. Se un personaggio era presente sull'esagono deve effettuare un tiro salvezza CD 14 o subire 3 danni.",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e70",
+    "type": "event",
+    "name": "Richiamo alle armi",
+    "desc": "Il giocatore che controlla la recluta con più HP può piazzare una nuova recluta in una casella di partenza libera. Questa recluta subisce 2 danni",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e71",
+    "type": "malus",
+    "name": "Esplosione di rabbia",
+    "desc": "Il prossimo attacco di un gigante ignora armature e riduzioni di danno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e72",
+    "type": "bonus",
+    "name": "Bandiera del coraggio",
+    "desc": "Il morale aumenta di 3",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e73",
+    "type": "malus",
+    "name": "Evacuazione fallita",
+    "desc": "Un gruppo di civili viene travolto. Perdi 2 morale",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e74",
+    "type": "event",
+    "name": "Squadra di supporto",
+    "desc": "Tutti i giocatori che hanno perso almeno una recluta pescano una carta equipaggiamento",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e75",
+    "type": "event",
+    "name": "Inseguimento",
+    "desc": "Un gigante non in combattimento si muove immediatamente di 2 esagoni verso la recluta più vicina. Se la raggiunge, compie un attacco immediato senza possibilità di contrattaco",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e76",
+    "type": "bonus",
+    "name": "Granata fumogena",
+    "desc": "La vista dei giganti è offuscata. Tutte le squadre possono riposizionarsi di 1 esagono",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e77",
+    "type": "malus",
+    "name": "Lama scheggiata",
+    "desc": "Le lame sono scheggiate. Durante il prossimo turno, tutti gli attacchi delle squadre infliggono 1 danno in meno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e78",
+    "type": "bonus",
+    "name": "Recluta eroica",
+    "desc": "Una recluta a scelta può ignorare i danni subiti in questo turno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e79",
+    "type": "event",
+    "name": "Muro instabile",
+    "desc": "Un gigante tira un masso contro le mura. Le mura subiscono immediatamente 3 danni",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e80",
+    "type": "event",
+    "name": "Morale a terra",
+    "desc": "Per questa missione i malus del morale sono raddoppiati",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e81",
+    "type": "malus",
+    "name": "Rifornimenti avariati",
+    "desc": "Un carico di provviste si rivela marcio. Tutti i giocatori scartano una carta consumabile se ne hanno una. Nessun istantaneo può essere usato in questa fase",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e82",
+    "type": "bonus",
+    "name": "Coraggio inaspettato",
+    "desc": "La recluta con meno morale personale (se esiste) guadagna +2 al prossimo tiro",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e83",
+    "type": "spawn",
+    "name": "Gigante errante",
+    "desc": "Un nuovo gigante viene avvistato senza fumogeni. Spawn di un gigante nella stessa fila della recluta più arretrata, in colonna 1",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e84",
+    "type": "event",
+    "name": "Caduta dalle mura",
+    "desc": "Un masso colpisce una sezione delle mura. Ogni recluta posizionata su o adiacente alle mura subisce 1 danno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e85",
+    "type": "malus",
+    "name": "Ordini confusi",
+    "desc": "Il comandante sbaglia le disposizioni: le reclute non possono attaccare lo stesso gigante durante il prossimo turno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e86",
+    "type": "bonus",
+    "name": "Cavalleria di supporto",
+    "desc": "Una recluta a scelta guadagna due movimenti extra se può posizionarsi fuori dal cono di visuale di un gigante",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e87",
+    "type": "spawn",
+    "name": "Rinforzi Anomali",
+    "desc": "Spawn di un gigante anomalo nella fila più arretrata",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e88",
+    "type": "malus",
+    "name": "Notte senza luna",
+    "desc": "La scarsa visibilità rende difficile colpire. Tutti i tiri di dado ottengono -2 finché non viene pescata un’altra carta Evento",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e89",
+    "type": "event",
+    "name": "Sacrificio eroico",
+    "desc": "Una recluta può decidere di morire istantaneamente per eliminare un gigante puro o anomalo entro 2 esagoni",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e90",
+    "type": "malus",
+    "name": "Pioggia torrenziale",
+    "desc": "Piove a dirotto. I giganti avanzano di 1 esagono extra perché i movimenti delle reclute sono rallentati",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e91",
+    "type": "event",
+    "name": "Resa dei conti",
+    "desc": "Se ci sono più giganti che reclute sulla mappa, il morale scende di 3",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e92",
+    "type": "bonus",
+    "name": "Armi affilate",
+    "desc": "Le lame sono state stostituite. Durante il prossimo turno, tutti gli attacchi delle squadre infliggono 1 danno in più",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e93",
+    "type": "event",
+    "name": "Vendetta!",
+    "desc": "Per ogni recluta caduta il morale aumenta di 1",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e94",
+    "type": "malus",
+    "name": "Urla tra le strade",
+    "desc": "La paura dilaga tra i civili. Se una breccia nelle mura è aperta, perdi 4 morale, altrimenti perdi 2 morale",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e95",
+    "type": "event",
+    "name": "Notte senza luna",
+    "desc": "I giocatori possono decidere di non pescare più carte evento ma le reclute subiscono 1 danno ogni turno. Pescare una carta evento, quando possibile, per interrompere l'effetto",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e96",
+    "type": "bonus",
+    "name": "Medico da campo",
+    "desc": "Puoi curare di 2 HP una recluta in missione",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e97",
+    "type": "event",
+    "name": "Trappola a filo",
+    "desc": "Piazza una trappola su un esagono adiacente su cui non è presente un gigante. Se un gigante si muove su quell'esagono subisce 2 danni ed è immobilizzato per 1 turno",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e98",
+    "type": "malus",
+    "name": "Morso letale",
+    "desc": "Il prossimo attacco di un gigante infligge danni critici: raddoppia i danni inflitti",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e99",
+    "type": "bonus",
+    "name": "Manovra diversiva",
+    "desc": "Una bomba fumogena offusca la vista dei giganti. Una recluta può sparire dalla mappa per 1 turno e riapparire in un esagono libero entro 3 esagoni dalla sua posizione",
+    "img": "assets/img/cards/logo.jpg"
+  },
+  {
+    "id": "e100",
+    "type": "bonus",
+    "name": "Assetto da tank",
+    "desc": "Tutti i personaggi che ottengono 'aggro' da parte di un gigante nel prossimo turno prevengono 2 danni contro quel gigante ",
+    "img": "assets/img/cards/logo.jpg"
+  }
+]

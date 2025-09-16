@@ -1,0 +1,110 @@
+[
+    {
+        "id": 1,
+        "title": "Caccia ai Puri I",
+        "objectives": [
+            "Uccidi 3 Giganti Puri."
+        ],
+        "reward": {
+            "xp": 2,
+            "morale": 0
+        },
+        "event": "Spawn di 2 Giganti Puri",
+        "timerSec": 1200,
+        "spawnRate": {
+            "Puro": {
+                "min": 1,
+                "max": 16
+            },
+            "Anomalo": {
+                "min": 17,
+                "max": 19
+            },
+            "Mutaforma": {
+                "min": 20,
+                "max": 20
+            }
+        }
+    },
+    {
+        "id": 2,
+        "title": "Caccia ai Puri II",
+        "objectives": [
+            "Uccidi 4 Giganti Puri."
+        ],
+        "reward": {
+            "xp": 2,
+            "morale": 0
+        },
+        "event": "Spawn di 3 Giganti Puri",
+        "timerSec": 1200,
+        "spawnRate": {
+            "Puro": {
+                "min": 1,
+                "max": 15
+            },
+            "Anomalo": {
+                "min": 16,
+                "max": 18
+            },
+            "Mutaforma": {
+                "min": 19,
+                "max": 20
+            }
+        }
+    },
+    {
+        "id": 3,
+        "title": "Anomalo & Puri",
+        "objectives": [
+            "Uccidi 1 Gigante Anomalo e 2 Giganti Puri."
+        ],
+        "reward": {
+            "xp": 3,
+            "morale": 0
+        },
+        "event": "Spawn di 1 Gigante Anomalo",
+        "timerSec": 1200,
+        "spawnRate": {
+            "Puro": {
+                "min": 1,
+                "max": 14
+            },
+            "Anomalo": {
+                "min": 15,
+                "max": 17
+            },
+            "Mutaforma": {
+                "min": 18,
+                "max": 20
+            }
+        }
+    },
+    {
+        "id": 4,
+        "title": "Doppio Anomalo",
+        "objectives": [
+            "Uccidi 2 Giganti Anomali."
+        ],
+        "reward": {
+            "xp": 5,
+            "morale": 1
+        },
+        "event": "Spawn di 2 Giganti Anomali",
+        "timerSec": 1200,
+        "spawnRate": {
+            "Puro": {
+                "min": 1,
+                "max": 13
+            },
+            "Anomalo": {
+                "min": 14,
+                "max": 16
+            },
+            "Mutaforma": {
+                "min": 17,
+                "max": 20
+            }
+        }
+    }
+]

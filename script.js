@@ -5,302 +5,66 @@ async function play(url, opts = {}) {
     try { await audio.play(); } catch (e) { console.warn('Autoplay blocked or error:', e); }
     return audio;
 }
-const gameSoundTrack = {
+const GAME_SOUND_TRACK = {
     background: null
 }
 // DB unico globale in memoria
-let DB = {
-    allies: null,
-    giants: null,
-    event: null,
-    consumable: null,
-    missions: null,
-    settings: null
+const DB = {
+    ALLIES: null,
+    GIANTS: null,
+    EVENTS: null,
+    CONSUMABLE: null,
+    MISSIONS: null,
+    SETTINGS: null
 };
+function setDefaultGameStateData() {
+    GAME_STATE.xpMoraleState = DB.SETTINGS.xpMoralDefault;
+    GAME_STATE.walls = DB.ALLIES.filter(unit => unit.role === "wall").map(u => ({ ...u, currHp: u.hp }));
+    GAME_STATE.alliesPool = DB.ALLIES.filter(unit => unit.role !== "wall").map(u => ({ ...u, currHp: u.hp, template: true, dead: false }));
+    GAME_STATE.giantsPool = DB.GIANTS.map(u => ({ role: "enemy", ...u, currHp: u.hp, template: true }));
+    GAME_STATE.decks.event.draw = DB.EVENTS;
+    GAME_STATE.decks.consumable.draw = DB.CONSUMABLE;
 
-const MAX_PER_HEX = 12;
-const DISPLAY_LIMIT = 8;
+    console.log('gamestate', GAME_STATE);
+}
+
+const GAME_STATE = {
+    missionState: {
+        curIndex: 0,
+        timerTotalSec: 1200,
+        remainingSec: 1200,
+        ticking: false,
+        intervalId: null
+    },
+    spawns: [],
+    decks: {
+        event: { draw: [], discard: [], removed: [] },
+        consumable: { draw: [], discard: [], removed: [] },
+    },
+    xpMoraleState: {},
+    alliesPool: [],
+    alliesRoster: [],
+    giantsPool: [],
+    giantsRoster: [],
+    walls: [],
+    logs: []
+}
+
 const COLOR_VAR = {
     red: 'var(--rosso)', yellow: 'var(--oro)', silver: 'var(--argento)', verde: 'var(--verde)',
     gray: 'var(--grigio)', blu: 'var(--blu)', argento: 'var(--argento)', viola: 'var(--viola)'
 };
-
-const ROWS = 12, COLS = 6;
-
-const WALL_ROWS = { 10: 'w1', 11: 'w2', 12: 'w3' };
-
-const ROW_BY_WALL_ID = Object.fromEntries(
-    Object.entries(WALL_ROWS).map(([r, id]) => [id, Number(r)])
-);
-
-
 const SAVE_VERSION = 1;
 const SAVE_KEY = 'aot-save-v' + SAVE_VERSION;
 const LONG_PRESS_MS = 320;
-
-const MISSIONS = [
-    {
-        id: 1, title: "Caccia ai Puri I",
-        objectives: ["Uccidi 3 Giganti Puri."],
-        reward: { xp: 2, morale: 0 },
-        event: "Spawn di 2 Giganti Puri",
-        timerSec: 1200,
-        spawnRate: { Puro: { min: 1, max: 16 }, Anomalo: { min: 17, max: 19 }, Mutaforma: { min: 20, max: 20 } }
-    },
-    {
-        id: 2, title: "Caccia ai Puri II",
-        objectives: ["Uccidi 4 Giganti Puri."],
-        reward: { xp: 2, morale: 0 },
-        event: "Spawn di 3 Giganti Puri",
-        timerSec: 1200,
-        spawnRate: { Puro: { min: 1, max: 15 }, Anomalo: { min: 16, max: 18 }, Mutaforma: { min: 19, max: 20 } }
-    },
-    {
-        id: 3, title: "Anomalo & Puri",
-        objectives: ["Uccidi 1 Gigante Anomalo e 2 Giganti Puri."],
-        reward: { xp: 3, morale: 0 },
-        event: "Spawn di 1 Gigante Anomalo",
-        timerSec: 1200,
-        spawnRate: { Puro: { min: 1, max: 14 }, Anomalo: { min: 15, max: 17 }, Mutaforma: { min: 18, max: 20 } }
-    },
-    {
-        id: 4, title: "Doppio Anomalo",
-        objectives: ["Uccidi 2 Giganti Anomali."],
-        reward: { xp: 5, morale: 1 },
-        event: "Spawn di 2 Giganti Anomali",
-        timerSec: 1200,
-        spawnRate: { Puro: { min: 1, max: 13 }, Anomalo: { min: 14, max: 16 }, Mutaforma: { min: 17, max: 20 } }
-    }
-];
-
-
-
-// Stato missione/timer
-const MISSION_STATE = {
-    missions: MISSIONS,
-    curIndex: 0,              // indice nell'array missions
-    timerTotalSec: 1200,      // default 20 min
-    remainingSec: 1200,
-    ticking: false,
-    intervalId: null
-};
-
 
 let selectedUnitId = null;
 let isDraggingNow = false;
 let _modalEls = null;
 
-let log_list = [];
-let alliesRoster = [];
 const baseHpOverride = new Map();
-let giantsCatalog = [];
-const spawns = [];
 const unitById = new Map();
-const decks = {
-    event: { draw: [], discard: [], removed: [] },
-    consumable: { draw: [], discard: [], removed: [] },
-};
-let _lastTooltipXY = null;
-
-
 const queue = [];
-let showing = false;
-
-// === XP / LIVELLI ===
-// Tabella cumulativa XP per raggiungere ogni livello (index = livello-1).
-// Esempio: XP_TABLE[0]=0 (Lv.1), XP_TABLE[1]=100 (Lv.2), ...
-const XP_TABLE = [2, 4, 8, 16, 64, 128, 256, 512, 1024];
-
-// Bonus sbloccati dal Livello (cumulativi per soglie raggiunte)
-const LEVEL_BONUS_TABLE = [
-    { lvl: 2, text: '+1 AGI', bonus: { agi: 1, tec: 0, atk: 0 } },
-    { lvl: 3, text: '+1 TEC', bonus: { agi: 0, tec: 1, atk: 0 } },
-    { lvl: 4, text: '+1 ATK', bonus: { agi: 0, tec: 0, atk: 1 } },
-    { lvl: 5, text: 'Cura le tue reclute di 5 HP complessivi.', bonus: { agi: 1, tec: 1, atk: 1 } },
-    { lvl: 6, text: 'Ogni giocatore può pescare una carta equipaggiamento.', bonus: { agi: 1, tec: 1, atk: 1 } },
-    { lvl: 7, text: 'Ripara le tue attuali mura di 5 HP.', bonus: { agi: 1, tec: 1, atk: 1 } },
-    { lvl: 8, text: 'Cura i tuoi comandanti di 8 HP complessivi.', bonus: { agi: 1, tec: 1, atk: 1 } },
-    { lvl: 9, text: 'Cura le tue reclute di 10 HP complessivi.', bonus: { agi: 1, tec: 1, atk: 1 } },
-    { lvl: 10, text: 'Le tue reclute subiscono un danno in meno da tutte le fonti.', bonus: { agi: 1, tec: 1, atk: 1 } },
-];
-
-const LEVEL_MALUS_TABLE = [
-    { range: { min: 75, max: 90 }, text: 'Tensione crescente', bonus: { agi: -1, tec: 0, atk: 0 }, type: 'warning' },
-    { range: { min: 50, max: 75 }, text: 'Scarsa disciplina', bonus: { agi: 0, tec: -1, atk: 0 }, type: 'warning' },
-    { range: { min: 25, max: 50 }, text: 'Catena di comando instabile', bonus: { agi: 0, tec: 0, atk: -1 }, type: 'error' },
-    { range: { min: 1, max: 25 }, text: 'Panico tra la popolazione', bonus: { agi: -1, tec: -1, atk: -1 }, type: 'error' },
-    { range: { min: 0, max: 1 }, text: 'Umanità sterminata', bonus: { agi: 0, tec: 0, atk: 0 }, type: 'error' },
-];
-
-const giantsPool = [
-    // Mutaforma
-    { id: "u1", name: "Gigante Femmina", img: "assets/img/giganti/gigante_femmina.jpg", type: "Mutaforma", color: "red", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u2", name: "Gigante Bestia", img: "assets/img/giganti/gigante_bestia.jpg", type: "Mutaforma", color: "red", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u3", name: "Gigante Carro", img: "assets/img/giganti/gigante_carro.jpg", type: "Mutaforma", color: "red", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u4", name: "Gigante Martello", img: "assets/img/giganti/gigante_martello.png", type: "Mutaforma", color: "red", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u5", name: "Gigante Mascella", img: "assets/img/giganti/gigante_mascella.png", type: "Mutaforma", color: "red", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u6", name: "Gigante Colossale", img: "assets/img/giganti/gigante_colossale.png", type: "Mutaforma", color: "red", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u7", name: "Gigante Corazzato", img: "assets/img/giganti/gigante_corazzato.png", type: "Mutaforma", color: "red", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    // Anomalo
-    { id: "u8", name: "Gigante Anomalo", img: "assets/img/giganti/anomalo.png", type: "Anomalo", color: "yellow", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u9", name: "Gigante Anomalo", img: "assets/img/giganti/anomalo_1.png", type: "Anomalo", color: "yellow", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u10", name: "Gigante Anomalo", img: "assets/img/giganti/anomalo_2.png", type: "Anomalo", color: "yellow", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u11", name: "Gigante Anomalo", img: "assets/img/giganti/anomalo_3.png", type: "Anomalo", color: "yellow", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u12", name: "Gigante Anomalo", img: "assets/img/giganti/anomalo_4.png", type: "Anomalo", color: "yellow", hp: 12, atk: 4, cd: 14, abi: "Test" },
-
-    { id: "u15", name: "Gigante Anomalo", img: "assets/img/giganti/anomalo_6.png", type: "Anomalo", color: "yellow", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u16", name: "Gigante Anomalo", img: "assets/img/giganti/anomalo_7.png", type: "Anomalo", color: "yellow", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    { id: "u17", name: "Gigante Anomalo", img: "assets/img/giganti/anomalo_8.png", type: "Anomalo", color: "yellow", hp: 12, atk: 4, cd: 14, abi: "Test" },
-    // Puro
-    { id: "u13", name: "Gigante Nano", img: "assets/img/giganti/gigante_puro.jpg", type: "Puro", color: "silver", hp: 12, atk: 2, cd: 12, abi: "Nessuna" },
-    { id: "u18", name: "Gigante Nano", img: "assets/img/giganti/gigante_puro_1.png", type: "Puro", color: "silver", hp: 12, atk: 2, cd: 12, abi: "Nessuna" },
-    { id: "u19", name: "Gigante Nano", img: "assets/img/giganti/gigante_puro_2.png", type: "Puro", color: "silver", hp: 12, atk: 2, cd: 12, abi: "Nessuna" },
-    { id: "u20", name: "Gigante Nano", img: "assets/img/giganti/gigante_puro_3.png", type: "Puro", color: "silver", hp: 12, atk: 2, cd: 12, abi: "Nessuna" },
-    { id: "u21", name: "Gigante Nano", img: "assets/img/giganti/gigante_puro_4.png", type: "Puro", color: "silver", hp: 12, atk: 2, cd: 12, abi: "Nessuna" },
-    { id: "u22", name: "Gigante Nano", img: "assets/img/giganti/gigante_puro_5.png", type: "Puro", color: "silver", hp: 12, atk: 2, cd: 12, abi: "Nessuna" },
-    { id: "u23", name: "Gigante Nano", img: "assets/img/giganti/gigante_puro_6.png", type: "Puro", color: "silver", hp: 12, atk: 2, cd: 12, abi: "Nessuna" },
-    { id: "u24", name: "Gigante Nano", img: "assets/img/giganti/gigante_puro_7.png", type: "Puro", color: "silver", hp: 12, atk: 2, cd: 12, abi: "Nessuna" },
-    { id: "u14", name: "Gigante Nano", img: "assets/img/giganti/gigante_puro_8.png", type: "Puro", color: "silver", hp: 12, atk: 2, cd: 12, abi: "Nessuna" },
-
-].map(u => ({ role: "enemy", ...u, currHp: u.hp, template: true }));
-
-const alliesPool = [
-    { id: "r1", role: "recruit", name: "Armin Arlert", img: "https://static.wikia.nocookie.net/shingekinokyojin/images/f/ff/Armin_Arlelt_%28Anime%29_character_image_%28850%29.png/revision/latest/scale-to-width/360?cb=20210124214612", hp: 10, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r2", role: "recruit", name: "Connie Springer", img: "https://placehold.co/60x60/d3d3d3/000000?text=C", hp: 8, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r3", role: "recruit", name: "Sasha Braus", img: "https://placehold.co/60x60/c4a683/FFFFFF?text=S", hp: 7, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r4", role: "recruit", name: "Reiner Braun", img: "https://placehold.co/60x60/e2e8f0/000000?text=R", hp: 9, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r5", role: "recruit", name: "Bertholdt Hoover", img: "https://placehold.co/60x60/a0aec0/000000?text=B", hp: 8, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r6", role: "recruit", name: "Annie Leonhart", img: "https://placehold.co/60x60/fde68a/000000?text=A", hp: 8, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r7", role: "recruit", name: "Ymir Fritz", img: "https://placehold.co/60x60/718096/FFFFFF?text=Y", hp: 7, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r8", role: "recruit", name: "Historia Reiss", img: "https://images.everyeye.it/img-notizie/attack-on-titan-cosa-succede-historia-storia-v3-693469.jpg", hp: 8, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r9", role: "recruit", name: "Marco Bodt", img: "https://placehold.co/60x60/b7791f/FFFFFF?text=M", hp: 5, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r10", role: "recruit", name: "Marlo Freudeberg", img: "https://placehold.co/60x60/9b2c2c/FFFFFF?text=T", hp: 5, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r11", role: "recruit", name: "Hitch Dreyse", img: "https://placehold.co/60x60/6b46c1/FFFFFF?text=M", hp: 5, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r12", role: "recruit", name: "Rico Brzenska", img: "https://placehold.co/60x60/000000/FFFFFF?text=S", hp: 5, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r13", role: "recruit", name: "Mikasa Ackerman", img: "https://static.wikitide.net/greatcharacterswiki/a/a2/850_Mikasa.jpg", hp: 13, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r14", role: "recruit", name: "Jean Kirstein", img: "https://placehold.co/60x60/c4a683/000000?text=J", hp: 12, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r15", role: "recruit", name: "Floch Forster", img: "https://placehold.co/60x60/e53e3e/FFFFFF?text=F", hp: 6, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "r16", role: "recruit", name: "Eren Yeager", img: "https://www.georgefiorini.eu/images/manga/attacco-dei-giganti/eren-jaeger-tv.jpg", hp: 10, atk: 4, tec: 3, agi: 2, color: "verde", abi: "Test" },
-    { id: "c1", role: "commander", name: "Hange Zoë", img: "https://4kwallpapers.com/images/wallpapers/hange-zoe-5k-attack-5120x2880-15185.jpg", hp: 17, atk: 4, tec: 3, agi: 2, color: "viola", abi: "Test" },
-    { id: "c2", role: "commander", name: "Mike Zacharias", img: "https://cdn.shopify.com/s/files/1/0252/1736/8154/files/33e7abb895a05bea2fee9350c37446cca48d1355r5-967-609_00_480x480.jpg?v=1646473635", hp: 18, atk: 4, tec: 3, agi: 2, color: "viola", abi: "Test" },
-    { id: "c3", role: "commander", name: "Erwin Smith", img: "https://static.wikia.nocookie.net/shingekinokyojin/images/3/3f/Erwin_puts_on_his_ODM.png/revision/latest?cb=20171102013340", hp: 16, atk: 4, tec: 3, agi: 2, color: "viola", abi: "Test" },
-    { id: "c4", role: "commander", name: "Levi Ackerman", img: "https://media.printler.com/media/photo/144700.jpg?rmode=crop&width=725&height=1024", hp: 20, atk: 4, tec: 3, agi: 2, color: "viola", abi: "Test" },
-    { id: "c5", role: "commander", name: "Keith Shadis", img: "https://static.wikia.nocookie.net/shingekinokyojin/images/e/e6/Keith.png/revision/latest?cb=20130930182018&path-prefix=it", hp: 17, atk: 4, tec: 3, agi: 2, color: "viola", abi: "Test" },
-
-].map(u => ({ ...u, currHp: u.hp, template: true, dead: false }));
-
-const wallsCatalog = [
-    { id: "w1", role: "wall", name: "Wall Maria", img: "assets/img/wall_maria.png", color: "gray", hp: 12, atk: 0, abi: "Difesa Esterna" },
-    { id: "w2", role: "wall", name: "Wall Rose", img: "assets/img/wall_rose.jpg", color: "gray", hp: 15, atk: 0, abi: "Difesa Intermedia" },
-    { id: "w3", role: "wall", name: "Wall Sina", img: "assets/img/wall_sina.jpg", color: "gray", hp: 18, atk: 0, abi: "Difesa Interna" },
-].map(u => ({ ...u, currHp: u.hp }));
-
-const eventPool = [
-    { id: "e1", type: "event", name: "Rifornimenti Inattesi", desc: "Le tue squadre trovano una cassa di rifornimenti. Tutti i giocatori pescano una carta equipaggiamento.", img: "assets/img/cards/logo.jpg" },
-    { id: "e2", type: "malus", name: "Maltempo Improvviso", desc: "Una pioggia torrenziale riduce la visibilità. Malus di -1 a tutti i tiri di dado per questo turno.", img: "assets/img/cards/logo.jpg" },
-    { id: "e3", type: "event", name: "Kit di sopravvivenza", desc: "Le tue squadre trovano una cassa di rifornimenti. Tutti i giocatori pescano una carta consumabile.", img: "assets/img/cards/logo.jpg" },
-    { id: "e4", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e5", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e6", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e7", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e8", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e9", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e10", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e11", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e12", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e13", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e14", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e15", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e16", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e17", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e18", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e19", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e20", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e21", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e22", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e23", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e24", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e25", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e26", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e27", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e28", type: "spawn", name: "Discesa del Gigante!", desc: "Si sente un rombo di tuono in lontananza...", img: "assets/img/cards/fulmine.jpg" },
-    { id: "e29", type: "event", name: "Duello", desc: "Scegli una recluta e muovila in un esagono adiacente ad un gigante. La recluta e il gigante combattono solo con i bonus da essi generati lanciando regolarmente i dadi finchè uno dei due non muore.", img: "assets/img/cards/logo.jpg" },
-    { id: "e30", type: "malus", name: "Tremore", desc: "Il comandante ha avvertito un tremore e ordina a tutte le squadre di non muoversi. Tutti i personaggi saltano il turno di movimento per questo turno", img: "assets/img/cards/logo.jpg" },
-    { id: "e31", type: "bonus", name: "Accelerazione", desc: "Il comandante ordina di accelerare la missione. Tutti i personaggi devono compiere un'azione di movimento aggiuntiva per questo turno", img: "assets/img/cards/logo.jpg" },
-    { id: "e32", type: "spawn", name: "Mutazione!", desc: "Appare un gigante mutaforma nell'ultima fila di esagoni. Lancia un d6 per stabilire la colonna.", img: "assets/img/cards/logo.jpg" },
-    { id: "e33", type: "malus", name: "Processo truccato", desc: "Conserva questa carta fino alla fine della missione. Per ogni recluta di ritorno dalla missione puoi decidere se infliggerle 2 danni oppure perdere 1 morale", img: "assets/img/cards/logo.jpg" },
-    { id: "e34", type: "malus", name: "Mutazione d'attacco", desc: "I giganti sembrano avere denti più affilati del solito. Ogniqualvolta un gigante dovrebbe infliggere danno in questa missione, egli infligge un danno aggiuntivo", img: "assets/img/cards/logo.jpg" },
-    { id: "e35", type: "malus", name: "Mutazione di difesa", desc: "I giganti sembrano avere una pelle più dura del solito. Ogniqualvolta un gigante dovrebbe subire danno in questa missione, egli subisce un danno in meno", img: "assets/img/cards/logo.jpg" },
-    { id: "e36", type: "event", name: "Assedio alle mura", desc: "Ogni gigante entro le prime due file di esagoni infligge il proprio danno alle mura. Se non ci sono giganti in questa zona, tutti i giganti non in combattimento avanzano verso le mura di 1 esagono", img: "assets/img/cards/logo.jpg" },
-    { id: "e37", type: "event", name: "Imboscata", desc: "Se un gigante entra in combattimento contro un personaggio il prossimo turno anche un altro gigante entro tre esagoni da esso viene spostato in un esagono ad egli adiacente e si unisce al combattimento ", img: "assets/img/cards/logo.jpg" },
-    { id: "e38", type: "event", name: "Mutilazione", desc: "Il comandante ha perso un braccio. Perde 5HP e non può attaccare il prossimo turno", img: "assets/img/cards/logo.jpg" },
-    { id: "e39", type: "event", name: "Rifugio nella torre", desc: "Se una recluta si reca nella torre nel prossimo turno, quella recluta può pescare 1 carta equipaggiamento", img: "assets/img/cards/logo.jpg" },
-    { id: "e40", type: "event", name: "Corsia laterale", desc: "Tutte le reclute nei due esagoni laterali di ogni fila possono compiere un'azione movimento bonus il prossimo turno", img: "assets/img/cards/logo.jpg" },
-    { id: "e41", type: "event", name: "Guerra", desc: "Questa missione è considerata completata solo se tutti i giganti presenti sulla mappa sono stati uccisi", img: "assets/img/cards/logo.jpg" },
-    { id: "e42", type: "event", name: "Corruzione della Gendarmeria", desc: "Senza il corpo di ricerca in città serpeggia la corruzione. Puoi scegliere se pescare un'altra carta evento oppure perdere 2 morale", img: "assets/img/cards/logo.jpg" },
-    { id: "e43", type: "event", name: "Obiettivo: Mare", desc: "Questa missione può essere completata solo raggiungendo il mare", img: "assets/img/cards/logo.jpg" },
-    { id: "e44", type: "event", name: "Sovrappopolazione", desc: "La popolazione all'interno delle mura è troppa e affamata. Se è caduto il Wall Maria perdi 2 morale. Se è caduto il Wall Rose perdi 5 morale", img: "assets/img/cards/logo.jpg" },
-    { id: "e45", type: "event", name: "Breccia nelle mura", desc: "Tutti i giganti non in combattimento entro la quarta fila di esagoni si muovono di due esagoni verso le mura", img: "assets/img/cards/logo.jpg" },
-    { id: "e46", type: "event", name: "Ritirata strategica", desc: "Puoi riposizionare le truppe non in combattimento entro due esagoni, ma non possono avanzare", img: "assets/img/cards/logo.jpg" },
-    { id: "e47", type: "event", name: "Quiete", desc: "Non succede nulla", img: "assets/img/cards/logo.jpg" },
-    { id: "e48", type: "event", name: "Sacrificio", desc: "Il morale sale a 15. Il comandante non in missione cone meno HP viene sacrificato e rimosso dal gioco", img: "assets/img/cards/logo.jpg" },
-    { id: "e49", type: "spawn", name: "Pioggia di giganti", desc: "Riattiva l'ultima carta 'Discesa del Gigante' pescata, due volte. Verranno evocati due giganti dello stesso tipo di quello evocato in precedenza e nella stessa posizione", img: "assets/img/cards/logo.jpg" },
-    { id: "e50", type: "event", name: "Disarcionamento", desc: "La recluta più arretrata viene disarcionata da cavallo per il resto della missione. E' considerata immobilizzata per questo turno ma potrà comunque attaccare", img: "assets/img/cards/logo.jpg" },
-    { id: "e51", type: "event", name: "Resistenza", desc: "Nessuna recluta può morire il prossimo turno. Una recluta che dovrebbe subire danni che la porterebbero alla morte, previene quei danni e può essere riposizionata entro due esagoni", img: "assets/img/cards/logo.jpg" },
-    { id: "e52", type: "event", name: "Carica!", desc: "Nel prossimo turno si può compiere um'azione di movimento bonus", img: "assets/img/cards/logo.jpg" },
-    { id: "e53", type: "event", name: "Amuleto della fortuna", desc: "La recluta con meno HP sceglie un numero. Durante questa missione ogni volta che il risultato di qualsiasi d20 è pari a quel numero, la recluta recupera 1HP", img: "assets/img/cards/logo.jpg" },
-    { id: "e54", type: "event", name: "Maledizione", desc: "La recluta con più HP sceglie un numero. Durante questa missione ogni volta che il risultato di qualsiasi d20 è pari a quel numero, la recluta perde 1HP", img: "assets/img/cards/logo.jpg" },
-    { id: "e55", type: "event", name: "Boato della terra", desc: "Tutti i giganti sulla mappa si muovono di due esagoni verso le mura. Ogni soldato presente sul loro cammino deve effettuare un tiro salvezza CD=13 o subire 3 danni. I personaggi immobilizzati non possono effettuare tiri salvezza", img: "assets/img/cards/logo.jpg" },
-    { id: "e56", type: "event", name: "Linfa vitale", desc: "Ogni recluta che mette a segno un attacco il prossimo turno, si cura di 1HP", img: "assets/img/cards/logo.jpg" },
-    { id: "e57", type: "event", name: "Attacco coordinato", desc: "Il comandante ordina di mirare ai legamenti delle caviglie. Durante il prossimo turno ogni attacco che ottiene 15+ naturale immobilizza il gigante", img: "assets/img/cards/logo.jpg" },
-    { id: "e58", type: "bonus", name: "Rifugio nel bosco", desc: "Durante il prossimo turno è possibile nascondersi nel bosco senza tirare i dadi. Ogni attacco sferrato dal bosco infligge 2 danni aggiuntivi per questo turno", img: "assets/img/cards/logo.jpg" },
-    { id: "e59", type: "event", name: "Linfa vitale", desc: "Ogni recluta che mette a segno un attacco il prossimo turno, si cura di 1HP", img: "assets/img/cards/logo.jpg" },
-    { id: "e60", type: "malus", name: "Avvelenamento", desc: "Il morso di un gigante ha avvelenato un compagno. La prima recluta a subire danno nel prossimo turno viene avvelenata e subisce 1 danno ogni turno passato in combattimento per il resto della missione", img: "assets/img/cards/logo.jpg" },
-    { id: "e61", type: "event", name: "Urlo del  Bestia", desc: "Tutti i giganti puri avanzano immediatamente di 1 esagono. Tutti i giganti anomali avanzano di 1 esagono e guadagnano +1 danni al prossimo attacco", img: "assets/img/cards/logo.jpg" },
-    { id: "e62", type: "malus", name: "Nebbia fitta", desc: "La visibilità cala drasticamente. Tutti i tiri salvezza hanno svantaggio al prossimo turno", img: "assets/img/cards/logo.jpg" },
-    { id: "e63", type: "bonus", name: "Furia disperata", desc: "La recluta con meno HP guadagna +2 danni al prossimo attacco", img: "assets/img/cards/logo.jpg" },
-    { id: "e64", type: "malus", name: "Sabotaggio armature", desc: "Un infiltrato sabota la missione e manomette un equipaggiamento: Una recluta deve scartare un equipaggiamento", img: "assets/img/cards/logo.jpg" },
-    { id: "e65", type: "event", name: "Furia di Hange", desc: "Una recluta può spostarsi rapidamente con movimento tridimensionale per tutta la mappa. Può effettuare un attacco contro ognuno dei giganti in missione, prima di morire", img: "assets/img/cards/logo.jpg" },
-    { id: "e66", type: "event", name: "Pioggia di fuoco", desc: "I giganti vengono colpiti da catapulte. Ogni gigante entro le prime due file di esagoni subisce 2 danni", img: "assets/img/cards/logo.jpg" },
-    { id: "e67", type: "event", name: "Ruggito paralizzante", desc: "Il prossimo attacco di un gigante infligge il doppio dei danni ma non potrà muoversi nel turno successivo", img: "assets/img/cards/logo.jpg" },
-    { id: "e68", type: "bonus", name: "Indurimento parziale", desc: "Per il prossimo turno tutti i danni inferiori a 3 vengono prevenuti, tutti i dannu superiori a 3 vengono raddoppiati", img: "assets/img/cards/logo.jpg" },
-    { id: "e69", type: "malus", name: "Crollo improvviso", desc: "Un edificio cede nell'incrocio di 2d6: quell'esagono diventa non calpestabile per il resto della missione. Se un gigante era presente sull'esagono subisce 3 danni. Se un personaggio era presente sull'esagono deve effettuare un tiro salvezza CD 14 o subire 3 danni.", img: "assets/img/cards/logo.jpg" },
-    { id: "e70", type: "event", name: "Richiamo alle armi", desc: "Il giocatore che controlla la recluta con più HP può piazzare una nuova recluta in una casella di partenza libera. Questa recluta subisce 2 danni", img: "assets/img/cards/logo.jpg" },
-    { id: "e71", type: "malus", name: "Esplosione di rabbia", desc: "Il prossimo attacco di un gigante ignora armature e riduzioni di danno", img: "assets/img/cards/logo.jpg" },
-    { id: "e72", type: "bonus", name: "Bandiera del coraggio", desc: "Il morale aumenta di 3", img: "assets/img/cards/logo.jpg" },
-    { id: "e73", type: "malus", name: "Evacuazione fallita", desc: "Un gruppo di civili viene travolto. Perdi 2 morale", img: "assets/img/cards/logo.jpg" },
-    { id: "e74", type: "event", name: "Squadra di supporto", desc: "Tutti i giocatori che hanno perso almeno una recluta pescano una carta equipaggiamento", img: "assets/img/cards/logo.jpg" },
-    { id: "e75", type: "event", name: "Inseguimento", desc: "Un gigante non in combattimento si muove immediatamente di 2 esagoni verso la recluta più vicina. Se la raggiunge, compie un attacco immediato senza possibilità di contrattaco", img: "assets/img/cards/logo.jpg" },
-    { id: "e76", type: "bonus", name: "Granata fumogena", desc: "La vista dei giganti è offuscata. Tutte le squadre possono riposizionarsi di 1 esagono", img: "assets/img/cards/logo.jpg" },
-    { id: "e77", type: "malus", name: "Lama scheggiata", desc: "Le lame sono scheggiate. Durante il prossimo turno, tutti gli attacchi delle squadre infliggono 1 danno in meno", img: "assets/img/cards/logo.jpg" },
-    { id: "e78", type: "bonus", name: "Recluta eroica", desc: "Una recluta a scelta può ignorare i danni subiti in questo turno", img: "assets/img/cards/logo.jpg" },
-    { id: "e79", type: "event", name: "Muro instabile", desc: "Un gigante tira un masso contro le mura. Le mura subiscono immediatamente 3 danni", img: "assets/img/cards/logo.jpg" },
-    { id: "e80", type: "event", name: "Morale a terra", desc: "Per questa missione i malus del morale sono raddoppiati", img: "assets/img/cards/logo.jpg" },
-    { id: "e81", type: "malus", name: "Rifornimenti avariati", desc: "Un carico di provviste si rivela marcio. Tutti i giocatori scartano una carta consumabile se ne hanno una. Nessun istantaneo può essere usato in questa fase", img: "assets/img/cards/logo.jpg" },
-    { id: "e82", type: "bonus", name: "Coraggio inaspettato", desc: "La recluta con meno morale personale (se esiste) guadagna +2 al prossimo tiro", img: "assets/img/cards/logo.jpg" },
-    { id: "e83", type: "spawn", name: "Gigante errante", desc: "Un nuovo gigante viene avvistato senza fumogeni. Spawn di un gigante nella stessa fila della recluta più arretrata, in colonna 1", img: "assets/img/cards/logo.jpg" },
-    { id: "e84", type: "event", name: "Caduta dalle mura", desc: "Un masso colpisce una sezione delle mura. Ogni recluta posizionata su o adiacente alle mura subisce 1 danno", img: "assets/img/cards/logo.jpg" },
-    { id: "e85", type: "malus", name: "Ordini confusi", desc: "Il comandante sbaglia le disposizioni: le reclute non possono attaccare lo stesso gigante durante il prossimo turno", img: "assets/img/cards/logo.jpg" },
-    { id: "e86", type: "bonus", name: "Cavalleria di supporto", desc: "Una recluta a scelta guadagna due movimenti extra se può posizionarsi fuori dal cono di visuale di un gigante", img: "assets/img/cards/logo.jpg" },
-    { id: "e87", type: "spawn", name: "Rinforzi Anomali", desc: "Spawn di un gigante anomalo nella fila più arretrata", img: "assets/img/cards/logo.jpg" },
-    { id: "e88", type: "malus", name: "Notte senza luna", desc: "La scarsa visibilità rende difficile colpire. Tutti i tiri di dado ottengono -2 finché non viene pescata un’altra carta Evento", img: "assets/img/cards/logo.jpg" },
-    { id: "e89", type: "event", name: "Sacrificio eroico", desc: "Una recluta può decidere di morire istantaneamente per eliminare un gigante puro o anomalo entro 2 esagoni", img: "assets/img/cards/logo.jpg" },
-    { id: "e90", type: "malus", name: "Pioggia torrenziale", desc: "Piove a dirotto. I giganti avanzano di 1 esagono extra perché i movimenti delle reclute sono rallentati", img: "assets/img/cards/logo.jpg" },
-    { id: "e91", type: "event", name: "Resa dei conti", desc: "Se ci sono più giganti che reclute sulla mappa, il morale scende di 3", img: "assets/img/cards/logo.jpg" },
-    { id: "e92", type: "bonus", name: "Armi affilate", desc: "Le lame sono state stostituite. Durante il prossimo turno, tutti gli attacchi delle squadre infliggono 1 danno in più", img: "assets/img/cards/logo.jpg" },
-    { id: "e93", type: "event", name: "Vendetta!", desc: "Per ogni recluta caduta il morale aumenta di 1", img: "assets/img/cards/logo.jpg" },
-    { id: "e94", type: "malus", name: "Urla tra le strade", desc: "La paura dilaga tra i civili. Se una breccia nelle mura è aperta, perdi 4 morale, altrimenti perdi 2 morale", img: "assets/img/cards/logo.jpg" },
-    { id: "e95", type: "event", name: "Notte senza luna", desc: "I giocatori possono decidere di non pescare più carte evento ma le reclute subiscono 1 danno ogni turno. Pescare una carta evento, quando possibile, per interrompere l'effetto", img: "assets/img/cards/logo.jpg" },
-    { id: "e96", type: "bonus", name: "Medico da campo", desc: "Puoi curare di 2 HP una recluta in missione", img: "assets/img/cards/logo.jpg" },
-    { id: "e97", type: "event", name: "Trappola a filo", desc: "Piazza una trappola su un esagono adiacente su cui non è presente un gigante. Se un gigante si muove su quell'esagono subisce 2 danni ed è immobilizzato per 1 turno", img: "assets/img/cards/logo.jpg" },
-    { id: "e98", type: "malus", name: "Morso letale", desc: "Il prossimo attacco di un gigante infligge danni critici: raddoppia i danni inflitti", img: "assets/img/cards/logo.jpg" },
-    { id: "e99", type: "bonus", name: "Manovra diversiva", desc: "Una bomba fumogena offusca la vista dei giganti. Una recluta può sparire dalla mappa per 1 turno e riapparire in un esagono libero entro 3 esagoni dalla sua posizione", img: "assets/img/cards/logo.jpg" },
-    { id: "e100", type: "bonus", name: "Assetto da tank", desc: "Tutti i personaggi che ottengono 'aggro' da parte di un gigante nel prossimo turno prevengono 2 danni contro quel gigante ", img: "assets/img/cards/logo.jpg" },
-];
-
-const consumablePool = [
-
-];
 
 const alliesEl = document.getElementById("bench-allies");
 const enemiesEl = document.getElementById("bench-enemies");
@@ -348,33 +112,6 @@ const moraleDOM = {
     pct: document.getElementById("morale-val"),
 };
 
-// Stato iniziale XP: deducilo dal DOM se presente, altrimenti default
-const initialLevel = (() => {
-    const txt = xpDOM.lvl?.textContent || "";
-    const m = txt.match(/Lv\.\s*(\d+)/i);
-    return m ? parseInt(m[1], 10) : 1;
-})();
-
-const initialPct = (() => {
-    const txt = xpDOM.pct?.textContent || "0%";
-    const m = txt.match(/(\d+(\.\d+)?)\s*%/);
-    return m ? parseFloat(m[1]) : 0;
-})();
-
-const EXP_MORAL_STATE = {
-    xp: (() => {
-        const base = xpThreshold(initialLevel);
-        const next = xpThreshold(initialLevel + 1);
-        const range = Math.max(1, next - base);
-        return Math.round(base + (initialPct / 100) * range);
-    })(),
-    moralePct: 100,
-    effectiveBonus: {
-        agi: 0,
-        tec: 0,
-        atk: 0,
-    }
-};
 
 
 function snapshot() {
@@ -382,26 +119,22 @@ function snapshot() {
     return {
         ver: SAVE_VERSION,
         savedAt: Date.now(),
-
         // campo - griglia
-        spawns: structuredClone(spawns),
-
+        spawns: structuredClone(GAME_STATE.spawns),
         // panchine/pool
-        alliesPool: structuredClone(alliesPool),
-        alliesRoster: structuredClone(alliesRoster),
-        giantsPool: structuredClone(giantsPool),
-        giantsCatalog: structuredClone(giantsCatalog),
-        wallsCatalog: structuredClone(wallsCatalog), // base walls (w1,w2,w3)
-
+        alliesPool: structuredClone(GAME_STATE.alliesPool),
+        alliesRoster: structuredClone(GAME_STATE.alliesRoster),
+        giantsPool: structuredClone(GAME_STATE.giantsPool),
+        giantsRoster: structuredClone(GAME_STATE.giantsRoster),
+        walls: structuredClone(GAME_STATE.walls), // base walls (w1,w2,w3)
         // mazzi
-        decks: structuredClone(decks),
-
+        decks: structuredClone(GAME_STATE.decks),
         // UI/stati
-        state: structuredClone(EXP_MORAL_STATE),
+        xpMoraleState: structuredClone(GAME_STATE.xpMoraleState),
         // log
-        logs: structuredClone(log_list),
+        logs: structuredClone(GAME_STATE.logs),
         missionState: (() => {
-            const m = structuredClone(MISSION_STATE);
+            const m = structuredClone(GAME_STATE.missionState);
             // leggero “sanitize”: niente intervalId/oggetti runtime
             delete m.intervalId;
             return m;
@@ -424,36 +157,37 @@ function restore(save) {
     // ver check
     if (!save || save.ver !== SAVE_VERSION) return false;
 
+    GAME_STATE.spawns.length = 0; GAME_STATE.spawns.push(...save.spawns);
     // 1) ripristina array principali (mantenendo i riferimenti)
-    spawns.length = 0; spawns.push(...save.spawns);
-    alliesPool.length = 0; alliesPool.push(...save.alliesPool);
-    alliesRoster.length = 0; alliesRoster.push(...save.alliesRoster);
-    giantsPool.length = 0; giantsPool.push(...save.giantsPool);
-    giantsCatalog.length = 0; giantsCatalog.push(...save.giantsCatalog);
-    wallsCatalog.length = 0; wallsCatalog.push(...save.wallsCatalog);
+
+    GAME_STATE.alliesPool.length = 0; GAME_STATE.alliesPool.push(...save.alliesPool);
+    GAME_STATE.alliesRoster.length = 0; GAME_STATE.alliesRoster.push(...save.alliesRoster);
+    GAME_STATE.giantsPool.length = 0; GAME_STATE.giantsPool.push(...save.giantsPool);
+    GAME_STATE.giantsRoster.length = 0; GAME_STATE.giantsRoster.push(...save.giantsRoster);
+    GAME_STATE.walls.length = 0; GAME_STATE.walls.push(...save.walls);
 
     // 2) mazzi
-    decks.event.draw = save.decks?.event?.draw ?? [];
-    decks.event.discard = save.decks?.event?.discard ?? [];
-    decks.event.removed = save.decks?.event?.removed ?? [];
-    decks.consumable.draw = save.decks?.consumable?.draw ?? [];
-    decks.consumable.discard = save.decks?.consumable?.discard ?? [];
-    decks.consumable.removed = save.decks?.consumable?.removed ?? [];
-    log_list = save.logs ?? [];
+    GAME_STATE.decks.event.draw = save.decks?.event?.draw ?? [];
+    GAME_STATE.decks.event.discard = save.decks?.event?.discard ?? [];
+    GAME_STATE.decks.event.removed = save.decks?.event?.removed ?? [];
+    GAME_STATE.decks.consumable.draw = save.decks?.consumable?.draw ?? [];
+    GAME_STATE.decks.consumable.discard = save.decks?.consumable?.discard ?? [];
+    GAME_STATE.decks.consumable.removed = save.decks?.consumable?.removed ?? [];
+    GAME_STATE.logs = save.logs ?? [];
 
     // 3) stati
-    Object.assign(EXP_MORAL_STATE, save.state || {});
-    Object.assign(MISSION_STATE, save.missionState || {});
-    MISSION_STATE.intervalId = null; // sempre nullo a cold start
+    Object.assign(GAME_STATE.xpMoraleState, save.xpMoraleState || {});
+    Object.assign(GAME_STATE.missionState, save.missionState || {});
+    GAME_STATE.missionState.intervalId = null; // sempre nullo a cold start
 
     // 4) ricostruisci unitById dai cataloghi + muri base
     unitById.clear();
-    rebuildUnitIndex(); // mette alliesRoster + giantsCatalog + wallsCatalog (base)
+    rebuildUnitIndex(); // mette alliesRoster + giantsRoster + walls (base)
 
     // 5) assicurati che i SEGMENTI MURA esistano per ogni cella muro salvata
     //    Se vedi un id "w1_r10c3" in spawns e non è nel map, crealo dal base corrispondente.
-    const baseByPrefix = new Map(wallsCatalog.map(w => [w.id, w]));
-    for (const s of spawns) {
+    const baseByPrefix = new Map(GAME_STATE.walls.map(w => [w.id, w]));
+    for (const s of GAME_STATE.spawns) {
         const ids = Array.isArray(s.unitIds) ? s.unitIds : (s.unitId ? [s.unitId] : []);
         for (const id of ids) {
             if (unitById.has(id)) continue;
@@ -470,10 +204,10 @@ function restore(save) {
 
     // 6) riprendi il TIMER in modo resiliente
     try {
-        if (MISSION_STATE.ticking) {
+        if (GAME_STATE.missionState.ticking) {
             const elapsedSec = Math.floor((Date.now() - (save.savedAt || Date.now())) / 1000);
-            MISSION_STATE.remainingSec = clamp((MISSION_STATE.remainingSec || 0) - elapsedSec, 0, MISSION_STATE.timerTotalSec || 1200);
-            if (MISSION_STATE.remainingSec > 0) {
+            GAME_STATE.missionState.remainingSec = clamp((GAME_STATE.missionState.remainingSec || 0) - elapsedSec, 0, GAME_STATE.missionState.timerTotalSec || 1200);
+            if (GAME_STATE.missionState.remainingSec > 0) {
                 startTimer();
             } else {
                 stopTimer();
@@ -488,7 +222,7 @@ function restore(save) {
     refreshMoraleUI();
     renderBonusMalus();
     renderBenches();
-    renderGrid(grid, ROWS, COLS, spawns);
+    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     restoreLayout();
     renderHeader();
     renderLogs();
@@ -507,7 +241,8 @@ function saveToLocal() {
     }
 }
 
-function loadFromLocal() {
+async function loadDataAndStateFromLocal() {
+    await bootDataApplication()
     try {
         const raw = localStorage.getItem(SAVE_KEY);
         if (!raw) return false;
@@ -525,26 +260,26 @@ const isTemplate = (u) => !!u.template;
 const isClone = (u) => !u.template && !!u.baseId;
 function rebuildUnitIndex() {
     unitById.clear();
-    [...alliesRoster, ...giantsCatalog, ...wallsCatalog].forEach(u => unitById.set(u.id, u));
+    [...GAME_STATE.alliesRoster, ...GAME_STATE.giantsRoster, ...GAME_STATE.walls].forEach(u => unitById.set(u.id, u));
 }
 function seedWallRows() {
     // 1) togli eventuali vecchie entry in r.10/11/12
-    for (let i = spawns.length - 1; i >= 0; i--) {
-        const r = spawns[i].row;
-        if (WALL_ROWS[r]) spawns.splice(i, 1);
+    for (let i = GAME_STATE.spawns.length - 1; i >= 0; i--) {
+        const r = GAME_STATE.spawns[i].row;
+        if (DB.SETTINGS.gridSettings.wall[r]) GAME_STATE.spawns.splice(i, 1);
     }
     // 2) crea segmenti (cloni con id univoco) e mettili in campo
-    for (const [rStr, baseId] of Object.entries(WALL_ROWS)) {
+    for (const [rStr, baseId] of Object.entries(DB.SETTINGS.gridSettings.wall)) {
         const r = +rStr;
-        const base = wallsCatalog.find(w => w.id === baseId);
+        const base = GAME_STATE.walls.find(w => w.id === baseId);
         if (!base) continue;
-        for (let c = 1; c <= COLS; c++) {
+        for (let c = 1; c <= DB.SETTINGS.gridSettings.cols; c++) {
             const segId = `${baseId}`;
             if (!unitById.has(segId)) {
                 const copy = { ...base, id: segId, name: base.name + ` — ${c}`, currHp: base.hp, segment: true };
-                unitById.set(segId, copy); // NB: non lo aggiungo a wallsCatalog per non affollare la panchina
+                unitById.set(segId, copy); // NB: non lo aggiungo a walls per non affollare la panchina
             }
-            spawns.push({ row: r, col: c, unitIds: [segId] });
+            GAME_STATE.spawns.push({ row: r, col: c, unitIds: [segId] });
         }
     }
 }
@@ -556,8 +291,8 @@ function shuffle(arr) {
     return arr;
 }
 function resetDeckFromPool(type) {
-    const pool = (type === 'event') ? eventPool : consumablePool;
-    const d = decks[type];
+    const pool = (type === 'event') ? DB.EVENTS : DB.CONSUMABLE;
+    const d = GAME_STATE.decks[type];
     d.draw = shuffle(pool.slice()); // copia + shuffle
     d.discard = [];
     d.removed = [];
@@ -565,33 +300,33 @@ function resetDeckFromPool(type) {
     updateFabDeckCounters();
 }
 const keyRC = (r, c) => `${r},${c}`;
-function findCellIndex(r, c) { return spawns.findIndex(s => s.row === r && s.col === c); }
+function findCellIndex(r, c) { return GAME_STATE.spawns.findIndex(s => s.row === r && s.col === c); }
 function getStack(r, c) {
     const idx = findCellIndex(r, c);
     if (idx < 0) return [];
-    const s = spawns[idx];
+    const s = GAME_STATE.spawns[idx];
     if (Array.isArray(s.unitIds)) return [...s.unitIds];
     if (s.unitId) return [s.unitId];
     return [];
 }
-const countAlive = (role) => alliesPool.filter(u => u.role === role && !u.dead).length;
-const totalByRole = (role) => alliesPool.filter(u => u.role === role).length;
+const countAlive = (role) => GAME_STATE.alliesPool.filter(u => u.role === role && !u.dead).length;
+const totalByRole = (role) => GAME_STATE.alliesPool.filter(u => u.role === role).length;
 function setStack(r, c, arr) {
     const idx = findCellIndex(r, c);
-    if (!arr || arr.length === 0) { if (idx >= 0) spawns.splice(idx, 1); return; }
-    if (idx < 0) spawns.push({ row: r, col: c, unitIds: [...arr] });
-    else spawns[idx] = { row: r, col: c, unitIds: [...arr] };
+    if (!arr || arr.length === 0) { if (idx >= 0) GAME_STATE.spawns.splice(idx, 1); return; }
+    if (idx < 0) GAME_STATE.spawns.push({ row: r, col: c, unitIds: [...arr] });
+    else GAME_STATE.spawns[idx] = { row: r, col: c, unitIds: [...arr] };
     scheduleSave();
 }
 function removeUnitEverywhere(unitId) {
-    for (let i = spawns.length - 1; i >= 0; i--) {
-        const s = spawns[i];
+    for (let i = GAME_STATE.spawns.length - 1; i >= 0; i--) {
+        const s = GAME_STATE.spawns[i];
         const arr = Array.isArray(s.unitIds) ? s.unitIds : (s.unitId ? [s.unitId] : []);
         const idx = arr.indexOf(unitId);
         if (idx >= 0) {
             arr.splice(idx, 1);
-            if (arr.length === 0) spawns.splice(i, 1);
-            else spawns[i] = { row: s.row, col: s.col, unitIds: arr };
+            if (arr.length === 0) GAME_STATE.spawns.splice(i, 1);
+            else GAME_STATE.spawns[i] = { row: s.row, col: s.col, unitIds: arr };
             scheduleSave();
             return;
         }
@@ -606,31 +341,31 @@ function bringToFront(cell, unitId) {
     setStack(cell.row, cell.col, list);
 }
 function isOnField(unitId) {
-    return spawns.some(s => {
+    return GAME_STATE.spawns.some(s => {
         const arr = Array.isArray(s.unitIds) ? s.unitIds : (s.unitId ? [s.unitId] : []);
         return arr.includes(unitId);
     });
 }
 function findUnitCell(unitId) {
-    for (const s of spawns) {
+    for (const s of GAME_STATE.spawns) {
         const arr = Array.isArray(s.unitIds) ? s.unitIds : (s.unitId ? [s.unitId] : []);
         if (arr.includes(unitId)) return { row: s.row, col: s.col };
     }
     return null;
 }
 function pickGiantFromPool(type = null) {
-    // escludo quelli già attivi in panchina (giantsCatalog)
-    const activeIds = new Set(giantsCatalog.map(g => g.id));
-    const avail = giantsPool.filter(g => !activeIds.has(g.id) && (!type || g.type === type));
+    // escludo quelli già attivi in panchina (giantsRoster)
+    const activeIds = new Set(GAME_STATE.giantsRoster.map(g => g.id));
+    const avail = GAME_STATE.giantsPool.filter(g => !activeIds.has(g.id) && (!type || g.type === type));
     if (avail.length === 0) return null;
     return avail[Math.floor(Math.random() * avail.length)];
 }
 function putGiantIntoRoster(giant) {
     // sposta dal pool alla panchina attiva
-    const ix = giantsPool.findIndex(g => g.id === giant.id);
-    const unit = ix >= 0 ? giantsPool.splice(ix, 1)[0] : { ...giant };
+    const ix = GAME_STATE.giantsPool.findIndex(g => g.id === giant.id);
+    const unit = ix >= 0 ? GAME_STATE.giantsPool.splice(ix, 1)[0] : { ...giant };
     unit.template = false;
-    giantsCatalog.push(unit);
+    GAME_STATE.giantsRoster.push(unit);
     rebuildUnitIndex();
     renderBenches();
     return unit;
@@ -643,11 +378,11 @@ function spawnGiantToFieldRandom(unitId) {
         const r = x + 2; // 1..6
         const c = y + 1; // 1..6
         const s = getStack(r, c);
-        if (s.length < MAX_PER_HEX) {
+        if (s.length < DB.SETTINGS.gridSettings.maxUnitHexagon) {
             removeUnitEverywhere(unitId);
             s.push(unitId);
             setStack(r, c, s);
-            renderGrid(grid, ROWS, COLS, spawns);
+            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
             return { row: r, col: c };
         }
     }
@@ -656,7 +391,7 @@ function spawnGiantToFieldRandom(unitId) {
 async function spawnGiant(type = null) {
 
     const roll20 = Math.floor(Math.random() * 20) + 1;
-    const m = MISSION_STATE.missions[MISSION_STATE.curIndex];
+    const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
     const tipo = type !== null ? type : getSpawnType(roll20, m.spawnRate);
     const pick = pickGiantFromPool(tipo);
 
@@ -672,16 +407,16 @@ async function spawnGiant(type = null) {
 
         if (type === "Mutaforma") {
             const url_mutaform = './assets/sounds/mutaform_sound.mp3';
-            gameSoundTrack.background.pause();
+            GAME_SOUND_TRACK.background.pause();
             const music = await play(url_mutaform, { loop: true, volume: 1 });
-            gameSoundTrack.background = music;
+            GAME_SOUND_TRACK.background = music;
         }
 
         if (type === "Anomalo") {
             const url_mutaform = './assets/sounds/ape_titan_sound.mp3';
-            gameSoundTrack.background.pause();
+            GAME_SOUND_TRACK.background.pause();
             const music = await play(url_mutaform, { loop: true, volume: 1 });
-            gameSoundTrack.background = music;
+            GAME_SOUND_TRACK.background = music;
         }
 
 
@@ -695,13 +430,13 @@ async function spawnGiant(type = null) {
     return true;
 }
 function renderBenches() {
-    renderBenchSection(alliesEl, alliesRoster, ["recruit", "commander"]);
-    renderBenchSection(enemiesEl, giantsCatalog, ["enemy"]);
-    renderBenchSection(wallsEl, wallsCatalog, ["wall"], /*readOnly*/ true);
+    renderBenchSection(alliesEl, GAME_STATE.alliesRoster, ["recruit", "commander"]);
+    renderBenchSection(enemiesEl, GAME_STATE.giantsRoster, ["enemy"]);
+    renderBenchSection(wallsEl, GAME_STATE.walls, ["wall"], /*readOnly*/ true);
 
-    countAlliesEl.textContent = `${alliesRoster.length} unità`;
-    countEnemiesEl.textContent = `${giantsCatalog.length} unità`;
-    countWallsEl.textContent = `${wallsCatalog.length} mura`;
+    countAlliesEl.textContent = `${GAME_STATE.alliesRoster.length} unità`;
+    countEnemiesEl.textContent = `${GAME_STATE.giantsRoster.length} unità`;
+    countWallsEl.textContent = `${GAME_STATE.walls.length} mura`;
 }
 function hpColor(pct) {
     const p = Math.max(0, Math.min(1, pct));
@@ -727,7 +462,7 @@ function benchClickFocusAndTop(u, card) {
         // È in campo: porta davanti e seleziona come già fai
         bringToFront(cell, unitId);
         selectedUnitId = unitId;
-        renderGrid(grid, ROWS, COLS, spawns);
+        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
         renderBenches();
 
         requestAnimationFrame(() => {
@@ -968,7 +703,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
                 if (idx >= 0) { src.splice(idx, 1); setStack(payload.from.row, payload.from.col, src); }
 
                 selectedUnitId = null;
-                renderGrid(grid, ROWS, COLS, spawns);
+                renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
                 renderBenches();
             }
         });
@@ -979,7 +714,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
    GRIGLIA
    ======================= */
 
-function renderGrid(container, rows = ROWS, cols = COLS, occupancy = []) {
+function renderGrid(container, rows, cols, occupancy = []) {
     container.textContent = "";
 
     const occMap = new Map();
@@ -1061,8 +796,8 @@ function createHexagon(row, col, unitIds = []) {
     if (row === 10 || row === 11 || row === 12) hex.setAttribute("data-color", "silver");
 
     const allUnits = unitIds.map(id => unitById.get(id)).filter(Boolean);
-    const overflow = Math.max(0, allUnits.length - DISPLAY_LIMIT);
-    const visibleUnits = overflow > 0 ? allUnits.slice(-DISPLAY_LIMIT) : allUnits;
+    const overflow = Math.max(0, allUnits.length - DB.SETTINGS.gridSettings.dispalyLimit);
+    const visibleUnits = overflow > 0 ? allUnits.slice(-DB.SETTINGS.gridSettings.dispalyLimit) : allUnits;
 
     setStackVisuals(hex, allUnits.length);
 
@@ -1100,14 +835,12 @@ function createHexagon(row, col, unitIds = []) {
             member.style.setProperty('--sel', colVar);
             if (unit.id === selectedUnitId) { member.classList.add('is-selected'); }
 
-
             // Long-press sul membro in campo: mostra tooltip; click breve = focus + bringToFront
             addLongPress(member, {
                 onClick: (e) => {
                     selectedUnitId = unit.id;
                     bringToFront({ row, col }, unit.id);
-                    renderGrid(grid, 12, 6, spawns);
-                    // NOVITÀ: evidenzia anche la card in panchina
+                    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
                     focusBenchCard(unit.id, { scroll: true, pulse: true });
                 },
                 onLongPress: (e) => {
@@ -1176,16 +909,16 @@ function handleDrop(payload, target) {
     if (payload.type === "from-bench") {
         // stesso esagono → non spostare né duplicare    
         if (sameId(payload.unitId, target)) {
-            renderGrid(grid, ROWS, COLS, spawns);
+            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
             return;
         }
         placeFromBench(target, payload.unitId);
-        renderGrid(grid, ROWS, COLS, spawns);
+        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     } else if (payload.type === "from-cell") {
         const u = unitById.get(payload.unitId);
         if (u?.role === 'wall') return;
         moveOneUnitBetweenStacks(payload.from, target, payload.unitId);
-        renderGrid(grid, ROWS, COLS, spawns);
+        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
         renderBenches();
     }
 }
@@ -1196,7 +929,7 @@ function placeFromBench(target, unitId) {
     if (unit?.role === 'wall') return; // i muri non si piazzano sul campo
 
     const tgt = getStack(target.row, target.col);
-    if (tgt.length >= MAX_PER_HEX) return;
+    if (tgt.length >= DB.SETTINGS.gridSettings.maxUnitHexagon) return;
 
     removeUnitEverywhere(unitId);
     tgt.push(unitId);
@@ -1216,7 +949,7 @@ function moveOneUnitBetweenStacks(from, to, unitId) {
     setStack(from.row, from.col, src);
 
     const tgt = getStack(to.row, to.col);
-    if (tgt.length >= MAX_PER_HEX) {
+    if (tgt.length >= DB.SETTINGS.gridSettings.maxUnitHexagon) {
         src.splice(Math.min(idx, src.length), 0, unitId);
         setStack(from.row, from.col, src);
         return;
@@ -1235,7 +968,7 @@ function focusUnitOnField(unitId) {
 
     bringToFront(cell, unitId);
     selectedUnitId = unitId;
-    renderGrid(grid, 12, 6, spawns);
+    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     renderBenches();
 
     requestAnimationFrame(() => {
@@ -1361,7 +1094,6 @@ tooltipEl.addEventListener('click', (e) => {
 function showTooltip(html, x, y) {
     tooltipEl.innerHTML = html;
     tooltipEl.style.display = "block";
-    _lastTooltipXY = { x, y };
     positionTooltip(x, y);
 }
 function hideTooltip() { tooltipEl.style.display = "none"; }
@@ -1382,14 +1114,14 @@ document.addEventListener('click', (e) => {
     ) {
         selectedUnitId = null;
         hideTooltip();
-        renderGrid(grid, ROWS, COLS, spawns); // rimuove highlight in campo
+        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
         renderBenches();                      // rimuove highlight in panchina
     }
 });
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        hideTooltip(); selectedUnitId = null; renderGrid(grid, 12, 6, spawns);
+        hideTooltip(); selectedUnitId = null; renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
         closeAllFabs();
     }
 });
@@ -1415,7 +1147,7 @@ btnReset.addEventListener('click', async () => {
    ======================= */
 missionCard.addEventListener('click', async () => {
     const ok = await openDialog({
-        title: `Completare la Missione #${MISSION_STATE.curIndex + 1}?`,
+        title: `Completare la Missione #${GAME_STATE.missionState.curIndex + 1}?`,
         message: `
      
       <p>Confermi il completamento della missione corrente?</p>
@@ -1516,12 +1248,12 @@ document.querySelectorAll('#fab-event .fab-option').forEach(btn => {
 
 function completeMission() {
     stopTimer();
-    log(`Missione #${MISSION_STATE.curIndex + 1} completata!`, 'success');
-    const m = MISSION_STATE.missions[MISSION_STATE.curIndex];
+    log(`Missione #${GAME_STATE.missionState.curIndex + 1} completata!`, 'success');
+    const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
     const reward = m?.reward ?? { morale: 0, xp: 0 };
     addMorale(reward.morale);
     addXP(reward?.xp)
-    setMissionByIndex(MISSION_STATE.curIndex + 1);
+    setMissionByIndex(GAME_STATE.missionState.curIndex + 1);
 }
 
 /* =======================
@@ -1534,7 +1266,7 @@ function log(msg, type = 'info') {
         minute: "2-digit",
     });
     const message = `[${hhmm}] - ${msg}`
-    log_list.push({ message, type });
+    GAME_STATE.logs.push({ message, type });
     window.snackbar(msg, {}, type);
     renderLogs();
     scheduleSave();
@@ -1816,7 +1548,7 @@ window.setUnitHp = function (unitId, newHp) {
 
     scheduleSave();
     renderBenches();
-    renderGrid(grid, 12, 6, spawns);
+    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
 };
 
 /* Elimina unità (da panchina e campo) */
@@ -1844,21 +1576,21 @@ async function deleteUnit(unitId) {
 
     if (u.role === 'recruit' || u.role === 'commander') {
         // rimuovi dal ROSTER
-        const i = alliesRoster.findIndex(x => x.id === unitId);
+        const i = GAME_STATE.alliesRoster.findIndex(x => x.id === unitId);
         if (i >= 0) {
-            const removed = alliesRoster.splice(i, 1)[0];
+            const removed = GAME_STATE.alliesRoster.splice(i, 1)[0];
             // torna nel POOL con gli HP aggiornati
             const back = { ...removed, template: true }; // torna “template: true”
-            alliesPool.push(back);
+            GAME_STATE.alliesPool.push(back);
         }
     } else if (u.role === 'enemy') {
         // rimuovi dal ROSTER attivo
-        const i = giantsCatalog.findIndex(x => x.id === unitId);
+        const i = GAME_STATE.giantsRoster.findIndex(x => x.id === unitId);
         if (i >= 0) {
-            const removed = giantsCatalog.splice(i, 1)[0];
+            const removed = GAME_STATE.giantsRoster.splice(i, 1)[0];
             // torna nel POOL (di default a FULL HP)
             const back = { ...removed, template: true, currHp: removed.hp };
-            giantsPool.push(back);
+            GAME_STATE.giantsPool.push(back);
         }
     }
 
@@ -1872,7 +1604,7 @@ async function deleteUnit(unitId) {
     if (selectedUnitId === unitId) selectedUnitId = null;
     rebuildUnitIndex();
     renderBenches();
-    renderGrid(grid, 12, 6, spawns);
+    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     // 5) Log
     log(`Rimossa unità: ${name}.`);
     scheduleSave();
@@ -1885,6 +1617,9 @@ ensureModal().backdrop.addEventListener('click', () => {
 });
 
 function handleWallDeath(wallUnit) {
+    const ROW_BY_WALL_ID = Object.fromEntries(
+        Object.entries(DB.SETTINGS.gridSettings.wall).map(([r, id]) => [id, Number(r)])
+    );
     // segna lo stato "distrutta"
     wallUnit.currHp = 0;
     wallUnit.destroyed = true;
@@ -1893,16 +1628,16 @@ function handleWallDeath(wallUnit) {
     const rows = [];
     const mapped = ROW_BY_WALL_ID[wallUnit.id];
     if (mapped) rows.push(mapped);
-    for (const s of spawns) {
+    for (const s of GAME_STATE.spawns) {
         const arr = Array.isArray(s.unitIds) ? s.unitIds : (s.unitId ? [s.unitId] : []);
         if (arr.includes(wallUnit.id) && !rows.includes(s.row)) rows.push(s.row);
     }
 
     // rimuovi tutte le entry della/e riga/righe trovate
-    for (let i = spawns.length - 1; i >= 0; i--) {
-        if (rows.includes(spawns[i].row)) spawns.splice(i, 1);
+    for (let i = GAME_STATE.spawns.length - 1; i >= 0; i--) {
+        if (rows.includes(GAME_STATE.spawns[i].row)) GAME_STATE.spawns.splice(i, 1);
     }
-    renderGrid(grid, 12, 6, spawns);
+    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     renderBenches();
     log(`${wallUnit.name} è stato distrutto!`, 'error');
     scheduleSave();
@@ -1913,8 +1648,8 @@ function handleGiantDeath(unit) {
     removeUnitEverywhere(unit.id);
 
     // 2) rimuovi dalla panchina attiva (roster giganti)
-    const i = giantsCatalog.findIndex(g => g.id === unit.id);
-    if (i >= 0) giantsCatalog.splice(i, 1);
+    const i = GAME_STATE.giantsRoster.findIndex(g => g.id === unit.id);
+    if (i >= 0) GAME_STATE.giantsRoster.splice(i, 1);
 
     // 3) NON rimettere nel pool: il gigante è “consumato”
     // (quindi niente push in giantsPool)
@@ -1922,7 +1657,7 @@ function handleGiantDeath(unit) {
     // 4) UI + log
     rebuildUnitIndex();
     renderBenches();
-    renderGrid(grid, 12, 6, spawns);
+    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     log(`${unit.name} è morto.`, 'success');
     scheduleSave();
 }
@@ -1931,23 +1666,23 @@ function handleAllyDeath(unit) {
     // rimuovi da campo
     removeUnitEverywhere(unit.id);
     // rimuovi da roster
-    const i = alliesRoster.findIndex(a => a.id === unit.id);
-    if (i >= 0) alliesRoster.splice(i, 1);
+    const i = GAME_STATE.alliesRoster.findIndex(a => a.id === unit.id);
+    if (i >= 0) GAME_STATE.alliesRoster.splice(i, 1);
     // torna nel pool come morto
     const back = { ...unit, template: true, dead: true, currHp: 0 };
     // se già esiste nel pool con stesso id, aggiorna, altrimenti push
-    const j = alliesPool.findIndex(a => a.id === back.id);
-    if (j >= 0) alliesPool[j] = back; else alliesPool.push(back);
+    const j = GAME_STATE.alliesPool.findIndex(a => a.id === back.id);
+    if (j >= 0) GAME_STATE.alliesPool[j] = back; else GAME_STATE.alliesPool.push(back);
 
     rebuildUnitIndex();
     renderBenches();
-    renderGrid(grid, 12, 6, spawns);
+    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     log(`${unit.name} è morto/a.`, 'error');
     scheduleSave();
 }
 
 function resurrectInPool(id) {
-    const u = alliesPool.find(a => a.id === id);
+    const u = GAME_STATE.alliesPool.find(a => a.id === id);
     if (!u) return false;
     u.dead = false;
     u.currHp = u.hp; // full heal; se preferisci metà vita, metti Math.ceil(u.hp/2)
@@ -2076,10 +1811,10 @@ function createSnack({ message, type = 'info', duration = 3000, actionText = nul
         target.style.animation = 'sb-exit .14s ease-in forwards';
         setTimeout(() => {
             region.removeChild(target);
-            showing = false;
+
             showNext();
         }, 140);
-        // rimuove handler ESC
+
         window.removeEventListener('keydown', onEsc);
     }
 
@@ -2104,10 +1839,8 @@ function createSnack({ message, type = 'info', duration = 3000, actionText = nul
 }
 
 function showNext() {
-    //if (showing) return;
     const item = queue.shift();
     if (!item) return;
-    showing = true;
     const el = createSnack(item);
     region.appendChild(el);
 }
@@ -2129,7 +1862,7 @@ window.snackbar = function (message, options = {}, type = 'success') {
    ========================================================= */
 
 function availableTemplates(role) {
-    return alliesPool.filter(u => u.role === role); // nel pool = non in panchina
+    return GAME_STATE.alliesPool.filter(u => u.role === role); // nel pool = non in panchina
 }
 function displayHpForTemplate(base) {
     return base.currHp ?? base.hp;
@@ -2204,7 +1937,7 @@ function pickAlliesDialog(role) {
     const paintPicker = () => {
         msg.querySelectorAll('.pick-card').forEach(card => {
             const id = card.dataset.id;
-            const base = alliesPool.find(a => a.id === id);
+            const base = GAME_STATE.alliesPool.find(a => a.id === id);
             if (!base) return;
 
             // Stato visivo + accessibilità
@@ -2317,7 +2050,7 @@ function pickAlliesDialog(role) {
             const id = resBtn.dataset.id;
             if (resurrectInPool(id)) {
                 const card = resBtn.closest('.pick-card');
-                const base = alliesPool.find(a => a.id === id);
+                const base = GAME_STATE.alliesPool.find(a => a.id === id);
 
                 // 1) stato "vivo"
                 card.classList.remove('is-dead');
@@ -2398,11 +2131,11 @@ async function openAlliesPicker(role) {
 
     const moved = [];
     for (const id of baseIds) {
-        const ix = alliesPool.findIndex(a => a.id === id && a.role === role);
+        const ix = GAME_STATE.alliesPool.findIndex(a => a.id === id && a.role === role);
         if (ix === -1) continue;
-        const unit = alliesPool.splice(ix, 1)[0]; // rimuovi dal pool
+        const unit = GAME_STATE.alliesPool.splice(ix, 1)[0]; // rimuovi dal pool
         unit.template = false;                    // ora è “attivo”
-        alliesRoster.push(unit);                  // metti in panchina
+        GAME_STATE.alliesRoster.push(unit);                  // metti in panchina
         moved.push(unit);
     }
 
@@ -2424,7 +2157,7 @@ function renderLogs() {
     if (!logBox) return;
     logBox.textContent = '';
     // Mostra al massimo "limit" righe, tagliando le più vecchie
-    log_list.forEach(entry => {
+    GAME_STATE.logs.forEach(entry => {
         const p = document.createElement('p');
         p.className = `log-entry log-${entry.type || 'info'}`;
         p.style.margin = '0 0 6px';
@@ -2514,7 +2247,7 @@ function renderHeader() {
 })();
 
 function drawCard(type /* 'event' | 'consumable' */) {
-    const d = decks[type];
+    const d = GAME_STATE.decks[type];
     if (!d) return null;
 
     if (d.draw.length === 0) {
@@ -2528,8 +2261,8 @@ function drawCard(type /* 'event' | 'consumable' */) {
     return pop; // pesca dal top
 }
 
-function applyCardAction(type, card, action /* 'discard' | 'reshuffle' | 'remove' */) {
-    const d = decks[type];
+function applyCardAction(type, card, action) {
+    const d = GAME_STATE.decks[type];
     if (!d || !card) return;
 
     if (action === 'discard') {
@@ -2549,7 +2282,7 @@ function applyCardAction(type, card, action /* 'discard' | 'reshuffle' | 'remove
 }
 
 function reshuffleDiscardsOf(type /* 'event' | 'consumable' */) {
-    const d = decks[type];
+    const d = GAME_STATE.decks[type];
     if (!d) return 0;
 
     let moved = [];
@@ -2589,8 +2322,8 @@ function reshuffleAllDiscards() {
 }
 
 function updateFabDeckCounters() {
-    const evDraw = decks.event?.draw?.length || 0;
-    const consDraw = decks.consumable?.draw?.length || 0;
+    const evDraw = GAME_STATE.decks.event?.draw?.length || 0;
+    const consDraw = GAME_STATE.decks.consumable?.draw?.length || 0;
 
     const evBadge = document.querySelector('[data-deck-badge="event"]');
     const consBadge = document.querySelector('[data-deck-badge="consumable"]');
@@ -2615,10 +2348,10 @@ document.querySelectorAll('#fab-arruola .fab-option').forEach(btn => {
 // Se superi la tabella, continua con una formula (incremento crescente)
 function xpThreshold(level) {
     // XP cumulativo richiesto per INIZIARE quel livello
-    if (level <= XP_TABLE.length) return XP_TABLE[level - 1];
+    if (level <= DB.SETTINGS.xpTable.length) return DB.SETTINGS.xpTable[level - 1];
     // oltre la tabella: aumento progressivo
-    let lastLevel = XP_TABLE.length;
-    let xp = XP_TABLE[lastLevel - 1];
+    let lastLevel = DB.SETTINGS.xpTable.length;
+    let xp = DB.SETTINGS.xpTable[lastLevel - 1];
     for (let L = lastLevel + 1; L <= level; L++) {
         // incremento che cresce con il livello (regolabile)
         const inc = 300 + (L - 1) * 50;
@@ -2644,11 +2377,11 @@ function levelProgressPercent(xp, level) {
 
 // === BONUS / MALUS dinamici (solo Morale per i malus, solo Livello per i bonus) ===
 
-// === MALUS da Morale (allineato a LEVEL_MALUS_TABLE) ===
+// === MALUS da Morale (allineato DB.SETTINGS.malusTable) ===
 function malusFromMorale(moralePctRaw) {
     const moralePct = Math.max(0, Math.min(100, Number(moralePctRaw) || 0));
     // Trova la riga di tabella che copre il range del morale corrente (inclusivo)
-    const row = LEVEL_MALUS_TABLE.find(r =>
+    const row = DB.SETTINGS.malusTable.find(r =>
         moralePct >= r.range.min && moralePct <= r.range.max
     );
 
@@ -2686,7 +2419,7 @@ function fmtSigned(n) {
 }
 
 function bonusesFromLevel(level) {
-    return LEVEL_BONUS_TABLE
+    return DB.SETTINGS.bonusTable
         .filter(b => level >= b.lvl)
         .map(b => ({ type: 'bonus', text: b.text, bonus: b.bonus }));
 }
@@ -2695,8 +2428,8 @@ function bonusesFromLevel(level) {
 function renderBonusMalus() {
     if (!box) return;
 
-    const level = levelFromXP(EXP_MORAL_STATE.xp);
-    const morale = Number(EXP_MORAL_STATE.moralePct) || 0;
+    const level = levelFromXP(GAME_STATE.xpMoraleState.xp);
+    const morale = Number(GAME_STATE.xpMoraleState.moralePct) || 0;
 
     // 1) raccogli pillole: bonus (cumulativi per soglia) + malus (unico per range)
     const pills = [
@@ -2707,7 +2440,7 @@ function renderBonusMalus() {
     // 2) calcola la somma effettiva
     const totals = mergeBonuses(pills);
     // opzionale: salviamo nello state se vuoi riusarlo altrove
-    EXP_MORAL_STATE.effectiveBonus = totals;
+    GAME_STATE.xpMoraleState.effectiveBonus = totals;
 
     // 3) render UI pillole + somma finale
     const pillsHtml = pills.length
@@ -2720,8 +2453,8 @@ function renderBonusMalus() {
 }
 
 function refreshXPUI() {
-    const L = levelFromXP(EXP_MORAL_STATE.xp);
-    const pct = levelProgressPercent(EXP_MORAL_STATE.xp, L);
+    const L = levelFromXP(GAME_STATE.xpMoraleState.xp);
+    const pct = levelProgressPercent(GAME_STATE.xpMoraleState.xp, L);
     if (xpDOM.fill) xpDOM.fill.style.width = pct + "%";
     if (xpDOM.pct) xpDOM.pct.textContent = Math.round(pct) + "%";
     if (xpDOM.lvl) xpDOM.lvl.textContent = "Lv. " + L;
@@ -2729,7 +2462,7 @@ function refreshXPUI() {
 }
 
 function refreshMoraleUI() {
-    const pct = Math.max(0, Math.min(100, Number(EXP_MORAL_STATE.moralePct) || 0));
+    const pct = Math.max(0, Math.min(100, Number(GAME_STATE.xpMoraleState.moralePct) || 0));
     if (moraleDOM.fill) moraleDOM.fill.style.width = pct + "%";
     if (moraleDOM.pct) moraleDOM.pct.textContent = Math.round(pct) + "%";
     renderBonusMalus();
@@ -2738,17 +2471,17 @@ function refreshMoraleUI() {
 // Helper: trova la riga malus corrispondente a una percentuale di morale
 function getMalusRow(moralePct) {
     const m = Math.max(0, Math.min(100, Number(moralePct) || 0));
-    return LEVEL_MALUS_TABLE.find(r => m >= r.range.min && m <= r.range.max) || null;
+    return DB.SETTINGS.malusTable.find(r => m >= r.range.min && m <= r.range.max) || null;
 }
 
 // Mutatore con logging dettagliato
 function addMorale(deltaPct) {
-    const prev = Math.max(0, Math.min(100, Number(EXP_MORAL_STATE.moralePct) || 0));
+    const prev = Math.max(0, Math.min(100, Number(GAME_STATE.xpMoraleState.moralePct) || 0));
     const delta = Number(deltaPct) || 0;
     const next = Math.max(0, Math.min(100, prev + delta));
 
     // Aggiorna stato
-    EXP_MORAL_STATE.moralePct = next;
+    GAME_STATE.xpMoraleState.moralePct = next;
 
     // UI + pillole
     refreshMoraleUI();     // richiama già renderBonusMalus()
@@ -2771,12 +2504,12 @@ function addMorale(deltaPct) {
 }
 
 function addXP(delta) {
-    const prevXP = EXP_MORAL_STATE.xp;
+    const prevXP = GAME_STATE.xpMoraleState.xp;
     const prevLevel = levelFromXP(prevXP);
 
     // aggiorna XP (può salire o scendere)
     const nextXP = Math.max(0, prevXP + (Number(delta) || 0));
-    EXP_MORAL_STATE.xp = nextXP;
+    GAME_STATE.xpMoraleState.xp = nextXP;
 
     const nextLevel = levelFromXP(nextXP);
 
@@ -2789,7 +2522,7 @@ function addXP(delta) {
         for (let L = prevLevel + 1; L <= nextLevel; L++) {
             log(`Salito al livello ${L}!`, 'success');
             // evidenzia i bonus appena sbloccati (se presenti)
-            const unlocked = LEVEL_BONUS_TABLE.filter(b => b.lvl === L);
+            const unlocked = DB.SETTINGS.bonusTable.filter(b => b.lvl === L);
             unlocked.forEach(b => log(`Sbloccato: ${b.text}`, 'info'));
         }
     } else if (nextLevel < prevLevel) {
@@ -2825,23 +2558,21 @@ const fmtClock = (sec) => {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 };
 
-// Carica JSON missioni
-async function loadMissions() {
-    // Missioni cablate per test (stesso formato normalizzato che ti ho proposto)
-    MISSION_STATE.missions = MISSIONS;
-    setMissionByIndex(0);
+
+function loadMissions() {
+    setMissionByIndex(GAME_STATE.missionState.curIndex);
 }
 
 // Imposta missione corrente (per indice nell’array)
 function setMissionByIndex(idx) {
-    idx = clamp(idx, 0, MISSION_STATE.missions.length - 1);
-    MISSION_STATE.curIndex = idx;
+    idx = clamp(idx, 0, DB.MISSIONS.length - 1);
+    GAME_STATE.missionState.curIndex = idx;
 
-    const m = MISSION_STATE.missions[idx];
+    const m = DB.MISSIONS[idx];
     // Timer: totale = timerSec (o 1200)
     const total = Number(m?.timerSec) > 0 ? Math.floor(m.timerSec) : 1200;
-    MISSION_STATE.timerTotalSec = total;
-    MISSION_STATE.remainingSec = total;
+    GAME_STATE.missionState.timerTotalSec = total;
+    GAME_STATE.missionState.remainingSec = total;
     stopTimer();
     renderMissionUI();
     renderTimerUI();
@@ -2850,8 +2581,8 @@ function setMissionByIndex(idx) {
 
 // Render UI missione (header + card)
 function renderMissionUI() {
-    const m = MISSION_STATE.missions[MISSION_STATE.curIndex];
-    const num = m?.id ?? (MISSION_STATE.curIndex + 1);
+    const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
+    const num = m?.id ?? (GAME_STATE.missionState.curIndex + 1);
     const title = m?.title ?? 'Missione';
     const objectives = Array.isArray(m?.objectives) ? m.objectives : [];
     const reward = m?.reward ?? { morale: 0, xp: 0 };
@@ -2874,21 +2605,21 @@ function renderMissionUI() {
 
 // Render UI timer
 function renderTimerUI() {
-    if (elTime) elTime.textContent = fmtClock(MISSION_STATE.remainingSec);
-    if (elPlay) elPlay.textContent = MISSION_STATE.ticking ? '⏸' : '▶';
+    if (elTime) elTime.textContent = fmtClock(GAME_STATE.missionState.remainingSec);
+    if (elPlay) elPlay.textContent = GAME_STATE.missionState.ticking ? '⏸' : '▶';
 }
 
 // Timer controls
 function startTimer() {
-    if (MISSION_STATE.ticking) return;
-    MISSION_STATE.ticking = true;
+    if (GAME_STATE.missionState.ticking) return;
+    GAME_STATE.missionState.ticking = true;
     renderTimerUI();
 
-    MISSION_STATE.intervalId = setInterval(() => {
-        MISSION_STATE.remainingSec = clamp(MISSION_STATE.remainingSec - 1, 0, MISSION_STATE.timerTotalSec);
+    GAME_STATE.missionState.intervalId = setInterval(() => {
+        GAME_STATE.missionState.remainingSec = clamp(GAME_STATE.missionState.remainingSec - 1, 0, GAME_STATE.missionState.timerTotalSec);
         renderTimerUI();
 
-        if (MISSION_STATE.remainingSec <= 0) {
+        if (GAME_STATE.missionState.remainingSec <= 0) {
             stopTimer();
             log("Tempo Scaduto! Ogni turno apparirà un gigante!")
             playCornoGuerra();
@@ -2901,17 +2632,17 @@ function playCornoGuerra() {
 }
 
 function stopTimer() {
-    MISSION_STATE.ticking = false;
-    if (MISSION_STATE.intervalId) {
-        clearInterval(MISSION_STATE.intervalId);
-        MISSION_STATE.intervalId = null;
+    GAME_STATE.missionState.ticking = false;
+    if (GAME_STATE.missionState.intervalId) {
+        clearInterval(GAME_STATE.missionState.intervalId);
+        GAME_STATE.missionState.intervalId = null;
     }
     renderTimerUI();
     scheduleSave();
 }
 
 function resetTimer() {
-    MISSION_STATE.remainingSec = MISSION_STATE.timerTotalSec || 1200;
+    GAME_STATE.missionState.remainingSec = GAME_STATE.missionState.timerTotalSec || 1200;
     stopTimer();
     renderTimerUI();
     scheduleSave();
@@ -2919,7 +2650,7 @@ function resetTimer() {
 
 // Play/Pausa
 elPlay?.addEventListener('click', () => {
-    MISSION_STATE.ticking ? stopTimer() : startTimer();
+    GAME_STATE.missionState.ticking ? stopTimer() : startTimer();
 });
 
 // Reset
@@ -2927,10 +2658,10 @@ elReset?.addEventListener('click', resetTimer);
 
 // Cambia missione
 elDec?.addEventListener('click', () => {
-    setMissionByIndex(MISSION_STATE.curIndex - 1);
+    setMissionByIndex(GAME_STATE.missionState.curIndex - 1);
 });
 elInc?.addEventListener('click', () => {
-    setMissionByIndex(MISSION_STATE.curIndex + 1);
+    setMissionByIndex(GAME_STATE.missionState.curIndex + 1);
 });
 
 // === Welcome popup @ startup (immagine a destra) ============================
@@ -3011,7 +2742,7 @@ async function showWelcomePopup(isFirstRun, imgUrl) {
     if (ok) {
         const url = './assets/sounds/risorsa_audio_avvio_app.mp3';
         const backgroundSound = await play(url, { loop: true, volume: 1 });
-        gameSoundTrack.background = backgroundSound;
+        GAME_SOUND_TRACK.background = backgroundSound;
     }
 }
 
@@ -3060,22 +2791,19 @@ async function bootDataApplication() {
             loadJSON(BOOT_CONFIG.settings)
         ]);
 
-        // merge in un DB unico
-        DB = { allies, giants, events, consumable, missions, settings };
+        // merge in un DB unico      
+        DB.ALLIES = allies;
+        DB.GIANTS = giants;
+        DB.EVENTS = events;
+        DB.MISSIONS = missions;
+        DB.CONSUMABLE = consumable;
+        DB.SETTINGS = settings;
 
         console.log('[boot] DB inizializzato:', DB);
+        setDefaultGameStateData();
         return DB;
     } catch (e) {
         console.warn('Caricamento JSON fallito, uso i fallback locali:', e);
-        // fallback: qui puoi mettere i tuoi array hardcoded
-        DB = {
-            allies: alliesPool ?? [],
-            giants: giantsPool ?? [],
-            event: eventPool ?? [],
-            consumable: consumablePool ?? [],
-            missions: MISSIONS ?? [],
-            settings: {}
-        };
         return DB;
     }
 }
@@ -3106,34 +2834,29 @@ async function bootDataApplication() {
     }
 })();
 
+document.addEventListener('DOMContentLoaded', async () => {
+    rebuildUnitIndex();
+    // BOOT dati
+    const booted = await loadDataAndStateFromLocal();
+   
+    if (!booted) {
+        seedWallRows();              // crea segmenti mura 10/11/12
+        renderBenches();
+        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
 
-rebuildUnitIndex();
+        resetDeckFromPool('event');
+        resetDeckFromPool('consumable');
 
-async function init() {
-    await bootDataApplication();
-}
+        loadMissions();
+        refreshXPUI();
+        refreshMoraleUI();
+        renderBonusMalus();
+        renderHeader();
+        renderLogs();
+        updateFabDeckCounters();
+    }
 
-init();
-// BOOT: prova restore; se non c'è, fai seed mura
-const booted = loadFromLocal();
+    // Mostra welcome/bentornato
+    setTimeout(() => { showWelcomePopup(!booted, "assets/img/erwin_popup_benvenuto.jpg"); }, 60);
+});
 
-if (!booted) {
-
-    seedWallRows();              // crea segmenti mura 10/11/12
-    renderBenches();
-    renderGrid(grid, ROWS, COLS, spawns);
-
-    resetDeckFromPool('event');
-    resetDeckFromPool('consumable');
-
-    loadMissions();
-    refreshXPUI();
-    refreshMoraleUI();
-    renderBonusMalus();
-    renderHeader();
-    renderLogs();
-    updateFabDeckCounters();
-}
-
-// Mostra welcome/bentornato (se non disattivato dall’utente)
-setTimeout(() => { showWelcomePopup(!booted, "assets/img/erwin_popup_benvenuto.jpg"); }, 60);
