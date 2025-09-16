@@ -1663,39 +1663,43 @@ function applyClasses() {
     // calcola lo stato dal dataset degli elementi
     const L = leftEl.classList.contains('collapsed');
     const R = rightEl.classList.contains('collapsed');
+
     document.body.classList.toggle('collapse-left', L && !R);
     document.body.classList.toggle('collapse-right', R && !L);
     document.body.classList.toggle('collapse-both', L && R);
 
     btnL.setAttribute('aria-expanded', String(!L));
     btnR.setAttribute('aria-expanded', String(!R));
+
     btnL.textContent = L ? '⟩' : '⟨';
     btnR.textContent = R ? '⟨' : '⟩';
 }
+function toggleSide(side){
+  // ⚠️ disattiva i media query "auto" dopo il primo intervento dell’utente
+  document.body.classList.add('manual-layout');
 
-function setCollapsed(side, collapsed) {
-    if (side === 'left') {
-        leftEl.classList.toggle('collapsed', collapsed);
-    } else {
-        rightEl.classList.toggle('collapsed', collapsed);
-    }
-    applyClasses();
+  const el = (side === 'left') ? leftEl : rightEl;
+  el.classList.toggle('collapsed');
+  applyClasses();
 }
 
-// Toggle via maniglie
-btnL.addEventListener('click', () => {
-    setCollapsed('left', !leftEl.classList.contains('collapsed'));
-});
-btnR.addEventListener('click', () => {
-    setCollapsed('right', !rightEl.classList.contains('collapsed'));
-});
+// init: default chiusi (come richiesto), nessuna persistenza
+(function initSidebars(){
+  leftEl.classList.add('collapsed');
+  rightEl.classList.add('collapsed');
+  applyClasses();
+
+  document.getElementById('toggle-left')?.addEventListener('click', () => toggleSide('left'));
+  document.getElementById('toggle-right')?.addEventListener('click', () => toggleSide('right'));
+})();
+
 
 // Click sull’area collassata riapre (UX comodo)
 leftEl.addEventListener('click', (e) => {
-    if (leftEl.classList.contains('collapsed')) setCollapsed('left', false);
+    if (leftEl.classList.contains('collapsed')) toggleSide('left');
 });
 rightEl.addEventListener('click', (e) => {
-    if (rightEl.classList.contains('collapsed')) setCollapsed('right', false);
+    if (rightEl.classList.contains('collapsed')) toggleSide('right');
 });
 
 // Ripristina preferenza utente (se esiste)
