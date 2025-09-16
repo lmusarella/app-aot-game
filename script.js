@@ -501,25 +501,6 @@ function benchClickFocusAndTop(u, card) {
     }
 }
 
-(function injectTouchGuardsCSS() {
-    if (document.getElementById('touch-guards-css')) return;
-    const css = document.createElement('style');
-    css.id = 'touch-guards-css';
-    css.textContent = `
-    /* niente click/long-press/drag sulle immagini */
-    .hex-content img,
-    .unit-avatar img,
-    .cardmodal__media img{
-      pointer-events: none;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-user-drag: none;
-    }
-  `;
-    document.head.appendChild(css);
-})();
-
 function renderBenchSection(container, units, acceptRoles, readOnly = false) {
     container.textContent = "";
     units.forEach(u => {
@@ -1410,34 +1391,7 @@ function openDialog({ title, message, confirmText = 'OK', cancelText = 'Annulla'
 }
 function confirmDialog(opts) { return openDialog({ ...opts, cancellable: true }); }
 
-// --- una volta sola: stile per la chip ---
-(function injectCardChipCSS() {
-    if (document.getElementById('card-chip-css')) return;
-    const css = document.createElement('style');
-    css.id = 'card-chip-css';
-    css.textContent = `
-    #dlg-title { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .card-chip{
-      --chip-color: var(--blu);
-      display:inline-flex; align-items:center; gap:6px;
-      padding:2px 8px; border-radius:999px;
-      font-size:12px; line-height:1; font-weight:600;
-      border:1px solid currentColor; color: var(--blu);
-      background: color-mix(in srgb, var(--chip-color) 16%, transparent);
-    }
-    .card-chip::before{
-      content:""; width:8px; height:8px; border-radius:50%;
-      background: var(--chip-color);
-    }
-    /* mapping colori */
-    .card-chip--event     { --chip-color: var(--blu);     color: var(--blu); }
-    .card-chip--spawn     { --chip-color: var(--oro);     color: var(--oro); }
-    .card-chip--malus     { --chip-color: var(--rosso);   color: var(--rosso); }
-    .card-chip--bonus     { --chip-color: var(--verde);   color: var(--verde); }
-    .card-chip--consumable{ --chip-color: var(--argento); color: var(--argento); }
-  `;
-    document.head.appendChild(css);
-})();
+
 
 async function showCardPopup(deckType, card) {
     const url = deckType === 'consumable' ? './assets/sounds/carte/carta_consumabile.mp3' : './assets/sounds/carte/carta_evento.mp3';
@@ -2183,83 +2137,10 @@ function renderLogs() {
 
 }
 
-/** Facciata semplice per sincronizzare l’header:
- *  riallinea missione e timer (testo e pulsanti).
- */
 function renderHeader() {
     renderMissionUI();
     renderTimerUI();
 }
-
-
-(function injectPickerCSS() {
-    if (document.getElementById('picker-css')) return;
-    const css = document.createElement('style');
-    css.id = 'picker-css';
-    css.textContent = `
-  .picker{ display:flex; flex-direction:column; gap:10px; min-width:0; }
-  .picker__head{ display:flex; gap:10px; align-items:center; min-width:0; }
-  .picker__title{ font-weight:600; white-space:nowrap; }
-  .picker__search{
-    flex:1; min-width:0; padding:8px 10px; border-radius:10px;
-    border:1px solid #2a2a2a; background:#0f111a; color:#eaeaea;
-  }
-  .picker__tools{ display:flex; align-items:center; gap:8px; }
-  .picker__spacer{ flex:1; }
-  .picker__count{ opacity:.9; font-size:12px; }
-
-  .picker__btn{
-    padding:6px 10px; border-radius:10px; border:1px solid #2a2a2a;
-    background:#121421; color:#ddd; cursor:pointer;
-  }
-
-  .picker__grid{
-    display:grid; gap:10px; padding-right:2px;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  }
-
-  /* Card stile bench */
-  .pick-card.unit-card{
-    cursor:pointer; user-select:none;
-    /* compattiamo un filo rispetto alla bench */
-    padding:8px 10px;
-  }
-  .pick-card.unit-card:hover{
-    box-shadow: 0 6px 16px rgba(0,0,0,.35);
-  }
-  .pick-card .unit-avatar{ width:34px; height:34px; border-radius:50%; border:2px solid #444; overflow:hidden; }
-  .pick-card .unit-name{ font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .pick-card .unit-sub{ font-size:12px; opacity:.9; }
-
-  /* Stato selezionato: bordo pulsante (oro) + pulse */
-  .pick-card.is-selected{
-    border-color: var(--oro);
-    box-shadow: 0 0 0 1px var(--oro), 0 0 12px rgba(207,148,57,.35);
-    animation: pickPulse 1.1s ease-in-out infinite;
-  }
-  @keyframes pickPulse{
-    0%,100% { box-shadow: 0 0 0 1px var(--oro), 0 0 10px rgba(207,148,57,.25); }
-    50%     { box-shadow: 0 0 0 2px var(--oro), 0 0 18px rgba(207,148,57,.55); }
-  }
-
-  /* Empty state */
-  .picker__empty{ opacity:.8; padding:20px; text-align:center; }
-  `;
-    document.head.appendChild(css);
-})();
-
-(function injectModalFixCSS() {
-    if (document.getElementById('modal-fix-css')) return;
-    const css = document.createElement('style');
-    css.id = 'modal-fix-css';
-    css.textContent = `
-    .modal{ box-sizing:border-box; max-height:min(84vh,100dvh - 40px);
-            display:flex; flex-direction:column; gap:12px; padding:16px; border-radius:14px; overflow:hidden; }
-    .modal-body{ min-height:0; overflow:auto; }
-    .modal input[type="search"], .modal input[type="text"]{ width:100%; min-width:0; box-sizing:border-box; }
-  `;
-    document.head.appendChild(css);
-})();
 
 function drawCard(type /* 'event' | 'consumable' */) {
     const d = GAME_STATE.decks[type];
