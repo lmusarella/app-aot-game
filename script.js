@@ -1392,8 +1392,8 @@ function showDrawnCard(deckType, card) {
     const strip = document.getElementById('hand-strip');
     const stage = root?.querySelector('.hand-stage');
     if (!root || !strip || !stage) return;
-    //stage.classList.add('hand-stage--single');
-
+    stage.classList.add('hand-stage--single');
+    strip.classList.remove('hand-strip')
     strip.innerHTML = '';
     const wrap = document.createElement('div');
     wrap.className = 'hand-card';
@@ -1469,7 +1469,7 @@ function openHandOverlay() {
     const stage = root?.querySelector('.hand-stage');
     if (!root || !strip || !stage) return;
     stage.classList.remove('hand-stage--single');
-
+    strip.classList.add('hand-strip')
     if (!GAME_STATE.hand.length) { log('La mano è vuota.', 'info'); return; }
 
     // render
