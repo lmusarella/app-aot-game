@@ -2719,13 +2719,13 @@
  }
 
  .card-chip--event {
-   --chip-color: var(--event);
-   color: var(--event);
+   --chip-color: var(--oro);
+   color: var(--oro);
  }
 
  .card-chip--spawn {
-   --chip-color: var(--oro);
-   color: var(--oro);
+   --chip-color: var(--rosso);
+   color: var(--rosso);
  }
 
  .card-chip--malus {
