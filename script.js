@@ -8,6 +8,17 @@ async function play(url, opts = {}) {
 const GAME_SOUND_TRACK = {
     background: null
 }
+
+async function playBg(url, { volume = 0.1, loop = true } = {}) {
+    try {
+        if (loop) {
+            GAME_SOUND_TRACK.background?.pause();
+        }
+    } catch { }
+    const music = await play(url, { loop, volume });
+    if (loop) GAME_SOUND_TRACK.background = music
+}
+
 // DB unico globale in memoria
 const DB = {
     ALLIES: null,
@@ -393,6 +404,21 @@ function spawnGiantToFieldRandom(unitId) {
     }
     return null; // full
 }
+
+function getMusicUrlById(unitId) {
+    const map = {
+        r9: './assets/sounds/reclute/marco_presentazione.mp3',
+        r14: './assets/sounds/reclute/jean_presentazione.mp3',
+        r1: './assets/sounds/reclute/armin_presentazione.mp3',
+        r2: './assets/sounds/reclute/conny_presentazione.mp3',
+        r15: './assets/sounds/reclute/flock_presentazione.mp3',
+        r3: './assets/sounds/reclute/sasha_presentazione.mp3',
+        c5: './assets/sounds/comandanti/sadis_presentazione.mp3',
+        c3: './assets/sounds/comandanti/urlo_erwin.mp3'
+    }
+    return map[unitId];
+}
+
 async function spawnGiant(type = null) {
 
     const roll20 = Math.floor(Math.random() * 20) + 1;
@@ -409,25 +435,24 @@ async function spawnGiant(type = null) {
     const cell = spawnGiantToFieldRandom(unit.id);
 
     if (cell) {
-
-        if (type === "Mutaforma") {
-            const url_mutaform = './assets/sounds/mutaform_sound.mp3';
-            GAME_SOUND_TRACK.background.pause();
-            const music = await play(url_mutaform, { loop: true, volume: 1 });
-            GAME_SOUND_TRACK.background = music;
+        if (tipo === "Mutaforma") {
+            if (unit.id === 'u2') await playBg('./assets/sounds/ape_titan_sound.mp3');
+            if (unit.id === 'u1') await playBg('./assets/sounds/female_titan.mp3');
+            if (unit.id === 'u6') await playBg('./assets/sounds/mutaform_sound.mp3');
+            if (unit.id === 'u7') await playBg('./assets/sounds/mutaform_sound.mp3');
         }
-
-        if (type === "Anomalo") {
-            const url_mutaform = './assets/sounds/ape_titan_sound.mp3';
-            GAME_SOUND_TRACK.background.pause();
-            const music = await play(url_mutaform, { loop: true, volume: 1 });
-            GAME_SOUND_TRACK.background = music;
+        if (tipo === "Anomalo") {
+            if (unit.id === 'u11')
+                await playBg('./assets/sounds/gigante_anomalo_rod.mp3');
+            else
+                await playBg('./assets/sounds/ape_titan_sound.mp3');
         }
-
+        if (tipo === "Puro") {
+            await playBg('./assets/sounds/giganti_puri.mp3');
+        }
 
         log(`Gigante ${tipo} appare in ${cell.row}-${cell.col}`, 'warning');
-        const url = './assets/sounds/flash_effect_sound.mp3';
-        await play(url, { loop: false, volume: 1 });
+        await playBg('./assets/sounds/flash_effect_sound.mp3', { loop: false, volume: 0.4 });
         focusUnitOnField(unit.id);
         openAccordionForRole(unit.role);
     } else {
@@ -903,7 +928,7 @@ const sameId = (unitId, target) => {
 /* =======================
    DROP LOGIC
    ======================= */
-function handleDrop(payload, target) {
+async function handleDrop(payload, target) {
     // blocca drop se nella cella target c'è una Muraglia
     if (hasWallInCell(target.row, target.col)) return;
     if (payload.type === "from-bench") {
@@ -912,7 +937,7 @@ function handleDrop(payload, target) {
             renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
             return;
         }
-        placeFromBench(target, payload.unitId);
+        await placeFromBench(target, payload.unitId);
         renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     } else if (payload.type === "from-cell") {
         const u = unitById.get(payload.unitId);
@@ -923,7 +948,7 @@ function handleDrop(payload, target) {
     }
 }
 
-function placeFromBench(target, unitId) {
+async function placeFromBench(target, unitId) {
     if (hasWallInCell(target.row, target.col)) return;
     const unit = unitById.get(unitId);
     if (unit?.role === 'wall') return; // i muri non si piazzano sul campo
@@ -936,6 +961,7 @@ function placeFromBench(target, unitId) {
     selectedUnitId = unitId;
     setStack(target.row, target.col, tgt);
     renderBenches();
+    await playBg(getMusicUrlById(unitId), { loop: false, volume: 1 });
 }
 
 function moveOneUnitBetweenStacks(from, to, unitId) {
@@ -1620,7 +1646,7 @@ function adjustUnitHp(unitId, delta) {
 /* =======================
    API: set HP a runtime
    ======================= */
-window.setUnitHp = function (unitId, newHp) {
+window.setUnitHp = async function (unitId, newHp) {
     const u = unitById.get(unitId);
     if (!u) return;
 
@@ -1634,7 +1660,7 @@ window.setUnitHp = function (unitId, newHp) {
 
     // Se è alleato e scende a 0 → morte
     if ((u.role === 'recruit' || u.role === 'commander') && clamped === 0) {
-        handleAllyDeath(u);
+        await handleAllyDeath(u);
         return; // già refreshato tutto
     }
     // Morte giganti
@@ -1765,7 +1791,7 @@ function handleGiantDeath(unit) {
     scheduleSave();
 }
 
-function handleAllyDeath(unit) {
+async function handleAllyDeath(unit) {
     // rimuovi da campo
     removeUnitEverywhere(unit.id);
     // rimuovi da roster
@@ -1781,6 +1807,7 @@ function handleAllyDeath(unit) {
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     log(`${unit.name} è morto/a.`, 'error');
+    await playBg('./assets/sounds/reclute/morte_recluta_comandante.mp3', { loop: false, volume: 1 });
     scheduleSave();
 }
 
@@ -2643,8 +2670,6 @@ elInc?.addEventListener('click', () => {
     setMissionByIndex(GAME_STATE.missionState.curIndex + 1);
 });
 
-// === Welcome popup @ startup (immagine a destra) ============================
-const WELCOME_PREF_KEY = 'aot-hide-welcome';
 
 function getLastSaveInfo() {
     try {
@@ -2717,9 +2742,7 @@ async function showWelcomePopup(isFirstRun, imgUrl) {
     });
 
     if (ok) {
-        const url = './assets/sounds/risorsa_audio_avvio_app.mp3';
-        const backgroundSound = await play(url, { loop: true, volume: 1 });
-        GAME_SOUND_TRACK.background = backgroundSound;
+        await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3');
     }
 }
 
@@ -2911,6 +2934,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Mostra welcome/bentornato
-    setTimeout(() => { showWelcomePopup(!booted, "assets/img/erwin_popup_benvenuto.jpg"); }, 60);
+    setTimeout(() => { showWelcomePopup(!booted, "assets/img/comandanti/erwin_popup_benvenuto.jpg"); }, 60);
 });
 

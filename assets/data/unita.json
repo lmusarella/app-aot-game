@@ -20,7 +20,7 @@
   { "id": "c3", "role": "commander", "name": "Erwin Smith", "img": "https://static.wikia.nocookie.net/shingekinokyojin/images/3/3f/Erwin_puts_on_his_ODM.png/revision/latest?cb=20171102013340", "hp": 16, "atk": 4, "tec": 3, "agi": 2, "color": "viola", "abi": "Test" },
   { "id": "c4", "role": "commander", "name": "Levi Ackerman", "img": "https://media.printler.com/media/photo/144700.jpg?rmode=crop&width=725&height=1024", "hp": 20, "atk": 4, "tec": 3, "agi": 2, "color": "viola", "abi": "Test" },
   { "id": "c5", "role": "commander", "name": "Keith Shadis", "img": "https://static.wikia.nocookie.net/shingekinokyojin/images/e/e6/Keith.png/revision/latest?cb=20130930182018&path-prefix=it", "hp": 17, "atk": 4, "tec": 3, "agi": 2, "color": "viola", "abi": "Test" },
-  { "id": "w1", "role": "wall", "name": "Wall Maria", "img": "assets/img/wall_maria.png", "color": "gray", "hp": 12, "atk": 0, "abi": "Difesa Esterna" },
-  { "id": "w2", "role": "wall", "name": "Wall Rose", "img": "assets/img/wall_rose.jpg", "color": "gray", "hp": 15, "atk": 0, "abi": "Difesa Intermedia" },
-  { "id": "w3", "role": "wall", "name": "Wall Sina", "img": "assets/img/wall_sina.jpg", "color": "gray", "hp": 18, "atk": 0, "abi": "Difesa Interna" }
+  { "id": "w1", "role": "wall", "name": "Wall Maria", "img": "assets/img/mura/wall_maria.png", "color": "gray", "hp": 12, "atk": 0, "abi": "Difesa Esterna" },
+  { "id": "w2", "role": "wall", "name": "Wall Rose", "img": "assets/img/mura/wall_rose.jpg", "color": "gray", "hp": 15, "atk": 0, "abi": "Difesa Intermedia" },
+  { "id": "w3", "role": "wall", "name": "Wall Sina", "img": "assets/img/mura/wall_sina.jpg", "color": "gray", "hp": 18, "atk": 0, "abi": "Difesa Interna" }
 ]
