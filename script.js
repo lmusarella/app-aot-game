@@ -452,7 +452,7 @@ async function spawnGiant(type = null) {
         }
 
         log(`Gigante ${tipo} appare in ${cell.row}-${cell.col}`, 'warning');
-        await playBg('./assets/sounds/flash_effect_sound.mp3', { loop: false, volume: 0.4 });
+        await playBg('./assets/sounds/flash_effect_sound.mp3', { loop: false, volume: 0.1 });
         focusUnitOnField(unit.id);
         openAccordionForRole(unit.role);
     } else {
