@@ -539,6 +539,9 @@ async function spawnGiant(type = null) {
         log(`Nessun gigante ${t} nel pool.`, 'warning');
         return false;
     }
+
+     await playSfx('./assets/sounds/flash_effect_sound.mp3', {volume: 0.3, loop: false});
+
     const unit = putGiantIntoRoster(pick);
     const cell = spawnGiantToFieldRandom(unit.id);
 
@@ -560,7 +563,7 @@ async function spawnGiant(type = null) {
         }
 
         log(`Gigante ${tipo} appare in ${cell.row}-${cell.col}`, 'warning');
-        await playSfx('./assets/sounds/flash_effect_sound.mp3');
+       
         focusUnitOnField(unit.id);
         openAccordionForRole(unit.role);
     } else {
@@ -1380,9 +1383,9 @@ document.querySelectorAll('#fab-event .fab-option').forEach(btn => {
             return;
         }
         log(`Pescata carta ${t}: "${card.name}".`);
-        showDrawnCard(type, card);
-        if (type === 'event') await playSfx('assets/sounds/carte/carta_evento.mp3');
+        if (type === 'event') await playSfx('assets/sounds/carte/carta_evento.mp3', {volume: 0.3, loop: false});
         if (type === 'consumable') await playSfx('assets/sounds/carte/carta_consumabile.mp3');
+        showDrawnCard(type, card); 
         closeAllFabs();
     });
 });
