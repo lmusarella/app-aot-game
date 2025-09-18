@@ -37,7 +37,7 @@ const ASSETS = [
   './assets/img/giganti/gigante_puro_8.png',
   './assets/img/giganti/gigante_puro.jpg',
 
-   "assets/img/reclute/armin_arlet.png",
+  "assets/img/reclute/armin_arlet.png",
   "assets/img/reclute/connie_springer.png",
   "assets/img/reclute/sasha_braus.png",
   "assets/img/reclute/reiner_braun.png",
@@ -72,11 +72,39 @@ const ASSETS = [
   './assets/sounds/carte/carta_evento.mp3',
 
   // === sounds root ===
-  './assets/sounds/ape_titan_sound.mp3',
-  './assets/sounds/commander_march_sound.mp3',
-  './assets/sounds/flash_effect_sound.mp3',
-  './assets/sounds/mutaform_sound.mp3',
-  './assets/sounds/risorsa_audio_avvio_app.mp3'
+  "./assets/sounds/ape_titan_sound.mp3",
+  "./assets/sounds/commander_march_sound.mp3",
+  "./assets/sounds/female_titan.mp3",
+  "./assets/sounds/flash_effect_sound.mp3",
+  "./assets/sounds/gigante_anomalo_rod.mp3",
+  "./assets/sounds/giganti_puri.mp3",
+  "./assets/sounds/mutaform_sound.mp3",
+  "./assets/sounds/risorsa_audio_avvio_app.mp3",
+
+  "./assets/sounds/reclute/annie_presentazione.mp3",
+  "./assets/sounds/reclute/armin_presentazione.mp3",
+  "./assets/sounds/reclute/bertold_presentazione.mp3",
+  "./assets/sounds/reclute/conny_presentazione.mp3",
+  "./assets/sounds/reclute/eren_presentazione.mp3",
+  "./assets/sounds/reclute/flock_presentazione.mp3",
+  "./assets/sounds/reclute/historia_presentazione.mp3",
+  "./assets/sounds/reclute/hitch_presentazione.mp3",
+  "./assets/sounds/reclute/jean_presentazione.mp3",
+  "./assets/sounds/reclute/marco_presentazione.mp3",
+  "./assets/sounds/reclute/marlo_presentazione.mp3",
+  "./assets/sounds/reclute/mikasa_presentazione.mp3",
+  "./assets/sounds/reclute/morte_recluta_comandante.mp3",
+  "./assets/sounds/reclute/reiner_presentazione.mp3",
+  "./assets/sounds/reclute/rico_presentazione.mp3",
+  "./assets/sounds/reclute/sasha_presentazione.mp3",
+  "./assets/sounds/reclute/ymir_presentazione.mp3",
+  "./assets/sounds/carte/carta_consumabile.mp3",
+  "./assets/sounds/carte/carta_evento.mp3",
+  "./assets/sounds/comandanti/hange_presentazione.mp3",
+  "./assets/sounds/comandanti/levi_presentazione.mp3",
+  "./assets/sounds/comandanti/mike_presentazione.mp3",
+  "./assets/sounds/comandanti/sadis_presentazione.mp3",
+  "./assets/sounds/comandanti/urlo_erwin.mp3"
 ];
 
 
