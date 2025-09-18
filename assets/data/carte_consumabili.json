@@ -2,22 +2,22 @@
     {
     "id": "cn1",
     "type": "equipaggiamento",
-    "name": "Dispositivo Trididimensionale",
+    "name": "Dispositivo Tridimensionale",
     "desc": "Tutti i personaggi che ottengono 'aggro' da parte di un gigante nel prossimo turno prevengono 2 danni contro quel gigante ",
-    "img": "assets/img/cards/logo.jpg"
+    "img": "assets/img/cards/sfondo_carte.png"
   },
    {
     "id": "cn2",
     "type": "equipaggiamento",
     "name": "Fiala Misteriosa",
     "desc": "Tutti i personaggi che ottengono 'aggro' da parte di un gigante nel prossimo turno prevengono 2 danni contro quel gigante ",
-    "img": "assets/img/cards/logo.jpg"
+    "img": "assets/img/cards/sfondo_carte.png"
   },
    {
     "id": "cn2",
     "type": "equipaggiamento",
     "name": "Chiave Cantina",
     "desc": "Tutti i personaggi che ottengono 'aggro' da parte di un gigante nel prossimo turno prevengono 2 danni contro quel gigante ",
-    "img": "assets/img/cards/logo.jpg"
+    "img": "assets/img/cards/sfondo_carte.png"
   }
 ]
