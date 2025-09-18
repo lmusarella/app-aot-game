@@ -1,23 +1,131 @@
+
+/* ================== MINI MIXER con DUCKING ================== */
+const MIXER = {
+    cfg: {
+        master: 1.0,        // volume globale
+        music: 0.25,        // volume musica
+        sfx: 1.0,           // volume effetti
+        ducking: { duckTo: 0.18, fadeMs: 160, holdMs: 350 } // quanto/quanto a lungo abbassare
+    },
+    musicEl: null,
+    _duckLevel: 1,        // 1 = normale, duckTo = abbassato
+    _fadeRAF: null,
+    _holdT: null,
+    _activeSfx: 0,
+
+    setConfig(partial) {
+        // deep-merge semplice
+        if (partial.ducking) {
+            this.cfg.ducking = { ...this.cfg.ducking, ...partial.ducking };
+            delete partial.ducking;
+        }
+        Object.assign(this.cfg, partial);
+        this._applyMusicVolume();
+    },
+
+    setMusicEl(el) {
+        // registra il player della musica e applica i volumi
+        this.musicEl = el;
+        el._baseVol = (typeof el._baseVol === 'number') ? el._baseVol : (el.volume ?? 1);
+        this._applyMusicVolume(true);
+    },
+
+    trackSfx(el, baseVol = 1) {
+        // imposta volume SFX (non riduckiamo SFX, solo la musica)
+        el.volume = clamp(baseVol * this.cfg.master * this.cfg.sfx, 0, 1);
+
+        // segnala start/stop per il ducking
+        const onStart = () => this._sfxStart();
+        const onEnd = () => { el.removeEventListener('ended', onEnd); el.removeEventListener('pause', onEnd); el.removeEventListener('error', onEnd); this._sfxEnd(); };
+
+        // se parte subito, chiama _sfxStart(); altrimenti quando fa 'play'
+        if (!el.paused) onStart(); else el.addEventListener('play', onStart, { once: true });
+        el.addEventListener('ended', onEnd);
+        el.addEventListener('pause', onEnd);
+        el.addEventListener('error', onEnd);
+    },
+
+    _sfxStart() {
+        this._activeSfx++;
+        if (this._activeSfx === 1) this._duckTo(this.cfg.ducking.duckTo);
+    },
+    _sfxEnd() {
+        this._activeSfx = Math.max(0, this._activeSfx - 1);
+        if (this._activeSfx === 0) {
+            clearTimeout(this._holdT);
+            this._holdT = setTimeout(() => this._duckTo(1), this.cfg.ducking.holdMs);
+        }
+    },
+
+    _duckTo(target) {
+        clearTimeout(this._holdT);
+        if (!this.musicEl) return;
+
+        const start = this._duckLevel;
+        const end = clamp(target, 0, 1);
+        if (Math.abs(start - end) < 0.001) return;
+
+        const dur = Math.max(30, this.cfg.ducking.fadeMs | 0);
+        const t0 = performance.now();
+
+        if (this._fadeRAF) cancelAnimationFrame(this._fadeRAF);
+
+        const step = (t) => {
+            const k = Math.min(1, (t - t0) / dur);
+            // ease-out cubic
+            const e = 1 - Math.pow(1 - k, 3);
+            this._duckLevel = start + (end - start) * e;
+            this._applyMusicVolume();
+            if (k < 1) this._fadeRAF = requestAnimationFrame(step);
+        };
+        this._fadeRAF = requestAnimationFrame(step);
+    },
+
+    _applyMusicVolume(force = false) {
+        if (!this.musicEl) return;
+        // base * master * music * duck
+        const base = (typeof this.musicEl._baseVol === 'number') ? this.musicEl._baseVol : (this.musicEl.volume ?? 1);
+        const v = clamp(base * this.cfg.master * this.cfg.music * this._duckLevel, 0, 1);
+        if (force || Math.abs((this.musicEl.volume ?? 0) - v) > 0.001) {
+            this.musicEl.volume = v;
+        }
+    }
+};
+
+const setMixerConfig = (p) => MIXER.setConfig(p);
+
 async function play(url, opts = {}) {
     const { loop = false, volume = 1 } = opts;
     const audio = new Audio();
-    audio.src = url; audio.preload = 'auto'; audio.loop = loop; audio.volume = clamp(volume, 0, 1); audio.crossOrigin = 'anonymous';
+    audio.src = url;
+    audio.preload = 'auto';
+    audio.loop = loop;
+    audio.volume = clamp(volume, 0, 1);
+    audio.crossOrigin = 'anonymous';
     try { await audio.play(); } catch (e) { console.warn('Autoplay blocked or error:', e); }
     return audio;
 }
-const GAME_SOUND_TRACK = {
-    background: null
+
+// --- MUSICA di fondo (registrata nel mixer)
+async function playBg(url, { volume = 0.18, loop = true } = {}) {
+    try { if (loop) GAME_SOUND_TRACK.background?.pause(); } catch { }
+    const music = await play(url, { loop, volume });
+    GAME_SOUND_TRACK.background = music;
+    MIXER.setMusicEl(music); // <-- qui il mixer “prende in mano” la musica
+    return music;
 }
 
-async function playBg(url, { volume = 0.1, loop = true } = {}) {
-    try {
-        if (loop) {
-            GAME_SOUND_TRACK.background?.pause();
-        }
-    } catch { }
-    const music = await play(url, { loop, volume });
-    if (loop) GAME_SOUND_TRACK.background = music
+// --- SFX (fa scattare il ducking della musica)
+async function playSfx(url, { volume = 1, loop = false } = {}) {
+    const sfx = await play(url, { loop, volume });    // riproduzione normale
+    MIXER.trackSfx(sfx, volume);                      // <-- segnala al mixer
+    return sfx;
 }
+
+// tuo oggetto esistente
+const GAME_SOUND_TRACK = { background: null };
+
+
 
 // DB unico globale in memoria
 const DB = {
@@ -452,7 +560,7 @@ async function spawnGiant(type = null) {
         }
 
         log(`Gigante ${tipo} appare in ${cell.row}-${cell.col}`, 'warning');
-        await playBg('./assets/sounds/flash_effect_sound.mp3', { loop: false, volume: 0.1 });
+        await playSfx('./assets/sounds/flash_effect_sound.mp3');
         focusUnitOnField(unit.id);
         openAccordionForRole(unit.role);
     } else {
@@ -961,7 +1069,7 @@ async function placeFromBench(target, unitId) {
     selectedUnitId = unitId;
     setStack(target.row, target.col, tgt);
     renderBenches();
-    await playBg(getMusicUrlById(unitId), { loop: false, volume: 1 });
+    await playSfx(getMusicUrlById(unitId));
 }
 
 function moveOneUnitBetweenStacks(from, to, unitId) {
@@ -1273,6 +1381,8 @@ document.querySelectorAll('#fab-event .fab-option').forEach(btn => {
         }
         log(`Pescata carta ${t}: "${card.name}".`);
         showDrawnCard(type, card);
+        if (type === 'event') await playSfx('assets/sounds/carte/carta_evento.mp3');
+        if (type === 'consumable') await playSfx('assets/sounds/carte/carta_consumabile.mp3');
         closeAllFabs();
     });
 });
@@ -1807,7 +1917,7 @@ async function handleAllyDeath(unit) {
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     log(`${unit.name} è morto/a.`, 'error');
-    await playBg('./assets/sounds/reclute/morte_recluta_comandante.mp3', { loop: false, volume: 1 });
+    await playSfx('./assets/sounds/reclute/morte_recluta_comandante.mp3');
     scheduleSave();
 }
 
@@ -2932,6 +3042,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderLogs();
         updateFabDeckCounters();
     }
+
+    setMixerConfig({
+        master: 0.8,
+        music: 0.22,
+        sfx: 0.8,
+        ducking: {
+            duckTo: 0.9, 
+            fadeMs: 180,   // entra dolcemente
+            holdMs: 120,   // resta abbassata per poco
+            releaseMs: 180, // risale morbida }
+        }})
 
     // Mostra welcome/bentornato
     setTimeout(() => { showWelcomePopup(!booted, "assets/img/comandanti/erwin_popup_benvenuto.jpg"); }, 60);
