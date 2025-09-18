@@ -522,7 +522,20 @@ function getMusicUrlById(unitId) {
         r15: './assets/sounds/reclute/flock_presentazione.mp3',
         r3: './assets/sounds/reclute/sasha_presentazione.mp3',
         c5: './assets/sounds/comandanti/sadis_presentazione.mp3',
-        c3: './assets/sounds/comandanti/urlo_erwin.mp3'
+        c3: './assets/sounds/comandanti/urlo_erwin.mp3',
+        r4: './assets/sounds/reclute/reiner_presentazione.mp3',
+        r5: './assets/sounds/reclute/bertold_presentazione.mp3',
+        r6: './assets/sounds/reclute/annie_presentazione.mp3',
+        r7: './assets/sounds/reclute/ymir_presentazione.mp3',
+        r8: './assets/sounds/reclute/historia_presentazione.mp3',
+        r10: './assets/sounds/reclute/marlo_presentazione.mp3',
+        r11: './assets/sounds/reclute/hitch_presentazione.mp3',
+        r12: './assets/sounds/reclute/rico_presentazione.mp3',
+        r13: './assets/sounds/reclute/mikasa_presentazione.mp3',
+        r16: './assets/sounds/reclute/eren_presentazione.mp3',
+        c1: './assets/sounds/comandanti/hange_presentazione.mp3',
+        c2: './assets/sounds/comandanti/mike_presentazione.mp3',
+        c4: './assets/sounds/comandanti/levi_presentazione.mp3',
     }
     return map[unitId];
 }
