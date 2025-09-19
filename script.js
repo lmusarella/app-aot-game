@@ -2351,6 +2351,46 @@ function pickAlliesDialog(role) {
     });
 }
 
+function pickRandomTeam({ commanders = 1, recruits = 3 } = {}) {
+  // prendi solo template (cioè nel pool), vivi
+  const poolCmd = availableTemplates('commander').filter(u => !u.dead);
+  const poolRec = availableTemplates('recruit').filter(u => !u.dead);
+
+  if (poolCmd.length < commanders || poolRec.length < recruits) {
+    log('Non ci sono abbastanza unità vive nel pool per creare la squadra.', 'warning');
+    return false;
+  }
+
+  // shuffle “in-place” sfruttando la tua shuffle()
+  shuffle(poolCmd);
+  shuffle(poolRec);
+
+  const chosen = [
+    ...poolCmd.slice(0, commanders),
+    ...poolRec.slice(0, recruits),
+  ];
+
+  const movedNames = [];
+  for (const base of chosen) {
+    // sposta dal POOL al ROSTER attivo
+    const ix = GAME_STATE.alliesPool.findIndex(a => a.id === base.id);
+    if (ix >= 0) {
+      const unit = GAME_STATE.alliesPool.splice(ix, 1)[0];
+      unit.template = false;
+      GAME_STATE.alliesRoster.push(unit);
+      movedNames.push(unit.name);
+    }
+  }
+
+  rebuildUnitIndex();
+  renderBenches();
+  log(`Squadra casuale arruolata: ${movedNames.join(', ')}.`, 'success');
+  openAccordionForRole('commander');
+  scheduleSave();
+  return true;
+}
+
+
 // Arruola dal picker (clona tutti i selezionati) + feedback
 async function openAlliesPicker(role) {
     const baseIds = await pickAlliesDialog(role);
@@ -2474,13 +2514,22 @@ function updateFabDeckCounters() {
    (al posto di arruola(role) diretto)
    ========================================================= */
 document.querySelectorAll('#fab-arruola .fab-option').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const role = btn.dataset.role; // 'recruit' | 'commander'
-        await openAlliesPicker(role);
-        closeAllFabs();
-    });
+  btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const role = btn.dataset.role; // 'recruit' | 'commander' | 'random-team'
+
+    if (role === 'random-team') {
+      pickRandomTeam({ commanders: 1, recruits: 3 });
+      closeAllFabs();
+      return;
+    }
+
+    // flusso standard: picker manuale
+    await openAlliesPicker(role);
+    closeAllFabs();
+  });
 });
+
 
 // Se superi la tabella, continua con una formula (incremento crescente)
 function xpThreshold(level) {
