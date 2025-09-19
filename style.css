@@ -898,6 +898,31 @@
    box-shadow: 0 0 0 3px var(--sel, rgba(255, 255, 255, .55)), 0 0 0 6px rgba(0, 0, 0, .4);
  }
 
+
+ .hex-member.is-selected-target .hex-circle {
+   animation: focusPulseTarget 1.4s ease-out infinite;
+   border-color: var(--rosso, #fff);
+   box-shadow: 0 0 0 3px var(--rosso, rgba(255, 255, 255, .55)), 0 0 0 6px rgba(0, 0, 0, .4);
+ }
+
+  @keyframes focusPulseTarget {
+   0% {
+     box-shadow: 0 0 0 2px var(--rosso, #fff), 0 0 0 0 var(--rosso, #fff), 0 0 0 14px rgba(0, 0, 0, .55);
+     transform: scale(1.02);
+   }
+
+   60% {
+     box-shadow: 0 0 0 4px var(--rosso, #fff), 0 0 0 26px rgba(255, 255, 255, 0), 0 0 0 8px rgba(0, 0, 0, .25);
+     transform: scale(1.06);
+   }
+
+   100% {
+     box-shadow: 0 0 0 6px var(--rosso, #fff), 0 0 0 0 rgba(255, 255, 255, 0), 0 0 0 0 rgba(0, 0, 0, 0);
+     transform: scale(1.02);
+   }
+ }
+
+
  @keyframes focusPulse {
    0% {
      box-shadow: 0 0 0 2px var(--sel, #fff), 0 0 0 0 var(--sel, #fff), 0 0 0 14px rgba(0, 0, 0, .55);
@@ -3034,3 +3059,133 @@ body.collapse-both  { grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-
   max-width: 350px !important;
 }
 
+
+/* === Attack bubble / picker === */
+.attack-bubble{
+  position: fixed; z-index: 100000;
+  background: linear-gradient(180deg, #10121a, #0d0f16);
+  border:1px solid #24263a; border-radius:12px; padding:8px 10px;
+  box-shadow:0 12px 32px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
+  animation: ttPop .12s ease-out;
+}
+.attack-bubble__btn{
+  border:1px solid #2a2a2a; background:#13151d; color:#e6e6e6;
+  padding:8px 12px; border-radius:10px; font-weight:800; cursor:pointer;
+}
+.attack-bubble__btn:hover{ background:#181b26; }
+
+/* evidenzia i bersagli selezionabili */
+.hex-member.targetable .hex-circle{
+  box-shadow: 0 0 0 3px #22c55e, 0 0 16px rgba(34,197,94,.45);
+  border-color:#22c55e !important;
+}
+
+/* mini-hint in basso */
+.target-hint{
+  position: fixed; left:50%; transform:translateX(-50%);
+  bottom: calc(var(--footer-h) + 10px);
+  background:#0f1118; border:1px solid #23263a; color:#dfe6ff;
+  padding:6px 10px; border-radius:999px; font-size:12px; z-index: 100000;
+  box-shadow:0 8px 24px rgba(0,0,0,.45);
+}
+/* stile mini per scelte bersaglio nel tooltip */
+#tooltip .atk-choice{
+  all: unset; cursor: pointer;
+  display: grid; place-items: center;
+  padding: 6px 8px; border-radius: 10px;
+  border: 1px solid #2a2a2a; background: #11131a;
+}
+#tooltip .atk-choice:hover{ filter: brightness(1.06); }
+
+/* === Target pick list (tooltip) === */
+.picklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  max-height: 48vh;
+  overflow: auto;
+  padding-right: 2px; /* evita che la scrollbar copra */
+  scrollbar-gutter: stable;
+}
+
+.tcard {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--ring, #2a2a2a);
+  background: #13151d;
+  color: #e6e6e6;
+  cursor: pointer;
+  text-align: left;
+  transition: box-shadow .16s ease, filter .16s ease, border-color .16s ease;
+}
+
+.tcard:hover {
+  box-shadow: 0 6px 16px rgba(0,0,0,.35);
+  filter: brightness(1.03);
+}
+
+.tcard:focus-visible {
+  outline: 2px solid #66ccff;
+  outline-offset: 2px;
+}
+
+.tcard.is-active {
+  border-color: var(--oro);
+  box-shadow: 0 0 0 2px var(--oro), 0 0 12px rgba(207,148,57,.35);
+}
+
+/* variante mini (stesso markup che hai usato) */
+.tcard--mini .tcard__avatar { width: 44px; height: 44px; }
+.tcard__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--ring, #444);
+  grid-row: 1 / span 3;
+}
+.tcard__avatar img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+.tcard__body {
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tcard__name {
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tcard__sub {
+  font-size: 12px;
+  opacity: .85;
+}
+
+.tcard .hpbar { margin-top: 2px; height: 6px; }
+.tcard .hpbar-fill {
+  height: 100%;
+  background: linear-gradient(180deg, #22c55e, #15803d);
+  transition: width .2s ease;
+}
+
+.tcard__meta {
+  font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono";
+  opacity: .9;
+}
+
+/* tooltip più largo quando c'è una picklist (auto-adatta la larghezza) */
+#tooltip .tt-card:has(.picklist) {
+  width: auto;
+  max-width: min(92vw, 680px);
+}

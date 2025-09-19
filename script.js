@@ -306,7 +306,7 @@ function restore(save) {
 
     // 4) ricostruisci unitById dai cataloghi + muri base
     unitById.clear();
-   
+
 
     // 5) assicurati che i SEGMENTI MURA esistano per ogni cella muro salvata
     //    Se vedi un id "w1_r10c3" in spawns e non è nel map, crealo dal base corrispondente.
@@ -477,6 +477,17 @@ function findUnitCell(unitId) {
     }
     return null;
 }
+// Tutte le occorrenze
+function findUnitCells(unitId) {
+    const cells = [];
+    for (const s of GAME_STATE.spawns) {
+        const arr = Array.isArray(s.unitIds) ? s.unitIds : (s.unitId ? [s.unitId] : []);
+        if (arr.includes(unitId)) {
+            cells.push({ row: s.row, col: s.col });
+        }
+    }
+    return cells; // [] se nessuna
+}
 function pickGiantFromPool(type = null) {
     // escludo quelli già attivi in panchina (giantsRoster)
     const activeIds = new Set(GAME_STATE.giantsRoster.map(g => g.id));
@@ -609,7 +620,7 @@ function applyHpBar(fillEl, unit) {
     fillEl.style.filter = `saturate(${0.5 + 0.5 * pct})`;
     fillEl.parentElement.title = `${cur}/${max} HP`;
 }
-function benchClickFocusAndTop(u, card) {
+function benchClickFocusAndTop(u) {
     const unitId = u.id;
     const cell = findUnitCell(unitId);
 
@@ -790,7 +801,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
         addLongPress(card, {
             onClick: () => {
                 if (!isDraggingNow) {
-                    benchClickFocusAndTop(u, card);
+                    benchClickFocusAndTop(u);
                     const html = getUnitTooltipHTML(u);
                     const rect = card.getBoundingClientRect();
                     showTooltip(html, rect.right + 6, rect.top + rect.height / 2);
@@ -805,9 +816,9 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
 
         container.appendChild(card);
 
-        card.addEventListener("click", (e) => {
+        card.addEventListener("click", () => {
             if (isDraggingNow) return;
-            benchClickFocusAndTop(u, card);
+            benchClickFocusAndTop(u);
         });
 
         if (!readOnly) {
@@ -991,8 +1002,10 @@ function createHexagon(row, col, unitIds = []) {
                         showTooltip(html, e.clientX, e.clientY);
                     }
                 },
-                onLongPress: (e) => {
+                onLongPress: () => {
                     hideTooltip();
+                    openAccordionForRole(unit.role);
+                    handleUnitLongPress({ unit, cell: { row, col }, anchorEl: member });
                 }
             });
 
@@ -1114,7 +1127,7 @@ function moveOneUnitBetweenStacks(from, to, unitId) {
 /* =======================
    FOCUS
    ======================= */
-function focusUnitOnField(unitId) {
+function focusUnitOnField(unitId, attackFocus = false) {
     const cell = findUnitCell(unitId);
     if (!cell) return;
 
@@ -1124,14 +1137,25 @@ function focusUnitOnField(unitId) {
     renderBenches();
 
     requestAnimationFrame(() => {
-        const content = document.querySelector(`.hex-content[data-unit-id="${CSS.escape(unitId)}"]`);
-        if (!content) return;
-        const member = content.parentElement;
-        const circle = member.querySelector('.hex-circle');
-        member.classList.add('is-selected');
-        circle.classList.add('focus-ring');
-        content.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-        setTimeout(() => circle.classList.remove('focus-ring'), 1600);
+        const nodes = document.querySelectorAll(`.hex-content[data-unit-id="${CSS.escape(unitId)}"]`);
+        if (!nodes || nodes.length === 0) return;
+        nodes.forEach(content => {
+            const member = content.parentElement;
+            const circle = member.querySelector('.hex-circle');
+            member.classList.add('is-selected');
+            circle.classList.add('focus-ring');
+            if (attackFocus) {
+                member.classList.add('is-selected-target');
+            } else {
+                member.classList.add('is-selected');
+            }
+
+            content.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            if (attackFocus)
+                circle.classList.remove('focus-ring')
+            else
+                setTimeout(() => circle.classList.remove('focus-ring'), 1600);
+        })
     });
 }
 function focusBenchCard(unitId, { scroll = true, pulse = true } = {}) {
@@ -1260,6 +1284,13 @@ function positionTooltip(mouseX, mouseY) {
 }
 
 document.addEventListener('click', (e) => {
+    // durante la scelta NON auto-chiudere (salvo click davvero fuori da tutto)
+    if (ATTACK_PICK) {
+        const insideTooltip = e.target.closest('#tooltip');
+        const onHex = e.target.closest('.hex-member') || e.target.closest('.hexagon');
+        if (!insideTooltip && !onHex) endAttackPick(); // click “fuori”: annulla
+        return; // non eseguire il reset selezione di default
+    }
     if (
         !e.target.closest('.hex-member') &&
         !e.target.closest('.btn-icon') &&
@@ -2354,42 +2385,42 @@ function pickAlliesDialog(role) {
 }
 
 function pickRandomTeam({ commanders = 1, recruits = 3 } = {}) {
-  // prendi solo template (cioè nel pool), vivi
-  const poolCmd = availableTemplates('commander').filter(u => !u.dead);
-  const poolRec = availableTemplates('recruit').filter(u => !u.dead);
+    // prendi solo template (cioè nel pool), vivi
+    const poolCmd = availableTemplates('commander').filter(u => !u.dead);
+    const poolRec = availableTemplates('recruit').filter(u => !u.dead);
 
-  if (poolCmd.length < commanders || poolRec.length < recruits) {
-    log('Non ci sono abbastanza unità vive nel pool per creare la squadra.', 'warning');
-    return false;
-  }
-
-  // shuffle “in-place” sfruttando la tua shuffle()
-  shuffle(poolCmd);
-  shuffle(poolRec);
-
-  const chosen = [
-    ...poolCmd.slice(0, commanders),
-    ...poolRec.slice(0, recruits),
-  ];
-
-  const movedNames = [];
-  for (const base of chosen) {
-    // sposta dal POOL al ROSTER attivo
-    const ix = GAME_STATE.alliesPool.findIndex(a => a.id === base.id);
-    if (ix >= 0) {
-      const unit = GAME_STATE.alliesPool.splice(ix, 1)[0];
-      unit.template = false;
-      GAME_STATE.alliesRoster.push(unit);
-      movedNames.push(unit.name);
+    if (poolCmd.length < commanders || poolRec.length < recruits) {
+        log('Non ci sono abbastanza unità vive nel pool per creare la squadra.', 'warning');
+        return false;
     }
-  }
 
-  rebuildUnitIndex();
-  renderBenches();
-  log(`Squadra casuale arruolata: ${movedNames.join(', ')}.`, 'success');
-  openAccordionForRole('commander');
-  scheduleSave();
-  return true;
+    // shuffle “in-place” sfruttando la tua shuffle()
+    shuffle(poolCmd);
+    shuffle(poolRec);
+
+    const chosen = [
+        ...poolCmd.slice(0, commanders),
+        ...poolRec.slice(0, recruits),
+    ];
+
+    const movedNames = [];
+    for (const base of chosen) {
+        // sposta dal POOL al ROSTER attivo
+        const ix = GAME_STATE.alliesPool.findIndex(a => a.id === base.id);
+        if (ix >= 0) {
+            const unit = GAME_STATE.alliesPool.splice(ix, 1)[0];
+            unit.template = false;
+            GAME_STATE.alliesRoster.push(unit);
+            movedNames.push(unit.name);
+        }
+    }
+
+    rebuildUnitIndex();
+    renderBenches();
+    log(`Squadra casuale arruolata: ${movedNames.join(', ')}.`, 'success');
+    openAccordionForRole('commander');
+    scheduleSave();
+    return true;
 }
 
 
@@ -2516,20 +2547,20 @@ function updateFabDeckCounters() {
    (al posto di arruola(role) diretto)
    ========================================================= */
 document.querySelectorAll('#fab-arruola .fab-option').forEach(btn => {
-  btn.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    const role = btn.dataset.role; // 'recruit' | 'commander' | 'random-team'
+    btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const role = btn.dataset.role; // 'recruit' | 'commander' | 'random-team'
 
-    if (role === 'random-team') {
-      pickRandomTeam({ commanders: 1, recruits: 3 });
-      closeAllFabs();
-      return;
-    }
+        if (role === 'random-team') {
+            pickRandomTeam({ commanders: 1, recruits: 3 });
+            closeAllFabs();
+            return;
+        }
 
-    // flusso standard: picker manuale
-    await openAlliesPicker(role);
-    closeAllFabs();
-  });
+        // flusso standard: picker manuale
+        await openAlliesPicker(role);
+        closeAllFabs();
+    });
 });
 
 
@@ -2915,7 +2946,7 @@ async function showWelcomePopup(isFirstRun, imgUrl) {
   `;
 
     const ok = await openDialog({
-        title: isFirstRun ? 'Benvenuto/a!' : 'Bentornato/a!',
+        title: isFirstRun ? 'Benvenuto/a! Soldato!' : 'Bentornato/a! Soldato!',
         message: html,
         confirmText: isFirstRun ? 'Inizia' : 'Riprendi',
         cancelText: 'Chiudi',
@@ -2923,9 +2954,9 @@ async function showWelcomePopup(isFirstRun, imgUrl) {
         cancellable: true
     });
 
-    
+
     await playBg('./assets/sounds/giganti_puri.mp3');
-    
+
 }
 
 // utility per caricare un json
@@ -3092,9 +3123,234 @@ function discardFullHand() {
 }
 window.addCardToHand = addCardToHand; // opzionale, comodo da console / altre parti
 
+/* =============================
+   Long-press / Right-click → Attacca (robusto)
+   SOSTITUISCI il vecchio blocco con questo
+   ============================= */
+// --- RILEVAZIONI AUTOMATICHE ----------------------------------------------
+const HEX_CFG = {
+    // base indici (0 o 1) dedotta dal DOM delle celle
+    base: 1,
+    // layout righe offset: 'even-r' | 'odd-r' | 'auto' (sceglie da solo)
+    layout: 'odd-r',
+    autoSwapRC: false
+};
+
+// --- UTILS -----------------------------------------------------------------
+function gridSize() {
+    const R = DB?.SETTINGS?.gridSettings?.rows ?? 0;
+    const C = DB?.SETTINGS?.gridSettings?.cols ?? 0;
+    return { R, C };
+}
+
+function inBoundsRC(r, c) {
+    const { R, C } = gridSize();
+    if (HEX_CFG.base === 0) {
+        return r >= 0 && r < R && c >= 0 && c < C;
+    } else {
+        return r >= 1 && r <= R && c >= 1 && c <= C;
+    }
+}
+
+// se qualcuno passa (col,row) invertiti, NON auto-swap di default
+// (attivalo solo se sai che ti serve davvero)
+HEX_CFG.autoSwapRC = false;
+
+function normalizeRC(r, c) {
+    if (!HEX_CFG.autoSwapRC) return { r, c };
+
+    const rcOK = inBoundsRC(r, c);
+    if (rcOK) return { r, c };
+
+    const crOK = inBoundsRC(c, r);
+    return crOK ? { r: c, c: r } : { r, c };
+}
+
+
+// --- VICINI ESAGONALI (row-offset) -----------------------------------------
+function hexNeighbors(row, col, includeSelf = true) {
+    // normalizza input (swap se abilitato)
+    ({ r: row, c: col } = normalizeRC(row, col));
+
+    // parità riga corretta anche con base 1
+    const evenRow = ((row - HEX_CFG.base) % 2 === 0);
+
+    const DELTAS_EVENR = evenRow
+        ? [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0], [1, 1]]
+        : [[-1, -1], [-1, 0], [0, -1], [0, 1], [1, -1], [1, 0]];
+
+    const DELTAS_ODDR = evenRow
+        ? [[-1, -1], [-1, 0], [0, -1], [0, 1], [1, -1], [1, 0]]
+        : [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0], [1, 1]];
+
+    const build = (deltas) =>
+        deltas.map(([dr, dc]) => ({ row: row + dr, col: col + dc }))
+            .filter(p => inBoundsRC(p.row, p.col));
+
+    let neigh;
+    if (HEX_CFG.layout === 'odd-r') {
+        neigh = build(DELTAS_ODDR);
+    } else if (HEX_CFG.layout === 'even-r') {
+        neigh = build(DELTAS_EVENR);
+    } else {
+        // 'auto' => UNIONE di ODDR ed EVENR (deduplicata)
+        const a = build(DELTAS_ODDR);
+        const b = build(DELTAS_EVENR);
+        const seen = new Set();
+        neigh = [...a, ...b].filter(p => {
+            const k = p.row + ':' + p.col;
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        });
+    }
+
+    if (includeSelf) neigh.unshift({ row, col, self: true });
+    return neigh;
+}
+
+let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
+let TARGET_CELLS = new Set();
+
+function endAttackPick() {
+    ATTACK_PICK = null;
+    TARGET_CELLS.clear();
+    hideTooltip();
+    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+}
+
+function startAttackPick(attacker, cell, anchorEl /* es: member/el della pedina */) {
+    const cand = targetsAround(attacker, cell);
+    if (cand.length === 0) {
+        showTooltip(`<div class="tt-card"><div class="tt-title">${attacker.name}</div><div class="tt-ability-text">Nessuno in portata.</div></div>`,
+            anchorEl?.getBoundingClientRect().left ?? 12,
+            anchorEl?.getBoundingClientRect().top ?? 12);
+        setTimeout(hideTooltip, 1100);
+        return;
+    }
+    cand.map(target => target.unit).forEach(unit => focusUnitOnField(unit.id, true))
+    ATTACK_PICK = { attackerId: attacker.id, targets: cand };
+    TARGET_CELLS = new Set(cand.map(t => keyRC(t.cell.row, t.cell.col)));
+
+    // Tooltip "appiccicoso": lista bersagli + annulla
+    const html = renderPickTooltip(attacker, cand);
+    const rect = anchorEl?.getBoundingClientRect?.();
+    const x = rect ? (rect.right + 8) : 20;
+    const y = rect ? (rect.top + rect.height / 2) : 20;
+    showTooltip(html, x, y);
+
+    // Listener sul tooltip per click target/annulla
+    tooltipEl.onclick = (e) => {
+        const tBtn = e.target.closest('[data-target-id]');
+        if (tBtn) {
+            resolveAttack(attacker.id, tBtn.dataset.targetId);
+            endAttackPick();
+            return;
+        }
+        if (e.target.closest('[data-cancel]')) {
+            endAttackPick();
+        }
+    };
+
+    // evidenzia griglia
+    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+}
+function renderPickTooltip(attacker, targets) {
+    const items = targets.map(t => {
+        const u = t.unit;
+        const pct = Math.max(0, Math.min(100, Math.round(((u.currHp ?? 0) / (u.hp || 1)) * 100)));
+        return `
+    <button class="tcard tcard--mini" data-target-id="${u.id}" type="button" title="${u.name || 'Unità'}">
+      <div class="tcard__avatar"><img src="${u.img || ''}" alt=""></div>
+      <div class="tcard__body">
+        <div class="tcard__name">${u.name || 'Unità'}</div>
+        <div class="tcard__sub">(${t.cell.row}-${t.cell.col})</div>
+        <div class="hpbar"><div class="hpbar-fill" style="width:${pct}%"></div></div>
+        <div class="tcard__meta">❤️ ${u.currHp}/${u.hp}</div>
+      </div>
+    </button>
+  `;
+    }).join('');
+
+    return `
+  <div class="tt-card" data-role="${attacker.role}">
+    <div class="tt-title">${attacker.name}</div>
+    <div class="tt-ability-text" style="margin:6px 0 8px">Attacca un bersaglio ⚔️</div>
+    <div class="picklist picklist--grid">${items}</div>
+  </div>
+`;
+
+}
+
+
+function targetsAround(attacker, cell) {
+    const out = [];
+    for (const p of hexNeighbors(cell.row, cell.col)) {
+        const ids = getStack(p.row, p.col);
+        for (const id of ids) {
+            const u = unitById.get(id);
+            if (!u) continue;
+            // alleati attaccano solo nemici
+            if ((attacker.role === 'recruit' || attacker.role === 'commander') && u.role === 'enemy') {
+                out.push({ unit: u, cell: p });
+            }
+            // giganti attaccano solo alleati
+            if (attacker.role === 'enemy' && (u.role === 'recruit' || u.role === 'commander' || u.role === 'wall')) {
+                out.push({ unit: u, cell: p });
+            }
+        }
+    }
+    return out;
+}
+
+function unitsAt(r, c) {
+    return getStack(r, c).map(id => unitById.get(id)).filter(Boolean);
+}
+
+function findTargetsFor(attacker, cell) {
+    const neigh = hexNeighbors(cell.row, cell.col);
+    const all = neigh.flatMap(p => unitsAt(p.row, p.col));
+    if (attacker.role === 'enemy') {
+        // i giganti colpiscono solo alleati (no mura)
+        return all.filter(u => (u.role === 'recruit' || u.role === 'commander' || u.role === 'wall'));
+    } else if (attacker.role === 'recruit' || attacker.role === 'commander') {
+        // alleati colpiscono i giganti
+        return all.filter(u => u.role === 'enemy');
+    }
+    return [];
+}
+
+function resolveAttack(attackerId, targetId) {
+    const a = unitById.get(attackerId);
+    const t = unitById.get(targetId);
+    if (!a || !t) return;
+
+    const dmg = Math.max(1, Number(a.atk || 1));
+    window.setUnitHp(targetId, (t.currHp ?? t.hp) - dmg);
+
+    log(`${a.name} attacca ${t.name} per ${dmg} danni.`, 'info');
+
+    // opzionale: suono
+    try { playSfx('./assets/sounds/attack.mp3', { volume: 0.8 }); } catch { }
+}
+
+function handleUnitLongPress({ unit, cell, anchorEl }) {
+    // niente mura
+    if (unit.role === 'wall') return;
+
+    const targets = findTargetsFor(unit, cell);
+
+    if (!targets.length) {
+        window.snackbar('Nessun bersaglio a portata.', {}, 'info');
+        return;
+    }
+
+    startAttackPick(unit, cell, anchorEl)
+}
+
 
 document.addEventListener('DOMContentLoaded', async () => {
-    
+
     // BOOT dati
     const booted = await loadDataAndStateFromLocal();
 
