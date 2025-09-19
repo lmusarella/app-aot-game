@@ -80,7 +80,7 @@ const ASSETS = [
   "./assets/sounds/giganti_puri.mp3",
   "./assets/sounds/mutaform_sound.mp3",
   "./assets/sounds/risorsa_audio_avvio_app.mp3",
-
+  "./assets/sounds/muro_distrutto.mp3",
   "./assets/sounds/reclute/annie_presentazione.mp3",
   "./assets/sounds/reclute/armin_presentazione.mp3",
   "./assets/sounds/reclute/bertold_presentazione.mp3",

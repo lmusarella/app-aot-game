@@ -553,7 +553,7 @@ async function spawnGiant(type = null) {
         return false;
     }
 
-     await playSfx('./assets/sounds/flash_effect_sound.mp3', {volume: 0.3, loop: false});
+    await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
 
     const unit = putGiantIntoRoster(pick);
     const cell = spawnGiantToFieldRandom(unit.id);
@@ -576,7 +576,7 @@ async function spawnGiant(type = null) {
         }
 
         log(`Gigante ${tipo} appare in ${cell.row}-${cell.col}`, 'warning');
-       
+
         focusUnitOnField(unit.id);
         openAccordionForRole(unit.role);
     } else {
@@ -1396,9 +1396,9 @@ document.querySelectorAll('#fab-event .fab-option').forEach(btn => {
             return;
         }
         log(`Pescata carta ${t}: "${card.name}".`);
-        if (type === 'event') await playSfx('assets/sounds/carte/carta_evento.mp3', {volume: 0.3, loop: false});
+        if (type === 'event') await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
         if (type === 'consumable') await playSfx('assets/sounds/carte/carta_consumabile.mp3');
-        showDrawnCard(type, card); 
+        showDrawnCard(type, card);
         closeAllFabs();
     });
 });
@@ -1797,7 +1797,7 @@ window.setUnitHp = async function (unitId, newHp) {
 
     // Morte MURA → rimuovi tutta la riga
     if (u.role === 'wall' && clamped === 0) {
-        handleWallDeath(u);
+        await handleWallDeath(u);
         return;
     }
 
@@ -1871,7 +1871,7 @@ ensureModal().backdrop.addEventListener('click', () => {
     // per evitare chiusure accidentali). Se lo vuoi, serve wiring interno.
 });
 
-function handleWallDeath(wallUnit) {
+async function handleWallDeath(wallUnit) {
     const ROW_BY_WALL_ID = Object.fromEntries(
         Object.entries(DB.SETTINGS.gridSettings.wall).map(([r, id]) => [id, Number(r)])
     );
@@ -1892,10 +1892,13 @@ function handleWallDeath(wallUnit) {
     for (let i = GAME_STATE.spawns.length - 1; i >= 0; i--) {
         if (rows.includes(GAME_STATE.spawns[i].row)) GAME_STATE.spawns.splice(i, 1);
     }
+
+    addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[wallUnit.role]);
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     renderBenches();
     log(`${wallUnit.name} è stato distrutto!`, 'error');
     scheduleSave();
+    await playSfx('./assets/sounds/muro_distrutto.mp3');
 }
 
 function handleGiantDeath(unit) {
@@ -1908,7 +1911,8 @@ function handleGiantDeath(unit) {
 
     // 3) NON rimettere nel pool: il gigante è “consumato”
     // (quindi niente push in giantsPool)
-
+    addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[unit.type]);
+    addXP(DB.SETTINGS.xpMoralDefault.giantsDeathXP[unit.type]);
     // 4) UI + log
     rebuildUnitIndex();
     renderBenches();
@@ -1929,6 +1933,7 @@ async function handleAllyDeath(unit) {
     const j = GAME_STATE.alliesPool.findIndex(a => a.id === back.id);
     if (j >= 0) GAME_STATE.alliesPool[j] = back; else GAME_STATE.alliesPool.push(back);
 
+    addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[unit.role]);
     rebuildUnitIndex();
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
@@ -3064,11 +3069,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         music: 0.22,
         sfx: 0.8,
         ducking: {
-            duckTo: 0.9, 
+            duckTo: 0.9,
             fadeMs: 180,   // entra dolcemente
             holdMs: 120,   // resta abbassata per poco
             releaseMs: 180, // risale morbida }
-        }})
+        }
+    })
 
     // Mostra welcome/bentornato
     setTimeout(() => { showWelcomePopup(!booted, "assets/img/comandanti/erwin_popup_benvenuto.jpg"); }, 60);
