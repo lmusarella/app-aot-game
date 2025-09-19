@@ -738,6 +738,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             adjustUnitHp(u.id, e.shiftKey ? -5 : -1);
             hpRight.textContent = `${u.currHp}/${u.hp}`;
             applyHpBar(hpFill, u);
+            hideTooltip();
         });
         hpPlus.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -745,6 +746,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             adjustUnitHp(u.id, e.shiftKey ? +5 : +1);
             hpRight.textContent = `${u.currHp}/${u.hp}`;
             applyHpBar(hpFill, u);
+            hideTooltip();
         });
 
 
