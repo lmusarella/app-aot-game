@@ -306,7 +306,7 @@ function restore(save) {
 
     // 4) ricostruisci unitById dai cataloghi + muri base
     unitById.clear();
-    rebuildUnitIndex(); // mette alliesRoster + giantsRoster + walls (base)
+   
 
     // 5) assicurati che i SEGMENTI MURA esistano per ogni cella muro salvata
     //    Se vedi un id "w1_r10c3" in spawns e non è nel map, crealo dal base corrispondente.
@@ -340,7 +340,7 @@ function restore(save) {
             }
         }
     } catch { }
-
+    rebuildUnitIndex(); // mette alliesRoster + giantsRoster + walls (base)
     // 7) UI refresh
     refreshXPUI();
     refreshMoraleUI();
@@ -569,11 +569,11 @@ async function spawnGiant(type = null) {
             if (unit.id === 'u11')
                 await playBg('./assets/sounds/gigante_anomalo_rod.mp3');
             else
-                await playBg('./assets/sounds/ape_titan_sound.mp3');
+                await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3');
         }
-        if (tipo === "Puro") {
-            await playBg('./assets/sounds/giganti_puri.mp3');
-        }
+        /*if (tipo === "Puro") {
+            await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3');
+        }*/
 
         log(`Gigante ${tipo} appare in ${cell.row}-${cell.col}`, 'warning');
 
@@ -2872,9 +2872,9 @@ async function showWelcomePopup(isFirstRun, imgUrl) {
         cancellable: true
     });
 
-    if (ok) {
-        await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3');
-    }
+    
+    await playBg('./assets/sounds/giganti_puri.mp3');
+    
 }
 
 // utility per caricare un json
@@ -3043,12 +3043,12 @@ window.addCardToHand = addCardToHand; // opzionale, comodo da console / altre pa
 
 
 document.addEventListener('DOMContentLoaded', async () => {
-    rebuildUnitIndex();
+    
     // BOOT dati
     const booted = await loadDataAndStateFromLocal();
 
     if (!booted) {
-        seedWallRows();              // crea segmenti mura 10/11/12
+        seedWallRows();        // crea segmenti mura 10/11/12
         renderBenches();
         renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
 
@@ -3062,6 +3062,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderHeader();
         renderLogs();
         updateFabDeckCounters();
+        rebuildUnitIndex();
     }
 
     setMixerConfig({
