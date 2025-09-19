@@ -1824,7 +1824,7 @@ window.setUnitHp = async function (unitId, newHp) {
     }
     // Morte giganti
     if (u.role === 'enemy' && clamped === 0) {
-        handleGiantDeath(u);
+        await handleGiantDeath(u);
         return; // UI già aggiornata
     }
 
@@ -1934,7 +1934,7 @@ async function handleWallDeath(wallUnit) {
     await playSfx('./assets/sounds/muro_distrutto.mp3');
 }
 
-function handleGiantDeath(unit) {
+async function handleGiantDeath(unit) {
     // 1) rimuovi dal campo
     removeUnitEverywhere(unit.id);
 
@@ -1952,6 +1952,7 @@ function handleGiantDeath(unit) {
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     log(`${unit.name} è morto.`, 'success');
     scheduleSave();
+    await playSfx('./assets/sounds/morte_gigante.mp3');
 }
 
 async function handleAllyDeath(unit) {
@@ -1971,7 +1972,9 @@ async function handleAllyDeath(unit) {
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     log(`${unit.name} è morto/a.`, 'error');
+    await playSfx('./assets/sounds/morte_umano.mp3');
     await playSfx('./assets/sounds/reclute/morte_recluta_comandante.mp3');
+
     scheduleSave();
 }
 
@@ -3330,8 +3333,16 @@ function resolveAttack(attackerId, targetId) {
 
     log(`${a.name} attacca ${t.name} per ${dmg} danni.`, 'info');
 
+    openAccordionForRole(t.role);
+    focusUnitOnField(targetId);
+    focusBenchCard(targetId);
     // opzionale: suono
-    try { playSfx('./assets/sounds/attack.mp3', { volume: 0.8 }); } catch { }
+    try {
+        if (a.role === "enemy")
+            playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 });
+        else
+            playSfx(a.sex === 'm' ? './assets/sounds/attacco_uomo.mp3' : './assets/sounds/attacco_donna.mp3', { volume: 0.8 });
+    } catch { }
 }
 
 function handleUnitLongPress({ unit, cell, anchorEl }) {
