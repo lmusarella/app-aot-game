@@ -3427,19 +3427,21 @@ function resolveAttack(attackerId, targetId) {
     // Tiro unico
     const d20 = d(20);
 
+    const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus;
     // Umano → TEC vs CD gigante (per colpire)
-    const humanHits = (d20 + tecMod) >= cdGiant;
+    const humanHits = (d20 + tecMod + effectiveBonus.tec) >= cdGiant;
 
     // Umano → AGI vs CD gigante (per schivare attacco/abilità del gigante)
-    const humanDodges = (d20 + agiMod) >= cdGiant;
+    const humanDodges = (d20 + agiMod + effectiveBonus.agi) >= cdGiant;
 
     // Abilità gigante pronta?
     const ability = getReadyGiantAbility(giant);
 
+    const totalTec = tecMod + effectiveBonus.tec;
     // Log
     const lines = [];
     lines.push(
-        `d20=${d20} | TEC ${tecMod >= 0 ? '+' : ''}${tecMod} vs CD ${cdGiant} → ${humanHits ? 'COLPITO' : 'MANCATO'}`
+        `d20=${d20} | TEC ${totalTec >= 0 ? '+' : ''}${totalTec} vs CD ${cdGiant} → ${humanHits ? 'COLPITO' : 'MANCATO'}`
     );
 
     let humanDamageDealt = 0;
@@ -3447,7 +3449,7 @@ function resolveAttack(attackerId, targetId) {
 
     // Danno umano (se colpisce): d4 + FOR (min 1)
     if (humanHits) {
-        const humanDmgRoll = Math.max(1, d(4) + forMod);
+        const humanDmgRoll = Math.max(1, d(4) + forMod + effectiveBonus.atk);
         humanDamageDealt = humanDmgRoll;
         const gCurr = (giant.currHp ?? giant.hp);
         window.setUnitHp(giantId, gCurr - humanDmgRoll);
@@ -3458,12 +3460,13 @@ function resolveAttack(attackerId, targetId) {
     if (ability) {
         const cdGiantAbi = ability.cd;
         // Se abilità è schivabile → l'esito usa la stessa logica della schivata
-        const humanDodgesAbility = (d20 + tecMod) >= cdGiantAbi;
+        const humanDodgesAbility = (d20 + agiMod + effectiveBonus.agi) >= cdGiantAbi;
         const dodgeable = (ability.dodgeable !== false); // default = true
         const giantHits = dodgeable ? !humanDodgesAbility : true;
 
+        const totalAgi = agiMod + effectiveBonus.agi;
         lines.push(
-            `Schivata abilità: d20=${d20} + AGI ${agiMod >= 0 ? '+' : ''}${agiMod} vs CD ABI ${cdGiantAbi} → ` +
+            `Schivata abilità: d20=${d20} + AGI ${totalAgi >= 0 ? '+' : ''}${totalAgi} vs CD ABI ${cdGiantAbi} → ` +
             (giantHits ? 'COLPITO' : 'SCHIVATA')
         );
 
@@ -3492,8 +3495,9 @@ function resolveAttack(attackerId, targetId) {
     } else {
         // Attacco base del gigante (come prima) — solo se niente abilità pronta
         const giantHits = !humanDodges;
+        const totalAgi = agiMod + effectiveBonus.agi
         lines.push(
-            `Schivata: d20=${d20} + AGI ${agiMod >= 0 ? '+' : ''}${agiMod} vs CD ${cdGiant} → ` +
+            `Schivata: d20=${d20} + AGI ${totalAgi >= 0 ? '+' : ''}${totalAgi} vs CD ${cdGiant} → ` +
             (giantHits ? 'COLPITO dal gigante' : 'SCHIVATA')
         );
 
