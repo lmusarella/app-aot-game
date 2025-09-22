@@ -3795,6 +3795,7 @@ function resolveAttack(attackerId, targetId) {
     // set/refresh ingaggio se sono a contatto (stessa cella o adiacenti) e entrambi vivi
     if (!engaged && unitAlive(human) && unitAlive(giant) && sameOrAdjCells(human.id, giant.id)) {
         setEngagementIfMelee(giant.id, human.id);
+        log(`${human.name} è entrato in combattimento con ${giant.name}`, 'warning');
     }
 
     scheduleSave();
