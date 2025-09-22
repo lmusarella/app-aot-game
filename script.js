@@ -3212,6 +3212,229 @@ function hexNeighbors(row, col, includeSelf = true) {
     return neigh;
 }
 
+// ===== RAGGIO & DISTANZA ====================================================
+
+// celle entro 'radius' passi (BFS sul grafo dei vicini)
+function hexWithinRadius(row, col, radius = 1, includeSelf = false) {
+    ({ r: row, c: col } = normalizeRC(row, col));
+    radius = Math.max(0, radius | 0);
+
+    const key = (r, c) => `${r}:${c}`;
+    const seen = new Set([key(row, col)]);
+    const out = [];
+    let frontier = [{ row, col }];
+
+    if (includeSelf) out.push({ row, col, self: true });
+
+    for (let dist = 1; dist <= radius; dist++) {
+        const next = [];
+        for (const p of frontier) {
+            const ns = hexNeighbors(p.row, p.col, false);
+            for (const n of ns) {
+                const k = key(n.row, n.col);
+                if (seen.has(k)) continue;
+                seen.add(k);
+                out.push(n);
+                next.push(n);
+            }
+        }
+        frontier = next;
+        if (frontier.length === 0) break;
+    }
+    return out;
+}
+
+// offset(r,c) -> cube, rispettando base (0/1) e layout ('even-r'|'odd-r')
+function offsetToCube(row, col) {
+    const base = HEX_CFG.base || 0;
+    let r0 = row - base, c0 = col - base;
+
+    let q;
+    if (HEX_CFG.layout === 'odd-r') {
+        q = c0 - Math.floor((r0 - (r0 & 1)) / 2);
+    } else { // default 'even-r'
+        q = c0 - Math.floor((r0 + (r0 & 1)) / 2);
+    }
+    const x = q;
+    const z = r0;
+    const y = -x - z;
+    return { x, y, z };
+}
+
+function hexDistance(r1, c1, r2, c2) {
+    ({ r: r1, c: c1 } = normalizeRC(r1, c1));
+    ({ r: r2, c: c2 } = normalizeRC(r2, c2));
+    const a = offsetToCube(r1, c1), b = offsetToCube(r2, c2);
+    return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y), Math.abs(a.z - b.z));
+}
+
+// ===== STACK HELPERS ========================================================
+
+// tutte le unità in una cella leggendo dagli stack
+function unitsAtCell(row, col) {
+    const ids = getStack(row, col) || [];
+    const res = [];
+    for (const id of ids) {
+        const u = unitById.get(id);
+        if (u) res.push(u);
+    }
+    return res;
+}
+
+
+
+// muri più vicini (scansione griglia usando hasWallInCell)
+function nearestWallCell(fromR, fromC) {
+    const { R, C } = gridSize();
+    const rMin = HEX_CFG.base ? 1 : 0;
+    const rMax = HEX_CFG.base ? R : R - 1;
+    const cMin = rMin;
+    const cMax = HEX_CFG.base ? C : C - 1;
+
+    let best = null, bestD = Infinity;
+    for (let r = rMin; r <= rMax; r++) {
+        for (let c = cMin; c <= cMax; c++) {
+            if (!hasWallInCell(r, c)) continue;
+            const d = hexDistance(fromR, fromC, r, c);
+            if (d < bestD) { bestD = d; best = { row: r, col: c }; }
+        }
+    }
+    return best;
+}
+
+// ===== SCELTA PASSO (1 esagono) ============================================
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// camminabilità: niente muri e rispetto cap stack
+function defaultWalkableFn(r, c) {
+    if (hasWallInCell(r, c)) return false;
+    const stack = getStack(r, c) || [];
+    const maxCap = DB?.SETTINGS?.gridSettings?.maxUnitHexagon ?? Infinity;
+    return stack.length < maxCap;
+}
+
+// vicino che riduce di più la distanza verso una destinazione
+function nextStepTowards(fromR, fromC, toR, toC, { walkableFn = defaultWalkableFn } = {}) {
+    const currD = hexDistance(fromR, fromC, toR, toC);
+    const neigh = hexNeighbors(fromR, fromC, false).filter(p => walkableFn(p.row, p.col));
+
+    const better = neigh
+        .map(p => ({ ...p, d: hexDistance(p.row, p.col, toR, toC) }))
+        .filter(p => p.d < currD);
+
+    if (better.length) {
+        const bestD = Math.min(...better.map(p => p.d));
+        const best = better.filter(p => p.d === bestD);
+        return pickRandom(best);
+    }
+    return null; // bloccato
+}
+
+// ===== "VISTA" GIGANTE & Mossa =============================================
+
+const GIANT_VIEW_RADIUS = 2;
+
+function humanTargetsWithin2(fromR, fromC) {
+    const area = hexWithinRadius(fromR, fromC, GIANT_VIEW_RADIUS, true);
+    const hits = [];
+    for (const c of area) {
+        const units = unitsAtCell(c.row, c.col).filter(isHuman);
+        for (const u of units) {
+            hits.push({ unit: u, row: c.row, col: c.col });
+        }
+    }
+    return hits;
+}
+function hasHumanInCell(row, col){
+  const stack = getStack(row, col) || [];
+  return stack.some(id => {
+    const u = unitById.get(id);
+    // considera umani = non enemy, non wall
+    return u && u.role !== 'enemy' && u.role !== 'wall';
+  });
+}
+// usa la TUA moveOneUnitBetweenStacks
+function stepGiant(giantId) {
+    const g = unitById.get(giantId);
+    if (!g || g.role !== 'enemy') return false;
+
+    // da dove parte il gigante
+    let here = findUnitCell?.(giantId) || null;
+
+
+
+    if (!here) {
+        // fallback: cerca negli stack
+        const { R, C } = gridSize();
+        const rMin = HEX_CFG.base ? 1 : 0, rMax = HEX_CFG.base ? R : R - 1;
+        const cMin = rMin, cMax = HEX_CFG.base ? C : C - 1;
+        outer:
+        for (let r = rMin; r <= rMax; r++) {
+            for (let c = cMin; c <= cMax; c++) {
+                if ((getStack(r, c) || []).includes(giantId)) { here = { row: r, col: c }; break outer; }
+            }
+        }
+    }
+    if (!here) return false;
+
+    const { row: r, col: c } = here;
+
+    if (hasHumanInCell(r, c)) return false;
+
+    // 1) se vede umani entro 2, avvicinati al più vicino (se non già adiacente)
+    const humans = humanTargetsWithin2(r, c);
+    if (humans.length) {
+        // scegli il bersaglio più vicino (random tra pari distanza)
+        let best = [], bestD = Infinity;
+        for (const h of humans) {
+            const d = hexDistance(r, c, h.row, h.col);
+            if (d < bestD) { bestD = d; best = [h]; }
+            else if (d === bestD) best.push(h);
+        }
+        const target = pickRandom(best);
+
+        if (bestD > 1) {
+            // ancora lontano: fai UN passo verso di lui
+            const step = nextStepTowards(r, c, target.row, target.col, {});
+            if (step) {
+                moveOneUnitBetweenStacks({ row: r, col: c }, { row: step.row, col: step.col }, giantId);
+                return true;
+            }
+            return false; // bloccato
+        }
+
+        if (bestD === 1) {
+            // ADIACENTE: prova ad entrare direttamente nella cella del bersaglio
+            moveOneUnitBetweenStacks({ row: r, col: c }, { row: target.row, col: target.col }, giantId);
+            return true; // se la cella è piena, la tua funzione non sposta (ok)
+        }
+
+        // bestD === 0: già nella stessa cella -> nessuna mossa
+        return false;
+    }
+
+    // 2) altrimenti verso le MURA
+    const wall = nearestWallCell(r, c);
+    if (!wall) return false;
+
+    const step = nextStepTowards(r, c, wall.row, wall.col, {});
+    if (step) {
+        moveOneUnitBetweenStacks({ row: r, col: c }, { row: step.row, col: step.col }, giantId);
+        return true;
+    }
+    return false; // bloccato
+}
+
+function giantsPhaseMove() {
+    const giants = [...unitById.values()].filter(u => u.role === 'enemy');
+    for (const g of giants) {
+        stepGiant(g.id);
+    }
+}
+
+
+
 let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
 
