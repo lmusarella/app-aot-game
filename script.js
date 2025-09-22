@@ -508,10 +508,10 @@ function putGiantIntoRoster(giant) {
 function spawnGiantToFieldRandom(unitId) {
     const attempts = 100;
     for (let i = 0; i < attempts; i++) {
-        const x = Math.floor(Math.random() * 6); // 0..5
-        const y = Math.floor(Math.random() * 6); // 0..5
-        const r = x + 2; // 1..6
-        const c = y + 1; // 1..6
+        const x = Math.floor(d(6)); // 0..5
+        const y = Math.floor(d(6)); // 0..5
+        const r = x + 1; // 1..6
+        const c = y; // 1..6
         const s = getStack(r, c);
         if (s.length < DB.SETTINGS.gridSettings.maxUnitHexagon) {
             removeUnitEverywhere(unitId);
@@ -553,7 +553,7 @@ function getMusicUrlById(unitId) {
 
 async function spawnGiant(type = null) {
 
-    const roll20 = Math.floor(Math.random() * 20) + 1;
+    const roll20 = d(20);
     const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
     const tipo = type !== null ? type : getSpawnType(roll20, m.spawnRate);
     const pick = pickGiantFromPool(tipo);
@@ -1469,10 +1469,10 @@ function rollAnimText(txt) {
 }
 
 document.getElementById('roll-d20').addEventListener('click', () => {
-    const n = 1 + Math.floor(Math.random() * 20); rollAnimText('d20 → ' + n);
+    const n = d(20); rollAnimText('d20 → ' + n);
 });
 document.getElementById('roll-d4').addEventListener('click', () => {
-    const n = 1 + Math.floor(Math.random() * 4); rollAnimText('d4  → ' + n);
+    const n = d(4); rollAnimText('d4  → ' + n);
 });
 
 /* ======================= LONG PRESS UTILS ======================= */
@@ -1814,7 +1814,7 @@ window.setUnitHp = async function (unitId, newHp) {
         return;
     }
     const clamped = Math.max(0, Math.min(u.hp ?? newHp, newHp));
-    const was = u.currHp ?? u.hp;
+
     u.currHp = clamped;
 
     // Se è alleato e scende a 0 → morte
@@ -3323,27 +3323,263 @@ function findTargetsFor(attacker, cell) {
     return [];
 }
 
+// --- Abilità Gigante: helper ------------------------------------------------
+
+// Prende abilità pronta (attiva + coolDownLeft == 0), altrimenti null
+function getReadyGiantAbility(giant) {
+    const ab = giant?.ability;
+    if (!ab) return null;
+    const active = (ab.active ?? true);
+    const coolDownLeft = Number(ab.coolDownLeft || 0);
+    if (!active || coolDownLeft > 0) return null;
+    return ab;
+}
+
+// Mette in cooldown l'abilità appena usata
+function consumeGiantAbilityCooldown(giant) {
+    const ab = giant?.ability;
+    if (!ab) return;
+    const coolDown = Math.max(1, Number(ab.coolDown || 1));
+    ab.coolDownLeft = coolDown;
+}
+
+// Da chiamare a fine turno per scalare i cooldown
+function tickUnitCooldowns(unit) {
+    const ab = unit?.ability;
+    if (ab && ab.coolDownLeft > 0) ab.coolDownLeft = Math.max(0, ab.coolDownLeft - 1);
+}
+
+// Utility dadi: 1dN e XdY (es. '2d6')
+function d(n) { return Math.floor(Math.random() * n) + 1; }
+function rollDiceSpec(spec) {
+    const m = /^(\d+)d(\d+)$/i.exec(spec || '1d6');
+    if (!m) return d(6);
+    const cnt = Number(m[1]), sides = Number(m[2]);
+    let sum = 0; for (let i = 0; i < cnt; i++) sum += d(sides);
+    return sum;
+}
+
+// Legge numeri robustamente (come già usi sopra)
+function getNum(obj, keys, fallback = 0) {
+    for (const k of keys) {
+        if (obj && obj[k] != null && obj[k] !== '') {
+            const n = Number(obj[k]);
+            if (!Number.isNaN(n)) return n;
+        }
+    }
+    return fallback;
+}
+
+// Calcolo danno abilità: (XdY) + bonus + (eventuale atk del gigante)
+function computeAbilityDamage(giant, ab) {
+    const base = rollDiceSpec(ab?.dice || '1d6');
+    const bonus = Number(ab?.bonus || 0);
+    const addAtk = !!ab?.addAtk;
+    const atk = Math.max(0, getNum(giant, ['atk'], 0));
+    return Math.max(1, base + bonus + (addAtk ? atk : 0));
+}
+
+// Umano = non 'enemy' e non 'wall'
+function isHuman(u) { return u && u.role !== 'enemy' && u.role !== 'wall'; }
+
+
 function resolveAttack(attackerId, targetId) {
     const a = unitById.get(attackerId);
     const t = unitById.get(targetId);
     if (!a || !t) return;
 
-    const dmg = Math.max(1, Number(a.atk || 1));
-    window.setUnitHp(targetId, (t.currHp ?? t.hp) - dmg);
+    // Se non è scontro UMANO vs GIGANTE → vecchio comportamento
+    const AisHuman = isHuman(a);
+    const TisHuman = isHuman(t);
+    const AisGiant = a?.role === 'enemy';
+    const TisGiant = t?.role === 'enemy';
+    const isHumanVsGiant = (AisHuman && TisGiant) || (TisHuman && AisGiant);
 
-    log(`${a.name} attacca ${t.name} per ${dmg} danni.`, 'info');
+    if (!isHumanVsGiant) {
+        const dmg = Math.max(1, Number(a.atk || 1));
+        window.setUnitHp(targetId, (t.currHp ?? t.hp) - dmg);
+        log(`${a.name} attacca ${t.name} per ${dmg} danni.`, 'info');
+        openAccordionForRole(t.role);
+        focusUnitOnField(targetId);
+        focusBenchCard(targetId);
+        try {
+            if (a.role === "enemy")
+                playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 });
+            else
+                playSfx(a.sex === 'm' ? './assets/sounds/attacco_uomo.mp3' : './assets/sounds/attacco_donna.mp3', { volume: 0.8 });
+        } catch { }
+        return;
+    }
 
-    openAccordionForRole(t.role);
-    focusUnitOnField(targetId);
-    focusBenchCard(targetId);
-    // opzionale: suono
+    // Normalizza chi è umano e chi è gigante (indipendente da chi inizia)
+    const human = AisHuman ? a : t;
+    const giant = AisGiant ? a : t;
+    const humanId = human.id;
+    const giantId = giant.id;
+
+    // Letture robuste
+    const cdGiant = getNum(giant, ['cd'], 12);
+    const tecMod = getNum(human, ['tec'], 0);
+    const agiMod = getNum(human, ['agi'], 0);
+    const forMod = getNum(human, ['atk'], 0);
+    const giantAtk = Math.max(1, getNum(giant, ['atk'], 1));
+
+    // Tiro unico
+    const d20 = d(20);
+
+    // Umano → TEC vs CD gigante (per colpire)
+    const humanHits = (d20 + tecMod) >= cdGiant;
+
+    // Umano → AGI vs CD gigante (per schivare attacco/abilità del gigante)
+    const humanDodges = (d20 + agiMod) >= cdGiant;
+
+    // Abilità gigante pronta?
+    const ability = getReadyGiantAbility(giant);
+
+    // Log
+    const lines = [];
+    lines.push(
+        `d20=${d20} | TEC ${tecMod >= 0 ? '+' : ''}${tecMod} vs CD ${cdGiant} → ${humanHits ? 'COLPITO' : 'MANCATO'}`
+    );
+
+    let humanDamageDealt = 0;
+    let humanDamageTaken = 0;
+
+    // Danno umano (se colpisce): d4 + FOR (min 1)
+    if (humanHits) {
+        const humanDmgRoll = Math.max(1, d(4) + forMod);
+        humanDamageDealt = humanDmgRoll;
+        const gCurr = (giant.currHp ?? giant.hp);
+        window.setUnitHp(giantId, gCurr - humanDmgRoll);
+        lines.push(`${human.name} infligge ${humanDmgRoll} danni a ${giant.name}.`);
+    }
+
+    // Azione del gigante: abilità se pronta, altrimenti attacco base
+    if (ability) {
+        const cdGiantAbi = ability.cd;
+        // Se abilità è schivabile → l'esito usa la stessa logica della schivata
+        const humanDodgesAbility = (d20 + tecMod) >= cdGiantAbi;
+        const dodgeable = (ability.dodgeable !== false); // default = true
+        const giantHits = dodgeable ? !humanDodgesAbility : true;
+
+        lines.push(
+            `Schivata abilità: d20=${d20} + AGI ${agiMod >= 0 ? '+' : ''}${agiMod} vs CD ABI ${cdGiantAbi} → ` +
+            (giantHits ? 'COLPITO' : 'SCHIVATA')
+        );
+
+        if (giantHits) {
+            const dmg = computeAbilityDamage(giant, ability);
+            humanDamageTaken = dmg;
+            const hCurr = (human.currHp ?? human.hp);
+            window.setUnitHp(humanId, hCurr - dmg);
+            lines.push(`${giant.name} usa **${ability.name || 'Abilità'}** e infligge ${dmg} danni a ${human.name}.`);
+        } else {
+            lines.push(`${human.name} schiva **${ability.name || 'l\'abilità'}** di ${giant.name}.`);
+        }
+
+        // metti in cooldown
+        consumeGiantAbilityCooldown(giant);
+
+        // SFX abilità (se fornito), altrimenti fallback
+        try {
+            if (giantHits && ability.sfx) {
+                playSfx(ability.sfx, { volume: 0.9 });
+            } else if (giantHits) {
+                playSfx('./assets/sounds/abilita_gigante.mp3', { volume: 0.9 });
+            }
+        } catch { }
+
+    } else {
+        // Attacco base del gigante (come prima) — solo se niente abilità pronta
+        const giantHits = !humanDodges;
+        lines.push(
+            `Schivata: d20=${d20} + AGI ${agiMod >= 0 ? '+' : ''}${agiMod} vs CD ${cdGiant} → ` +
+            (giantHits ? 'COLPITO dal gigante' : 'SCHIVATA')
+        );
+
+        if (giantHits) {
+            humanDamageTaken = giantAtk;
+            const hCurr = (human.currHp ?? human.hp);
+            window.setUnitHp(humanId, hCurr - giantAtk);
+            lines.push(`${giant.name} infligge ${giantAtk} danni a ${human.name}.`);
+            try { playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 }); } catch { }
+        }
+    }
+
+    // Log compatto
+    log(`${human.name} vs ${giant.name}\n` + lines.join('\n'), 'info');
+
+    // SFX umano (se ha colpito)
     try {
-        if (a.role === "enemy")
-            playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 });
-        else
-            playSfx(a.sex === 'm' ? './assets/sounds/attacco_uomo.mp3' : './assets/sounds/attacco_donna.mp3', { volume: 0.8 });
+        if (humanDamageDealt > 0) {
+            const path = human.sex === 'm'
+                ? './assets/sounds/attacco_uomo.mp3'
+                : './assets/sounds/attacco_donna.mp3';
+            // leggero offset se anche il gigante ha colpito, per non accavallare troppo
+            const offset = humanDamageTaken > 0 ? 140 : 0;
+            setTimeout(() => playSfx(path, { volume: 0.8 }), offset);
+        }
     } catch { }
+    scheduleSave();
 }
+
+// === COOLDOWN A FINE TURNO ================================================
+
+// Scala il cooldown di UNA unità (già definito sopra, lo estendo con delta opz.)
+function tickUnitCooldowns(unit, delta = 1) {
+    const ab = unit?.ability;
+    if (!ab) return;
+    if (ab.coolDownLeft > 0) {
+        ab.coolDownLeft = Math.max(0, ab.coolDownLeft - Math.max(1, delta));
+    }
+}
+
+// Scala il cooldown di TUTTE le unità nella tua unitById (Map)
+// Opzioni:
+//  - delta: di quanti turni scalare (default 1)
+//  - giantsOnly / humansOnly: filtri rapidi (mutuamente esclusivi)
+//  - silent: se true non logga quando un’abilità torna pronta
+function advanceAllCooldowns(
+    delta = 1,
+    { giantsOnly = false, humansOnly = false, silent = false } = {}
+) {
+    if (!unitById || typeof unitById.values !== 'function') return;
+
+    for (const u of unitById.values()) {
+        if (giantsOnly && u.role !== 'enemy') continue;
+        if (humansOnly && (u.role === 'enemy' || u.role === 'wall')) continue;
+
+        const ab = u?.ability;
+        if (!ab) continue;
+
+        const before = Number(ab.coolDownLeft || 0);
+        if (before <= 0) continue;
+
+        tickUnitCooldowns(u, delta);
+
+        if (!silent && before > 0 && ab.coolDownLeft === 0) {
+            // appena tornata pronta
+            try {
+                log(`L'abilità di ${u.name} è di nuovo pronta: ${ab.name || 'Abilità'}.`, 'warning');
+            } catch { }
+        }
+    }
+}
+
+// (Facoltative) utility comode
+function resetAllCooldowns({ giantsOnly = false, humansOnly = false } = {}) {
+    if (!unitById || typeof unitById.values !== 'function') return;
+    for (const u of unitById.values()) {
+        if (giantsOnly && u.role !== 'enemy') continue;
+        if (humansOnly && (u.role === 'enemy' || u.role === 'wall')) continue;
+        if (u.ability) u.ability.coolDownLeft = 0;
+    }
+}
+
+function setAbilityReady(unit) {
+    if (unit?.ability) unit.ability.coolDownLeft = 0;
+}
+
 
 function handleUnitLongPress({ unit, cell, anchorEl }) {
     // niente mura
