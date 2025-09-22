@@ -3346,13 +3346,13 @@ function humanTargetsWithin2(fromR, fromC) {
     }
     return hits;
 }
-function hasHumanInCell(row, col){
-  const stack = getStack(row, col) || [];
-  return stack.some(id => {
-    const u = unitById.get(id);
-    // considera umani = non enemy, non wall
-    return u && u.role !== 'enemy' && u.role !== 'wall';
-  });
+function hasHumanInCell(row, col) {
+    const stack = getStack(row, col) || [];
+    return stack.some(id => {
+        const u = unitById.get(id);
+        // considera umani = non enemy, non wall
+        return u && u.role !== 'enemy' && u.role !== 'wall';
+    });
 }
 // usa la TUA moveOneUnitBetweenStacks
 function stepGiant(giantId) {
@@ -3446,7 +3446,13 @@ function endAttackPick() {
 }
 
 function startAttackPick(attacker, cell, anchorEl /* es: member/el della pedina */) {
-    const cand = targetsAround(attacker, cell);
+    let cand = targetsAround(attacker, cell);
+
+    const engaged = getEngagedHuman(attacker.id);
+    if(engaged) {
+        cand = cand.filter(target => target.unit.id === engaged);
+    }
+
     if (cand.length === 0) {
         showTooltip(`<div class="tt-card"><div class="tt-title">${attacker.name}</div><div class="tt-ability-text">Nessuno in portata.</div></div>`,
             anchorEl?.getBoundingClientRect().left ?? 12,
@@ -3605,6 +3611,36 @@ function computeAbilityDamage(giant, ab) {
 // Umano = non 'enemy' e non 'wall'
 function isHuman(u) { return u && u.role !== 'enemy' && u.role !== 'wall'; }
 
+// giantId -> humanId attualmente ingaggiato
+const GIANT_ENGAGEMENT = new Map();
+
+function unitAlive(u) { return !!u && (u.currHp ?? u.hp) > 0; }
+
+function sameOrAdjCells(idA, idB) {
+    const a = findUnitCell(idA), b = findUnitCell(idB);
+    if (!a || !b) return false;
+    if (a.row === b.row && a.col === b.col) return true;
+    const neigh = hexNeighbors(a.row, a.col, true); // include self
+    return neigh.some(p => p.row === b.row && p.col === b.col);
+}
+
+// valida e ritorna l’umano ingaggiato col gigante, se ancora valido
+function getEngagedHuman(gid) {
+    const hid = GIANT_ENGAGEMENT.get(gid);
+    if (!hid) return null;
+    const h = unitById.get(hid);
+    if (!unitAlive(h) || !sameOrAdjCells(gid, hid)) {
+        GIANT_ENGAGEMENT.delete(gid);
+        return null;
+    }
+    return hid;
+}
+
+function setEngagementIfMelee(gid, hid) {
+    if (!gid || !hid) return;
+    if (!sameOrAdjCells(gid, hid)) return;
+    GIANT_ENGAGEMENT.set(gid, hid);
+}
 
 function resolveAttack(attackerId, targetId) {
     const a = unitById.get(attackerId);
@@ -3679,58 +3715,66 @@ function resolveAttack(attackerId, targetId) {
         lines.push(`${human.name} infligge ${humanDmgRoll} danni a ${giant.name}.`);
     }
 
-    // Azione del gigante: abilità se pronta, altrimenti attacco base
-    if (ability) {
-        const cdGiantAbi = ability.cd;
-        // Se abilità è schivabile → l'esito usa la stessa logica della schivata
-        const humanDodgesAbility = (d20 + agiMod + effectiveBonus.agi) >= cdGiantAbi;
-        const dodgeable = (ability.dodgeable !== false); // default = true
-        const giantHits = dodgeable ? !humanDodgesAbility : true;
+    const engaged = getEngagedHuman(giant.id);
 
-        const totalAgi = agiMod + effectiveBonus.agi;
-        lines.push(
-            `Schivata abilità: d20=${d20} + AGI ${totalAgi >= 0 ? '+' : ''}${totalAgi} vs CD ABI ${cdGiantAbi} → ` +
-            (giantHits ? 'COLPITO' : 'SCHIVATA')
-        );
+    //il gigante attacca solo un umano alla volta
+    if (!engaged || engaged === human.id) {
+        // Azione del gigante: abilità se pronta, altrimenti attacco base
+        if (ability) {
+            const cdGiantAbi = ability.cd;
+            // Se abilità è schivabile → l'esito usa la stessa logica della schivata
+            const humanDodgesAbility = (d20 + agiMod + effectiveBonus.agi) >= cdGiantAbi;
+            const dodgeable = (ability.dodgeable !== false); // default = true
+            const giantHits = dodgeable ? !humanDodgesAbility : true;
 
-        if (giantHits) {
-            const dmg = computeAbilityDamage(giant, ability);
-            humanDamageTaken = dmg;
-            const hCurr = (human.currHp ?? human.hp);
-            window.setUnitHp(humanId, hCurr - dmg);
-            lines.push(`${giant.name} usa **${ability.name || 'Abilità'}** e infligge ${dmg} danni a ${human.name}.`);
-        } else {
-            lines.push(`${human.name} schiva **${ability.name || 'l\'abilità'}** di ${giant.name}.`);
-        }
+            const totalAgi = agiMod + effectiveBonus.agi;
+            lines.push(
+                `Schivata abilità: d20=${d20} + AGI ${totalAgi >= 0 ? '+' : ''}${totalAgi} vs CD ABI ${cdGiantAbi} → ` +
+                (giantHits ? 'COLPITO' : 'SCHIVATA')
+            );
 
-        // metti in cooldown
-        consumeGiantAbilityCooldown(giant);
-
-        // SFX abilità (se fornito), altrimenti fallback
-        try {
-            if (giantHits && ability.sfx) {
-                playSfx(ability.sfx, { volume: 0.9 });
-            } else if (giantHits) {
-                playSfx('./assets/sounds/abilita_gigante.mp3', { volume: 0.9 });
+            if (giantHits) {
+                const dmg = computeAbilityDamage(giant, ability);
+                humanDamageTaken = dmg;
+                const hCurr = (human.currHp ?? human.hp);
+                window.setUnitHp(humanId, hCurr - dmg);
+                lines.push(`${giant.name} usa **${ability.name || 'Abilità'}** e infligge ${dmg} danni a ${human.name}.`);
+            } else {
+                lines.push(`${human.name} schiva **${ability.name || 'l\'abilità'}** di ${giant.name}.`);
             }
-        } catch { }
 
-    } else {
-        // Attacco base del gigante (come prima) — solo se niente abilità pronta
-        const giantHits = !humanDodges;
-        const totalAgi = agiMod + effectiveBonus.agi
-        lines.push(
-            `Schivata: d20=${d20} + AGI ${totalAgi >= 0 ? '+' : ''}${totalAgi} vs CD ${cdGiant} → ` +
-            (giantHits ? 'COLPITO dal gigante' : 'SCHIVATA')
-        );
+            // metti in cooldown
+            consumeGiantAbilityCooldown(giant);
 
-        if (giantHits) {
-            humanDamageTaken = giantAtk;
-            const hCurr = (human.currHp ?? human.hp);
-            window.setUnitHp(humanId, hCurr - giantAtk);
-            lines.push(`${giant.name} infligge ${giantAtk} danni a ${human.name}.`);
-            try { playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 }); } catch { }
+            // SFX abilità (se fornito), altrimenti fallback
+            try {
+                if (giantHits && ability.sfx) {
+                    playSfx(ability.sfx, { volume: 0.9 });
+                } else if (giantHits) {
+                    playSfx('./assets/sounds/abilita_gigante.mp3', { volume: 0.9 });
+                }
+            } catch { }
+
+        } else {
+            // Attacco base del gigante (come prima) — solo se niente abilità pronta
+            const giantHits = !humanDodges;
+            const totalAgi = agiMod + effectiveBonus.agi
+            lines.push(
+                `Schivata: d20=${d20} + AGI ${totalAgi >= 0 ? '+' : ''}${totalAgi} vs CD ${cdGiant} → ` +
+                (giantHits ? 'COLPITO dal gigante' : 'SCHIVATA')
+            );
+
+            if (giantHits) {
+                humanDamageTaken = giantAtk;
+                const hCurr = (human.currHp ?? human.hp);
+                window.setUnitHp(humanId, hCurr - giantAtk);
+                lines.push(`${giant.name} infligge ${giantAtk} danni a ${human.name}.`);
+                try { playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 }); } catch { }
+            }
         }
+    } else {
+        const engagedUnit = unitById.get(engaged);
+        if(engagedUnit) lines.push(`${giant.name} è distratto, perchè in combattimento con ${engagedUnit.name}`)
     }
 
     // Log compatto
@@ -3747,6 +3791,12 @@ function resolveAttack(attackerId, targetId) {
             setTimeout(() => playSfx(path, { volume: 0.8 }), offset);
         }
     } catch { }
+
+    // set/refresh ingaggio se sono a contatto (stessa cella o adiacenti) e entrambi vivi
+    if (!engaged && unitAlive(human) && unitAlive(giant) && sameOrAdjCells(human.id, giant.id)) {
+        setEngagementIfMelee(giant.id, human.id);
+    }
+
     scheduleSave();
 }
 
