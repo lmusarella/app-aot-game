@@ -3,13 +3,20 @@
         "id": 1,
         "title": "Caccia ai Puri I",
         "objectives": [
-            "Uccidi 3 Giganti Puri."
+            {
+                "num": 3,
+                "type": "Puro"
+            }
         ],
         "reward": {
             "xp": 2,
             "morale": 0
         },
         "event": "Spawn di 2 Giganti Puri",
+        "event_spawn": [
+            "Puro",
+            "Puro"
+        ],
         "timerSec": 1200,
         "spawnRate": {
             "Puro": {
@@ -30,13 +37,21 @@
         "id": 2,
         "title": "Caccia ai Puri II",
         "objectives": [
-            "Uccidi 4 Giganti Puri."
+            {
+                "num": 4,
+                "type": "Puro"
+            }
         ],
         "reward": {
             "xp": 2,
             "morale": 0
         },
         "event": "Spawn di 3 Giganti Puri",
+        "event_spawn": [
+            "Puro",
+            "Puro",
+            "Puro"
+        ],
         "timerSec": 1200,
         "spawnRate": {
             "Puro": {
@@ -57,13 +72,23 @@
         "id": 3,
         "title": "Anomalo & Puri",
         "objectives": [
-            "Uccidi 1 Gigante Anomalo e 2 Giganti Puri."
+             {
+                "num": 1,
+                "type": "Anomalo"
+            },
+             {
+                "num": 2,
+                "type": "Puro"
+            }
         ],
         "reward": {
             "xp": 3,
             "morale": 0
         },
         "event": "Spawn di 1 Gigante Anomalo",
+        "event_spawn": [
+            "Anomalo"
+        ],
         "timerSec": 1200,
         "spawnRate": {
             "Puro": {
@@ -84,13 +109,20 @@
         "id": 4,
         "title": "Doppio Anomalo",
         "objectives": [
-            "Uccidi 2 Giganti Anomali."
+            {
+                "num": 2,
+                "type": "Anomalo"
+            }
         ],
         "reward": {
             "xp": 5,
             "morale": 1
         },
         "event": "Spawn di 2 Giganti Anomali",
+        "event_spawn": [
+            "Anomalo",
+            "Anomalo"
+        ],
         "timerSec": 1200,
         "spawnRate": {
             "Puro": {

@@ -4,8 +4,8 @@
    --oro: #CF9439;
    --argento: #C0C0C0;
    --viola: #584083;
-   --grigio: #545454;
-   --blu: #192299;
+   --grigio: #431c14;
+   --blu: #102575b5;
    --verde: #44ad6b;
 
    /* FAB palette */
@@ -30,7 +30,7 @@
 
  body {
    margin: 0;
-   background: #000;
+   background: #1c2030c7;
    color: #e6e6e6;
    font: 14px/1.35 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 
@@ -135,9 +135,9 @@
    position: sticky;
    top: 0;
    z-index: 1000;
-   background: linear-gradient(180deg, rgba(20, 20, 24, .92), rgba(10, 10, 12, .88));
    border-bottom: 1px solid #1f1f1f;
    padding: 4px 8px;
+   background: linear-gradient(180deg, #0b0d14, #090b12);
    backdrop-filter: blur(6px) saturate(120%);
  }
 
@@ -905,7 +905,7 @@
    box-shadow: 0 0 0 3px var(--rosso, rgba(255, 255, 255, .55)), 0 0 0 6px rgba(0, 0, 0, .4);
  }
 
-  @keyframes focusPulseTarget {
+ @keyframes focusPulseTarget {
    0% {
      box-shadow: 0 0 0 2px var(--rosso, #fff), 0 0 0 0 var(--rosso, #fff), 0 0 0 14px rgba(0, 0, 0, .55);
      transform: scale(1.02);
@@ -1254,7 +1254,7 @@
    bottom: 0;
    height: var(--footer-h);
    z-index: 99998;
-   background: linear-gradient(180deg, rgba(15, 16, 22, .92), rgba(10, 11, 16, .95));
+   background: linear-gradient(180deg, #0b0d14, #090b12);
    border-top: 1px solid #1f2230;
    display: flex;
    align-items: center;
@@ -2081,8 +2081,6 @@
    justify-content: space-between;
    gap: 12px;
    padding: 4px 8px;
-   background: linear-gradient(180deg, #111, #0b0b12);
-
  }
 
  /* Logo box */
@@ -2908,116 +2906,195 @@
    min-width: 0;
    box-sizing: border-box;
  }
+
  /* ===== Right-column accordions: fill available height ===== */
 
-/* Ogni sezione accordion nella colonna destra deve poter crescere */
-aside .bench-section {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;           /* important per far funzionare gli overflow interni */
-}
+ /* Ogni sezione accordion nella colonna destra deve poter crescere */
+ aside .bench-section {
+   display: flex;
+   flex-direction: column;
+   min-height: 0;
+   /* important per far funzionare gli overflow interni */
+ }
 
-/* Usa l'attributo data-open per controllare l'altezza via flex */
-aside .bench-section[data-open="1"] { flex: 1 1 auto; }  /* sezione aperta: prende spazio */
-aside .bench-section[data-open="0"] { flex: 0 0 auto; }  /* sezione chiusa: solo header */
+ /* Usa l'attributo data-open per controllare l'altezza via flex */
+ aside .bench-section[data-open="1"] {
+   flex: 1 1 auto;
+ }
 
-/* Il pannello dell'accordion deve crescere e gestire lo scroll interno */
-aside .bench-section .accordion-panel {
-  display: flex;
-  flex: 1 1 auto;
-  overflow: hidden;        /* niente scroll qui; lo diamo al contenuto interno */
-  border-top: 1px solid #2a2a2a;
-}
+ /* sezione aperta: prende spazio */
+ aside .bench-section[data-open="0"] {
+   flex: 0 0 auto;
+ }
 
-/* Stato chiuso: pannello compresso */
-aside .bench-section[data-open="0"] .accordion-panel {
-  flex: 0 0 0;
-  border-top-color: transparent;
-}
+ /* sezione chiusa: solo header */
 
-/* Contenitore interno scorrevole */
-aside .bench-section .accordion-inner {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
-  max-height: none;        /* rimuove i vincoli precedenti */
-}
+ /* Il pannello dell'accordion deve crescere e gestire lo scroll interno */
+ aside .bench-section .accordion-panel {
+   display: flex;
+   flex: 1 1 auto;
+   overflow: hidden;
+   /* niente scroll qui; lo diamo al contenuto interno */
+   border-top: 1px solid #2a2a2a;
+ }
 
-/* Rimuovi i limiti "da lista" quando le bench stanno dentro un accordion */
-aside .bench {
-  max-height: none !important;
-}
+ /* Stato chiuso: pannello compresso */
+ aside .bench-section[data-open="0"] .accordion-panel {
+   flex: 0 0 0;
+   border-top-color: transparent;
+ }
 
-/* Se avevi un max-height per le Mura, disattivalo in accordion */
-aside .accordion-inner {
-  max-height: none !important;
-}
+ /* Contenitore interno scorrevole */
+ aside .bench-section .accordion-inner {
+   flex: 1 1 auto;
+   min-height: 0;
+   overflow: auto;
+   max-height: none;
+   /* rimuove i vincoli precedenti */
+ }
 
-/* Aprendo una card del pannello, le griglie dentro possono scorrere senza tagli */
-aside .bench .unit-card { contain: layout paint; }
+ /* Rimuovi i limiti "da lista" quando le bench stanno dentro un accordion */
+ aside .bench {
+   max-height: none !important;
+ }
 
-/* — override layout quando l’utente usa i toggle — */
-body.collapse-left,
-body.collapse-right,
-body.collapse-both { transition: grid-template-columns .18s ease; }
+ /* Se avevi un max-height per le Mura, disattivalo in accordion */
+ aside .accordion-inner {
+   max-height: none !important;
+ }
 
-body.collapse-left  { grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-w) !important; }
-body.collapse-right { grid-template-columns: var(--sidebar-w) 1fr var(--sidebar-c) !important; }
-body.collapse-both  { grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-c) !important; }
+ /* Aprendo una card del pannello, le griglie dentro possono scorrere senza tagli */
+ aside .bench .unit-card {
+   contain: layout paint;
+ }
+
+ /* — override layout quando l’utente usa i toggle — */
+ body.collapse-left,
+ body.collapse-right,
+ body.collapse-both {
+   transition: grid-template-columns .18s ease;
+ }
+
+ body.collapse-left {
+   grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-w) !important;
+ }
+
+ body.collapse-right {
+   grid-template-columns: var(--sidebar-w) 1fr var(--sidebar-c) !important;
+ }
+
+ body.collapse-both {
+   grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-c) !important;
+ }
 
 
-/* ==== Overlay mano – auto width + tools ==== */
-.hand-overlay[hidden]{ display:none!important; }
-.hand-overlay{
-  --card-w: clamp(280px, 30ch, 340px);  /* larghezza carta base */
-  position:fixed; inset:0; z-index:100002; display:grid; place-items:center;
-}
-.hand-backdrop{ position:absolute; inset:0; background:rgba(8,10,14,.64); backdrop-filter:blur(6px) saturate(120%); }
+ /* ==== Overlay mano – auto width + tools ==== */
+ .hand-overlay[hidden] {
+   display: none !important;
+ }
 
-/* lo stage ora shrink-wrappa al contenuto (max 96vw) */
-.hand-stage{
-  position:relative;
-  display:inline-block;               /* <-- fa shrink-wrap */
-  width:fit-content(96vw);            /* <-- si adatta alle carte */
-  max-width:600px;                     /* cap a viewport */
-  max-height:88vh;
-  padding:18px;
-  border-radius:16px;
-  border:1px solid #1f2230;
-  background-color: transparent;
-  box-shadow:0 18px 44px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
-  animation:ttPop .12s ease-out;
-  overflow:hidden;
-}
+ .hand-overlay {
+   --card-w: clamp(280px, 30ch, 340px);
+   /* larghezza carta base */
+   position: fixed;
+   inset: 0;
+   z-index: 100002;
+   display: grid;
+   place-items: center;
+ }
 
-/* toolbar (close + rimescola) */
-.hand-close,.hand-shuffle{
-  position:absolute; top:10px; width:34px; height:34px; border-radius:10px;
-  border:1px solid #2a2a2a; background:#13151d; color:#ddd; cursor:pointer;
-}
-.hand-close{ right:10px; }
-.hand-shuffle{ right:52px; }           /* icona a sinistra della X */
-.hand-close:hover,.hand-shuffle:hover{ filter:brightness(1.08); }
+ .hand-backdrop {
+   position: absolute;
+   inset: 0;
+   background: rgba(8, 10, 14, .64);
+   backdrop-filter: blur(6px) saturate(120%);
+ }
 
-/* strip carte: grid in colonne => larghezza intrinseca = somma carte */
-.hand-strip{
-  display:grid; grid-auto-flow:column; grid-auto-columns:var(--card-w);
-  gap:16px; overflow-x:auto; padding:6px 10px 12px;
-  scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;
-}
-.hand-strip::before,.hand-strip::after{ content:""; width:12px; }
+ /* lo stage ora shrink-wrappa al contenuto (max 96vw) */
+ .hand-stage {
+   position: relative;
+   display: inline-block;
+   /* <-- fa shrink-wrap */
+   width: fit-content(96vw);
+   /* <-- si adatta alle carte */
+   max-width: 600px;
+   /* cap a viewport */
+   max-height: 88vh;
+   padding: 18px;
+   border-radius: 16px;
+   border: 1px solid #1f2230;
+   background-color: transparent;
+   box-shadow: 0 18px 44px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
+   animation: ttPop .12s ease-out;
+   overflow: hidden;
+ }
 
-/* carta */
-.hand-card{ scroll-snap-align:center; }
-.tt-card.card-sheet{
-  height:100%; display:flex; flex-direction:column; align-items:stretch; padding:14px;
-  border-radius:16px; border:3px solid gray;
-  background:linear-gradient(180deg,#121524,#0d101b);
-  box-shadow:0 8px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
-  text-align:center;
-  transition: transform .08s ease, filter .12s ease, box-shadow .2s ease, border-color .2s ease;
-  animation: cardPulse 2.8s ease-in-out infinite;
-}
+ /* toolbar (close + rimescola) */
+ .hand-close,
+ .hand-shuffle {
+   position: absolute;
+   top: 10px;
+   width: 34px;
+   height: 34px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #13151d;
+   color: #ddd;
+   cursor: pointer;
+ }
+
+ .hand-close {
+   right: 10px;
+ }
+
+ .hand-shuffle {
+   right: 52px;
+ }
+
+ /* icona a sinistra della X */
+ .hand-close:hover,
+ .hand-shuffle:hover {
+   filter: brightness(1.08);
+ }
+
+ /* strip carte: grid in colonne => larghezza intrinseca = somma carte */
+ .hand-strip {
+   display: grid;
+   grid-auto-flow: column;
+   grid-auto-columns: var(--card-w);
+   gap: 16px;
+   overflow-x: auto;
+   padding: 6px 10px 12px;
+   scroll-snap-type: x proximity;
+   -webkit-overflow-scrolling: touch;
+ }
+
+ .hand-strip::before,
+ .hand-strip::after {
+   content: "";
+   width: 12px;
+ }
+
+ /* carta */
+ .hand-card {
+   scroll-snap-align: center;
+ }
+
+ .tt-card.card-sheet {
+   height: 100%;
+   display: flex;
+   flex-direction: column;
+   align-items: stretch;
+   padding: 14px;
+   border-radius: 16px;
+   border: 3px solid gray;
+   background: linear-gradient(180deg, #121524, #0d101b);
+   box-shadow: 0 8px 24px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .04);
+   text-align: center;
+   transition: transform .08s ease, filter .12s ease, box-shadow .2s ease, border-color .2s ease;
+   animation: cardPulse 2.8s ease-in-out infinite;
+ }
+
  @keyframes cardPulse {
 
    0%,
@@ -3039,153 +3116,296 @@ body.collapse-both  { grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-
      border-color: #66ccff;
    }
  }
-.card-sheet .tt-title{ display:flex; justify-content:center; gap:10px; margin:0 0 6px; font:700 16px/1.1 system-ui; }
-.card-sheet .tt-avatar{ width:180px; height:180px; margin:6px auto 8px; border-radius:50%; overflow:hidden; border:3px solid gray; background:#0b0d12; box-shadow:0 0 12px rgba(0,0,0,.4); }
-.card-sheet .tt-ability{ margin-top:6px; padding-top:8px; border-top:1px solid #20253a; }
-.card-sheet .tt-ability .tt-label{ display:block; font-size:11px; opacity:.7; letter-spacing:.3px; margin-bottom:6px; }
-.card-sheet .tt-ability-text{ font-size:13px; line-height:1.35; white-space:pre-wrap; overflow-wrap:anywhere; max-height:7.5em; overflow:auto; }
-.card-actions{ margin-top:12px; display:flex; gap:8px; justify-content:center; }
-.card-btn{ padding:8px 12px; border-radius:10px; border:1px solid #2a2f43; background:#14192b; color:#e6e6e6; font-weight:800; cursor:pointer; }
-.card-btn.primary{ background:#193256; border-color:#254066; color:#cfe8ff; }
-.card-btn.danger{ background:linear-gradient(180deg,#b83131,#7a1f1f); border-color:#3f1111; color:#fff; }
-.card-btn:hover{ filter:brightness(1.08); }
-.card-btn:active{ transform:translateY(1px); }
 
-/* micro-interazione */
-@media (hover:hover){ .hand-card{ transition:transform .18s cubic-bezier(.2,.8,.2,1), filter .18s; } .hand-card:hover{ transform:translateY(-8px); filter:brightness(1.06); } }
+ .card-sheet .tt-title {
+   display: flex;
+   justify-content: center;
+   gap: 10px;
+   margin: 0 0 6px;
+   font: 700 16px/1.1 system-ui;
+ }
 
-/* vista singola (quando peschi): carte più larghe */
-.hand-stage--single{ 
-  max-width: 350px !important;
-}
+ .card-sheet .tt-avatar {
+   width: 180px;
+   height: 180px;
+   margin: 6px auto 8px;
+   border-radius: 50%;
+   overflow: hidden;
+   border: 3px solid gray;
+   background: #0b0d12;
+   box-shadow: 0 0 12px rgba(0, 0, 0, .4);
+ }
+
+ .card-sheet .tt-ability {
+   margin-top: 6px;
+   padding-top: 8px;
+   border-top: 1px solid #20253a;
+ }
+
+ .card-sheet .tt-ability .tt-label {
+   display: block;
+   font-size: 11px;
+   opacity: .7;
+   letter-spacing: .3px;
+   margin-bottom: 6px;
+ }
+
+ .card-sheet .tt-ability-text {
+   font-size: 13px;
+   line-height: 1.35;
+   white-space: pre-wrap;
+   overflow-wrap: anywhere;
+   max-height: 7.5em;
+   overflow: auto;
+ }
+
+ .card-actions {
+   margin-top: 12px;
+   display: flex;
+   gap: 8px;
+   justify-content: center;
+ }
+
+ .card-btn {
+   padding: 8px 12px;
+   border-radius: 10px;
+   border: 1px solid #2a2f43;
+   background: #14192b;
+   color: #e6e6e6;
+   font-weight: 800;
+   cursor: pointer;
+ }
+
+ .card-btn.primary {
+   background: #193256;
+   border-color: #254066;
+   color: #cfe8ff;
+ }
+
+ .card-btn.danger {
+   background: linear-gradient(180deg, #b83131, #7a1f1f);
+   border-color: #3f1111;
+   color: #fff;
+ }
+
+ .card-btn:hover {
+   filter: brightness(1.08);
+ }
+
+ .card-btn:active {
+   transform: translateY(1px);
+ }
+
+ /* micro-interazione */
+ @media (hover:hover) {
+   .hand-card {
+     transition: transform .18s cubic-bezier(.2, .8, .2, 1), filter .18s;
+   }
+
+   .hand-card:hover {
+     transform: translateY(-8px);
+     filter: brightness(1.06);
+   }
+ }
+
+ /* vista singola (quando peschi): carte più larghe */
+ .hand-stage--single {
+   max-width: 350px !important;
+ }
 
 
-/* === Attack bubble / picker === */
-.attack-bubble{
-  position: fixed; z-index: 100000;
-  background: linear-gradient(180deg, #10121a, #0d0f16);
-  border:1px solid #24263a; border-radius:12px; padding:8px 10px;
-  box-shadow:0 12px 32px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
-  animation: ttPop .12s ease-out;
-}
-.attack-bubble__btn{
-  border:1px solid #2a2a2a; background:#13151d; color:#e6e6e6;
-  padding:8px 12px; border-radius:10px; font-weight:800; cursor:pointer;
-}
-.attack-bubble__btn:hover{ background:#181b26; }
+ /* === Attack bubble / picker === */
+ .attack-bubble {
+   position: fixed;
+   z-index: 100000;
+   background: linear-gradient(180deg, #10121a, #0d0f16);
+   border: 1px solid #24263a;
+   border-radius: 12px;
+   padding: 8px 10px;
+   box-shadow: 0 12px 32px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .04);
+   animation: ttPop .12s ease-out;
+ }
 
-/* evidenzia i bersagli selezionabili */
-.hex-member.targetable .hex-circle{
-  box-shadow: 0 0 0 3px #22c55e, 0 0 16px rgba(34,197,94,.45);
-  border-color:#22c55e !important;
-}
+ .attack-bubble__btn {
+   border: 1px solid #2a2a2a;
+   background: #13151d;
+   color: #e6e6e6;
+   padding: 8px 12px;
+   border-radius: 10px;
+   font-weight: 800;
+   cursor: pointer;
+ }
 
-/* mini-hint in basso */
-.target-hint{
-  position: fixed; left:50%; transform:translateX(-50%);
-  bottom: calc(var(--footer-h) + 10px);
-  background:#0f1118; border:1px solid #23263a; color:#dfe6ff;
-  padding:6px 10px; border-radius:999px; font-size:12px; z-index: 100000;
-  box-shadow:0 8px 24px rgba(0,0,0,.45);
-}
-/* stile mini per scelte bersaglio nel tooltip */
-#tooltip .atk-choice{
-  all: unset; cursor: pointer;
-  display: grid; place-items: center;
-  padding: 6px 8px; border-radius: 10px;
-  border: 1px solid #2a2a2a; background: #11131a;
-}
-#tooltip .atk-choice:hover{ filter: brightness(1.06); }
+ .attack-bubble__btn:hover {
+   background: #181b26;
+ }
 
-/* === Target pick list (tooltip) === */
-.picklist {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px;
-  max-height: 48vh;
-  overflow: auto;
-  padding-right: 2px; /* evita che la scrollbar copra */
-  scrollbar-gutter: stable;
-}
+ /* evidenzia i bersagli selezionabili */
+ .hex-member.targetable .hex-circle {
+   box-shadow: 0 0 0 3px #22c55e, 0 0 16px rgba(34, 197, 94, .45);
+   border-color: #22c55e !important;
+ }
 
-.tcard {
-  display: grid;
-  grid-template-columns: 48px 1fr;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--ring, #2a2a2a);
-  background: #13151d;
-  color: #e6e6e6;
-  cursor: pointer;
-  text-align: left;
-  transition: box-shadow .16s ease, filter .16s ease, border-color .16s ease;
-}
+ /* mini-hint in basso */
+ .target-hint {
+   position: fixed;
+   left: 50%;
+   transform: translateX(-50%);
+   bottom: calc(var(--footer-h) + 10px);
+   background: #0f1118;
+   border: 1px solid #23263a;
+   color: #dfe6ff;
+   padding: 6px 10px;
+   border-radius: 999px;
+   font-size: 12px;
+   z-index: 100000;
+   box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+ }
 
-.tcard:hover {
-  box-shadow: 0 6px 16px rgba(0,0,0,.35);
-  filter: brightness(1.03);
-}
+ /* stile mini per scelte bersaglio nel tooltip */
+ #tooltip .atk-choice {
+   all: unset;
+   cursor: pointer;
+   display: grid;
+   place-items: center;
+   padding: 6px 8px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #11131a;
+ }
 
-.tcard:focus-visible {
-  outline: 2px solid #66ccff;
-  outline-offset: 2px;
-}
+ #tooltip .atk-choice:hover {
+   filter: brightness(1.06);
+ }
 
-.tcard.is-active {
-  border-color: var(--oro);
-  box-shadow: 0 0 0 2px var(--oro), 0 0 12px rgba(207,148,57,.35);
-}
+ /* === Target pick list (tooltip) === */
+ .picklist {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+   gap: 10px;
+   max-height: 48vh;
+   overflow: auto;
+   padding-right: 2px;
+   /* evita che la scrollbar copra */
+   scrollbar-gutter: stable;
+ }
 
-/* variante mini (stesso markup che hai usato) */
-.tcard--mini .tcard__avatar { width: 44px; height: 44px; }
-.tcard__avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid var(--ring, #444);
-  grid-row: 1 / span 3;
-}
-.tcard__avatar img {
-  width: 100%; height: 100%; object-fit: cover;
-}
+ .tcard {
+   display: grid;
+   grid-template-columns: 48px 1fr;
+   align-items: center;
+   gap: 10px;
+   padding: 8px 10px;
+   border-radius: 10px;
+   border: 1px solid var(--ring, #2a2a2a);
+   background: #13151d;
+   color: #e6e6e6;
+   cursor: pointer;
+   text-align: left;
+   transition: box-shadow .16s ease, filter .16s ease, border-color .16s ease;
+ }
 
-.tcard__body {
-  display: grid;
-  grid-template-rows: auto auto auto auto;
-  gap: 4px;
-  min-width: 0;
-}
+ .tcard:hover {
+   box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+   filter: brightness(1.03);
+ }
 
-.tcard__name {
-  font-weight: 700;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+ .tcard:focus-visible {
+   outline: 2px solid #66ccff;
+   outline-offset: 2px;
+ }
 
-.tcard__sub {
-  font-size: 12px;
-  opacity: .85;
-}
+ .tcard.is-active {
+   border-color: var(--oro);
+   box-shadow: 0 0 0 2px var(--oro), 0 0 12px rgba(207, 148, 57, .35);
+ }
 
-.tcard .hpbar { margin-top: 2px; height: 6px; }
-.tcard .hpbar-fill {
-  height: 100%;
-  background: linear-gradient(180deg, #22c55e, #15803d);
-  transition: width .2s ease;
-}
+ /* variante mini (stesso markup che hai usato) */
+ .tcard--mini .tcard__avatar {
+   width: 44px;
+   height: 44px;
+ }
 
-.tcard__meta {
-  font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono";
-  opacity: .9;
-}
+ .tcard__avatar {
+   width: 48px;
+   height: 48px;
+   border-radius: 50%;
+   overflow: hidden;
+   border: 2px solid var(--ring, #444);
+   grid-row: 1 / span 3;
+ }
 
-/* tooltip più largo quando c'è una picklist (auto-adatta la larghezza) */
-#tooltip .tt-card:has(.picklist) {
-  width: auto;
-  max-width: min(92vw, 680px);
-}
+ .tcard__avatar img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+ }
+
+ .tcard__body {
+   display: grid;
+   grid-template-rows: auto auto auto auto;
+   gap: 4px;
+   min-width: 0;
+ }
+
+ .tcard__name {
+   font-weight: 700;
+   font-size: 13px;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+ }
+
+ .tcard__sub {
+   font-size: 12px;
+   opacity: .85;
+ }
+
+ .tcard .hpbar {
+   margin-top: 2px;
+   height: 6px;
+ }
+
+ .tcard .hpbar-fill {
+   height: 100%;
+   background: linear-gradient(180deg, #22c55e, #15803d);
+   transition: width .2s ease;
+ }
+
+ .tcard__meta {
+   font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono";
+   opacity: .9;
+ }
+
+ /* tooltip più largo quando c'è una picklist (auto-adatta la larghezza) */
+ #tooltip .tt-card:has(.picklist) {
+   width: auto;
+   max-width: min(92vw, 680px);
+ }
+
+ .start-hdr-btn {
+   background: linear-gradient(180deg, #16a34a, #0f7a37);
+   /* verde */
+   color: #fff;
+   border: 1px solid #0a5a27;
+   border-radius: 12px;
+   padding: 8px 12px;
+   font-weight: 900;
+   letter-spacing: .3px;
+   cursor: pointer;
+   box-shadow: 0 10px 18px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .08);
+ }
+
+ .start-hdr-btn:hover {
+   filter: brightness(1.06);
+ }
+
+ .start-hdr-btn[hidden] {
+   display: none !important;
+ }
+
+ /* quando è in modalità "Termina setup" (arancio) */
+ .start-hdr-btn[data-mode="end"] {
+   background: linear-gradient(180deg, #f59e0b, #b45309);
+   border-color: #7c3a06;
+ }

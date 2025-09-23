@@ -1,4 +1,175 @@
 
+const TurnEngine = {
+    phase: 'idle',   // 'idle' | 'setup' | 'round_start' | ...
+    round: 0,
+    teamCreated: false,
+
+    init() {
+        document.body.dataset.phase = this.phase; // utile anche per CSS mirato
+        applyPhaseUI(this.phase);
+        renderStartBtn();
+
+        if (this.phase !== 'idle') {
+            stopTimer();
+            startTimer()
+        }
+    },
+
+    async setPhaseMusic() {
+        if (this.phase === 'setup') {
+            await playBg('./assets/sounds/giganti_puri.mp3');
+        }
+        if (this.phase === 'move_phase') {
+            await playBg('./assets/sounds/commander_march_sound.mp3');
+        }
+        if (this.phase === 'attack_phase') {
+            await playBg('./assets/sounds/start_mission.mp3');
+        }
+        if (this.phase === 'event_card') {
+            const ids = giantsRoster.map(giant => giant.id);
+            if (spawnEvents.every(event => event === "Puro")) {
+                await playBg('./assets/sounds/start_app.mp3');
+            }
+            if (spawnEvents.some(event => event === "Anomalo")) {
+                await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/ape_titan_sound.mp3');
+            }
+            if (spawnEvents.some(event => event === "Mutaforma")) {
+                await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/start_app.mp3');
+            }
+        }
+    },
+
+    setPhase(p) {
+        this.phase = p;
+        document.body.dataset.phase = p; // utile anche per CSS mirato
+        applyPhaseUI(p);
+        renderStartBtn();
+        scheduleSave();
+    },
+
+    async startPhase(phase) {
+        // entra in setup (senza limiti di movimento)
+
+        if (phase === 'idle') {
+            await playBg('./assets/sounds/giganti_puri.mp3');
+            startTimer();
+            this.setPhase('setup');
+            if (!this.teamCreated) {
+                try {
+                    pickRandomTeam({ commanders: 1, recruits: 3 });
+                    openAccordionForRole('commander');
+                } catch { }
+                this.teamCreated = true;
+                log('Setup: posiziona e sistema la squadra come vuoi con 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info');
+            } else {
+                log('Setup: Hai 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info');
+            }
+        }
+
+        if (phase === 'event_mission') {
+            const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
+            const spawnEvents = m.event_spawn;
+            const ids = [];
+            if (spawnEvents && spawnEvents.length > 0) {
+
+                for (const event of spawnEvents) {
+                    const id = await spawnGiant(event, true);
+                    ids.push(id);
+                }
+
+                await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
+
+                if (spawnEvents.every(event => event === "Puro")) {
+                    await playBg('./assets/sounds/start_app.mp3');
+                }
+
+                if (spawnEvents.some(event => event === "Anomalo")) {
+                    await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/ape_titan_sound.mp3');
+                }
+
+                if (spawnEvents.some(event => event === "Mutaforma")) {
+                    await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/start_app.mp3');
+                }
+
+                openAccordionForRole("enemy");
+            }
+
+            this.setPhase('event_card');
+        }
+
+        if (phase === 'round_start') {
+            startTimer();
+            this.round++;
+            log(`Round ${this.round} iniziato.`, 'success');
+            this.setPhase('move_phase');
+            log(`Fase Movimento ${TurnEngine.round}° ROUND: Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`, 'info');
+            await playBg('./assets/sounds/commander_march_sound.mp3');
+        }
+    },
+
+    async endPhase(phase) {
+        if (phase === 'setup') {
+            const flagAlleatoInGriglia = GAME_STATE.alliesRoster.some( ally => GAME_STATE.spawns.some(s => (s.unitIds ?? []).includes(ally.id)));
+            if (flagAlleatoInGriglia) {
+                this.setPhase('event_mission');
+                log(`Setup Missione: Clicca su Evento per generare lo spawn dei giganti associati alla missione`, 'info');
+            } else {
+                log(`Setup Missione: Trascina almeno un'unità della tua squadra in campo`, 'info');
+            }
+        }
+
+        if (phase === 'event_card') {
+            const card = drawCard('event');
+
+            if (!card) {
+                log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning');
+                closeAllFabs();
+                return;
+            }
+            log(`Pescata carta evento: "${card.name}".`);
+            await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
+
+            showDrawnCard('event', card);
+
+            this.setPhase('round_start');
+        }
+
+        if (phase === 'move_phase') {
+            log('I giganti iniziano a muoversi...', 'warning');
+            giantsPhaseMove();
+            this.setPhase('attack_phase');
+            log(`Fase Attacco ${TurnEngine.round}° ROUND: Scegli i bersagli che ingaggeranno battaglia`, 'info');
+            await playBg('./assets/sounds/start_mission.mp3');
+        }
+
+        if (phase === 'attack_phase') {
+            this.setPhase('round_start');
+            log(`Fase Finale ${TurnEngine.round}° ROUND`, 'info');
+
+            const flagTempoNonScaduto = GAME_STATE.missionState.remainingSec;
+            if (this.round % 2 === 0 || flagTempoNonScaduto === 0) {
+                const card = drawCard('event');
+
+                if (!card) {
+                    log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning');
+                    closeAllFabs();
+                    return;
+                }
+                log(`Pescata carta evento: "${card.name}".`);
+                await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
+
+                showDrawnCard('event', card);
+            }
+
+        }
+
+        if (phase === 'end_round') {
+            this.setPhase('round_start');
+            await playBg('./assets/sounds/start_mission.mp3');
+        }
+    }
+};
+
 /* ================== MINI MIXER con DUCKING ================== */
 const MIXER = {
     cfg: {
@@ -153,7 +324,12 @@ const GAME_STATE = {
         timerTotalSec: 1200,
         remainingSec: 1200,
         ticking: false,
-        intervalId: null
+        intervalId: null,
+        kills: {
+            Puro: 0,
+            Anomalo: 0,
+            Mutaforma: 0
+        }
     },
     spawns: [],
     hand: [],
@@ -167,7 +343,8 @@ const GAME_STATE = {
     giantsPool: [],
     giantsRoster: [],
     walls: [],
-    logs: []
+    logs: [],
+    turnEngine: TurnEngine
 }
 
 const COLOR_VAR = {
@@ -255,6 +432,8 @@ function snapshot() {
         xpMoraleState: structuredClone(GAME_STATE.xpMoraleState),
         // log
         logs: structuredClone(GAME_STATE.logs),
+        //turnengine
+        turnEngine: GAME_STATE.turnEngine,
         missionState: (() => {
             const m = structuredClone(GAME_STATE.missionState);
             // leggero “sanitize”: niente intervalId/oggetti runtime
@@ -302,6 +481,7 @@ function restore(save) {
     // 3) stati
     Object.assign(GAME_STATE.xpMoraleState, save.xpMoraleState || {});
     Object.assign(GAME_STATE.missionState, save.missionState || {});
+    Object.assign(GAME_STATE.turnEngine, save.turnEngine || TurnEngine);
     GAME_STATE.missionState.intervalId = null; // sempre nullo a cold start
 
     // 4) ricostruisci unitById dai cataloghi + muri base
@@ -342,12 +522,12 @@ function restore(save) {
     } catch { }
     rebuildUnitIndex(); // mette alliesRoster + giantsRoster + walls (base)
     // 7) UI refresh
+    initSidebars();
     refreshXPUI();
     refreshMoraleUI();
     renderBonusMalus();
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-    restoreLayout();
     renderHeader();
     renderLogs();
     updateFabDeckCounters();
@@ -547,11 +727,17 @@ function getMusicUrlById(unitId) {
         c1: './assets/sounds/comandanti/hange_presentazione.mp3',
         c2: './assets/sounds/comandanti/mike_presentazione.mp3',
         c4: './assets/sounds/comandanti/levi_presentazione.mp3',
+        u1: './assets/sounds/female_titan.mp3',
+        u2: './assets/sounds/ape_mutaform.mp3',
+        u3: './assets/sounds/ape_mutaform.mp3',
+        u6: './assets/sounds/mutaform_sound.mp3',
+        u7: './assets/sounds/mutaform_sound.mp3',
+        u11: './assets/sounds/gigante_anomalo_rod.mp3'
     }
     return map[unitId];
 }
 
-async function spawnGiant(type = null) {
+async function spawnGiant(type = null, flagNoSound = false) {
 
     const roll20 = d(20);
     const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
@@ -564,27 +750,16 @@ async function spawnGiant(type = null) {
         return false;
     }
 
-    await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
-
     const unit = putGiantIntoRoster(pick);
     const cell = spawnGiantToFieldRandom(unit.id);
 
     if (cell) {
-        if (tipo === "Mutaforma") {
-            if (unit.id === 'u2') await playBg('./assets/sounds/ape_titan_sound.mp3');
-            if (unit.id === 'u1') await playBg('./assets/sounds/female_titan.mp3');
-            if (unit.id === 'u6') await playBg('./assets/sounds/mutaform_sound.mp3');
-            if (unit.id === 'u7') await playBg('./assets/sounds/mutaform_sound.mp3');
+        const url = getMusicUrlById(unit.id);
+        console.log('unit', unit, url);
+        if (!flagNoSound) {
+            await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
+            await playBg(url ? url : (tipo === 'Anomalo' ? './assets/sounds/ape_titan_sound.mp3' : './assets/sounds/start_app.mp3'));
         }
-        if (tipo === "Anomalo") {
-            if (unit.id === 'u11')
-                await playBg('./assets/sounds/gigante_anomalo_rod.mp3');
-            else
-                await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3');
-        }
-        /*if (tipo === "Puro") {
-            await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3');
-        }*/
 
         log(`Gigante ${tipo} appare in ${cell.row}-${cell.col}`, 'warning');
 
@@ -593,7 +768,7 @@ async function spawnGiant(type = null) {
     } else {
         log('Campo pieno nelle zone consentite. Il gigante è in panchina.', 'warning');
     }
-    return true;
+    return unit.id;
 }
 function renderBenches() {
     renderBenchSection(alliesEl, GAME_STATE.alliesRoster, ["recruit", "commander"]);
@@ -715,14 +890,17 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
 
         /* minus */
         const hpMinus = document.createElement("button");
-        hpMinus.className = "btn-mini";
+
+
+        hpMinus.classList.add('btn-mini', 'hp-btn');
         hpMinus.type = "button";
         hpMinus.title = "-1 HP (Shift -5)";
         hpMinus.textContent = "−";
 
         /* plus */
         const hpPlus = document.createElement("button");
-        hpPlus.className = "btn-mini";
+        hpPlus.classList.add('btn-mini', 'hp-btn');
+
         hpPlus.type = "button";
         hpPlus.title = "+1 HP (Shift +5)";
         hpPlus.textContent = "+";
@@ -1344,7 +1522,7 @@ missionCard.addEventListener('click', async () => {
 
     if (!ok) return;
 
-    completeMission();       // tua funzione esistente
+    await completeMission();       // tua funzione esistente
 });
 
 
@@ -1437,14 +1615,38 @@ document.querySelectorAll('#fab-event .fab-option').forEach(btn => {
 });
 
 
-function completeMission() {
+async function completeMission() {
     stopTimer();
-    log(`Missione #${GAME_STATE.missionState.curIndex + 1} completata!`, 'success');
+
     const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
-    const reward = m?.reward ?? { morale: 0, xp: 0 };
-    addMorale(reward.morale);
-    addXP(reward?.xp)
-    setMissionByIndex(GAME_STATE.missionState.curIndex + 1);
+    const missioneFallita = m.objectives.some(missione => GAME_STATE.missionState.kills[missione.type] !== missione.num);
+    if (missioneFallita) {
+        log(`Missione #${GAME_STATE.missionState.curIndex + 1} Fallita!`, 'error');
+    } else {
+        log(`Missione #${GAME_STATE.missionState.curIndex + 1} completata!`, 'success');
+        const reward = m?.reward ?? { morale: 0, xp: 0 };
+        addMorale(reward.morale);
+        addXP(reward?.xp)
+        setMissionByIndex(GAME_STATE.missionState.curIndex + 1);
+    }
+
+    GAME_STATE.turnEngine.setPhase('idle');
+    GAME_STATE.missionState.kills = {
+        Puro: 0,
+        Anomalo: 0,
+        Mutaforma: 0
+    };
+    await clearGrid();
+    await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3');
+}
+
+async function clearGrid() {
+    deleteUnits(GAME_STATE.giantsRoster.map(giant => giant.id));
+    deleteUnits(GAME_STATE.alliesRoster.map(ally => ally.id));
+    GIANT_ENGAGEMENT.clear();
+    GAME_STATE.turnEngine.teamCreated = false;
+    renderMissionUI();
+    scheduleSave();
 }
 
 /* =======================
@@ -1840,7 +2042,7 @@ window.setUnitHp = async function (unitId, newHp) {
 };
 
 /* Elimina unità (da panchina e campo) */
-async function deleteUnit(unitId) {
+async function deleteUnit(unitId, flagPopup = true) {
 
     const u = unitById.get(unitId);
     if (!u) return false;
@@ -1849,14 +2051,18 @@ async function deleteUnit(unitId) {
     }
 
     const name = u.name || 'Unità';
-    const ok = await confirmDialog({
-        title: 'Elimina unità',
-        message: `Eliminare definitivamente “${name}”?`,
-        confirmText: 'Elimina',
-        cancelText: 'Annulla',
-        danger: true
-    });
-    if (!ok) return false;
+
+    if (flagPopup) {
+        const ok = await confirmDialog({
+            title: 'Elimina unità',
+            message: `Eliminare definitivamente “${name}”?`,
+            confirmText: 'Elimina',
+            cancelText: 'Annulla',
+            danger: true
+        });
+        if (!ok) return false;
+    }
+
 
     // 1) Togli dal campo
     removeUnitEverywhere(unitId);
@@ -1898,6 +2104,66 @@ async function deleteUnit(unitId) {
     scheduleSave();
     return true;
 }
+
+/* Elimina più unità in batch, senza popup di conferma.
+   Ritorna il numero di unità effettivamente rimosse. */
+function deleteUnits(ids) {
+    if (!Array.isArray(ids) || ids.length === 0) return 0;
+
+    const uniq = [...new Set(ids)];
+    let removedCount = 0;
+    const removedNames = [];
+
+    for (const unitId of uniq) {
+        const u = unitById.get(unitId);
+        if (!u) continue;             // non esiste
+        if (u.role === 'wall') continue; // non rimuovere le mura
+
+        // 1) Togli dal campo
+        removeUnitEverywhere(unitId);
+
+        // 2) Cataloghi/pool
+        if (u.role === 'recruit' || u.role === 'commander') {
+            const i = GAME_STATE.alliesRoster.findIndex(x => x.id === unitId);
+            if (i >= 0) {
+                const removed = GAME_STATE.alliesRoster.splice(i, 1)[0];
+                const back = { ...removed, template: true }; // torna template
+                GAME_STATE.alliesPool.push(back);
+            }
+            // salva HP sul template base se era un clone
+            if (isClone(u) && u.baseId) {
+                baseHpOverride.set(u.baseId, u.currHp ?? u.hp);
+            }
+        } else if (u.role === 'enemy') {
+            const i = GAME_STATE.giantsRoster.findIndex(x => x.id === unitId);
+            if (i >= 0) {
+                const removed = GAME_STATE.giantsRoster.splice(i, 1)[0];
+                const back = { ...removed, template: true, currHp: removed.hp };
+                GAME_STATE.giantsPool.push(back);
+            }
+        }
+
+        // 3) Map globale e selezione
+        unitById.delete(unitId);
+        if (selectedUnitId === unitId) selectedUnitId = null;
+
+        removedNames.push(u.name || 'Unità');
+        removedCount++;
+    }
+
+    // 4) UI/Log/Save una sola volta
+    if (removedCount > 0) {
+        rebuildUnitIndex();
+        renderBenches();
+        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+        log(removedCount === 1 ? `Rimossa unità: ${removedNames[0]}.`
+            : `Rimosse ${removedCount} unità.`, 'info');
+        scheduleSave();
+    }
+
+    return removedCount;
+}
+
 
 ensureModal().backdrop.addEventListener('click', () => {
     // noop: gestito in openDialog (per semplicità potresti non abilitarlo
@@ -1942,11 +2208,13 @@ async function handleGiantDeath(unit) {
     const i = GAME_STATE.giantsRoster.findIndex(g => g.id === unit.id);
     if (i >= 0) GAME_STATE.giantsRoster.splice(i, 1);
 
+    GAME_STATE.missionState.kills[unit.type] = GAME_STATE.missionState.kills[unit.type] + 1;
     // 3) NON rimettere nel pool: il gigante è “consumato”
     // (quindi niente push in giantsPool)
     addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[unit.type]);
     addXP(DB.SETTINGS.xpMoralDefault.giantsDeathXP[unit.type]);
     // 4) UI + log
+    renderMissionUI();
     rebuildUnitIndex();
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
@@ -2012,14 +2280,11 @@ function toggleSide(side) {
 }
 
 // init: default chiusi (come richiesto), nessuna persistenza
-(function initSidebars() {
-    leftEl.classList.add('collapsed');
-    rightEl.classList.add('collapsed');
+function initSidebars() {
     applyClasses();
-
     document.getElementById('toggle-left')?.addEventListener('click', () => toggleSide('left'));
     document.getElementById('toggle-right')?.addEventListener('click', () => toggleSide('right'));
-})();
+}
 
 
 // Click sull’area collassata riapre (UX comodo)
@@ -2029,13 +2294,6 @@ leftEl.addEventListener('click', (e) => {
 rightEl.addEventListener('click', (e) => {
     if (rightEl.classList.contains('collapsed')) toggleSide('right');
 });
-
-// Ripristina preferenza utente (se esiste)
-function restoreLayout() {
-    leftEl.classList.add('collapsed');
-    rightEl.classList.add('collapsed');
-    applyClasses();
-};
 
 function createSnack({ message, type = 'info', duration = 3000, actionText = null, onAction = null }) {
     const el = document.createElement('div');
@@ -2808,7 +3066,7 @@ function renderMissionUI() {
     const title = m?.title ?? 'Missione';
     const objectives = Array.isArray(m?.objectives) ? m.objectives : [];
     const reward = m?.reward ?? { morale: 0, xp: 0 };
-
+    const event = m?.event;
     if (elMissionNumTop) elMissionNumTop.textContent = String(num);
     if (elMissionNumCard) elMissionNumCard.textContent = String(num);
 
@@ -2818,9 +3076,10 @@ function renderMissionUI() {
         card.innerHTML = `
       <p style="margin:0 0 8px; opacity:.9;"><strong>#<span>${num}</span> — ${title}</strong></p>
       <ul style="margin:0 0 10px 18px; padding:0; opacity:.9">
-        ${objectives.map(li => `<li>${li}</li>`).join('')}
+        ${objectives.map(li => `<li> Uccidi ${li.num} Giganti di tipo ${li.type} ➔ ${GAME_STATE.missionState.kills[li.type]} / ${li.num} 💀</li>`).join('')}
       </ul>
       <p style="margin:0; font-size:12px; opacity:.8">Ricompensa: ${reward.morale ? `+${reward.morale} Morale` : ''}${(reward.morale && reward.xp) ? ', ' : ''}${reward.xp ? `+${reward.xp} XP` : ''}</p>
+      <p style="margin:0; font-size:12px; opacity:.8">Evento: ${event}</p>
     `;
     }
 }
@@ -2879,11 +3138,43 @@ elPlay?.addEventListener('click', () => {
 elReset?.addEventListener('click', resetTimer);
 
 // Cambia missione
-elDec?.addEventListener('click', () => {
+elDec?.addEventListener('click', async () => {
+
+    const ok = await confirmDialog({
+        title: 'Missione Precedente',
+        message: `Confermando perderai i dati della missione corrente, vuoi procedere lo stesso”?`,
+        confirmText: 'Conferma',
+        cancelText: 'Annulla',
+        danger: true
+    });
+    if (!ok) return false;
+
     setMissionByIndex(GAME_STATE.missionState.curIndex - 1);
+    GAME_STATE.turnEngine.setPhase('idle');
+     GAME_STATE.missionState.kills = {
+        Puro: 0,
+        Anomalo: 0,
+        Mutaforma: 0
+    };
+    await clearGrid();
 });
-elInc?.addEventListener('click', () => {
+elInc?.addEventListener('click', async () => {
+    const ok = await confirmDialog({
+        title: 'Missione Successiva',
+        message: `Confermando perderai i dati della missione corrente, vuoi procedere lo stesso”?`,
+        confirmText: 'Conferma',
+        cancelText: 'Annulla',
+        danger: true
+    });
+    if (!ok) return false;
     setMissionByIndex(GAME_STATE.missionState.curIndex + 1);
+    GAME_STATE.turnEngine.setPhase('idle');
+     GAME_STATE.missionState.kills = {
+        Puro: 0,
+        Anomalo: 0,
+        Mutaforma: 0
+    };
+    await clearGrid();
 });
 
 
@@ -2948,7 +3239,7 @@ async function showWelcomePopup(isFirstRun, imgUrl) {
     </div>
   `;
 
-    const ok = await openDialog({
+    await openDialog({
         title: isFirstRun ? 'Benvenuto/a! Soldato!' : 'Bentornato/a! Soldato!',
         message: html,
         confirmText: isFirstRun ? 'Inizia' : 'Riprendi',
@@ -2957,9 +3248,7 @@ async function showWelcomePopup(isFirstRun, imgUrl) {
         cancellable: true
     });
 
-
-    await playBg('./assets/sounds/giganti_puri.mp3');
-
+    GAME_STATE.turnEngine.phase === 'idle' ? await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3') : await GAME_STATE.turnEngine.setPhaseMusic();
 }
 
 // utility per caricare un json
@@ -3449,7 +3738,7 @@ function startAttackPick(attacker, cell, anchorEl /* es: member/el della pedina 
     let cand = targetsAround(attacker, cell);
 
     const engaged = getEngagedHuman(attacker.id);
-    if(engaged) {
+    if (engaged) {
         cand = cand.filter(target => target.unit.id === engaged);
     }
 
@@ -3774,7 +4063,7 @@ function resolveAttack(attackerId, targetId) {
         }
     } else {
         const engagedUnit = unitById.get(engaged);
-        if(engagedUnit) lines.push(`${giant.name} è distratto, perchè in combattimento con ${engagedUnit.name}`)
+        if (engagedUnit) lines.push(`${giant.name} è distratto, perchè in combattimento con ${engagedUnit.name}`)
     }
 
     // Log compatto
@@ -3873,6 +4162,124 @@ function handleUnitLongPress({ unit, cell, anchorEl }) {
     startAttackPick(unit, cell, anchorEl)
 }
 
+// === FASI SEMPLIFICATE ======================================================
+
+
+//window.setPhase = (p) => TurnEngine.setPhase(p);
+// === UI MANAGEMENT (mostra/nascondi in base alla fase) ======================
+const PHASE_UI = {
+    // cosa si vede in ciascuna fase (modifica liberamente i selettori!)
+    idle: {
+        show: [],
+        hide: []
+    },
+    setup: {
+        show: [],
+        hide: ['.fab.spawn', '.fab.arruola', '.fab.event']
+    },
+    event_mission: {
+        show: [],
+        hide: ['.fab.spawn', '.fab.arruola', '.fab.event']
+    },
+    event_card: {
+        show: [],
+        hide: ['.fab.spawn', '.fab.arruola', '.fab.event']
+    },
+    round_start: {
+        show: ['.fab.spawn', '.fab.event'],
+        hide: ['.fab.arruola']
+    },
+    move_phase: {
+        show: [],
+        hide: ['.fab.spawn', '.fab.arruola', '.fab.event']
+    },
+    attack_phase: {
+        show: [],
+        hide: ['.fab.spawn', '.fab.arruola', '.fab.event']
+    },
+    end_round: {
+        show: ['.fab.spawn', '.fab.event'],
+        hide: ['.fab.arruola']
+    }
+};
+
+// Applica visibilità dai mapping sopra
+function applyPhaseUI(phase) {
+    const allSelectors = new Set();
+    for (const p of Object.values(PHASE_UI)) {
+        (p.show || []).forEach(s => allSelectors.add(s));
+        (p.hide || []).forEach(s => allSelectors.add(s));
+    }
+
+    // reset: tutto visibile
+    allSelectors.forEach(sel =>
+        document.querySelectorAll(sel).forEach(el => el.classList.remove('is-hidden'))
+    );
+
+    // applica per la fase corrente
+    const conf = PHASE_UI[phase] || {};
+    (conf.hide || []).forEach(sel =>
+        document.querySelectorAll(sel).forEach(el => el.classList.add('is-hidden'))
+    );
+    (conf.show || []).forEach(sel =>
+        document.querySelectorAll(sel).forEach(el => el.classList.remove('is-hidden'))
+    );
+}
+
+
+const btnStart = document.getElementById('btn-start');
+
+function renderStartBtn() {
+    if (!btnStart) return;
+    const p = TurnEngine.phase;
+    if (p === 'idle') {
+        btnStart.hidden = false;
+        btnStart.dataset.mode = 'start';
+        btnStart.textContent = 'INIZIA MISSIONE';
+    } else if (p === 'setup') {
+        btnStart.hidden = false;
+        btnStart.dataset.mode = 'end';
+        btnStart.textContent = 'TERMINA SETUP';
+    } else if (p === 'event_mission') {
+        btnStart.hidden = false;
+        btnStart.dataset.mode = 'start';
+        btnStart.textContent = 'EVENTO MISSIONE';
+    } else if (p === 'event_card') {
+        btnStart.hidden = false;
+        btnStart.dataset.mode = 'end';
+        btnStart.textContent = 'CARTA EVENTO';
+    } else if (p === 'round_start') {
+        btnStart.hidden = false;
+        btnStart.dataset.mode = 'start';
+        btnStart.textContent = `INIZIA ${TurnEngine.round + 1}° ROUND`;
+    } else if (p === 'move_phase') {
+        btnStart.hidden = false;
+        btnStart.dataset.mode = 'end';
+        btnStart.textContent = 'TERMINA FASE MOVIMENTO';
+    } else if (p === 'attack_phase') {
+        btnStart.hidden = false;
+        btnStart.dataset.mode = 'end';
+        btnStart.textContent = 'TERMINA FASE ATTACCO';
+    } else if (p === 'end_round') {
+        btnStart.hidden = false;
+        btnStart.dataset.mode = 'end';
+        btnStart.textContent = 'TERMINA ROUND';
+    }
+    else {
+        btnStart.hidden = true; // nelle altre fasi non serve
+    }
+}
+
+// click handler
+btnStart?.addEventListener('click', async () => {
+    const mode = btnStart.dataset.mode;
+    if (mode === 'start') {
+        await GAME_STATE.turnEngine.startPhase(TurnEngine.phase);
+    } else if (mode === 'end') {
+        await GAME_STATE.turnEngine.endPhase(TurnEngine.phase);
+    }
+});
+
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -3880,6 +4287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const booted = await loadDataAndStateFromLocal();
 
     if (!booted) {
+        initSidebars();
         seedWallRows();        // crea segmenti mura 10/11/12
         renderBenches();
         renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
@@ -3896,6 +4304,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateFabDeckCounters();
         rebuildUnitIndex();
     }
+
+    GAME_STATE.turnEngine.init()
 
     setMixerConfig({
         master: 0.8,
