@@ -755,7 +755,6 @@ async function spawnGiant(type = null, flagNoSound = false) {
 
     if (cell) {
         const url = getMusicUrlById(unit.id);
-        console.log('unit', unit, url);
         if (!flagNoSound) {
             await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
             await playBg(url ? url : (tipo === 'Anomalo' ? './assets/sounds/ape_titan_sound.mp3' : './assets/sounds/start_app.mp3'));

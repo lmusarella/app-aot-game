@@ -72,6 +72,9 @@ const ASSETS = [
   './assets/sounds/carte/carta_evento.mp3',
 
   // === sounds root ===
+    "./assets/sounds/start_app.mp3",
+  "./assets/sounds/start_mission.mp3",
+  "./assets/sounds/ape_mutaform.mp3",
   "./assets/sounds/ape_titan_sound.mp3",
   "./assets/sounds/commander_march_sound.mp3",
   "./assets/sounds/female_titan.mp3",
