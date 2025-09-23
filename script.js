@@ -171,132 +171,226 @@ const TurnEngine = {
 };
 
 /* ================== MINI MIXER con DUCKING ================== */
-const MIXER = {
+/* ================== HYBRID MIXER (WebAudio su iOS/moderni, fallback su volume) ================== */
+function clampAudio(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+const GAME_SOUND_TRACK = { background: null };
+
+const MIXER = (() => {
+  const supportsWA = !!(window.AudioContext || window.webkitAudioContext);
+  let ctx = null, master = null;
+  const bus = { music: null, sfx: null };
+
+  const state = {
     cfg: {
-        master: 1.0,        // volume globale
-        music: 0.25,        // volume musica
-        sfx: 1.0,           // volume effetti
-        ducking: { duckTo: 0.18, fadeMs: 160, holdMs: 350 } // quanto/quanto a lungo abbassare
+      master: 1.0,
+      music:  0.25,
+      sfx:    1.0,
+      ducking: { duckTo: 0.18, attack: 0.06, release: 0.25, holdMs: 350 } // iOS-friendly
     },
     musicEl: null,
-    _duckLevel: 1,        // 1 = normale, duckTo = abbassato
-    _fadeRAF: null,
-    _holdT: null,
     _activeSfx: 0,
+    // fallback path (no WebAudio)
+    _duckLevel: 1,
+    _fadeRAF: null,
+    _holdT: null
+  };
 
-    setConfig(partial) {
-        // deep-merge semplice
-        if (partial.ducking) {
-            this.cfg.ducking = { ...this.cfg.ducking, ...partial.ducking };
-            delete partial.ducking;
-        }
-        Object.assign(this.cfg, partial);
-        this._applyMusicVolume();
-    },
+  function ensureCtx(){
+    if (!supportsWA) return null;
+    if (ctx) return ctx;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    ctx = new AC();
+    master = ctx.createGain(); master.gain.value = state.cfg.master; master.connect(ctx.destination);
+    bus.music = ctx.createGain(); bus.music.gain.value = state.cfg.music; bus.music.connect(master);
+    bus.sfx   = ctx.createGain(); bus.sfx.gain.value   = state.cfg.sfx;   bus.sfx.connect(master);
 
-    setMusicEl(el) {
-        // registra il player della musica e applica i volumi
-        this.musicEl = el;
-        el._baseVol = (typeof el._baseVol === 'number') ? el._baseVol : (el.volume ?? 1);
-        this._applyMusicVolume(true);
-    },
+    // iOS unlock
+    const unlock = () => { ctx.resume().catch(()=>{}); window.removeEventListener('touchstart', unlock); window.removeEventListener('click', unlock); };
+    window.addEventListener('touchstart', unlock, { once:true });
+    window.addEventListener('click', unlock, { once:true });
+    return ctx;
+  }
 
-    trackSfx(el, baseVol = 1) {
-        // imposta volume SFX (non riduckiamo SFX, solo la musica)
-        el.volume = clamp(baseVol * this.cfg.master * this.cfg.sfx, 0, 1);
-
-        // segnala start/stop per il ducking
-        const onStart = () => this._sfxStart();
-        const onEnd = () => { el.removeEventListener('ended', onEnd); el.removeEventListener('pause', onEnd); el.removeEventListener('error', onEnd); this._sfxEnd(); };
-
-        // se parte subito, chiama _sfxStart(); altrimenti quando fa 'play'
-        if (!el.paused) onStart(); else el.addEventListener('play', onStart, { once: true });
-        el.addEventListener('ended', onEnd);
-        el.addEventListener('pause', onEnd);
-        el.addEventListener('error', onEnd);
-    },
-
-    _sfxStart() {
-        this._activeSfx++;
-        if (this._activeSfx === 1) this._duckTo(this.cfg.ducking.duckTo);
-    },
-    _sfxEnd() {
-        this._activeSfx = Math.max(0, this._activeSfx - 1);
-        if (this._activeSfx === 0) {
-            clearTimeout(this._holdT);
-            this._holdT = setTimeout(() => this._duckTo(1), this.cfg.ducking.holdMs);
-        }
-    },
-
-    _duckTo(target) {
-        clearTimeout(this._holdT);
-        if (!this.musicEl) return;
-
-        const start = this._duckLevel;
-        const end = clamp(target, 0, 1);
-        if (Math.abs(start - end) < 0.001) return;
-
-        const dur = Math.max(30, this.cfg.ducking.fadeMs | 0);
-        const t0 = performance.now();
-
-        if (this._fadeRAF) cancelAnimationFrame(this._fadeRAF);
-
-        const step = (t) => {
-            const k = Math.min(1, (t - t0) / dur);
-            // ease-out cubic
-            const e = 1 - Math.pow(1 - k, 3);
-            this._duckLevel = start + (end - start) * e;
-            this._applyMusicVolume();
-            if (k < 1) this._fadeRAF = requestAnimationFrame(step);
-        };
-        this._fadeRAF = requestAnimationFrame(step);
-    },
-
-    _applyMusicVolume(force = false) {
-        if (!this.musicEl) return;
-        // base * master * music * duck
-        const base = (typeof this.musicEl._baseVol === 'number') ? this.musicEl._baseVol : (this.musicEl.volume ?? 1);
-        const v = clamp(base * this.cfg.master * this.cfg.music * this._duckLevel, 0, 1);
-        if (force || Math.abs((this.musicEl.volume ?? 0) - v) > 0.001) {
-            this.musicEl.volume = v;
-        }
+  function _wireWA(el, group, elVol=1){
+    ensureCtx();
+    if (!el._wiredWA) {
+      el.crossOrigin = 'anonymous';
+      const src  = ctx.createMediaElementSource(el);
+      const gain = ctx.createGain();
+      gain.gain.value = clampAudio(elVol, 0, 1);
+      src.connect(gain);
+      (group === 'music' ? bus.music : bus.sfx).connect // keep reference
+      gain.connect(group === 'music' ? bus.music : bus.sfx);
+      el._waSrc  = src;
+      el._waGain = gain;
+      el._wiredWA = true;
+      // IMPORTANT: lascia il volume nativo a 1, il mix lo fa il GainNode
+      el.volume = 1;
+    } else if (el._waGain) {
+      el._waGain.gain.value = clampAudio(elVol, 0, 1);
     }
-};
+  }
+
+  function _duckOnceWA(){
+    ensureCtx();
+    const { duckTo, attack, release, holdMs } = state.cfg.ducking;
+    const now = ctx.currentTime;
+    bus.music.gain.cancelScheduledValues(now);
+    const targetDown = clampAudio(state.cfg.music * duckTo, 0, 1);
+
+    // attack
+    bus.music.gain.setTargetAtTime(targetDown, now, Math.max(0.01, attack));
+
+    // release after hold
+    setTimeout(() => {
+      const t = ctx.currentTime;
+      bus.music.gain.cancelScheduledValues(t);
+      bus.music.gain.setTargetAtTime(state.cfg.music, t, Math.max(0.01, release));
+    }, holdMs);
+  }
+
+  // ===== Fallback ducking (senza WebAudio): usa el.volume e una curva con RAF =====
+  function _applyMusicVolumeFallback(force=false){
+    if (!state.musicEl) return;
+    const base = (typeof state.musicEl._baseVol === 'number') ? state.musicEl._baseVol : (state.musicEl.volume ?? 1);
+    const v = clampAudio(base * state.cfg.master * state.cfg.music * state._duckLevel, 0, 1);
+    if (force || Math.abs((state.musicEl.volume ?? 0) - v) > 0.001) state.musicEl.volume = v;
+  }
+  function _duckToFallback(target){
+    clearTimeout(state._holdT);
+    if (!state.musicEl) return;
+    const start = state._duckLevel;
+    const end   = clampAudio(target, 0, 1);
+    if (Math.abs(start - end) < 0.001) return;
+    const dur = Math.max(30, 160);
+    const t0 = performance.now();
+    if (state._fadeRAF) cancelAnimationFrame(state._fadeRAF);
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / dur);
+      const e = 1 - Math.pow(1 - k, 3); // ease-out cubic
+      state._duckLevel = start + (end - start) * e;
+      _applyMusicVolumeFallback();
+      if (k < 1) state._fadeRAF = requestAnimationFrame(step);
+    };
+    state._fadeRAF = requestAnimationFrame(step);
+  }
+
+  function _sfxStart(){
+    state._activeSfx++;
+    if (state._activeSfx === 1){
+      if (supportsWA) _duckOnceWA();
+      else _duckToFallback(state.cfg.ducking.duckTo);
+    }
+  }
+  function _sfxEnd(){
+    state._activeSfx = Math.max(0, state._activeSfx - 1);
+    if (state._activeSfx === 0){
+      if (supportsWA){
+        // WA già programma il release nel _duckOnceWA; qui non serve altro
+      } else {
+        clearTimeout(state._holdT);
+        state._holdT = setTimeout(() => _duckToFallback(1), state.cfg.ducking.holdMs);
+      }
+    }
+  }
+
+  function setConfig(partial){
+    if (partial.ducking){
+      state.cfg.ducking = { ...state.cfg.ducking, ...partial.ducking };
+      delete partial.ducking;
+    }
+    Object.assign(state.cfg, partial);
+
+    if (supportsWA && ensureCtx()){
+      master.gain.value   = state.cfg.master;
+      bus.music.gain.value = state.cfg.music;
+      bus.sfx.gain.value   = state.cfg.sfx;
+    } else {
+      _applyMusicVolumeFallback(true);
+    }
+  }
+
+  function setMusicEl(el){
+    state.musicEl = el;
+    if (supportsWA && ensureCtx()){
+      _wireWA(el, 'music', 1); // il livello della musica lo controlla bus.music.gain
+      // con WA il volume HTML rimane a 1
+    } else {
+      el._baseVol = (typeof el._baseVol === 'number') ? el._baseVol : (el.volume ?? 1);
+      _applyMusicVolumeFallback(true);
+    }
+  }
+
+  function trackSfx(el, baseVol = 1){
+    if (supportsWA && ensureCtx()){
+      _wireWA(el, 'sfx', clamp(baseVol, 0, 1));
+    } else {
+      // fallback: gestiamo volume del tag direttamente (no duck sugli sfx)
+      el.volume = clamp(baseVol * state.cfg.master * state.cfg.sfx, 0, 1);
+    }
+
+    const onStart = () => _sfxStart();
+    const onEnd   = () => {
+      el.removeEventListener('ended', onEnd);
+      el.removeEventListener('pause', onEnd);
+      el.removeEventListener('error', onEnd);
+      _sfxEnd();
+    };
+
+    if (!el.paused) onStart(); else el.addEventListener('play', onStart, { once:true });
+    el.addEventListener('ended', onEnd);
+    el.addEventListener('pause', onEnd);
+    el.addEventListener('error', onEnd);
+  }
+
+  return { setConfig, setMusicEl, trackSfx, ensureCtx, _state: state, _bus: bus, _supportsWA: supportsWA };
+})();
 
 const setMixerConfig = (p) => MIXER.setConfig(p);
 
+// ======= API DI RIPRODUZIONE (stesse tue firme) =======
 async function play(url, opts = {}) {
-    const { loop = false, volume = 1 } = opts;
-    const audio = new Audio();
-    audio.src = url;
-    audio.preload = 'auto';
-    audio.loop = loop;
-    audio.volume = clamp(volume, 0, 1);
-    audio.crossOrigin = 'anonymous';
-    try { await audio.play(); } catch (e) { console.warn('Autoplay blocked or error:', e); }
-    return audio;
+  const { loop = false, volume = 1 } = opts;
+  MIXER.ensureCtx?.(); // crea l'audio context se disponibile
+  const audio = new Audio();
+  audio.src = url;
+  audio.preload = 'auto';
+  audio.loop = loop;
+  // IMPORTANTE: con WebAudio lasciamo a 1 il volume nativo
+  audio.volume = MIXER._supportsWA ? 1 : clampAudio(volume, 0, 1);
+  audio.crossOrigin = 'anonymous';
+  try { await audio.play(); } catch (e) { console.warn('Autoplay blocked or error:', e); }
+  return audio;
 }
 
 // --- MUSICA di fondo (registrata nel mixer)
 async function playBg(url, { volume = 0.18, loop = true } = {}) {
-    try { if (loop) GAME_SOUND_TRACK.background?.pause(); } catch { }
-    const music = await play(url, { loop, volume });
-    GAME_SOUND_TRACK.background = music;
-    MIXER.setMusicEl(music); // <-- qui il mixer “prende in mano” la musica
-    return music;
+  try { if (loop) GAME_SOUND_TRACK.background?.pause(); } catch {}
+  const music = await play(url, { loop, volume });
+  GAME_SOUND_TRACK.background = music;
+  MIXER.setMusicEl(music); // il mixer prende in mano la musica
+  // con WebAudio: il volume reale lo definisce il bus (cfg.music); opzionalmente
+  if (!MIXER._supportsWA) {
+    // fallback: imposta "base" per calcolo volumi
+    music._baseVol = volume;
+  }
+  return music;
 }
 
-// --- SFX (fa scattare il ducking della musica)
+// --- SFX (fa scattare il duck della musica)
 async function playSfx(url, { volume = 1, loop = false } = {}) {
-    const sfx = await play(url, { loop, volume });    // riproduzione normale
-    MIXER.trackSfx(sfx, volume);                      // <-- segnala al mixer
-    return sfx;
+  MIXER.ensureCtx?.();
+  const sfx = new Audio();
+  sfx.src = url;
+  sfx.preload = 'auto';
+  sfx.loop = loop;
+  sfx.crossOrigin = 'anonymous';
+  // wire PRIMA del play (così catchiamo bene l'evento 'play')
+  MIXER.trackSfx(sfx, volume);
+  try { await sfx.play(); } catch (e) { console.warn('Autoplay blocked or error:', e); }
+  return sfx;
 }
-
-// tuo oggetto esistente
-const GAME_SOUND_TRACK = { background: null };
-
-
 
 // DB unico globale in memoria
 const DB = {
