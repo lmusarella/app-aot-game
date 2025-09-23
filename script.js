@@ -1615,7 +1615,7 @@ document.querySelectorAll('#fab-event .fab-option').forEach(btn => {
 
 
 async function completeMission() {
-    stopTimer();
+    resetTimer();
 
     const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
     const missioneFallita = m.objectives.some(missione => GAME_STATE.missionState.kills[missione.type] !== missione.num);
