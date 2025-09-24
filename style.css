@@ -1568,28 +1568,6 @@
    right: 10px;
  }
 
- /* Responsività automatica:
-   - sotto 1200px: collassa la destra
-   - sotto 900px: collassa entrambe
-   (puoi tarare le soglie come vuoi) */
- @media (max-width: 1200px) {
-   body:not(.manual-layout):not(.collapse-both) {
-     /* solo se non c'è override manuale */
-     grid-template-columns: var(--sidebar-w) 1fr var(--sidebar-c);
-   }
-
-   body:not(.manual-layout) aside {
-     /* segna visivamente come collassata */
-     padding: 8px;
-   }
- }
-
- @media (max-width: 900px) {
-   body:not(.manual-layout) {
-     grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-c);
-   }
- }
-
  #snackbar-region {
    position: fixed;
    top: 64px;

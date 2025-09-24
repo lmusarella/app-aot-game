@@ -2473,9 +2473,9 @@ function applyClasses() {
     const L = leftEl.classList.contains('collapsed');
     const R = rightEl.classList.contains('collapsed');
 
-    document.body.classList.toggle('collapse-left', L && !R);
-    document.body.classList.toggle('collapse-right', R && !L);
-    document.body.classList.toggle('collapse-both', L && R);
+    document.body.classList.toggle('collapse-left', L);
+    document.body.classList.toggle('collapse-right', R);
+    //document.body.classList.toggle('collapse-both', L && R);
 
     btnL.setAttribute('aria-expanded', String(!L));
     btnR.setAttribute('aria-expanded', String(!R));
@@ -2494,7 +2494,6 @@ function toggleSide(side) {
 
 // init: default chiusi (come richiesto), nessuna persistenza
 function initSidebars() {
-    applyClasses();
     document.getElementById('toggle-left')?.addEventListener('click', () => toggleSide('left'));
     document.getElementById('toggle-right')?.addEventListener('click', () => toggleSide('right'));
 }
