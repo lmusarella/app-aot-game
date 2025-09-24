@@ -388,10 +388,26 @@ async function play(url, opts = {}) {
   audio.src = url;
   audio.preload = 'auto';
   audio.loop = loop;
-  // IMPORTANTE: con WebAudio lasciamo a 1 il volume nativo
+  // con WebAudio lasciamo a 1, senza usiamo il volume passato
   audio.volume = MIXER._supportsWA ? 1 : clampAudio(volume, 0, 1);
   audio.crossOrigin = 'anonymous';
-  try { await audio.play(); } catch (e) { console.warn('Autoplay blocked or error:', e); }
+
+  // Se non è ancora sbloccato, prova in muto (spesso passa) e poi smuta
+  if (!AUDIO_UNLOCKED) audio.muted = true;
+
+  try {
+    await audio.play();
+  } catch (e) {
+    // Autoplay bloccato: ritenta alla prima gesture
+    waitForUserGestureOnce(() => {
+      audio.muted = false;
+      audio.play().catch(()=>{});
+    });
+  }
+
+  // se era partito muted, smuta appena possibile
+  if (audio.muted) setTimeout(() => { audio.muted = false; }, 0);
+
   return audio;
 }
 
@@ -409,19 +425,17 @@ async function playBg(url, { volume = 0.18, loop = true } = {}) {
   return music;
 }
 
-// --- SFX (fa scattare il duck della musica)
 async function playSfx(url, { volume = 1, loop = false } = {}) {
-  MIXER.ensureCtx?.();
-  const sfx = new Audio();
-  sfx.src = url;
-  sfx.preload = 'auto';
-  sfx.loop = loop;
-  sfx.crossOrigin = 'anonymous';
-  // wire PRIMA del play (così catchiamo bene l'evento 'play')
+  const sfx = await play(url, { loop, volume }); // usa play() con retry mobile
   MIXER.trackSfx(sfx, volume);
-  try { await sfx.play(); } catch (e) { console.warn('Autoplay blocked or error:', e); }
   return sfx;
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    try { GAME_SOUND_TRACK.background?.play(); } catch {}
+  }
+});
 
 // DB unico globale in memoria
 const DB = {
