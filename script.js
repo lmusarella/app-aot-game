@@ -51,9 +51,10 @@ const TurnEngine = {
         // entra in setup (senza limiti di movimento)
 
         if (phase === 'idle') {
+            this.setPhase('setup');
             await playBg('./assets/sounds/giganti_puri.mp3');
             startTimer();
-            this.setPhase('setup');
+           
             if (!this.teamCreated) {
                 try {
                     pickRandomTeam({ commanders: 1, recruits: 3 });
@@ -67,6 +68,7 @@ const TurnEngine = {
         }
 
         if (phase === 'event_mission') {
+            this.setPhase('event_card');
             const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
             const spawnEvents = m.event_spawn;
             const ids = [];
@@ -94,15 +96,15 @@ const TurnEngine = {
                 openAccordionForRole("enemy");
             }
 
-            this.setPhase('event_card');
+            
         }
 
         if (phase === 'round_start') {
+            this.setPhase('move_phase');
             startTimer();
             this.round++;
             log(`Round ${this.round} iniziato.`, 'success');
             advanceAllCooldowns(1, { giantsOnly: true })
-            this.setPhase('move_phase');
             log(`Fase Movimento ${TurnEngine.round}° ROUND: Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`, 'info');
             await playBg('./assets/sounds/commander_march_sound.mp3');
         }
