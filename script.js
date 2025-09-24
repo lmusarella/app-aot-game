@@ -175,8 +175,39 @@ const TurnEngine = {
 function clampAudio(v, a, b){ return Math.max(a, Math.min(b, v)); }
 
 const GAME_SOUND_TRACK = { background: null };
-// === UNLOCK AUDIO (iOS/Android) ===
+// ====== AUDIO BOOTSTRAP (mobile friendly) ======
 let AUDIO_UNLOCKED = false;
+let PENDING_BG = null; // { url, opts }
+
+function initAudio(){
+  if (AUDIO_UNLOCKED) return;
+  AUDIO_UNLOCKED = true;
+
+  // 1) WebAudio: crea/risveglia il context se c’è
+  try { MIXER.ensureCtx?.(); MIXER._ctx?.resume?.(); } catch {}
+
+  // 2) HTMLAudio: “kick” silenzioso per iOS/Android
+  try {
+    const a = new Audio();
+    a.src = 'data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA'; // brevissimo silenzio
+    a.muted = true;
+    a.play().then(()=>{ a.pause(); a.remove(); }).catch(()=>{});
+  } catch {}
+
+  // 3) se avevamo chiesto una musica prima dello sblocco, avviala ora
+  if (PENDING_BG){
+    const { url, opts } = PENDING_BG;
+    PENDING_BG = null;
+    playBg(url, opts);
+  }
+}
+
+// sblocca al primo gesto (meglio pointerdown/touchstart)
+document.addEventListener('DOMContentLoaded', () => {
+  const once = { once: true, passive: true };
+  document.addEventListener('pointerdown', () => initAudio(), once);
+  document.addEventListener('touchstart',  () => initAudio(), once);
+});
 
 function waitForUserGestureOnce(cb){
   const h = () => { try{ cb(); }catch{} 
@@ -381,55 +412,61 @@ const MIXER = (() => {
 const setMixerConfig = (p) => MIXER.setConfig(p);
 
 // ======= API DI RIPRODUZIONE (stesse tue firme) =======
+
 async function play(url, opts = {}) {
   const { loop = false, volume = 1 } = opts;
-  MIXER.ensureCtx?.(); // crea l'audio context se disponibile
+  MIXER.ensureCtx?.(); // crea l’audio context se disponibile
+
   const audio = new Audio();
   audio.src = url;
   audio.preload = 'auto';
   audio.loop = loop;
-  // con WebAudio lasciamo a 1, senza usiamo il volume passato
+  // Con WebAudio lasciamo volume tag a 1; nel fallback usiamo quello passato
   audio.volume = MIXER._supportsWA ? 1 : clampAudio(volume, 0, 1);
-  audio.crossOrigin = 'anonymous';
+  // audio.crossOrigin = 'anonymous'; // se i file sono same-origin puoi anche NON metterlo
 
-  // Se non è ancora sbloccato, prova in muto (spesso passa) e poi smuta
-  if (!AUDIO_UNLOCKED) audio.muted = true;
-
-  try {
-    await audio.play();
-  } catch (e) {
-    // Autoplay bloccato: ritenta alla prima gesture
-    waitForUserGestureOnce(() => {
-      audio.muted = false;
-      audio.play().catch(()=>{});
-    });
+  // Se non è sbloccato, non forzare subito .play(): lasciamo che initAudio gestisca
+  if (!AUDIO_UNLOCKED) {
+    // Non tentare play qui: iOS lo bloccherebbe.
+    return audio;
   }
 
-  // se era partito muted, smuta appena possibile
-  if (audio.muted) setTimeout(() => { audio.muted = false; }, 0);
-
+  try { await audio.play(); } 
+  catch (e) { console.warn('Autoplay blocked:', e); }
   return audio;
 }
 
 // --- MUSICA di fondo (registrata nel mixer)
 async function playBg(url, { volume = 0.18, loop = true } = {}) {
+  // se non sbloccato, metti in coda e basta
+  if (!AUDIO_UNLOCKED) {
+    PENDING_BG = { url, opts: { volume, loop } };
+    return null;
+  }
+
   try { if (loop) GAME_SOUND_TRACK.background?.pause(); } catch {}
+
   const music = await play(url, { loop, volume });
   GAME_SOUND_TRACK.background = music;
-  MIXER.setMusicEl(music); // il mixer prende in mano la musica
-  // con WebAudio: il volume reale lo definisce il bus (cfg.music); opzionalmente
-  if (!MIXER._supportsWA) {
-    // fallback: imposta "base" per calcolo volumi
-    music._baseVol = volume;
-  }
+  MIXER.setMusicEl(music);
+
+  // nel fallback (no WebAudio) usare volume base per calcolo
+  if (!MIXER._supportsWA) music._baseVol = volume;
+
+  // prova a partire (se non è già partita in play(), o se play() è stato “soft”)
+  try { await music.play(); } catch (e) { console.warn('BG play error:', e); }
+
   return music;
 }
 
+
 async function playSfx(url, { volume = 1, loop = false } = {}) {
-  const sfx = await play(url, { loop, volume }); // usa play() con retry mobile
+  const sfx = await play(url, { loop, volume });
   MIXER.trackSfx(sfx, volume);
+  try { await sfx.play(); } catch {}
   return sfx;
 }
+
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
