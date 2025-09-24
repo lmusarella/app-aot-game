@@ -54,7 +54,7 @@ const TurnEngine = {
             this.setPhase('setup');
             await playBg('./assets/sounds/giganti_puri.mp3');
             startTimer();
-           
+
             if (!this.teamCreated) {
                 try {
                     pickRandomTeam({ commanders: 1, recruits: 3 });
@@ -96,7 +96,7 @@ const TurnEngine = {
                 openAccordionForRole("enemy");
             }
 
-            
+
         }
 
         if (phase === 'round_start') {
@@ -270,6 +270,36 @@ const MIXER = (() => {
         _holdT: null
     };
 
+    function setMusicVolume(v) {
+        v = clampAudio(parseFloat(v) || 0, 0, 1);
+        state.cfg.music = v;
+
+        if (useWA && ensureCtx()) {
+            // interrompe eventuali automazioni in corso e imposta subito il valore
+            const now = ctx.currentTime;
+            bus.music.gain.cancelScheduledValues(now);
+            bus.music.gain.setValueAtTime(v, now);
+        } else {
+            // fallback: ricalcola il volume del tag
+            _applyMusicVolumeFallback(true);
+        }
+    }
+
+    function setSfxVolume(v) {
+        v = clampAudio(parseFloat(v) || 0, 0, 1);
+        state.cfg.sfx = v;
+
+        if (useWA && ensureCtx()) {
+            const now = ctx.currentTime;
+            bus.sfx.gain.cancelScheduledValues(now);
+            bus.sfx.gain.setValueAtTime(v, now);
+        } else {
+            // non possiamo riparametrare SFX già in riproduzione;
+            // i prossimi SFX useranno il nuovo livello (via trackSfx).
+        }
+    }
+
+
     function ensureCtx() {
         if (!useWA) return null;
         if (ctx) return ctx;
@@ -345,7 +375,7 @@ const MIXER = (() => {
     function _sfxStart() {
         state._activeSfx++;
         if (state._activeSfx === 1) {
-            if (supportsWA) _duckOnceWA();
+            if (useWA) _duckOnceWA();
             else _duckToFallback(state.cfg.ducking.duckTo);
         }
     }
@@ -410,9 +440,9 @@ const MIXER = (() => {
         el.addEventListener('error', onEnd);
     }
 
-    return { setConfig, setMusicEl, trackSfx, ensureCtx, _state: state, _bus: bus, _supportsWA: useWA, get _ctx() { return ctx; } };
+    return { setConfig, setMusicEl, trackSfx, ensureCtx, _state: state, _bus: bus, _supportsWA: useWA, get _ctx() { return ctx; }, setMusicVolume, setSfxVolume };
 })();
-
+window.MIXER = MIXER;
 const setMixerConfig = (p) => MIXER.setConfig(p);
 
 // ======= API DI RIPRODUZIONE (stesse tue firme) =======
@@ -4466,9 +4496,202 @@ btnStart?.addEventListener('click', async () => {
     }
 });
 
+// === Volume UI (BG + SFX) auto-mount ===
+function volumeUI() {
+    if (!window.MIXER || typeof MIXER.setMusicVolume !== 'function') {
+        // mixer non ancora pronto: riprova tra poco
+        setTimeout(volumeUI, 50);
+        return;
+    }
+    const LS_BG = 'vol:bg';
+    const LS_SFX = 'vol:sfx';
+
+    function getMixer() {
+        if (window.MIXER && typeof MIXER.setConfig === 'function') return MIXER;
+        console.warn('[volUI] MIXER non pronto, retry…');
+        setTimeout(volumeUI, 150);
+        throw new Error('MIXER not ready');
+    }
+
+    function mountControls() {
+        // Trova un punto comodo (vicino al timer). Se non esiste, appendi al body.
+        const host = document.querySelector('.center-box') || document.body;
+
+        // Evita duplicati
+        if (host.querySelector('#bgVol')) return;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'vol-wrap';
+        wrap.innerHTML = `
+      <style>
+        .vol-wrap{ display:flex; gap:14px; align-items:center; margin-left:12px; }
+        .vol-ctrl{ display:flex; align-items:center; gap:8px; }
+        .vol-ctrl .mc-label{ font-size:12px; opacity:.85; }
+        .vol-ctrl input[type="range"]{ width:120px; }
+        .vol-ctrl .mc-num{ font-size:12px; min-width:28px; text-align:right; opacity:.9; }
+      </style>
+      <div class="vol-ctrl" title="Volume musica">
+        <span class="mc-label">BG</span>
+        <input id="bgVol" type="range" min="0" max="100" step="1" />
+        <span id="bgVolVal" class="mc-num">–</span>
+      </div>
+      <div class="vol-ctrl" title="Volume effetti">
+        <span class="mc-label">SFX</span>
+        <input id="sfxVol" type="range" min="0" max="100" step="1" />
+        <span id="sfxVolVal" class="mc-num">–</span>
+      </div>
+    `;
+        host.appendChild(wrap);
+
+        const MIX = getMixer();
+        console.log('mix init')
+
+        // Valori iniziali (da LS oppure dal mixer)
+        const initBG = (() => {
+            const v = parseFloat(localStorage.getItem(LS_BG));
+            return Number.isFinite(v) ? v : (MIX?._state?.cfg?.music ?? 0.25);
+        })();
+        const initSFX = (() => {
+            const v = parseFloat(localStorage.getItem(LS_SFX));
+            return Number.isFinite(v) ? v : (MIX?._state?.cfg?.sfx ?? 1.0);
+        })();
+
+        const bgSlider = document.getElementById('bgVol');
+        const bgLabel = document.getElementById('bgVolVal');
+        const sfxSlider = document.getElementById('sfxVol');
+        const sfxLabel = document.getElementById('sfxVolVal');
+
+        function applyBG(v) {
+            v = Math.max(0, Math.min(1, Number(v) || 0));
+            MIX.setMusicVolume(v);
+            console.log('applyBG')
+            localStorage.setItem(LS_BG, String(v));
+            if (bgLabel) bgLabel.textContent = Math.round(v * 100);
+        }
+        function applySFX(v) {
+            v = Math.max(0, Math.min(1, Number(v) || 0));
+            MIX.setSfxVolume(v);
+            console.log('applySFX')
+            localStorage.setItem(LS_SFX, String(v));
+            if (sfxLabel) sfxLabel.textContent = Math.round(v * 100);
+        }
+
+        // Set iniziale UI
+        bgSlider.value = Math.round(initBG * 100);
+        sfxSlider.value = Math.round(initSFX * 100);
+        applyBG(initBG);
+        applySFX(initSFX);
+
+        // Handlers
+        const onBG = () => applyBG((Number(bgSlider.value) || 0) / 100);
+        const onSFX = () => applySFX((Number(sfxSlider.value) || 0) / 100);
+        bgSlider.addEventListener('input', onBG);
+        bgSlider.addEventListener('change', onBG);
+        sfxSlider.addEventListener('input', onSFX);
+        sfxSlider.addEventListener('change', onSFX);
+
+        console.log('[volUI] OK: sliders montati');
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', mountControls);
+    } else {
+        mountControls();
+    }
+};
+
+function mountVolumeCard(){
+  // aspetta che il MIXER esponga i setter
+  if (!window.MIXER || typeof MIXER.setMusicVolume !== 'function'){
+    setTimeout(mountVolumeCard, 40);
+    return;
+  }
+  const musicEl = document.getElementById('vol-music');
+  const sfxEl   = document.getElementById('vol-sfx');
+  const outM    = document.getElementById('vol-music-val');
+  const outS    = document.getElementById('vol-sfx-val');
+
+  // leggi config corrente dal mixer
+  const cfg = MIXER._state?.cfg || { music: 0.22, sfx: 0.8 };
+  const mVal = Math.round((cfg.music ?? 0.22) * 100);
+  const sVal = Math.round((cfg.sfx   ?? 0.80) * 100);
+
+  musicEl.value = mVal;
+  sfxEl.value   = sVal;
+  outM.textContent = `${mVal}%`;
+  outS.textContent = `${sVal}%`;
+
+  // applica riempimento grafico
+  updateSliderFill(musicEl);
+  updateSliderFill(sfxEl);
+
+  const onInput = (ev) => {
+    const el = ev.currentTarget;
+    const val = parseInt(el.value, 10) || 0;
+    const pct = Math.max(0, Math.min(100, val));
+    if (el === musicEl){
+      MIXER.setMusicVolume(pct / 100);
+      outM.textContent = `${pct}%`;
+      localStorage.setItem('vol.music', String(pct));
+    } else {
+      MIXER.setSfxVolume(pct / 100);
+      outS.textContent = `${pct}%`;
+      localStorage.setItem('vol.sfx', String(pct));
+    }
+    updateSliderFill(el);
+  };
+
+  musicEl.addEventListener('input', onInput);
+  sfxEl.addEventListener('input', onInput);
+
+  // se avevi salvato preferenze, ricaricale
+  const savedM = parseInt(localStorage.getItem('vol.music') || '', 10);
+  const savedS = parseInt(localStorage.getItem('vol.sfx')   || '', 10);
+  if (!Number.isNaN(savedM)){ musicEl.value = savedM; outM.textContent = `${savedM}%`; MIXER.setMusicVolume(savedM/100); updateSliderFill(musicEl); }
+  if (!Number.isNaN(savedS)){ sfxEl.value   = savedS; outS.textContent = `${savedS}%`; MIXER.setSfxVolume(savedS/100);   updateSliderFill(sfxEl); }
+}
+
+// colora la track fino alla percentuale
+function updateSliderFill(inputEl){
+  const pct = (parseInt(inputEl.value, 10) || 0);
+  const styles = getComputedStyle(inputEl);
+  const fill  = styles.getPropertyValue('--fill').trim() || '#3b82f6';
+  const track = styles.getPropertyValue('--track').trim() || '#1a2031';
+  inputEl.style.background = `linear-gradient(to right, ${fill} 0% ${pct}%, ${track} ${pct}% 100%)`;
+}
+
+(function wireAudioPopup(){
+  const btn = document.getElementById('btn-audio');
+  const dlg = document.getElementById('audio-modal');
+  const bd  = document.getElementById('audio-backdrop');
+  const closeBtn = dlg?.querySelector('[data-close]');
+  let inited = false;
+
+  function openAudio(){
+    bd.classList.add('show');
+    dlg.classList.add('show');
+    if (!inited){
+      mountVolumeCard(); // inizializza gli slider SOLO ora
+      inited = true;
+    }
+  }
+  function closeAudio(){
+    bd.classList.remove('show');
+    dlg.classList.remove('show');
+  }
+
+  btn?.addEventListener('click', openAudio);
+  closeBtn?.addEventListener('click', closeAudio);
+  bd?.addEventListener('click', closeAudio);
+  // Esc per chiudere
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && dlg.classList.contains('show')) closeAudio();
+  });
+})();
+
 
 document.addEventListener('DOMContentLoaded', async () => {
-    unlockAudioOnFirstTap(() => MIXER?._ctx)
+    unlockAudioOnFirstTap(() => MIXER?._ctx);
     // BOOT dati
     const booted = await loadDataAndStateFromLocal();
 
@@ -4498,7 +4721,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         music: 0.22,
         sfx: 0.8,
         ducking: {
-            duckTo: 0.9,
+            duckTo: 0.6,
             fadeMs: 180,   // entra dolcemente
             holdMs: 120,   // resta abbassata per poco
             releaseMs: 180, // risale morbida }

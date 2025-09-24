@@ -43,21 +43,27 @@
                 <!-- Missione -->
                 <div class="mission-ctrl">
                     <div class="mc-box">
-                        <span class="mc-label">Missione Corrente</span>
+                        <span class="mc-label">Missione</span>
                         <button id="m-dec" class="mc-btn" type="button" title="Missione precedente">−</button>
                         <span id="m-num" class="mc-num">1</span>
                         <button id="m-inc" class="mc-btn" type="button" title="Missione successiva">+</button>
                     </div>
                 </div>
 
-                <button id="btn-start" class="start-hdr-btn" data-mode="start" type="button" title="Avvia missione">INIZIA</button>
+                <button id="btn-start" class="start-hdr-btn" data-mode="start" type="button"
+                    title="Avvia missione">INIZIA</button>
                 <!-- Timer missione -->
                 <div class="timer" title="Timer missione">
-                    <span class="mc-label">Timer Missione</span>
+                    <span class="mc-label">Timer</span>
                     <button id="t-play" class="t-btn" aria-label="Play/Pausa">▶</button>
                     <span id="t-time" class="t-time">00:00</span>
                     <button id="t-reset" class="t-btn" aria-label="Azzera timer">⟲</button>
                 </div>
+
+                <button id="btn-audio" class="btn-icon" title="Impostazioni audio" aria-label="Impostazioni audio">
+                    🎧
+                </button>
+              
             </div>
 
             <!-- Reset partita (a destra) -->
@@ -190,6 +196,47 @@
     <!-- ===== Tooltip ===== -->
     <div id="tooltip"></div>
 
+
+    <!-- Popup Audio -->
+    <div id="audio-backdrop" class="modal-backdrop"></div>
+    <div id="audio-modal" class="modal modal-audio" role="dialog" aria-modal="true" aria-labelledby="audio-title">
+        <div class="modal-header">
+            <span id="audio-title" class="modal-title">Impostazioni Audio</span>
+            <button class="modal-close" data-close aria-label="Chiudi">×</button>
+        </div>
+        <div class="modal-body">
+            <!-- la stessa card di prima -->
+            <div class="vol-card" id="vol-card" role="region" aria-label="Controlli volume">
+                <div class="vol-row">
+                    <div class="vol-head">
+                        <span class="vol-ico" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="16" height="16">
+                                <path fill="currentColor" d="M12 3v10.55A4 4 0 1 1 10 17V8h8V3h-6z" />
+                            </svg>
+                        </span>
+                        <span class="vol-title">Musica</span>
+                        <output id="vol-music-val" class="vol-val">22%</output>
+                    </div>
+                    <input id="vol-music" class="vol-range music" type="range" min="0" max="100" step="1" value="22"
+                        data-prop="music" />
+                </div>
+
+                <div class="vol-row">
+                    <div class="vol-head">
+                        <span class="vol-ico" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="16" height="16">
+                                <path fill="currentColor" d="M13 3L4 14h6l-1 7 9-11h-6l1-7z" />
+                            </svg>
+                        </span>
+                        <span class="vol-title">Effetti</span>
+                        <output id="vol-sfx-val" class="vol-val">80%</output>
+                    </div>
+                    <input id="vol-sfx" class="vol-range sfx" type="range" min="0" max="100" step="1" value="80"
+                        data-prop="sfx" />
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <!-- ===== CAMPO ===== -->
