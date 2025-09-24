@@ -175,6 +175,42 @@ const TurnEngine = {
 function clampAudio(v, a, b){ return Math.max(a, Math.min(b, v)); }
 
 const GAME_SOUND_TRACK = { background: null };
+// === UNLOCK AUDIO (iOS/Android) ===
+let AUDIO_UNLOCKED = false;
+
+function waitForUserGestureOnce(cb){
+  const h = () => { try{ cb(); }catch{} 
+    window.removeEventListener('pointerup', h);
+    window.removeEventListener('touchend', h);
+    document.removeEventListener('keydown', h);
+  };
+  window.addEventListener('pointerup', h, { once:true, passive:true });
+  window.addEventListener('touchend', h, { once:true, passive:true });
+  document.addEventListener('keydown', h, { once:true });
+}
+
+function unlockAudioOnFirstTap(ctxGetter){
+  if (AUDIO_UNLOCKED) return;
+  waitForUserGestureOnce(async () => {
+    try {
+      // 1) sblocca WebAudio (se presente)
+      const ctx = ctxGetter?.();
+      if (ctx && ctx.state !== 'running') { try { await ctx.resume(); } catch {} }
+
+      // 2) “kick” per HTML5 audio
+      const a = new Audio();
+      a.src = 'data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA'; // brevissimo silenzio
+      a.muted = true;
+      await a.play().catch(()=>{});
+      a.pause();
+
+      AUDIO_UNLOCKED = true;
+
+      // riprova la musica di background se pronta
+      try { GAME_SOUND_TRACK.background?.play(); } catch {}
+    } catch {}
+  });
+}
 
 const MIXER = (() => {
   const supportsWA = !!(window.AudioContext || window.webkitAudioContext);
@@ -204,11 +240,6 @@ const MIXER = (() => {
     master = ctx.createGain(); master.gain.value = state.cfg.master; master.connect(ctx.destination);
     bus.music = ctx.createGain(); bus.music.gain.value = state.cfg.music; bus.music.connect(master);
     bus.sfx   = ctx.createGain(); bus.sfx.gain.value   = state.cfg.sfx;   bus.sfx.connect(master);
-
-    // iOS unlock
-    const unlock = () => { ctx.resume().catch(()=>{}); window.removeEventListener('touchstart', unlock); window.removeEventListener('click', unlock); };
-    window.addEventListener('touchstart', unlock, { once:true });
-    window.addEventListener('click', unlock, { once:true });
     return ctx;
   }
 
@@ -344,7 +375,7 @@ const MIXER = (() => {
     el.addEventListener('error', onEnd);
   }
 
-  return { setConfig, setMusicEl, trackSfx, ensureCtx, _state: state, _bus: bus, _supportsWA: supportsWA };
+  return { setConfig, setMusicEl, trackSfx, ensureCtx, _state: state, _bus: bus, _supportsWA: supportsWA , get _ctx(){ return ctx; }};
 })();
 
 const setMixerConfig = (p) => MIXER.setConfig(p);
@@ -4375,7 +4406,7 @@ btnStart?.addEventListener('click', async () => {
 
 
 document.addEventListener('DOMContentLoaded', async () => {
-
+    unlockAudioOnFirstTap(() => MIXER?._ctx)
     // BOOT dati
     const booted = await loadDataAndStateFromLocal();
 
