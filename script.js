@@ -1831,7 +1831,7 @@ async function completeMission() {
     resetTimer();
 
     const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
-    const missioneFallita = m.objectives.some(missione => GAME_STATE.missionState.kills[missione.type] !== missione.num);
+    const missioneFallita = m.objectives.some(missione => GAME_STATE.missionState.kills[missione.type] < missione.num);
     if (missioneFallita) {
         log(`Missione #${GAME_STATE.missionState.curIndex + 1} Fallita!`, 'error');
     } else {

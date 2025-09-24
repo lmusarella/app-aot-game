@@ -138,5 +138,44 @@
                 "max": 20
             }
         }
+    },
+     {
+        "id": 5,
+        "title": "Doppio Anomalo & Mutaforma",
+        "objectives": [
+            {
+                "num": 2,
+                "type": "Anomalo"
+            },
+             {
+                "num": 1,
+                "type": "Mutaforma"
+            }
+        ],
+        "reward": {
+            "xp": 5,
+            "morale": 1
+        },
+        "event": "Spawn di 2 Giganti Anomali e 1 Mutaforma",
+        "event_spawn": [
+            "Anomalo",
+            "Anomalo",
+            "Mutaforma"
+        ],
+        "timerSec": 1200,
+        "spawnRate": {
+            "Puro": {
+                "min": 1,
+                "max": 10
+            },
+            "Anomalo": {
+                "min": 11,
+                "max": 15
+            },
+            "Mutaforma": {
+                "min": 16,
+                "max": 20
+            }
+        }
     }
 ]
