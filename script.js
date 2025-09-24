@@ -101,7 +101,7 @@ const TurnEngine = {
             startTimer();
             this.round++;
             log(`Round ${this.round} iniziato.`, 'success');
-            advanceAllCooldowns(1, {giantsOnly: true})
+            advanceAllCooldowns(1, { giantsOnly: true })
             this.setPhase('move_phase');
             log(`Fase Movimento ${TurnEngine.round}° ROUND: Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`, 'info');
             await playBg('./assets/sounds/commander_march_sound.mp3');
@@ -246,7 +246,10 @@ function unlockAudioOnFirstTap(ctxGetter) {
 }
 
 const MIXER = (() => {
-    const supportsWA = !!(window.AudioContext || window.webkitAudioContext);
+    const RAW_WA = !!(window.AudioContext || window.webkitAudioContext);
+    const IS_MOBILE = /iP(ad|hone|od)|Android/i.test(navigator.userAgent);
+    let useWA = RAW_WA && !IS_MOBILE;
+
     let ctx = null, master = null;
     const bus = { music: null, sfx: null };
 
@@ -266,7 +269,7 @@ const MIXER = (() => {
     };
 
     function ensureCtx() {
-        if (!supportsWA) return null;
+        if (!useWA) return null;
         if (ctx) return ctx;
         const AC = window.AudioContext || window.webkitAudioContext;
         ctx = new AC();
@@ -279,18 +282,15 @@ const MIXER = (() => {
     function _wireWA(el, group, elVol = 1) {
         ensureCtx();
         if (!el._wiredWA) {
-            el.crossOrigin = 'anonymous';
             const src = ctx.createMediaElementSource(el);
             const gain = ctx.createGain();
             gain.gain.value = clampAudio(elVol, 0, 1);
             src.connect(gain);
-            (group === 'music' ? bus.music : bus.sfx).connect // keep reference
             gain.connect(group === 'music' ? bus.music : bus.sfx);
             el._waSrc = src;
             el._waGain = gain;
             el._wiredWA = true;
-            // IMPORTANT: lascia il volume nativo a 1, il mix lo fa il GainNode
-            el.volume = 1;
+            el.volume = 1; // il mix lo fa il GainNode
         } else if (el._waGain) {
             el._waGain.gain.value = clampAudio(elVol, 0, 1);
         }
@@ -350,7 +350,7 @@ const MIXER = (() => {
     function _sfxEnd() {
         state._activeSfx = Math.max(0, state._activeSfx - 1);
         if (state._activeSfx === 0) {
-            if (supportsWA) {
+            if (useWA) {
                 // WA già programma il release nel _duckOnceWA; qui non serve altro
             } else {
                 clearTimeout(state._holdT);
@@ -366,7 +366,7 @@ const MIXER = (() => {
         }
         Object.assign(state.cfg, partial);
 
-        if (supportsWA && ensureCtx()) {
+        if (useWA && ensureCtx()) {
             master.gain.value = state.cfg.master;
             bus.music.gain.value = state.cfg.music;
             bus.sfx.gain.value = state.cfg.sfx;
@@ -377,7 +377,7 @@ const MIXER = (() => {
 
     function setMusicEl(el) {
         state.musicEl = el;
-        if (supportsWA && ensureCtx()) {
+        if (useWA && ensureCtx()) {
             _wireWA(el, 'music', 1); // il livello della musica lo controlla bus.music.gain
             // con WA il volume HTML rimane a 1
         } else {
@@ -387,7 +387,7 @@ const MIXER = (() => {
     }
 
     function trackSfx(el, baseVol = 1) {
-        if (supportsWA && ensureCtx()) {
+        if (useWA && ensureCtx()) {
             _wireWA(el, 'sfx', clamp(baseVol, 0, 1));
         } else {
             // fallback: gestiamo volume del tag direttamente (no duck sugli sfx)
@@ -408,7 +408,7 @@ const MIXER = (() => {
         el.addEventListener('error', onEnd);
     }
 
-    return { setConfig, setMusicEl, trackSfx, ensureCtx, _state: state, _bus: bus, _supportsWA: supportsWA, get _ctx() { return ctx; } };
+    return { setConfig, setMusicEl, trackSfx, ensureCtx, _state: state, _bus: bus, _supportsWA: useWA, get _ctx() { return ctx; } };
 })();
 
 const setMixerConfig = (p) => MIXER.setConfig(p);
@@ -417,12 +417,13 @@ const setMixerConfig = (p) => MIXER.setConfig(p);
 
 async function play(url, opts = {}) {
     const { loop = false, volume = 1 } = opts;
-    MIXER.ensureCtx?.(); // crea l’audio context se disponibile
+    MIXER.ensureCtx(); // crea l’audio context se disponibile
 
     const audio = new Audio();
     audio.src = url;
     audio.preload = 'auto';
     audio.loop = loop;
+    audio.playsInline = true; // innocuo su desktop, utile su iOS
     // Con WebAudio lasciamo volume tag a 1; nel fallback usiamo quello passato
     audio.volume = MIXER._supportsWA ? 1 : clampAudio(volume, 0, 1);
     // audio.crossOrigin = 'anonymous'; // se i file sono same-origin puoi anche NON metterlo
@@ -449,7 +450,9 @@ async function playBg(url, { volume = 0.18, loop = true } = {}) {
     try { if (loop) GAME_SOUND_TRACK.background?.pause(); } catch { }
 
     const music = await play(url, { loop, volume });
+
     GAME_SOUND_TRACK.background = music;
+    music.playsInline = true;
     MIXER.setMusicEl(music);
 
     // nel fallback (no WebAudio) usare volume base per calcolo
@@ -3428,6 +3431,7 @@ async function showWelcomePopup(isFirstRun, imgUrl) {
         cancellable: true
     });
 
+    initAudio();
     GAME_STATE.turnEngine.phase === 'idle' ? await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3') : await GAME_STATE.turnEngine.setPhaseMusic();
 }
 
