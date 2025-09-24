@@ -101,6 +101,7 @@ const TurnEngine = {
             startTimer();
             this.round++;
             log(`Round ${this.round} iniziato.`, 'success');
+            advanceAllCooldowns(1, {giantsOnly: true})
             this.setPhase('move_phase');
             log(`Fase Movimento ${TurnEngine.round}° ROUND: Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`, 'info');
             await playBg('./assets/sounds/commander_march_sound.mp3');
