@@ -63,7 +63,7 @@
                 <button id="btn-audio" class="btn-icon" title="Impostazioni audio" aria-label="Impostazioni audio">
                     🎧
                 </button>
-              
+
             </div>
 
             <!-- Reset partita (a destra) -->
@@ -75,66 +75,115 @@
 
 
     <!-- ===== MENU LATERALE SINISTRO ===== -->
+
     <nav class="leftbar" aria-label="Pannello laterale">
-        <!-- Missione corrente (card pulsante) -->
-        <section class="left-section">
-            <div class="left-head">
-                <h4>Obiettivo Missione</h4>
-            </div>
-            <div id="missione-corrente" class="left-content" style="padding-right:0;">
-                <div id="mission-card" class="mission-card" role="button" tabindex="0"
-                    aria-label="Apri dettagli missione corrente">
-                    <p style="margin:0 0 8px; opacity:.9;"><strong>#<span id="mc-num">3</span> — Scorta
-                            rifornimenti</strong></p>
-                    <ul style="margin:0 0 10px 18px; padding:0; opacity:.9">
-                        <li>Proteggi il convoglio per 5 turni</li>
-                        <li>Evita che più di 2 carri vengano distrutti</li>
-                    </ul>
-                    <p style="margin:0; font-size:12px; opacity:.8">Ricompensa: +2 Morale, +200 XP</p>
-                </div>
-            </div>
 
-        </section>
-
-        <!-- Stato Squadra: Morale / XP + Bonus/Malus -->
-        <section class="left-section">
-            <div class="left-head">
-                <h4>Bonus / Malus</h4>
+        <!-- OBIETTIVO MISSIONE -->
+        <section class="bench-section accordion-section" id="mission-section" data-open="1">
+            <div class="accordion-header">
+                <button class="accordion-trigger" type="button" aria-expanded="true" aria-controls="mission-panel">
+                    <h4 class="accordion-title">Obiettivo Missione</h4>
+                    <span class="accordion-caret" aria-hidden="true">▾</span>
+                </button>
             </div>
-            <div class="left-content" style="padding-right:0;">
-
-                <div style="margin-top:10px;">
-                    <div style="font-size:12px; opacity:.85; margin-bottom:6px;"></div>
-                    <div id="bm-box" class="pillbox">
-                        <span class="pill bonus">+1 Ricognizione</span>
-                        <span class="pill malus">-1 Meteo</span>
+            <div class="accordion-panel" id="mission-panel" role="region" aria-hidden="false">
+                <div class="accordion-inner">
+                    <div id="mission-card" class="mission-card" role="button" tabindex="0"
+                        aria-label="Apri dettagli missione corrente">
+                        <p style="margin:0 0 8px; opacity:.9;"><strong>#<span id="mc-num">3</span> — Scorta
+                                rifornimenti</strong></p>
+                        <ul style="margin:0 0 10px 18px; padding:0; opacity:.9">
+                            <li>Proteggi il convoglio per 5 turni</li>
+                            <li>Evita che più di 2 carri vengano distrutti</li>
+                        </ul>
+                        <p style="margin:0; font-size:12px; opacity:.8">Ricompensa: +2 Morale, +200 XP</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Lancio Dadi (restyle) -->
-        <section class="left-section dice-wrap">
-            <div class="left-head">
-                <h4>Lancio Dadi</h4>
+        <!-- MODIFICATORI TIRI -->
+        <section class="bench-section accordion-section" id="mods-section" data-open="0">
+            <div class="accordion-header">
+                <button class="accordion-trigger" type="button" aria-expanded="true" aria-controls="mods-panel">
+                    <h4 class="accordion-title">Modificatori - Globali</h4>
+                    <span class="accordion-caret" aria-hidden="true">▾</span>
+                </button>
             </div>
-            <div id="dice-box" class="left-content">
-                <div class="dice-actions">
-                    <button id="roll-d20" class="die-btn" title="Tira d20">d20</button>
-                    <button id="roll-d4" class="die-btn" title="Tira d4">d4</button>
-                    <span id="dice-res" class="dice-res" aria-live="polite"></span>
+            <div class="accordion-panel" id="mods-panel" role="region" aria-hidden="false">
+                <div class="accordion-inner">
+                    <div class="rm-rows">
+                        <div class="rm-row" data-kind="atk" data-sign="zero">
+                            <span class="rm-label">ATK</span>
+                            <div class="rm-stepper">
+                                <button class="rm-btn" data-delta="-1" type="button">−</button>
+                                <span class="rm-chip"><span id="rm-atk">+0</span></span>
+                                <button class="rm-btn" data-delta="+1" type="button">+</button>
+                            </div>
+                        </div>
+                        <div class="rm-row" data-kind="tec" data-sign="zero">
+                            <span class="rm-label">TEC</span>
+                            <div class="rm-stepper">
+                                <button class="rm-btn" data-delta="-1" type="button">−</button>
+                                <span class="rm-chip"><span id="rm-tec">+0</span></span>
+                                <button class="rm-btn" data-delta="+1" type="button">+</button>
+                            </div>
+                        </div>
+                        <div class="rm-row" data-kind="agi" data-sign="zero">
+                            <span class="rm-label">AGI</span>
+                            <div class="rm-stepper">
+                                <button class="rm-btn" data-delta="-1" type="button">−</button>
+                                <span class="rm-chip"><span id="rm-agi">+0</span></span>
+                                <button class="rm-btn" data-delta="+1" type="button">+</button>
+                            </div>
+                        </div>
+                        <div class="rm-row" data-kind="all" data-sign="zero">
+                            <span class="rm-label">TOT</span>
+                            <div class="rm-stepper">
+                                <button class="rm-btn" data-delta="-1" type="button">−</button>
+                                <span class="rm-chip"><span id="rm-all">+0</span></span>
+                                <button class="rm-btn" data-delta="+1" type="button">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="rm-sep">
+
+                    <div class="rm-dice">
+                        <div class="rm-dice-row">
+                            <select id="rm-die" class="rm-die">
+                                <option value="4">d4</option>
+                                <option value="6">d6</option>
+                                <option value="8">d8</option>
+                                <option value="10">d10</option>
+                                <option value="12">d12</option>
+                                <option value="20" selected>d20</option>
+                            </select>
+                            <button id="rm-roll" class="rm-btn" type="button" title="Tira">🎲</button>
+                            <span id="rm-roll-out" class="rm-roll-out" aria-live="polite">—</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Log partita (restyle) -->
-        <section class="left-section log-wrap">
-            <div class="left-head">
-                <h4>Log partita</h4>
+        <!-- LOG PARTITA -->
+        <section class="bench-section accordion-section" id="log-section" data-open="0">
+            <div class="accordion-header">
+                <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="log-panel">
+                    <h4 class="accordion-title">Log partita</h4>
+                    <span class="accordion-caret" aria-hidden="true">▾</span>
+                </button>
             </div>
-            <div id="log-box" class="left-content"></div>
+            <div class="accordion-panel" id="log-panel" role="region" aria-hidden="true">
+                <div class="accordion-inner">
+                    <div id="log-box" class="left-content"></div>
+                </div>
+            </div>
         </section>
+
     </nav>
+
 
     <!-- ===== COLONNA PANCHINE (DESTRA) ===== -->
     <aside>
@@ -323,7 +372,7 @@
                 <div class="bar xp">
                     <div id="xp-fill" class="fill" style="width:40%"></div>
                 </div>
-                <button class="bbtn" data-target="xp" data-xp="+1" title="+1 XP">+</button>
+                <button class="bbtn" data-target="xp" data-xp="1" title="+1 XP">+</button>
                 <!-- non serve più il br-val a destra -->
             </div>
         </div>

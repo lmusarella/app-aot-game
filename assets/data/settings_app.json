@@ -161,6 +161,7 @@
         "dispalyLimit": 8
     },
     "xpTable": [
+        0,
         2,
         4,
         8,
@@ -190,7 +191,8 @@
         "effectiveBonus": {
             "agi": 0,
             "tec": 0,
-            "atk": 0
+            "atk": 0,
+            "all": 0
         }
     }
 }

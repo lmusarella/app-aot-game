@@ -557,6 +557,12 @@ const GAME_STATE = {
     giantsRoster: [],
     walls: [],
     logs: [],
+    modRolls: {
+        atk: 0,
+        tec: 0,
+        agi: 0,
+        all: 0
+    },
     turnEngine: TurnEngine
 }
 
@@ -602,7 +608,7 @@ const box = document.getElementById('bm-box');
 
 const elMissionNumTop = document.getElementById('m-num');       // header (numero)
 const elMissionNumCard = document.querySelector('#missione-corrente #mc-num'); // card (numero)
-const elMissionCardWrap = document.getElementById('missione-corrente');        // container card
+const elMissionCardWrap = document.getElementById('mission-panel');        // container card
 
 const elPlay = document.getElementById('t-play');
 const elReset = document.getElementById('t-reset');
@@ -643,6 +649,7 @@ function snapshot() {
         decks: structuredClone(GAME_STATE.decks),
         // UI/stati
         xpMoraleState: structuredClone(GAME_STATE.xpMoraleState),
+        modRolls: structuredClone(GAME_STATE.modRolls),
         // log
         logs: structuredClone(GAME_STATE.logs),
         //turnengine
@@ -693,6 +700,7 @@ function restore(save) {
 
     // 3) stati
     Object.assign(GAME_STATE.xpMoraleState, save.xpMoraleState || {});
+    Object.assign(GAME_STATE.modRolls, save.modRolls || {});
     Object.assign(GAME_STATE.missionState, save.missionState || {});
     Object.assign(GAME_STATE.turnEngine, save.turnEngine || TurnEngine);
     GAME_STATE.missionState.intervalId = null; // sempre nullo a cold start
@@ -744,6 +752,7 @@ function restore(save) {
     renderHeader();
     renderLogs();
     updateFabDeckCounters();
+    refreshRollModsUI();
     return true;
 }
 
@@ -1882,14 +1891,6 @@ function log(msg, type = 'info') {
 function rollAnimText(txt) {
     diceRes.innerHTML = `<span class="roll">${txt}</span>`;
 }
-
-document.getElementById('roll-d20').addEventListener('click', () => {
-    const n = d(20); rollAnimText('d20 → ' + n);
-});
-document.getElementById('roll-d4').addEventListener('click', () => {
-    const n = d(4); rollAnimText('d4  → ' + n);
-});
-
 /* ======================= LONG PRESS UTILS ======================= */
 
 function addLongPress(el, { onLongPress, onClick }) {
@@ -3091,17 +3092,18 @@ function malusFromMorale(moralePctRaw) {
     return [{
         type: 'malus',
         text: row.text || '',           // Puoi popolarlo nella tabella
-        bonus: row.bonus || { agi: 0, tec: 0, atk: 0 }
+        bonus: row.bonus || { agi: 0, tec: 0, atk: 0, all: 0 }
     }];
 }
 // === Utility merge/somma di tutti i bonus/malus ===
 function mergeBonuses(pills) {
-    const totals = { agi: 0, tec: 0, atk: 0 };
+    const totals = { agi: 0, tec: 0, atk: 0, all: 0 };
     for (const p of pills) {
         if (!p || !p.bonus) continue;
         totals.agi += p.bonus.agi || 0;
         totals.tec += p.bonus.tec || 0;
         totals.atk += p.bonus.atk || 0;
+        totals.all += p.bonus.all || 0;
     }
     return totals;
 }
@@ -3118,30 +3120,22 @@ function bonusesFromLevel(level) {
 
 // Render unico
 function renderBonusMalus() {
-    if (!box) return;
 
     const level = levelFromXP(GAME_STATE.xpMoraleState.xp);
     const morale = Number(GAME_STATE.xpMoraleState.moralePct) || 0;
-
     // 1) raccogli pillole: bonus (cumulativi per soglia) + malus (unico per range)
     const pills = [
+        {type: 'modsRoll', text: '', bonus: GAME_STATE.modRolls},
         ...bonusesFromLevel(level),
         ...malusFromMorale(morale),
     ];
-
+    console.log('pills', pills);
     // 2) calcola la somma effettiva
     const totals = mergeBonuses(pills);
     // opzionale: salviamo nello state se vuoi riusarlo altrove
     GAME_STATE.xpMoraleState.effectiveBonus = totals;
 
-    // 3) render UI pillole + somma finale
-    const pillsHtml = pills.length
-        ? pills.map(p => `<span class="pill ${p.type}">${p.text || ''}</span>`).join('')
-        : '';
-
-    const totalsHtml = `<span class="pill total">Totale: AGI ${fmtSigned(totals.agi)} • TEC ${fmtSigned(totals.tec)} • ATK ${fmtSigned(totals.atk)}</span>`;
-
-    box.innerHTML = pillsHtml + totalsHtml;
+    refreshRollModsUI();
 }
 
 function refreshXPUI() {
@@ -3196,13 +3190,11 @@ function addMorale(deltaPct) {
 }
 
 function addXP(delta) {
+
     const prevXP = GAME_STATE.xpMoraleState.xp;
     const prevLevel = levelFromXP(prevXP);
-
-    // aggiorna XP (può salire o scendere)
     const nextXP = Math.max(0, prevXP + (Number(delta) || 0));
     GAME_STATE.xpMoraleState.xp = nextXP;
-
     const nextLevel = levelFromXP(nextXP);
 
     // UI immediata
@@ -3284,6 +3276,7 @@ function renderMissionUI() {
 
     // Rigenera il contenuto della card (mantieni il div#mission-card)
     const card = elMissionCardWrap.querySelector('#mission-card');
+    console.log('card', card);
     if (card) {
         card.innerHTML = `
       <p style="margin:0 0 8px; opacity:.9;"><strong>#<span>${num}</span> — ${title}</strong></p>
@@ -3511,6 +3504,81 @@ async function bootDataApplication() {
         return DB;
     }
 }
+(function setupLeftAccordions() {
+    const aside = document.querySelector('nav');
+    if (!aside) return;
+
+    const sections = Array.from(aside.querySelectorAll('.accordion-section'));
+
+    // Applica lo stato iniziale letto da data-open (0/1)
+    sections.forEach(sec => {
+        const btn = sec.querySelector('.accordion-trigger');
+        const panel = sec.querySelector('.accordion-panel');
+        const open = sec.dataset.open === '1';
+        btn?.setAttribute('aria-expanded', String(open));
+        panel?.setAttribute('aria-hidden', String(!open));
+    });
+
+    function expandMax(sec) {
+        // Calcola lo spazio disponibile totale dentro <aside>
+        const styleAside = getComputedStyle(aside);
+        const gap = parseFloat(styleAside.gap) || 0;
+        const padT = parseFloat(styleAside.paddingTop) || 0;
+        const padB = parseFloat(styleAside.paddingBottom) || 0;
+        const total = aside.clientHeight;
+
+        // Somma le altezze delle intestazioni di TUTTE le sezioni
+        let consumed = padT + padB + gap * Math.max(0, sections.length - 1);
+        sections.forEach(s => {
+            const hdr = s.querySelector('.accordion-header');
+            consumed += hdr ? hdr.offsetHeight : 0;
+        });
+
+        const max = Math.max(120, total - consumed - 8); // margine di sicurezza
+        const inner = sec.querySelector('.accordion-inner');
+        if (inner) inner.style.maxHeight = `${max}px`;
+    }
+
+    function openOne(target) {
+        sections.forEach(sec => {
+            const isTarget = sec === target;
+            const btn = sec.querySelector('.accordion-trigger');
+            const panel = sec.querySelector('.accordion-panel');
+
+            sec.dataset.open = isTarget ? '1' : '0';
+            btn?.setAttribute('aria-expanded', String(isTarget));
+            panel?.setAttribute('aria-hidden', String(!isTarget));
+
+            if (isTarget) expandMax(sec);
+        });
+    }
+
+    // Click: apertura esclusiva. Se clicchi su quello già aperto: lo chiude.
+    sections.forEach(sec => {
+        const btn = sec.querySelector('.accordion-trigger');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            const isOpen = sec.dataset.open === '1';
+            if (isOpen) {
+                sec.dataset.open = '0';
+                sec.querySelector('.accordion-panel')?.setAttribute('aria-hidden', 'true');
+                btn.setAttribute('aria-expanded', 'false');
+            } else {
+                openOne(sec);
+            }
+        });
+    });
+
+    // Se una sezione è già aperta all’avvio (es. "Mura"), calcola subito l’altezza massima
+    const initialOpen = sections.find(s => s.dataset.open === '1');
+    if (initialOpen) expandMax(initialOpen);
+
+
+    window.openLeftAccordionById = function (id) {
+        const sec = sections.find(s => s.id === id);
+        if (sec) openOne(sec);
+    };
+})();
 
 (function setupRightAccordions() {
     const aside = document.querySelector('aside');
@@ -3598,7 +3666,37 @@ function openAccordionForRole(role) {
     if (typeof window.openRightAccordionById === 'function') {
         window.openRightAccordionById(id);
     }
+
+    if (typeof window.openLeftAccordionById === 'function') {
+        window.openLeftAccordionById(id);
+    }
 }
+// opzionale: wiring semplice per tutti gli accordion
+(function setupAccordions() {
+    document.querySelectorAll('.accordion-section .accordion-trigger').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const expanded = btn.getAttribute('aria-expanded') === 'true';
+            const panelId = btn.getAttribute('aria-controls');
+            const panel = document.getElementById(panelId);
+            btn.setAttribute('aria-expanded', String(!expanded));
+            if (panel) panel.setAttribute('aria-hidden', String(expanded));
+        });
+    });
+})();
+// === COLLASSA/ESPANDI NAV SINISTRO mantenendo i titoli visibili ===
+(function setupLeftCollapse() {
+    const btn = document.getElementById('toggle-left');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        // inverti stato
+        btn.setAttribute('aria-expanded', String(!expanded));
+        document.body.classList.toggle('is-left-collapsed', expanded);
+    });
+})();
+
+
 
 // logica mano
 function addCardToHand(deckType, card) {
@@ -3629,6 +3727,84 @@ function discardFullHand() {
     if (e || c) log(`Scartate ${e ? `${e} Evento` : ''}${e && c ? ' e ' : ''}${c ? `${c} Consumabile` : ''} dalla mano.`, 'info');
 }
 window.addCardToHand = addCardToHand; // opzionale, comodo da console / altre parti
+
+function ensureRollMods() {
+    if (!GAME_STATE.modRolls) {
+        GAME_STATE.modRolls = { atk: 0, tec: 0, agi: 0, all: 0 };
+    }
+    return GAME_STATE.modRolls;
+}
+
+function initModsDiceUI() {
+    const dieSel = document.getElementById('rm-die');
+    const btn = document.getElementById('rm-roll');
+    const out = document.getElementById('rm-roll-out');
+
+    if (!dieSel || !btn || !out) return;
+
+    const signed = (n) => (n >= 0 ? `+ ${n}` : `${n}`);
+    const getTot = () => {
+        const el = document.getElementById('rm-all');
+        if (!el) return 0;
+        const n = parseInt((el.textContent || '').replace(/[^\-0-9]/g, ''), 10);
+        return Number.isFinite(n) ? n : 0;
+    };
+    const rollDie = (sides) => Math.floor(Math.random() * sides) + 1;
+
+    btn.addEventListener('click', () => {
+        const sides = parseInt(dieSel.value, 10) || 20;
+        const r = rollDie(sides);
+        const totMod = getTot();
+        const total = r + totMod;
+
+        out.textContent = `d${sides}: ${r} ${totMod ? `(${signed(totMod)}) = ${total}` : ''}`;
+        out.classList.remove('roll'); // retrigger anim
+        void out.offsetWidth;
+        out.classList.add('roll');
+
+        // opzionale: log e sfx se li usi già
+        try { log(`Tiro d${sides}: ${r}${totMod ? ` ${signed(totMod)} => ${total}` : ''}`, 'info'); } catch { }
+    });
+}
+
+const boxMods = document.getElementById('mods-section');
+
+const renderRollMods = () => {
+    const m = GAME_STATE.xpMoraleState.effectiveBonus;
+    const fmt = (v) => (v >= 0 ? '+' + v : '' + v);
+    ['atk', 'tec', 'agi', 'all'].forEach(k => {
+        const v = m[k] || 0;
+        const el = document.getElementById('rm-' + k);
+        if (el) el.textContent = fmt(v);
+
+        // 👉 imposta il segno sulla riga per attivare il CSS
+        const row = boxMods.querySelector(`.rm-row[data-kind="${k}"]`);
+        if (row) row.dataset.sign = (v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero');
+    });
+};
+
+boxMods.addEventListener('click', (e) => {
+    const btn = e.target.closest('.rm-btn');
+    console.log('btn', btn)
+    if (!btn) return;
+    const row = btn.closest('.rm-row');
+    const kind = row?.dataset?.kind;
+    const d = Number(btn.dataset.delta || 0);
+    if (!kind || !d) return;
+    const m = ensureRollMods();
+
+    m[kind] = (m[kind] || 0) + d;
+
+    renderBonusMalus();
+    refreshRollModsUI();
+    scheduleSave();
+});
+
+
+function refreshRollModsUI() {
+    renderRollMods();
+}
+
 
 /* =============================
    Long-press / Right-click → Attacca (robusto)
@@ -4187,10 +4363,12 @@ function resolveAttack(attackerId, targetId) {
     const forMod = getNum(human, ['atk'], 0);
     const giantAtk = Math.max(1, getNum(giant, ['atk'], 1));
 
-    // Tiro unico
-    const d20 = d(20);
-
     const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus;
+
+    // Tiro unico
+    const d20 = d(20) + effectiveBonus.all;
+
+
     // Umano → TEC vs CD gigante (per colpire)
     const humanHits = (d20 + tecMod + effectiveBonus.tec) >= cdGiant;
 
@@ -4599,93 +4777,93 @@ function volumeUI() {
     }
 };
 
-function mountVolumeCard(){
-  // aspetta che il MIXER esponga i setter
-  if (!window.MIXER || typeof MIXER.setMusicVolume !== 'function'){
-    setTimeout(mountVolumeCard, 40);
-    return;
-  }
-  const musicEl = document.getElementById('vol-music');
-  const sfxEl   = document.getElementById('vol-sfx');
-  const outM    = document.getElementById('vol-music-val');
-  const outS    = document.getElementById('vol-sfx-val');
-
-  // leggi config corrente dal mixer
-  const cfg = MIXER._state?.cfg || { music: 0.22, sfx: 0.8 };
-  const mVal = Math.round((cfg.music ?? 0.22) * 100);
-  const sVal = Math.round((cfg.sfx   ?? 0.80) * 100);
-
-  musicEl.value = mVal;
-  sfxEl.value   = sVal;
-  outM.textContent = `${mVal}%`;
-  outS.textContent = `${sVal}%`;
-
-  // applica riempimento grafico
-  updateSliderFill(musicEl);
-  updateSliderFill(sfxEl);
-
-  const onInput = (ev) => {
-    const el = ev.currentTarget;
-    const val = parseInt(el.value, 10) || 0;
-    const pct = Math.max(0, Math.min(100, val));
-    if (el === musicEl){
-      MIXER.setMusicVolume(pct / 100);
-      outM.textContent = `${pct}%`;
-      localStorage.setItem('vol.music', String(pct));
-    } else {
-      MIXER.setSfxVolume(pct / 100);
-      outS.textContent = `${pct}%`;
-      localStorage.setItem('vol.sfx', String(pct));
+function mountVolumeCard() {
+    // aspetta che il MIXER esponga i setter
+    if (!window.MIXER || typeof MIXER.setMusicVolume !== 'function') {
+        setTimeout(mountVolumeCard, 40);
+        return;
     }
-    updateSliderFill(el);
-  };
+    const musicEl = document.getElementById('vol-music');
+    const sfxEl = document.getElementById('vol-sfx');
+    const outM = document.getElementById('vol-music-val');
+    const outS = document.getElementById('vol-sfx-val');
 
-  musicEl.addEventListener('input', onInput);
-  sfxEl.addEventListener('input', onInput);
+    // leggi config corrente dal mixer
+    const cfg = MIXER._state?.cfg || { music: 0.22, sfx: 0.8 };
+    const mVal = Math.round((cfg.music ?? 0.22) * 100);
+    const sVal = Math.round((cfg.sfx ?? 0.80) * 100);
 
-  // se avevi salvato preferenze, ricaricale
-  const savedM = parseInt(localStorage.getItem('vol.music') || '', 10);
-  const savedS = parseInt(localStorage.getItem('vol.sfx')   || '', 10);
-  if (!Number.isNaN(savedM)){ musicEl.value = savedM; outM.textContent = `${savedM}%`; MIXER.setMusicVolume(savedM/100); updateSliderFill(musicEl); }
-  if (!Number.isNaN(savedS)){ sfxEl.value   = savedS; outS.textContent = `${savedS}%`; MIXER.setSfxVolume(savedS/100);   updateSliderFill(sfxEl); }
+    musicEl.value = mVal;
+    sfxEl.value = sVal;
+    outM.textContent = `${mVal}%`;
+    outS.textContent = `${sVal}%`;
+
+    // applica riempimento grafico
+    updateSliderFill(musicEl);
+    updateSliderFill(sfxEl);
+
+    const onInput = (ev) => {
+        const el = ev.currentTarget;
+        const val = parseInt(el.value, 10) || 0;
+        const pct = Math.max(0, Math.min(100, val));
+        if (el === musicEl) {
+            MIXER.setMusicVolume(pct / 100);
+            outM.textContent = `${pct}%`;
+            localStorage.setItem('vol.music', String(pct));
+        } else {
+            MIXER.setSfxVolume(pct / 100);
+            outS.textContent = `${pct}%`;
+            localStorage.setItem('vol.sfx', String(pct));
+        }
+        updateSliderFill(el);
+    };
+
+    musicEl.addEventListener('input', onInput);
+    sfxEl.addEventListener('input', onInput);
+
+    // se avevi salvato preferenze, ricaricale
+    const savedM = parseInt(localStorage.getItem('vol.music') || '', 10);
+    const savedS = parseInt(localStorage.getItem('vol.sfx') || '', 10);
+    if (!Number.isNaN(savedM)) { musicEl.value = savedM; outM.textContent = `${savedM}%`; MIXER.setMusicVolume(savedM / 100); updateSliderFill(musicEl); }
+    if (!Number.isNaN(savedS)) { sfxEl.value = savedS; outS.textContent = `${savedS}%`; MIXER.setSfxVolume(savedS / 100); updateSliderFill(sfxEl); }
 }
 
 // colora la track fino alla percentuale
-function updateSliderFill(inputEl){
-  const pct = (parseInt(inputEl.value, 10) || 0);
-  const styles = getComputedStyle(inputEl);
-  const fill  = styles.getPropertyValue('--fill').trim() || '#3b82f6';
-  const track = styles.getPropertyValue('--track').trim() || '#1a2031';
-  inputEl.style.background = `linear-gradient(to right, ${fill} 0% ${pct}%, ${track} ${pct}% 100%)`;
+function updateSliderFill(inputEl) {
+    const pct = (parseInt(inputEl.value, 10) || 0);
+    const styles = getComputedStyle(inputEl);
+    const fill = styles.getPropertyValue('--fill').trim() || '#3b82f6';
+    const track = styles.getPropertyValue('--track').trim() || '#1a2031';
+    inputEl.style.background = `linear-gradient(to right, ${fill} 0% ${pct}%, ${track} ${pct}% 100%)`;
 }
 
-(function wireAudioPopup(){
-  const btn = document.getElementById('btn-audio');
-  const dlg = document.getElementById('audio-modal');
-  const bd  = document.getElementById('audio-backdrop');
-  const closeBtn = dlg?.querySelector('[data-close]');
-  let inited = false;
+(function wireAudioPopup() {
+    const btn = document.getElementById('btn-audio');
+    const dlg = document.getElementById('audio-modal');
+    const bd = document.getElementById('audio-backdrop');
+    const closeBtn = dlg?.querySelector('[data-close]');
+    let inited = false;
 
-  function openAudio(){
-    bd.classList.add('show');
-    dlg.classList.add('show');
-    if (!inited){
-      mountVolumeCard(); // inizializza gli slider SOLO ora
-      inited = true;
+    function openAudio() {
+        bd.classList.add('show');
+        dlg.classList.add('show');
+        if (!inited) {
+            mountVolumeCard(); // inizializza gli slider SOLO ora
+            inited = true;
+        }
     }
-  }
-  function closeAudio(){
-    bd.classList.remove('show');
-    dlg.classList.remove('show');
-  }
+    function closeAudio() {
+        bd.classList.remove('show');
+        dlg.classList.remove('show');
+    }
 
-  btn?.addEventListener('click', openAudio);
-  closeBtn?.addEventListener('click', closeAudio);
-  bd?.addEventListener('click', closeAudio);
-  // Esc per chiudere
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && dlg.classList.contains('show')) closeAudio();
-  });
+    btn?.addEventListener('click', openAudio);
+    closeBtn?.addEventListener('click', closeAudio);
+    bd?.addEventListener('click', closeAudio);
+    // Esc per chiudere
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && dlg.classList.contains('show')) closeAudio();
+    });
 })();
 
 
@@ -4711,6 +4889,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderLogs();
         updateFabDeckCounters();
         rebuildUnitIndex();
+        refreshRollModsUI();
+        initModsDiceUI();
     }
 
     GAME_STATE.turnEngine.init()

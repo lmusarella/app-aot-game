@@ -32,7 +32,7 @@
    margin: 0;
    background: #1c2030c7;
    color: #e6e6e6;
-   font: 14px/1.35 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+   font: 13px/1.35 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 
    /* layout 3 colonne */
    height: 100vh;
@@ -1242,7 +1242,6 @@
    border-radius: 8px;
    padding: 8px;
    min-height: 80px;
-   max-height: 180px;
    overflow: auto;
  }
 
@@ -1533,7 +1532,6 @@
    color: #9aa0a6;
    letter-spacing: .2px;
    font-weight: 800;
-   opacity: .8;
    border: 1px dashed #222;
    background: linear-gradient(180deg, #0c0d12, #090a0f);
  }
@@ -2545,7 +2543,7 @@
    width: 100%;
    cursor: pointer;
    padding: 12px 18px;
-   /* più respiro */
+   justify-content: space-between;
    user-select: none;
    -webkit-user-select: none;
    touch-action: manipulation;
@@ -2888,6 +2886,7 @@
  /* ===== Right-column accordions: fill available height ===== */
 
  /* Ogni sezione accordion nella colonna destra deve poter crescere */
+  nav .bench-section,
  aside .bench-section {
    display: flex;
    flex-direction: column;
@@ -2896,11 +2895,13 @@
  }
 
  /* Usa l'attributo data-open per controllare l'altezza via flex */
+  nav .bench-section[data-open="1"],
  aside .bench-section[data-open="1"] {
    flex: 1 1 auto;
  }
 
  /* sezione aperta: prende spazio */
+  nav .bench-section[data-open="0"],
  aside .bench-section[data-open="0"] {
    flex: 0 0 auto;
  }
@@ -2908,6 +2909,7 @@
  /* sezione chiusa: solo header */
 
  /* Il pannello dell'accordion deve crescere e gestire lo scroll interno */
+  nav .bench-section .accordion-panel,
  aside .bench-section .accordion-panel {
    display: flex;
    flex: 1 1 auto;
@@ -2917,12 +2919,14 @@
  }
 
  /* Stato chiuso: pannello compresso */
+  nav .bench-section[data-open="0"] .accordion-panel,
  aside .bench-section[data-open="0"] .accordion-panel {
    flex: 0 0 0;
    border-top-color: transparent;
  }
 
  /* Contenitore interno scorrevole */
+ nav .bench-section .accordion-inner,
  aside .bench-section .accordion-inner {
    flex: 1 1 auto;
    min-height: 0;
@@ -2932,11 +2936,13 @@
  }
 
  /* Rimuovi i limiti "da lista" quando le bench stanno dentro un accordion */
+  nav .bench,
  aside .bench {
    max-height: none !important;
  }
 
  /* Se avevi un max-height per le Mura, disattivalo in accordion */
+  nav .accordion-inner,
  aside .accordion-inner {
    max-height: none !important;
  }
@@ -3387,96 +3393,475 @@
    background: linear-gradient(180deg, #f59e0b, #b45309);
    border-color: #7c3a06;
  }
+
  /* ====== Volume Card ====== */
-.vol-card{
-  --bg: linear-gradient(180deg, #0f1118, #0b0d14);
-  --bd: #22263b;
-  --ring: rgba(100, 160, 255, .12);
-  position: relative;
-  min-width: 260px;
-  max-width: 360px;
-  padding: 12px;
-  border: 1px solid var(--bd);
-  border-radius: 14px;
-  background: var(--bg);
-  box-shadow: 0 12px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
-}
+ .vol-card {
+   --bg: linear-gradient(180deg, #0f1118, #0b0d14);
+   --bd: #22263b;
+   --ring: rgba(100, 160, 255, .12);
+   position: relative;
+   min-width: 260px;
+   max-width: 360px;
+   padding: 12px;
+   border: 1px solid var(--bd);
+   border-radius: 14px;
+   background: var(--bg);
+   box-shadow: 0 12px 28px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .05);
+ }
 
-.vol-row + .vol-row{ margin-top: 12px; }
+ .vol-row+.vol-row {
+   margin-top: 12px;
+ }
 
-.vol-head{
-  display:flex; align-items:center; gap:8px;
-  margin-bottom: 8px;
-}
-.vol-ico{
-  display:inline-grid; place-items:center;
-  width:22px; height:22px; border-radius:6px;
-  background: rgba(255,255,255,.06);
-  color: #cbd5ff;
-}
-.vol-title{
-  font-weight:700; font-size:13px;
-}
-.vol-val{
-  margin-left:auto; font-variant-numeric: tabular-nums;
-  font-size:12px; opacity:.9;
-}
+ .vol-head {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   margin-bottom: 8px;
+ }
 
-/* ====== Range moderno (dark) ====== */
-.vol-range{
-  --track: #1a2031;         /* colore base track */
-  --fill:  #3b82f6;         /* fallback accent */
-  --thumb: #e6e6e6;
-  --focus: #7aa2ff;
-  width: 100%;
-  height: 28px;
-  appearance: none;
-  background: linear-gradient(to right, var(--fill) 0% 0%, var(--track) 0% 100%);
-  border-radius: 999px;
-  outline: none;
-  transition: filter .15s ease;
-  cursor: pointer;
-}
+ .vol-ico {
+   display: inline-grid;
+   place-items: center;
+   width: 22px;
+   height: 22px;
+   border-radius: 6px;
+   background: rgba(255, 255, 255, .06);
+   color: #cbd5ff;
+ }
 
-/* accenti per i due slider (riusa la tua palette) */
-.vol-range.music{ --fill: var(--oro, #CF9439); }
-.vol-range.sfx  { --fill: var(--verde, #44ad6b); }
+ .vol-title {
+   font-weight: 700;
+   font-size: 13px;
+ }
 
-/* WebKit track */
-.vol-range::-webkit-slider-runnable-track{
-  height: 8px;
-  background: transparent;  /* lo sfondo lo gestiamo sul wrapper input */
-  border-radius: 999px;
-}
-.vol-range::-webkit-slider-thumb{
-  -webkit-appearance: none;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--thumb);
-  border: 3px solid #0b0d14;
-  box-shadow: 0 2px 10px rgba(0,0,0,.45), 0 0 0 4px rgba(255,255,255,.06);
-  margin-top: -5px; /* centra il thumb sulla track */
-}
+ .vol-val {
+   margin-left: auto;
+   font-variant-numeric: tabular-nums;
+   font-size: 12px;
+   opacity: .9;
+ }
 
-/* Firefox */
-.vol-range::-moz-range-track{
-  height: 8px; background: transparent; border: none; border-radius: 999px;
-}
-.vol-range::-moz-range-thumb{
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--thumb);
-  border: 3px solid #0b0d14;
-  box-shadow: 0 2px 10px rgba(0,0,0,.45), 0 0 0 4px rgba(255,255,255,.06);
-}
+ /* ====== Range moderno (dark) ====== */
+ .vol-range {
+   --track: #1a2031;
+   /* colore base track */
+   --fill: #3b82f6;
+   /* fallback accent */
+   --thumb: #e6e6e6;
+   --focus: #7aa2ff;
+   width: 100%;
+   height: 28px;
+   appearance: none;
+   background: linear-gradient(to right, var(--fill) 0% 0%, var(--track) 0% 100%);
+   border-radius: 999px;
+   outline: none;
+   transition: filter .15s ease;
+   cursor: pointer;
+ }
 
-/* Focus */
-.vol-range:focus-visible{
-  box-shadow: 0 0 0 3px var(--ring);
-}
+ /* accenti per i due slider (riusa la tua palette) */
+ .vol-range.music {
+   --fill: var(--oro, #CF9439);
+ }
 
-/* Hover/active piccoli feedback */
-.vol-range:hover{ filter: brightness(1.06); }
-.vol-range:active{ filter: saturate(1.08); }
+ .vol-range.sfx {
+   --fill: var(--verde, #44ad6b);
+ }
 
-/* popup audio: larghezza comoda e body senza padding extra */
-.modal.modal-audio { max-width: 420px; }
-.modal.modal-audio .modal-body { padding: 12px; }
+ /* WebKit track */
+ .vol-range::-webkit-slider-runnable-track {
+   height: 8px;
+   background: transparent;
+   /* lo sfondo lo gestiamo sul wrapper input */
+   border-radius: 999px;
+ }
+
+ .vol-range::-webkit-slider-thumb {
+   -webkit-appearance: none;
+   width: 18px;
+   height: 18px;
+   border-radius: 50%;
+   background: var(--thumb);
+   border: 3px solid #0b0d14;
+   box-shadow: 0 2px 10px rgba(0, 0, 0, .45), 0 0 0 4px rgba(255, 255, 255, .06);
+   margin-top: -5px;
+   /* centra il thumb sulla track */
+ }
+
+ /* Firefox */
+ .vol-range::-moz-range-track {
+   height: 8px;
+   background: transparent;
+   border: none;
+   border-radius: 999px;
+ }
+
+ .vol-range::-moz-range-thumb {
+   width: 18px;
+   height: 18px;
+   border-radius: 50%;
+   background: var(--thumb);
+   border: 3px solid #0b0d14;
+   box-shadow: 0 2px 10px rgba(0, 0, 0, .45), 0 0 0 4px rgba(255, 255, 255, .06);
+ }
+
+ /* Focus */
+ .vol-range:focus-visible {
+   box-shadow: 0 0 0 3px var(--ring);
+ }
+
+ /* Hover/active piccoli feedback */
+ .vol-range:hover {
+   filter: brightness(1.06);
+ }
+
+ .vol-range:active {
+   filter: saturate(1.08);
+ }
+
+ /* popup audio: larghezza comoda e body senza padding extra */
+ .modal.modal-audio {
+   max-width: 420px;
+ }
+
+ .modal.modal-audio .modal-body {
+   padding: 12px;
+ }
+
+ .rm-row {
+   display: grid;
+   grid-template-columns: auto 28px auto 28px;
+   align-items: center;
+   gap: 8px;
+ }
+
+ #mods-section .br-label {
+   font-size: 13px;
+   opacity: .9;
+ }
+
+ #mods-section .br-val {
+   font-size: 12px;
+   min-width: 42px;
+   text-align: center;
+ }
+
+ /* Modificatori tiro: colore in base al segno */
+ #mods-section .rm-row[data-sign="pos"] .br-label,
+ #mods-section .rm-row[data-sign="pos"] .br-val {
+   color: #22c55e;
+ }
+
+ /* verde */
+
+ #mods-section .rm-row[data-sign="neg"] .br-label,
+ #mods-section .rm-row[data-sign="neg"] .br-val {
+   color: #ef4444;
+ }
+
+ /* rosso */
+
+ #mods-section .rm-row[data-sign="zero"] .br-label,
+ #mods-section .rm-row[data-sign="zero"] .br-val {
+   color: #e6e6e6;
+   opacity: .9;
+ }
+
+ /* neutro */
+
+ #mods-section .br-val {
+   transition: color .15s ease;
+ }
+
+ /* ==== Compact & modern roll-mods card ==== */
+ :root {
+   --rm-bg: #0f1118;
+   --rm-bd: #1f2436;
+   --rm-chip-bg: #13182a;
+   --rm-btn-bg: #111420;
+   --rm-btn-bd: #262b3f;
+   --rm-btn-bg-hover: #161b2b;
+ }
+
+ #mods-section.rm-card {
+   background: linear-gradient(180deg, #0f1118, #0b0e16);
+   border: 1px solid var(--rm-bd);
+   border-radius: 14px;
+   overflow: hidden;
+ }
+
+ #mods-section .rm-head {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   padding: 10px 12px;
+   border-bottom: 1px solid var(--rm-bd);
+ }
+
+ #mods-section .rm-title {
+   margin: 0;
+   font-size: 14px;
+   font-weight: 800;
+   letter-spacing: .2px;
+ }
+
+ #mods-section .rm-reset {
+   width: 28px;
+   height: 28px;
+   border-radius: 9px;
+   border: 1px solid var(--rm-btn-bd);
+   background: var(--rm-btn-bg);
+   color: #dbe1ff;
+   cursor: pointer;
+   display: grid;
+   place-items: center;
+   transition: transform .08s ease, filter .12s ease, background .12s ease, border-color .12s ease;
+ }
+
+ #mods-section .rm-reset:hover {
+   background: var(--rm-btn-bg-hover);
+   filter: brightness(1.05);
+ }
+
+ #mods-section .rm-reset:active {
+   transform: scale(.97);
+ }
+
+ #mods-section .rm-rows {
+   display: grid;
+   gap: 8px;
+   padding: 12px;
+ }
+
+ #mods-section .rm-row {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   padding: 8px 10px;
+   border: 1px solid var(--rm-bd);
+   border-radius: 12px;
+   background: linear-gradient(180deg, #0f1118, #0c101a);
+ }
+
+ #mods-section .rm-label {
+   font-weight: 800;
+   font-size: 12px;
+   letter-spacing: .4px;
+   opacity: .95;
+   min-width: 42px;
+ }
+
+ #mods-section .rm-stepper {
+   margin-left: auto;
+   display: inline-grid;
+   grid-template-columns: 28px auto 28px;
+   gap: 6px;
+   align-items: center;
+ }
+
+ #mods-section .rm-btn {
+   width: 28px;
+   height: 28px;
+   border-radius: 9px;
+   cursor: pointer;
+   border: 1px solid var(--rm-btn-bd);
+   background: var(--rm-btn-bg);
+   color: #e6e6e6;
+   display: grid;
+   place-items: center;
+   font-weight: 900;
+   transition: transform .08s ease, filter .12s ease, background .12s ease, border-color .12s ease;
+   user-select: none;
+ }
+
+ #mods-section .rm-btn:hover {
+   background: var(--rm-btn-bg-hover);
+   filter: brightness(1.05);
+ }
+
+ #mods-section .rm-btn:active {
+   transform: scale(.96);
+ }
+
+ #mods-section .rm-chip {
+   min-width: 56px;
+   text-align: center;
+   padding: 6px 10px;
+   border-radius: 10px;
+   border: 1px solid #2a324a;
+   background: var(--rm-chip-bg);
+   font: 600 12px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+ }
+
+ /* Colori in base al segno (etichetta + chip) */
+ #mods-section .rm-row[data-sign="pos"] .rm-label,
+ #mods-section .rm-row[data-sign="pos"] .rm-chip {
+   color: #22c55e;
+   border-color: #22c55e55;
+ }
+
+ #mods-section .rm-row[data-sign="neg"] .rm-label,
+ #mods-section .rm-row[data-sign="neg"] .rm-chip {
+   color: #ef4444;
+   border-color: #ef444455;
+ }
+
+ #mods-section .rm-row[data-sign="zero"] .rm-label {
+   color: #e6e6e6;
+   opacity: .9;
+ }
+
+ #mods-section .rm-row[data-sign="zero"] .rm-chip {
+   color: #cdd3e3;
+   border-color: #2a324a;
+ }
+
+ /* Micro-anim al cambio: se vuoi */
+ #mods-section .rm-chip {
+   transition: color .15s ease, background-color .15s ease, border-color .15s ease;
+ }
+
+ /* ==== mini dice area in mods card ==== */
+ #mods-section .rm-sep {
+   border: 0;
+   border-top: 1px solid var(--rm-bd);
+   margin: 8px 0 10px;
+ }
+
+ #mods-section .rm-dice {
+   padding: 0 12px 10px;
+ }
+
+ #mods-section .rm-dice-head {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   margin-bottom: 8px;
+   font-size: 12px;
+   opacity: .9;
+ }
+
+ #mods-section .rm-chk {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   cursor: pointer;
+   user-select: none;
+ }
+
+ #mods-section .rm-chk input {
+   accent-color: #3b82f6;
+ }
+
+ #mods-section .rm-dice-row {
+   display: grid;
+   grid-template-columns: 80px 40px 1fr;
+   gap: 8px;
+   align-items: center;
+ }
+
+ #mods-section .rm-die {
+   width: 100%;
+   padding: 8px 10px;
+   border-radius: 10px;
+   border: 1px solid var(--rm-bd);
+   background: #101425;
+   color: #e6e6e6;
+ }
+
+ #mods-section .rm-roll-out {
+   justify-self: end;
+   font: 600 12px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono";
+   padding: 6px 10px;
+   border-radius: 10px;
+   min-width: 120px;
+   text-align: right;
+   border: 1px solid #2a324a;
+   background: #11182b;
+   color: #cdd3e3;
+ }
+
+ /* piccola animazione quando esce il risultato */
+ #mods-section .rm-roll-out.roll {
+   animation: rmBounce .35s ease;
+ }
+
+ @keyframes rmBounce {
+   0% {
+     transform: translateY(-2px);
+     opacity: .85;
+   }
+
+   100% {
+     transform: none;
+     opacity: 1;
+   }
+ }
+
+ /* === Select compatta === */
+ #mods-section .rm-die {
+   appearance: none;
+   -webkit-appearance: none;
+   -moz-appearance: none;
+   font-size: 12px;
+   padding: 6px 26px 6px 8px;
+   height: 28px;
+   line-height: 1;
+   border-radius: 8px;
+   border: 1px solid #2a324a;
+   background:
+     #0e1324 padding-box;
+   color: #e6e6e6;
+   outline: none;
+   transition: border-color .12s ease, box-shadow .12s ease;
+   /* freccia piccola */
+   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24'><path fill='%23bfc6da' d='M7 10l5 5 5-5z'/></svg>");
+   background-repeat: no-repeat;
+   background-position: right 8px center;
+   background-size: 10px;
+ }
+
+ #mods-section .rm-die:hover {
+   border-color: #3b82f6;
+ }
+
+ #mods-section .rm-die:focus {
+   border-color: #3b82f6;
+   box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
+ }
+
+ /* === Pulsante semplice “Tira” === */
+ #mods-section .rm-btn {
+   font-size: 12px;
+   font-weight: 700;
+   letter-spacing: .2px;
+   height: 28px;
+   line-height: 1;
+   border-radius: 8px;
+   border: 1px solid #2a324a;
+   background: #141a2b;
+   color: #e6e6e6;
+   cursor: pointer;
+   user-select: none;
+   transition: background .12s ease, border-color .12s ease;
+ }
+
+ #mods-section .rm-btn:hover {
+   background: #182033;
+   border-color: #3b82f6;
+ }
+
+ #mods-section .rm-btn:active {
+   background: #111728;
+ }
+
+ #mods-section .rm-btn:focus-visible {
+   outline: none;
+   box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
+ }
+
+ /* (opzionale) se avevi la vecchia variante ‘rm-btn--dice’, neutralizzala qui */
+ #mods-section .rm-btn.rm-btn--dice::before {
+   content: none !important;
+ }
