@@ -1602,7 +1602,9 @@ function getUnitTooltipHTML(unit) {
     const atk = unit.atk ?? "—";
     const tec = unit.tec ?? "—";         // per reclute/commanders
     const agi = unit.agi ?? "—";         // per reclute/commanders
-    const cd = unit.cd ?? "—";         // per giganti
+    const cd = unit.cd ?? "—";
+    const mov = unit.mov ?? "—";         // per giganti
+    const rng = unit.rng ?? "—";
 
     const img = unit.img ?? "";
     const abi = (unit.abi ?? "").toString();
@@ -1612,8 +1614,14 @@ function getUnitTooltipHTML(unit) {
         ? `<div class="tt-stats">
     <div class="tt-row">
       <div class="tt-label">ATK</div><div class="tt-value">${atk}</div>
-      <div class="tt-label">CD</div><div class="tt-value">${cd}</div>
-    </div></div>
+      <div class="tt-label">CA</div><div class="tt-value">${cd}</div>
+       <div class="tt-label">MOV</div><div class="tt-value">${mov}</div>
+    </div>
+       <div class="tt-row">
+      <div class="tt-label">RNG</div><div class="tt-value">${rng}</div>
+     
+    </div>
+    </div>
   `
         : (role !== "wall") ? `<div class="tt-stats">
     <div class="tt-row">
@@ -3125,7 +3133,7 @@ function renderBonusMalus() {
     const morale = Number(GAME_STATE.xpMoraleState.moralePct) || 0;
     // 1) raccogli pillole: bonus (cumulativi per soglia) + malus (unico per range)
     const pills = [
-        {type: 'modsRoll', text: '', bonus: GAME_STATE.modRolls},
+        { type: 'modsRoll', text: '', bonus: GAME_STATE.modRolls },
         ...bonusesFromLevel(level),
         ...malusFromMorale(morale),
     ];

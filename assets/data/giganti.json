@@ -9,6 +9,8 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+    "mov": 1,
+    "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -16,6 +18,8 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
+      "coolDown": 3,
+      "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
     }
@@ -30,6 +34,8 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -37,7 +43,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -53,6 +59,8 @@
     "atk": 2,
     "cd": 14,
     "abi": "Test",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -60,7 +68,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -76,6 +84,8 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -83,7 +93,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -99,6 +109,8 @@
     "atk": 3,
     "cd": 14,
     "abi": "Test",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -106,7 +118,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -121,6 +133,8 @@
     "hp": 20,
     "atk": 6,
     "cd": 10,
+    "mov": 1,
+     "rng": 1,
     "abi": "Test",
     "ability": {
       "name": "Schianto",
@@ -129,7 +143,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 8,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -145,6 +159,8 @@
     "atk": 4,
     "cd": 16,
     "abi": "Test",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -152,7 +168,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -167,6 +183,8 @@
     "hp": 16,
     "atk": 4,
     "cd": 14,
+    "mov": 1,
+     "rng": 1,
     "abi": "Test",
     "ability": {
       "name": "Schianto",
@@ -175,7 +193,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -191,6 +209,9 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+     "rng": 1,
+    "mov": 1,
+  
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -198,7 +219,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -214,6 +235,8 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -221,7 +244,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -237,6 +260,8 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -259,6 +284,8 @@
     "hp": 16,
     "atk": 4,
     "cd": 14,
+    "mov": 1,
+     "rng": 1,
     "abi": "Test",
     "ability": {
       "name": "Schianto",
@@ -267,7 +294,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -283,6 +310,8 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -290,7 +319,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -306,6 +335,8 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -313,7 +344,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -329,6 +360,8 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -336,7 +369,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -352,6 +385,8 @@
     "atk": 2,
     "cd": 12,
     "abi": "Nessuna",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d6",
@@ -359,7 +394,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -375,6 +410,8 @@
     "atk": 2,
     "cd": 12,
     "abi": "Nessuna",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -398,6 +435,8 @@
     "atk": 2,
     "cd": 12,
     "abi": "Nessuna",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -405,7 +444,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -421,6 +460,8 @@
     "atk": 2,
     "cd": 12,
     "abi": "Nessuna",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -428,7 +469,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -439,6 +480,8 @@
     "name": "Gigante Nano",
     "img": "assets/img/giganti/gigante_puro_4.png",
     "type": "Puro",
+    "mov": 1,
+     "rng": 1,
     "color": "silver",
     "hp": 12,
     "atk": 2,
@@ -451,7 +494,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -466,6 +509,8 @@
     "hp": 12,
     "atk": 2,
     "cd": 12,
+    "mov": 1,
+     "rng": 1,
     "abi": "Nessuna",
     "ability": {
       "name": "Schianto",
@@ -474,7 +519,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -490,6 +535,8 @@
     "atk": 2,
     "cd": 12,
     "abi": "Nessuna",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -497,7 +544,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -513,6 +560,8 @@
     "atk": 2,
     "cd": 12,
     "abi": "Nessuna",
+    "mov": 1,
+     "rng": 1,
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -520,7 +569,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"
@@ -535,6 +584,8 @@
     "hp": 12,
     "atk": 2,
     "cd": 12,
+    "mov": 1,
+     "rng": 1,
     "abi": "Nessuna",
     "ability": {
       "name": "Schianto",
@@ -543,7 +594,7 @@
       "addAtk": true,
       "dodgeable": true,
       "cd": 12,
-       "coolDown": 3,
+      "coolDown": 3,
       "coolDownLeft": 0,
       "active": true,
       "sfx": "./assets/sounds/attacco_gigante.mp3"

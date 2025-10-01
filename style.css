@@ -2207,7 +2207,6 @@
 
  /* stats grid */
  .tt-stats {
-   display: grid;
    grid-template-columns: 1fr 1fr;
    gap: 10px 14px;
    padding-top: 10px;
