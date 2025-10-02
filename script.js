@@ -1162,7 +1162,7 @@ function restore(save) {
     renderLogs();
     updateFabDeckCounters();
     refreshRollModsUI();
-        initModsDiceUI();
+    initModsDiceUI();
     mountUnitModsUI();
     return true;
 }
@@ -2045,7 +2045,7 @@ function focusBenchCard(unitId, { scroll = true, pulse = true } = {}) {
 function getUnitBonus(u, key) {
     const effs = Array.isArray(u?._effects) ? u._effects : [];
     return effs.reduce((sum, e) => sum + (e?.stat === key ? Number(e.delta || 0) : 0), 0);
-} 
+}
 
 function getUnitTooltipHTML(unit) {
     const role = unit.role ?? "recruit";
@@ -2074,21 +2074,21 @@ function getUnitTooltipHTML(unit) {
     const statsForRole = (role === "enemy")
         ? `<div class="tt-stats">
     <div class="tt-row">
-      <div class="tt-label">ATK</div><div class="tt-value">${atk} ${getUnitBonus(unit, 'atk') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'atk'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'atk'))}</span>`: ''}</div>
-      <div class="tt-label">CA</div><div class="tt-value">${cd} ${getUnitBonus(unit, 'cd') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'cd'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'cd'))}</span>`: ''}</div>
-       <div class="tt-label">MOV</div><div class="tt-value">${mov} ${getUnitBonus(unit, 'mov') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'mov'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'mov'))}</span>`: ''}</div>
+      <div class="tt-label">ATK</div><div class="tt-value">${atk} ${getUnitBonus(unit, 'atk') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'atk'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'atk'))}</span>` : ''}</div>
+      <div class="tt-label">CA</div><div class="tt-value">${cd} ${getUnitBonus(unit, 'cd') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'cd'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'cd'))}</span>` : ''}</div>
+       <div class="tt-label">MOV</div><div class="tt-value">${mov} ${getUnitBonus(unit, 'mov') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'mov'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'mov'))}</span>` : ''}</div>
     </div>
        <div class="tt-row">
-      <div class="tt-label">RNG</div><div class="tt-value">${rng} ${getUnitBonus(unit, 'rng') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'rng'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'rng'))}</span>`: ''}</div>
+      <div class="tt-label">RNG</div><div class="tt-value">${rng} ${getUnitBonus(unit, 'rng') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'rng'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'rng'))}</span>` : ''}</div>
      
     </div>
     </div>
   `
         : (role !== "wall") ? `<div class="tt-stats">
     <div class="tt-row">
-      <div class="tt-label">ATK</div><div class="tt-value">${atk} ${getUnitBonus(unit, 'atk') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'atk'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'atk'))}</span>`: ''}</span></div>
-      <div class="tt-label">TEC</div><div class="tt-value">${tec} ${getUnitBonus(unit, 'tec') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'tec'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'tec'))}</span>`: ''}</div>
-      <div class="tt-label">AGI</div><div class="tt-value">${agi} ${getUnitBonus(unit, 'agi') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'agi'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'agi'))}</span>`: ''}</div>
+      <div class="tt-label">ATK</div><div class="tt-value">${atk} ${getUnitBonus(unit, 'atk') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'atk'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'atk'))}</span>` : ''}</span></div>
+      <div class="tt-label">TEC</div><div class="tt-value">${tec} ${getUnitBonus(unit, 'tec') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'tec'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'tec'))}</span>` : ''}</div>
+      <div class="tt-label">AGI</div><div class="tt-value">${agi} ${getUnitBonus(unit, 'agi') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'agi'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'agi'))}</span>` : ''}</div>
     </div></div>
   ` : '';
 
@@ -2198,21 +2198,21 @@ btnReset.addEventListener('click', async () => {
    Mission card click (placeholder azione)
    ======================= */
 missionCard.addEventListener('click', async () => {
-    const ok = await openDialog({
+    const res = await openDialog({
         title: `Completare la Missione #${GAME_STATE.missionState.curIndex + 1}?`,
         message: `
      
       <p>Confermi il completamento della missione corrente?</p>
     `,
-        confirmText: 'Completa',
-        cancelText: 'Annulla',
+        confirmText: 'Missione Completata',
+        cancelText: 'Ritirata Generale',
         danger: true,         // metti true se vuoi il bottone rosso
-        cancellable: true
+        cancellable: true,
+        detailed: true
     });
 
-    if (!ok) return;
-
-    await completeMission();       // tua funzione esistente
+    if (res.reason === 'close-x' || res.reason === 'backdrop') return;
+    await completeMission(res.reason);       // tua funzione esistente
 });
 
 
@@ -2305,12 +2305,12 @@ document.querySelectorAll('#fab-event .fab-option').forEach(btn => {
 });
 
 
-async function completeMission() {
+async function completeMission(reason) {
     resetTimer();
 
     const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
     const missioneFallita = m.objectives.some(missione => GAME_STATE.missionState.kills[missione.type] < missione.num);
-    if (missioneFallita) {
+    if (missioneFallita && reason === 'cancel-button') {
         log(`Missione #${GAME_STATE.missionState.curIndex + 1} Fallita!`, 'error');
     } else {
         log(`Missione #${GAME_STATE.missionState.curIndex + 1} completata!`, 'success');
@@ -2344,7 +2344,7 @@ async function clearGrid() {
 /* =======================
    LOG & DADI (inline result)
    ======================= */
-function log(msg, type = 'info') {
+function log(msg, type = 'info', time = 3000) {
     const now = new Date();
     const hhmm = now.toLocaleTimeString("it-IT", {
         hour: "2-digit",
@@ -2352,7 +2352,7 @@ function log(msg, type = 'info') {
     });
     const message = `[${hhmm}] - ${msg}`
     GAME_STATE.logs.push({ message, type });
-    window.snackbar(msg, {}, type);
+    window.snackbar(msg, { duration: time }, type);
     renderLogs();
     scheduleSave();
 }
@@ -2643,35 +2643,57 @@ function setStandardActions({ confirmText = 'OK', cancelText = 'Annulla', danger
     btnClose.style.display = cancellabile(cancellable);
 }
 const cancellabile = (c) => c ? '' : 'none';
-
-function openDialog({ title, message, confirmText = 'OK', cancelText = 'Annulla', danger = false, cancellable = true }) {
+function openDialog({
+    title,
+    message,
+    confirmText = 'OK',
+    cancelText = 'Annulla',
+    danger = false,
+    cancellable = true,
+    detailed = false, // <-- opzionale: se true ritorna {ok, reason}
+}) {
     const { backdrop, modal, title: ttl, msg, btnCancel, btnConfirm, btnClose } = ensureModal();
     ttl.textContent = title || '';
     msg.innerHTML = message || '';
     setStandardActions({ confirmText, cancelText, danger, cancellable });
 
     return new Promise((resolve) => {
-        const close = (ok) => {
+        let resolved = false;
+
+        const finish = (ok, reason) => {
+            if (resolved) return;
+            resolved = true;
             backdrop.classList.remove('show'); modal.classList.remove('show');
-            setTimeout(() => resolve(ok), 100);
+            setTimeout(() => resolve(detailed ? { ok, reason } : ok), 100);
             document.removeEventListener('keydown', onKey);
+            backdrop.removeEventListener('click', onBackdrop);
             btnCancel.onclick = btnConfirm.onclick = btnClose.onclick = null;
             resetModalActions(); // ripristina SEMPRE
         };
+
         const onKey = (e) => {
-            if (e.key === 'Escape' && cancellable) close(false);
-            if (e.key === 'Enter') close(true);
+            if (e.key === 'Escape' && cancellable) finish(false, 'escape');
+            if (e.key === 'Enter') finish(true, 'enter');
         };
+
+        const onBackdrop = (e) => {
+            // chiudi solo se clicco “fuori” dal box e la dialog è cancellabile
+            if (e.target === backdrop && cancellable) finish(false, 'backdrop');
+        };
+
         document.addEventListener('keydown', onKey);
-        btnCancel.onclick = () => close(false);
-        btnConfirm.onclick = () => close(true);
-        btnClose.onclick = () => close(false);
+        backdrop.addEventListener('click', onBackdrop);
+
+        btnCancel.onclick = () => finish(false, 'cancel-button');
+        btnConfirm.onclick = () => finish(true, 'confirm-button');
+        btnClose.onclick = () => finish(false, 'close-x');
 
         requestAnimationFrame(() => {
             backdrop.classList.add('show'); modal.classList.add('show');
         });
     });
 }
+
 function confirmDialog(opts) { return openDialog({ ...opts, cancellable: true }); }
 
 
@@ -4924,7 +4946,7 @@ function resolveAttack(attackerId, targetId) {
     }
 
     // Log compatto
-    log(`${human.name} vs ${giant.name}\n` + lines.join('\n'), 'info');
+    log(`${human.name} vs ${giant.name}\n` + lines.join('\n'), 'info', 6000);
 
     // SFX umano (se ha colpito)
     try {
@@ -4949,41 +4971,41 @@ function resolveAttack(attackerId, targetId) {
 
 // === COOLDOWN A FINE TURNO ================================================
 // Reset di tutti i modificatori "mission" su ogni unità (reclute, comandanti, giganti)
-function resetMissionEffectsAllUnits({ includeRoles = ['recruit','commander','enemy'], skipWalls = true } = {}) {
-  const touched = [];
-  const iter = (unitById && typeof unitById.values === 'function')
-    ? unitById.values()
-    : (Array.isArray(GAME_STATE?.alliesRoster) ? [...GAME_STATE.alliesRoster, ...GAME_STATE.giantsRoster] : []);
+function resetMissionEffectsAllUnits({ includeRoles = ['recruit', 'commander', 'enemy'], skipWalls = true } = {}) {
+    const touched = [];
+    const iter = (unitById && typeof unitById.values === 'function')
+        ? unitById.values()
+        : (Array.isArray(GAME_STATE?.alliesRoster) ? [...GAME_STATE.alliesRoster, ...GAME_STATE.giantsRoster] : []);
 
-  for (const u of iter) {
-    if (!u) continue;
-    if (skipWalls && u.role === 'wall') continue;
-    if (!includeRoles.includes(u.role)) continue;
+    for (const u of iter) {
+        if (!u) continue;
+        if (skipWalls && u.role === 'wall') continue;
+        if (!includeRoles.includes(u.role)) continue;
 
-    const effs = Array.isArray(u._effects) ? u._effects : [];
-    if (!effs.length) continue;
+        const effs = Array.isArray(u._effects) ? u._effects : [];
+        if (!effs.length) continue;
 
-    const before = effs.length;
+        const before = effs.length;
 
-    // Considera "mission" sia per type che per legacy rounds === Infinity
-    u._effects = effs.filter(e => {
-      const isMission = (e?.type === 'mission') || (e?.rounds === Infinity);
-      return !isMission;
-    });
+        // Considera "mission" sia per type che per legacy rounds === Infinity
+        u._effects = effs.filter(e => {
+            const isMission = (e?.type === 'mission') || (e?.rounds === Infinity);
+            return !isMission;
+        });
 
-    if (u._effects.length !== before) touched.push(u.id);
-  }
+        if (u._effects.length !== before) touched.push(u.id);
+    }
 
-  try { scheduleSave?.(); } catch {}
-  try { log?.(`Reset modificatori di missione per ${touched.length} unità.`, 'info'); } catch {}
+    try { scheduleSave?.(); } catch { }
+    try { log?.(`Reset modificatori di missione per ${touched.length} unità.`, 'info'); } catch { }
 
-  // Notifica opzionale (se vuoi rinfrescare UI che ascolta questo evento)
-  try {
-    const ev = new CustomEvent('unitEffectsChanged', { detail: { unitIds: touched } });
-    document.dispatchEvent(ev);
-  } catch {}
+    // Notifica opzionale (se vuoi rinfrescare UI che ascolta questo evento)
+    try {
+        const ev = new CustomEvent('unitEffectsChanged', { detail: { unitIds: touched } });
+        document.dispatchEvent(ev);
+    } catch { }
 
-  return touched;
+    return touched;
 }
 
 // Scala il cooldown di UNA unità (già definito sopra, lo estendo con delta opz.)
