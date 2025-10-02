@@ -800,7 +800,7 @@ function mountUnitModsUI() {
 
     function renderRows() {
         if (!current) { rowsBox.innerHTML = ''; return; }
-        const stats = isEnemy(current) ? ['atk', 'cd'] : ['atk', 'tec', 'agi'];
+        const stats = isEnemy(current) ? ['atk', 'cd', 'mov', 'rng'] : ['atk', 'tec', 'agi'];
 
         rowsBox.innerHTML = `
   <div class="um-card">
@@ -841,7 +841,7 @@ function mountUnitModsUI() {
 
     <!-- CTA in basso a dx -->
     <div class="um-actions um-dur">
-      <button id="um-add" class="um-addfab" type="button">Aggiungi Moficatore</button>
+      <button id="um-add" class="um-addfab" type="button">Aggiungi Modificatore</button>
     </div>
   </div>
 
@@ -935,7 +935,7 @@ function mountUnitModsUI() {
         const box = rowsBox.querySelector('#um-totals');
         if (!box || !current) return;
 
-        const stats = isEnemy(current) ? ['atk', 'cd'] : ['atk', 'tec', 'agi'];
+        const stats = isEnemy(current) ? ['atk', 'cd', 'mov', 'rng'] : ['atk', 'tec', 'agi'];
         const effs = ensureModsStore(current);
         const sums = {};
         stats.forEach(s => sums[s] = 0);
