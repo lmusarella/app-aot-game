@@ -680,18 +680,6 @@ function getUnitRollMods(uid, role) {
     };
 }
 
-// Chiamala a inizio di ogni nuovo round per scalare durate
-function tickUnitModsOnNewRound() {
-    const bag = GAME_STATE.unitMods || {};
-    for (const uid in bag) {
-        const timed = bag[uid].timed || [];
-        for (const ef of timed) if (ef.roundsLeft > 0) ef.roundsLeft--;
-        bag[uid].timed = timed.filter(ef => (ef.roundsLeft || 0) > 0);
-    }
-    scheduleSave?.();
-}
-
-
 // Considera roster e/o unità sul campo
 function isOnField(unitId) {
     return GAME_STATE.spawns?.some(s => Array.isArray(s.unitIds) ? s.unitIds.includes(unitId) : s.unitId === unitId) || false;
@@ -703,15 +691,7 @@ function activeUnitsForMods() {
     return [...allies, ...giants].filter(u => u.role !== 'wall');
 }
 
-// lettura mod attuali (safe)
-function getUnitMods(unitId) { return GAME_STATE.unitMods[unitId] || { scope: 'turn' }; }
 
-// set + save + refresh fields
-function setUnitMods(unitId, patch) {
-    const cur = getUnitMods(unitId);
-    GAME_STATE.unitMods[unitId] = { ...cur, ...patch };
-    scheduleSave?.();
-}
 
 // util per colorare il valore
 function applySignAttr(el, v) {
@@ -720,24 +700,8 @@ function applySignAttr(el, v) {
     el.setAttribute('data-sign', n > 0 ? 'pos' : (n < 0 ? 'neg' : ''));
 }
 
-// ——— dipendenze minime ———
-// GAME_STATE.unitMods = { [unitId]: { scope:'turn'|'mission', atk?:n, agi?:n, tec?:n, cd?:n } }
-// unitById: Map
-// activeUnitsForMods(): array di unità attive (reclute/commander/enemy) — come già fai
-// scheduleSave(): tua funzione
-// getUnitMods/setUnitMods: se non le hai, inline sotto
-
-function getUnitMods(unitId) {
-    return (GAME_STATE.unitMods && GAME_STATE.unitMods[unitId]) || { scope: 'turn' };
-}
-function setUnitMods(unitId, patch) {
-    const cur = getUnitMods(unitId);
-    GAME_STATE.unitMods[unitId] = { ...cur, ...patch };
-    scheduleSave?.();
-}
-
 // utilmini
-const UM_STAT_LABELS = { atk: 'ATK', tec: 'TEC', agi: 'AGI', cd: 'CD' };
+const UM_STAT_LABELS = { atk: 'ATK', tec: 'TEC', agi: 'AGI', cd: 'CD', mov: 'MOV', rng: 'RNG' };
 const signClass = n => (n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero');
 const fmtSigned = n => (n > 0 ? `+${n}` : `${n}`);
 const isEnemy = u => u?.role === 'enemy';
@@ -887,7 +851,6 @@ function mountUnitModsUI() {
 `;
 
         // === refs
-        const scopeRadios = rowsBox.querySelectorAll('input[name="um-scope"]');
         const scopeSel = rowsBox.querySelector('#um-scope');
 
         const roundsInput = rowsBox.querySelector('#um-rounds');
@@ -1010,7 +973,7 @@ function mountUnitModsUI() {
 
         list.innerHTML = effs.map(e => {
             const sign = signClass(e.delta);
-            const durTxt = (e.rounds === Infinity) ? 'Per tutta la Missione' : `Per ${e.rounds} round`;
+            const durTxt = (e.rounds === Infinity || !e.rounds) ? 'Per tutta la Missione' : `Per ${e.rounds} round`;
             return `
         <div class="um-pill" data-id="${e.id}" data-sign="${sign}"
              style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--b,#2a2a2a);border-radius:10px;background:#0f1118;">
@@ -1075,10 +1038,6 @@ function mountUnitModsUI() {
     setPicker(current);
 }
 
-// chiama una volta a DOM pronto
-// mountUnitModsUI();
-
-
 function snapshot() {
     // NB: non salvo unitById (si ricostruisce). Salvo solo ciò che serve davvero.
     return {
@@ -1099,7 +1058,7 @@ function snapshot() {
         // UI/stati
         xpMoraleState: structuredClone(GAME_STATE.xpMoraleState),
         modRolls: structuredClone(GAME_STATE.modRolls),
-        unitMods: structuredClone(GAME_STATE.unitMods),
+
         // log
         logs: structuredClone(GAME_STATE.logs),
         //turnengine
@@ -1151,7 +1110,6 @@ function restore(save) {
     // 3) stati
     Object.assign(GAME_STATE.xpMoraleState, save.xpMoraleState || {});
     Object.assign(GAME_STATE.modRolls, save.modRolls || {});
-    Object.assign(GAME_STATE.unitMods, save.unitMods || {});
     Object.assign(GAME_STATE.missionState, save.missionState || {});
     Object.assign(GAME_STATE.turnEngine, save.turnEngine || TurnEngine);
     GAME_STATE.missionState.intervalId = null; // sempre nullo a cold start
@@ -1204,6 +1162,7 @@ function restore(save) {
     renderLogs();
     updateFabDeckCounters();
     refreshRollModsUI();
+        initModsDiceUI();
     mountUnitModsUI();
     return true;
 }
@@ -1444,28 +1403,47 @@ async function spawnGiant(type = null, flagNoSound = false) {
     return unit.id;
 }
 
-function getStat(u, key) {
-    const base = Number(u[key] ?? 0);
-    const m = GAME_STATE.unitMods?.[u.id];
-    const bonus = Number(m?.[key] ?? 0);
-    return base + bonus;
+// Iteratore robusto: passa su tutte le unità utili (mappa globale o roster)
+function* iterUnitsForEffects() {
+    if (unitById && typeof unitById.values === 'function') {
+        for (const u of unitById.values()) yield u;
+    } else {
+        const allies = (GAME_STATE?.alliesRoster || []);
+        const giants = (GAME_STATE?.giantsRoster || []);
+        for (const u of [...allies, ...giants]) yield u;
+    }
 }
 
-function clearTurnUnitMods() {
-    const mods = GAME_STATE.unitMods || {};
-    for (const id of Object.keys(mods)) {
-        const m = mods[id];
-        if (m?.scope === 'turn') {
-            // conserva solo scope
-            GAME_STATE.unitMods[id] = { scope: 'turn' };
+/** Avanza di 1 round i modificatori "a durata" su ogni unità.
+ *  Usa `e.rounds`: numerico => decrementa; Infinity => persiste.
+ */
+function tickUnitModsOnNewRound() {
+    for (const u of iterUnitsForEffects()) {
+        const arr = Array.isArray(u._effects) ? u._effects : [];
+        if (!arr.length) continue;
+
+        // decrementa solo quelli con durata finita
+        for (const ef of arr) {
+            if (Number.isFinite(ef.rounds) && ef.rounds > 0) ef.rounds--;
         }
+
+        // rimuovi scaduti (<= 0). Lascia Infinity intatto
+        u._effects = arr.filter(ef => !Number.isFinite(ef.rounds) || ef.rounds > 0);
     }
     scheduleSave();
 }
 
-// ESEMPIO: chiamalo quando finisci il turno
-// TurnEngine.on('endTurn', clearTurnUnitMods);
-// oppure nel tuo handler di “Avanza Turno”
+/** Ritorna il valore attuale della statistica: base + somma dei delta attivi su quella stat */
+function getStat(u, key) {
+    if (!u) return 0;
+    const base = Number(u[key] ?? 0);
+    const effs = Array.isArray(u._effects) ? u._effects : [];
+    const bonus = effs.reduce((sum, e) => {
+        if (e?.stat === key) return sum + Number(e.delta || 0);
+        return sum;
+    }, 0);
+    return base + bonus;
+}
 
 
 function renderBenches() {
@@ -2063,6 +2041,12 @@ function focusBenchCard(unitId, { scroll = true, pulse = true } = {}) {
 /* =======================
    TOOLTIP
    ======================= */
+
+function getUnitBonus(u, key) {
+    const effs = Array.isArray(u?._effects) ? u._effects : [];
+    return effs.reduce((sum, e) => sum + (e?.stat === key ? Number(e.delta || 0) : 0), 0);
+} 
+
 function getUnitTooltipHTML(unit) {
     const role = unit.role ?? "recruit";
     const name = unit.name ?? "Unità";
@@ -2090,21 +2074,21 @@ function getUnitTooltipHTML(unit) {
     const statsForRole = (role === "enemy")
         ? `<div class="tt-stats">
     <div class="tt-row">
-      <div class="tt-label">ATK</div><div class="tt-value">${atk}</div>
-      <div class="tt-label">CA</div><div class="tt-value">${cd}</div>
-       <div class="tt-label">MOV</div><div class="tt-value">${mov}</div>
+      <div class="tt-label">ATK</div><div class="tt-value">${atk} ${getUnitBonus(unit, 'atk') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'atk'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'atk'))}</span>`: ''}</div>
+      <div class="tt-label">CA</div><div class="tt-value">${cd} ${getUnitBonus(unit, 'cd') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'cd'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'cd'))}</span>`: ''}</div>
+       <div class="tt-label">MOV</div><div class="tt-value">${mov} ${getUnitBonus(unit, 'mov') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'mov'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'mov'))}</span>`: ''}</div>
     </div>
        <div class="tt-row">
-      <div class="tt-label">RNG</div><div class="tt-value">${rng}</div>
+      <div class="tt-label">RNG</div><div class="tt-value">${rng} ${getUnitBonus(unit, 'rng') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'rng'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'rng'))}</span>`: ''}</div>
      
     </div>
     </div>
   `
         : (role !== "wall") ? `<div class="tt-stats">
     <div class="tt-row">
-      <div class="tt-label">ATK</div><div class="tt-value">${atk}</div>
-      <div class="tt-label">TEC</div><div class="tt-value">${tec}</div>
-      <div class="tt-label">AGI</div><div class="tt-value">${agi}</div>
+      <div class="tt-label">ATK</div><div class="tt-value">${atk} ${getUnitBonus(unit, 'atk') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'atk'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'atk'))}</span>`: ''}</span></div>
+      <div class="tt-label">TEC</div><div class="tt-value">${tec} ${getUnitBonus(unit, 'tec') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'tec'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'tec'))}</span>`: ''}</div>
+      <div class="tt-label">AGI</div><div class="tt-value">${agi} ${getUnitBonus(unit, 'agi') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'agi'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'agi'))}</span>`: ''}</div>
     </div></div>
   ` : '';
 
@@ -2334,6 +2318,7 @@ async function completeMission() {
         addMorale(reward.morale);
         addXP(reward?.xp)
         setMissionByIndex(GAME_STATE.missionState.curIndex + 1);
+        resetMissionEffectsAllUnits();
     }
 
     GAME_STATE.turnEngine.setPhase('idle');
@@ -4963,6 +4948,43 @@ function resolveAttack(attackerId, targetId) {
 }
 
 // === COOLDOWN A FINE TURNO ================================================
+// Reset di tutti i modificatori "mission" su ogni unità (reclute, comandanti, giganti)
+function resetMissionEffectsAllUnits({ includeRoles = ['recruit','commander','enemy'], skipWalls = true } = {}) {
+  const touched = [];
+  const iter = (unitById && typeof unitById.values === 'function')
+    ? unitById.values()
+    : (Array.isArray(GAME_STATE?.alliesRoster) ? [...GAME_STATE.alliesRoster, ...GAME_STATE.giantsRoster] : []);
+
+  for (const u of iter) {
+    if (!u) continue;
+    if (skipWalls && u.role === 'wall') continue;
+    if (!includeRoles.includes(u.role)) continue;
+
+    const effs = Array.isArray(u._effects) ? u._effects : [];
+    if (!effs.length) continue;
+
+    const before = effs.length;
+
+    // Considera "mission" sia per type che per legacy rounds === Infinity
+    u._effects = effs.filter(e => {
+      const isMission = (e?.type === 'mission') || (e?.rounds === Infinity);
+      return !isMission;
+    });
+
+    if (u._effects.length !== before) touched.push(u.id);
+  }
+
+  try { scheduleSave?.(); } catch {}
+  try { log?.(`Reset modificatori di missione per ${touched.length} unità.`, 'info'); } catch {}
+
+  // Notifica opzionale (se vuoi rinfrescare UI che ascolta questo evento)
+  try {
+    const ev = new CustomEvent('unitEffectsChanged', { detail: { unitIds: touched } });
+    document.dispatchEvent(ev);
+  } catch {}
+
+  return touched;
+}
 
 // Scala il cooldown di UNA unità (già definito sopra, lo estendo con delta opz.)
 function tickUnitCooldowns(unit, delta = 1) {

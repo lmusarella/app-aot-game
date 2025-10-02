@@ -4444,3 +4444,26 @@
    color: #e5e5e5;
    font-size: 12px;
  }
+ /* Chip bonus/malus nelle stats del tooltip */
+.stat-chip{
+  display:inline-block;
+  margin-left:6px;
+  padding:2px 6px;
+  border-radius:999px;
+  border:1px solid #2a2a2a;
+  font: 11px/1.2 ui-monospace, Menlo, Consolas, monospace;
+  font-weight:700;
+  background:#10121a;
+}
+
+/* colori */
+.stat-chip.pos{ color:#b7ffcf; border-color:#245f3c; background:#0f1713; }
+.stat-chip.neg{ color:#ffd0d0; border-color:#5a2a2a; background:#191214; }
+/* opzionale: mostrare lo zero in tono neutro (se mai lo vorrai visualizzare) */
+.stat-chip.zero{ color:#cfcfcf; border-color:#2a2a2a; background:#10121a; }
+
+.tt-stat{
+  display:flex; align-items:center; gap:6px;
+}
+.tt-stat-label{ opacity:.9; font-size:12px; min-width:34px; }
+.tt-stat-val{ font-weight:700; }
