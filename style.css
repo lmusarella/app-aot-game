@@ -3619,13 +3619,17 @@
  }
 
  #mods-section .rm-reset:hover {
-   background: var(--rm-btn-bg-hover);
-   filter: brightness(1.05);
+    background: #202020;
+ }
+ #mods-section .rm-btn:hover {
+    background: #202020;
  }
 
- #mods-section .rm-reset:active {
-   transform: scale(.97);
+  #mods-section .um-btn:hover {
+    background: #202020;
  }
+
+
 
  #mods-section .rm-rows {
    display: grid;
@@ -3665,7 +3669,7 @@
    border-radius: 9px;
    cursor: pointer;
    border: 1px solid var(--rm-btn-bd);
-   background: var(--rm-btn-bg);
+
    color: #e6e6e6;
    display: grid;
    place-items: center;
@@ -3674,23 +3678,22 @@
    user-select: none;
  }
 
- #mods-section .rm-btn:hover {
-   background: var(--rm-btn-bg-hover);
-   filter: brightness(1.05);
- }
-
- #mods-section .rm-btn:active {
-   transform: scale(.96);
- }
-
  #mods-section .rm-chip {
    min-width: 56px;
    text-align: center;
    padding: 6px 10px;
    border-radius: 10px;
    border: 1px solid #2a324a;
-   background: var(--rm-chip-bg);
    font: 600 12px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+ }
+
+  #mods-section .rm-btn:hover {
+   background: var(--rm-btn-bg-hover);
+   filter: brightness(1.05);
+ }
+
+ #mods-section .rm-btn:active {
+   transform: scale(.96);
  }
 
  /* Colori in base al segno (etichetta + chip) */
@@ -3765,7 +3768,7 @@
    padding: 8px 10px;
    border-radius: 10px;
    border: 1px solid var(--rm-bd);
-   background: #101425;
+   background: #14161f;;
    color: #e6e6e6;
  }
 
@@ -3777,7 +3780,6 @@
    min-width: 120px;
    text-align: right;
    border: 1px solid #2a324a;
-   background: #11182b;
    color: #cdd3e3;
  }
 
@@ -3809,8 +3811,6 @@
    line-height: 1;
    border-radius: 8px;
    border: 1px solid #2a324a;
-   background:
-     #0e1324 padding-box;
    color: #e6e6e6;
    outline: none;
    transition: border-color .12s ease, box-shadow .12s ease;
@@ -3838,26 +3838,12 @@
    height: 28px;
    line-height: 1;
    border-radius: 8px;
-   border: 1px solid #2a324a;
-   background: #141a2b;
+   border: 1px solid #2a2a2a;
+   background: #14161f;
    color: #e6e6e6;
    cursor: pointer;
    user-select: none;
    transition: background .12s ease, border-color .12s ease;
- }
-
- #mods-section .rm-btn:hover {
-   background: #182033;
-   border-color: #3b82f6;
- }
-
- #mods-section .rm-btn:active {
-   background: #111728;
- }
-
- #mods-section .rm-btn:focus-visible {
-   outline: none;
-   box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
  }
 
  /* (opzionale) se avevi la vecchia variante ‘rm-btn--dice’, neutralizzala qui */
