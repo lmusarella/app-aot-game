@@ -104,7 +104,8 @@ const TurnEngine = {
             startTimer();
             this.round++;
             log(`Round ${this.round} iniziato.`, 'success');
-            advanceAllCooldowns(1, { giantsOnly: true })
+            advanceAllCooldowns(1, { giantsOnly: true });
+            tickUnitModsOnNewRound();
             log(`Fase Movimento ${TurnEngine.round}° ROUND: Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`, 'info');
             await playBg('./assets/sounds/commander_march_sound.mp3');
         }
@@ -544,6 +545,7 @@ const GAME_STATE = {
             Mutaforma: 0
         }
     },
+    unitMods: {},
     spawns: [],
     hand: [],
     decks: {
@@ -595,7 +597,7 @@ const missionCard = document.getElementById('mission-card');
 const logBox = document.getElementById('log-box');
 
 const fabs = Array.from(document.querySelectorAll('.fab'));
-const diceRes = document.getElementById('dice-res');
+
 const btnReset = document.getElementById('btn-reset-game');
 
 /* ===== Collapsible sidebars: logic ===== */
@@ -629,6 +631,453 @@ const moraleDOM = {
 };
 
 
+// --- Unit Mods: modello ad effetti cumulativi -------------------------------
+function statKeysForRole(role) { return (role === 'enemy') ? ['atk', 'cd', 'tot'] : ['atk', 'tec', 'agi', 'tot']; }
+
+function ensureUnitModsObj(uid) {
+    const bag = (GAME_STATE.unitMods ||= {});
+    return (bag[uid] ||= { mission: [], timed: [] }); // timed = con durata (roundsLeft)
+}
+
+function addUnitMod(uid, role, { stat, value, scope = 'mission', rounds = 1 }) {
+    const store = ensureUnitModsObj(uid);
+    const entry = { id: 'mod_' + Math.random().toString(36).slice(2, 9), stat, value: Number(value) || 0 };
+    if (scope === 'round') { entry.roundsLeft = Math.max(1, rounds | 0); store.timed.push(entry); }
+    else { store.mission.push(entry); }
+    scheduleSave?.();
+    return entry.id;
+}
+
+function removeUnitMod(uid, scope, id) {
+    const store = ensureUnitModsObj(uid);
+    const arr = (scope === 'round') ? store.timed : store.mission;
+    const i = arr.findIndex(x => x.id === id);
+    if (i >= 0) { arr.splice(i, 1); scheduleSave?.(); return true; }
+    return false;
+}
+
+// Somma tutti gli effetti attivi (mission + timed con roundsLeft>0)
+function getUnitActiveMods(uid, role) {
+    const keys = statKeysForRole(role);
+    const out = Object.fromEntries(keys.map(k => [k, 0]));
+    const store = ensureUnitModsObj(uid);
+
+    for (const m of store.mission) { if (m && out[m.stat] != null) out[m.stat] += Number(m.value) || 0; }
+    for (const m of store.timed) { if (m && (m.roundsLeft || 0) > 0 && out[m.stat] != null) out[m.stat] += Number(m.value) || 0; }
+
+    return out;
+}
+
+// (opz.) comodo: i modificatori per i tiri (TOT si aggiunge alle prove d20)
+function getUnitRollMods(uid, role) {
+    const m = getUnitActiveMods(uid, role);
+    if (role === 'enemy') return { atk: (m.atk || 0) + (m.tot || 0), cd: (m.cd || 0) };
+    return {
+        atk: (m.atk || 0) + (m.tot || 0),
+        tec: (m.tec || 0) + (m.tot || 0),
+        agi: (m.agi || 0) + (m.tot || 0),
+        tot: (m.tot || 0)
+    };
+}
+
+// Chiamala a inizio di ogni nuovo round per scalare durate
+function tickUnitModsOnNewRound() {
+    const bag = GAME_STATE.unitMods || {};
+    for (const uid in bag) {
+        const timed = bag[uid].timed || [];
+        for (const ef of timed) if (ef.roundsLeft > 0) ef.roundsLeft--;
+        bag[uid].timed = timed.filter(ef => (ef.roundsLeft || 0) > 0);
+    }
+    scheduleSave?.();
+}
+
+
+// Considera roster e/o unità sul campo
+function isOnField(unitId) {
+    return GAME_STATE.spawns?.some(s => Array.isArray(s.unitIds) ? s.unitIds.includes(unitId) : s.unitId === unitId) || false;
+}
+function activeUnitsForMods() {
+    const allies = (GAME_STATE.alliesRoster || []).filter(u => isOnField(u.id) || true);  // in missione
+    const giants = (GAME_STATE.giantsRoster || []).filter(u => isOnField(u.id) || true);  // in missione
+    // solo reclute/commander e enemy (no walls)
+    return [...allies, ...giants].filter(u => u.role !== 'wall');
+}
+
+// lettura mod attuali (safe)
+function getUnitMods(unitId) { return GAME_STATE.unitMods[unitId] || { scope: 'turn' }; }
+
+// set + save + refresh fields
+function setUnitMods(unitId, patch) {
+    const cur = getUnitMods(unitId);
+    GAME_STATE.unitMods[unitId] = { ...cur, ...patch };
+    scheduleSave?.();
+}
+
+// util per colorare il valore
+function applySignAttr(el, v) {
+    if (!el) return;
+    const n = Number(v) || 0;
+    el.setAttribute('data-sign', n > 0 ? 'pos' : (n < 0 ? 'neg' : ''));
+}
+
+// ——— dipendenze minime ———
+// GAME_STATE.unitMods = { [unitId]: { scope:'turn'|'mission', atk?:n, agi?:n, tec?:n, cd?:n } }
+// unitById: Map
+// activeUnitsForMods(): array di unità attive (reclute/commander/enemy) — come già fai
+// scheduleSave(): tua funzione
+// getUnitMods/setUnitMods: se non le hai, inline sotto
+
+function getUnitMods(unitId) {
+    return (GAME_STATE.unitMods && GAME_STATE.unitMods[unitId]) || { scope: 'turn' };
+}
+function setUnitMods(unitId, patch) {
+    const cur = getUnitMods(unitId);
+    GAME_STATE.unitMods[unitId] = { ...cur, ...patch };
+    scheduleSave?.();
+}
+
+// utilmini
+const UM_STAT_LABELS = { atk: 'ATK', tec: 'TEC', agi: 'AGI', cd: 'CD' };
+const signClass = n => (n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero');
+const fmtSigned = n => (n > 0 ? `+${n}` : `${n}`);
+const isEnemy = u => u?.role === 'enemy';
+
+function unitListForPicker() {
+    const ids = new Set();
+    const out = [];
+
+    // 1) Unità sulla griglia
+    for (const s of (GAME_STATE?.spawns || [])) {
+        const arr = Array.isArray(s.unitIds) ? s.unitIds : (s.unitId ? [s.unitId] : []);
+        for (const id of arr) {
+            const u = unitById?.get ? unitById.get(id) : null;
+            if (u && u.role !== 'wall' && !ids.has(u.id)) { ids.add(u.id); out.push(u); }
+        }
+    }
+
+    // 2) Roster in missione (alleati + giganti)
+    for (const u of [...(GAME_STATE?.alliesRoster || []), ...(GAME_STATE?.giantsRoster || [])]) {
+        if (!u || !u.id || u.role === 'wall' || ids.has(u.id)) continue;
+        ids.add(u.id);
+        out.push(unitById?.get ? (unitById.get(u.id) || u) : u);
+    }
+
+    // 3) Fallback: tutto ciò che c’è in unitById (no template)
+    if (!out.length && unitById?.size) {
+        for (const u of unitById.values()) {
+            if (u && ['recruit', 'commander', 'enemy'].includes(u.role) && u.template !== true && !ids.has(u.id)) {
+                ids.add(u.id); out.push(u);
+            }
+        }
+    }
+
+    return out;
+}
+
+
+// storage semplice: attacco la lista effetti all’oggetto unità
+function ensureModsStore(u) {
+    if (!u._effects) u._effects = []; // {id, stat, delta, rounds, type:'mission'|'round'}
+    return u._effects;
+}
+
+function mountUnitModsUI() {
+    const root = document.querySelector('#mods-unit-panel .accordion-inner');
+    if (!root || root.dataset.ready) return;
+    root.dataset.ready = '1';
+
+    // se nel markup fosse rimasto un vecchio scope “statico”, rimuovilo
+    root.querySelectorAll('.um > .um-scope').forEach(n => n.remove());
+
+    // riferimenti header già presenti in HTML
+    const btnPicker = root.querySelector('#um-picker');
+    const menu = root.querySelector('#um-menu');
+    const imgAva = root.querySelector('#um-ava');
+    const nameEl = root.querySelector('#um-name');
+    const roleEl = root.querySelector('#um-role');
+    const btnReset = root.querySelector('#um-reset');
+
+    const rowsBox = root.querySelector('#um-rows');
+
+    // stato locale
+    let units = unitListForPicker();
+    let current = units[0] || null;
+
+    // ============ render picker menu ============
+    function renderMenu() {
+        units = unitListForPicker(); // ✅ ricalcola qui
+        if (!units.length) {
+            menu.innerHTML = `<div class="um-opt" style="opacity:.8;cursor:default">Nessuna unità disponibile</div>`;
+            return;
+        }
+        menu.innerHTML = units.map(u => `
+    <div class="um-opt" data-id="${u.id}">
+      <span class="ava"><img src="${u.img || u.avatar || 'assets/img/logo.jpg'}" alt=""></span>
+      <span class="name">${u.name || '(sconosciuto)'}</span>
+      <span class="sub">${u.role === 'enemy' ? 'Gigante' : (u.role === 'commander' ? 'Comandante' : 'Recluta')}</span>
+    </div>
+  `).join('');
+    }
+
+    function setPicker(u) {
+        current = u || null;
+        if (!current) {
+            imgAva.src = 'assets/img/logo.jpg';
+            nameEl.textContent = 'Seleziona unità';
+            roleEl.textContent = '—';
+            rowsBox.innerHTML = `<div style="opacity:.8">Nessuna unità selezionata.</div>`;
+            return;
+        }
+        imgAva.src = current.img || current.avatar || 'assets/img/logo.jpg';
+        nameEl.textContent = current.name || '(sconosciuto)';
+        roleEl.textContent = (current.role === 'enemy' ? 'Gigante' : (current.role === 'commander' ? 'Comandante' : 'Recluta'));
+        renderRows();
+    }
+
+    function renderRows() {
+        if (!current) { rowsBox.innerHTML = ''; return; }
+        const stats = isEnemy(current) ? ['atk', 'cd'] : ['atk', 'tec', 'agi'];
+
+        rowsBox.innerHTML = `
+  <div class="um-card">
+
+    <!-- riga stat + valore -->
+    <div class="um-line um-editor-row">
+
+    <span id="um-label" class="rm-chip">Modificatore</span>
+
+      <select id="um-stat" class="um-select">
+        ${stats.map(s => `<option value="${s}">${UM_STAT_LABELS[s]}</option>`).join('')}
+      </select>
+
+      <div class="um-step">
+        <button class="um-btn" data-act="vminus" title="- valore">−</button>
+        <input id="um-value" type="number" value="1" hidden>
+        <span id="um-value-chip" class="rm-chip">+1</span>
+        <button class="um-btn" data-act="vplus" title="+ valore">+</button>
+      </div>
+    </div>
+
+    <!-- riga durata (dentro la card) -->
+    <div class="um-line um-dur">
+         <span id="um-label" class="rm-chip">Durata</span>
+      <select id="um-scope" class="um-select um-sel-sm">
+  <option value="mission">Missione</option>
+  <option value="round">N° Round</option>
+</select>
+
+
+      <div class="um-step">
+        <button class="um-btn" data-act="rminus" title="- round">−</button>
+        <input id="um-rounds" type="number" min="1" value="1" hidden>
+        <span id="um-rounds-chip" class="rm-chip">1</span>
+        <button class="um-btn" data-act="rplus" title="+ round">+</button>
+      </div>
+    </div>
+
+    <!-- CTA in basso a dx -->
+    <div class="um-actions um-dur">
+      <button id="um-add" class="um-addfab" type="button">Aggiungi Moficatore</button>
+    </div>
+  </div>
+
+  <div id="um-totals" class="um-totals" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;"></div>
+<hr class="um-sep">
+  <div id="um-list" class="um-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+`;
+
+        // === refs
+        const scopeRadios = rowsBox.querySelectorAll('input[name="um-scope"]');
+        const scopeSel = rowsBox.querySelector('#um-scope');
+
+        const roundsInput = rowsBox.querySelector('#um-rounds');
+        const roundsChip = rowsBox.querySelector('#um-rounds-chip');
+        const valInput = rowsBox.querySelector('#um-value');
+        const valChip = rowsBox.querySelector('#um-value-chip');
+        const editorRow = rowsBox.querySelector('.um-editor-row');
+        const addBtn = rowsBox.querySelector('#um-add');
+
+        // init chips
+        valChip.textContent = fmtSigned(parseInt(valInput.value || 0, 10));
+        if (editorRow) editorRow.dataset.sign = signClass(parseInt(valInput.value || 0, 10));
+        roundsChip.textContent = String(parseInt(roundsInput.value || 1, 10));
+
+        // abilita/disabilita durata in base a Missione/Round
+        const setRoundsEnabled = () => {
+            const scope = scopeSel.value;
+            const disabled = (scope === 'mission');
+            roundsInput.disabled = disabled;
+            rowsBox.querySelector('[data-act="rminus"]').disabled = disabled;
+            rowsBox.querySelector('[data-act="rplus"]').disabled = disabled;
+            roundsChip.style.opacity = disabled ? .6 : 1;
+        };
+        scopeSel.addEventListener('change', setRoundsEnabled);
+        setRoundsEnabled();
+
+        // (ri)aggancia ogni volta, usando riferimenti freschi
+        if (rowsBox._handler) rowsBox.removeEventListener('click', rowsBox._handler);
+
+        rowsBox._handler = (e) => {
+            const b = e.target.closest('[data-act]');
+            if (!b) return;
+            const act = b.dataset.act;
+
+            // prendi i riferimenti dal DOM *attuale*
+            const valInput = rowsBox.querySelector('#um-value');
+            const valChip = rowsBox.querySelector('#um-value-chip');
+            const roundsInput = rowsBox.querySelector('#um-rounds');
+            const roundsChip = rowsBox.querySelector('#um-rounds-chip');
+            const editorRow = rowsBox.querySelector('.um-editor-row');
+
+            if (!valInput || !valChip || !roundsInput || !roundsChip) return;
+
+            if (act === 'vminus' || act === 'vplus') {
+                const step = (act === 'vminus') ? -1 : 1;
+                const next = (parseInt(valInput.value || 0, 10) || 0) + step;
+                valInput.value = next;
+                valChip.textContent = fmtSigned(next);
+                if (editorRow) editorRow.dataset.sign = signClass(next);
+            }
+
+            if ((act === 'rminus' || act === 'rplus') && !roundsInput.disabled) {
+                const step = (act === 'rminus') ? -1 : 1;
+                const next = Math.max(1, (parseInt(roundsInput.value || 1, 10) || 1) + step);
+                roundsInput.value = next;
+                roundsChip.textContent = String(next);
+            }
+        };
+
+        rowsBox.addEventListener('click', rowsBox._handler);
+
+        // aggiungi effetto
+        addBtn.addEventListener('click', () => {
+            const stat = rowsBox.querySelector('#um-stat').value;
+            const delta = parseInt(valInput.value, 10) || 0;
+            if (!delta) return;
+
+            const scope = scopeSel.value;
+            const rounds = (scope === 'mission') ? Infinity : Math.max(1, parseInt(roundsInput.value, 10) || 1);
+
+            const effs = ensureModsStore(current);
+            effs.push({ id: 'e' + Math.random().toString(36).slice(2), stat, delta, rounds, type: scope });
+            renderList();
+            renderTotals();
+            scheduleSave?.();
+        });
+
+        renderList();
+        renderTotals();
+    }
+    function renderTotals() {
+        const box = rowsBox.querySelector('#um-totals');
+        if (!box || !current) return;
+
+        const stats = isEnemy(current) ? ['atk', 'cd'] : ['atk', 'tec', 'agi'];
+        const effs = ensureModsStore(current);
+        const sums = {};
+        stats.forEach(s => sums[s] = 0);
+        effs.forEach(e => { if (sums.hasOwnProperty(e.stat)) sums[e.stat] += (e.delta | 0); });
+
+        box.innerHTML = stats.map(s => {
+            const v = sums[s] || 0;
+            const sig = v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero';
+            const color =
+                sig === 'pos' ? 'color:#b7ffcf;border-color:#245f3c;background:#0f1713;' :
+                    sig === 'neg' ? 'color:#ffd0d0;border-color:#5a2a2a;background:#191214;' :
+                        'color:#e5e5e5;border-color:#2a2a2a;background:#10121a;';
+            return `<span class="tot-chip" data-sign="${sig}"
+             style="padding:4px 8px;border:1px solid;border-radius:999px;${color}">
+             ${UM_STAT_LABELS[s]} <strong style="margin-left:4px;">${fmtSigned(v)}</strong>
+            </span>`;
+        }).join('');
+    }
+
+    function renderList() {
+        const list = rowsBox.querySelector('#um-list');
+        const effs = ensureModsStore(current);
+
+        // ordina per durata: prima quelle che scadono prima, poi ∞
+        effs.sort((a, b) => {
+            const da = a.rounds === Infinity ? Number.POSITIVE_INFINITY : a.rounds;
+            const db = b.rounds === Infinity ? Number.POSITIVE_INFINITY : b.rounds;
+            return da - db;
+        });
+
+        if (!effs.length) {
+            list.innerHTML = `<div style="opacity:.7;font-size:12px;">Nessun modificatore.</div>`;
+            return;
+        }
+
+        list.innerHTML = effs.map(e => {
+            const sign = signClass(e.delta);
+            const durTxt = (e.rounds === Infinity) ? 'Per tutta la Missione' : `Per ${e.rounds} round`;
+            return `
+        <div class="um-pill" data-id="${e.id}" data-sign="${sign}"
+             style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--b,#2a2a2a);border-radius:10px;background:#0f1118;">
+          <span class="um-label" style="opacity:.9, font-weight: 700;">${UM_STAT_LABELS[e.stat] || e.stat}</span>
+          <span class="um-val" style="font-weight:700;">${fmtSigned(e.delta)}</span>
+          <span style="margin-left:auto;opacity:.8;">${durTxt}</span>
+          <button class="btn-icon um-del" title="Rimuovi">×</button>
+        </div>
+      `;
+        }).join('');
+
+        // colori
+        list.querySelectorAll('.um-pill').forEach(p => {
+            const s = p.dataset.sign;
+            if (s === 'pos') { p.style.setProperty('--b', '#245f3c'); p.style.color = '#b7ffcf'; }
+            else if (s === 'neg') { p.style.setProperty('--b', '#5a2a2a'); p.style.color = '#ffd0d0'; }
+            else { p.style.setProperty('--b', '#2a2a2a'); p.style.color = '#e5e5e5'; }
+        });
+
+        // remove handler
+        list.querySelectorAll('.um-del').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.closest('.um-pill')?.dataset.id;
+                const effs = ensureModsStore(current);
+                const i = effs.findIndex(x => x.id === id);
+                if (i >= 0) effs.splice(i, 1);
+                renderList();
+                renderTotals();
+                scheduleSave?.();
+            });
+        });
+    }
+
+    // ============ picker interactions ============
+    const closeMenu = (ev) => {
+        if (!menu.hidden && !menu.contains(ev.target) && !btnPicker.contains(ev.target)) {
+            menu.hidden = true;
+        }
+    };
+    document.addEventListener('click', closeMenu);
+
+    btnPicker.addEventListener('click', () => {
+        if (menu.hidden) { renderMenu(); menu.hidden = false; }
+        else menu.hidden = true;
+    });
+    menu.addEventListener('click', (e) => {
+        const item = e.target.closest('.um-opt');
+        if (!item) return;
+        const u = units.find(x => x.id === item.dataset.id);
+        menu.hidden = true;
+        setPicker(u);
+    });
+
+    btnReset.addEventListener('click', () => {
+        if (!current) return;
+        current._effects = [];
+        renderRows();
+        scheduleSave?.();
+    });
+
+    // prima selezione
+    setPicker(current);
+}
+
+// chiama una volta a DOM pronto
+// mountUnitModsUI();
+
 
 function snapshot() {
     // NB: non salvo unitById (si ricostruisce). Salvo solo ciò che serve davvero.
@@ -650,6 +1099,7 @@ function snapshot() {
         // UI/stati
         xpMoraleState: structuredClone(GAME_STATE.xpMoraleState),
         modRolls: structuredClone(GAME_STATE.modRolls),
+        unitMods: structuredClone(GAME_STATE.unitMods),
         // log
         logs: structuredClone(GAME_STATE.logs),
         //turnengine
@@ -701,6 +1151,7 @@ function restore(save) {
     // 3) stati
     Object.assign(GAME_STATE.xpMoraleState, save.xpMoraleState || {});
     Object.assign(GAME_STATE.modRolls, save.modRolls || {});
+    Object.assign(GAME_STATE.unitMods, save.unitMods || {});
     Object.assign(GAME_STATE.missionState, save.missionState || {});
     Object.assign(GAME_STATE.turnEngine, save.turnEngine || TurnEngine);
     GAME_STATE.missionState.intervalId = null; // sempre nullo a cold start
@@ -753,6 +1204,7 @@ function restore(save) {
     renderLogs();
     updateFabDeckCounters();
     refreshRollModsUI();
+    mountUnitModsUI();
     return true;
 }
 
@@ -991,6 +1443,31 @@ async function spawnGiant(type = null, flagNoSound = false) {
     }
     return unit.id;
 }
+
+function getStat(u, key) {
+    const base = Number(u[key] ?? 0);
+    const m = GAME_STATE.unitMods?.[u.id];
+    const bonus = Number(m?.[key] ?? 0);
+    return base + bonus;
+}
+
+function clearTurnUnitMods() {
+    const mods = GAME_STATE.unitMods || {};
+    for (const id of Object.keys(mods)) {
+        const m = mods[id];
+        if (m?.scope === 'turn') {
+            // conserva solo scope
+            GAME_STATE.unitMods[id] = { scope: 'turn' };
+        }
+    }
+    scheduleSave();
+}
+
+// ESEMPIO: chiamalo quando finisci il turno
+// TurnEngine.on('endTurn', clearTurnUnitMods);
+// oppure nel tuo handler di “Avanza Turno”
+
+
 function renderBenches() {
     renderBenchSection(alliesEl, GAME_STATE.alliesRoster, ["recruit", "commander"]);
     renderBenchSection(enemiesEl, GAME_STATE.giantsRoster, ["enemy"]);
@@ -1893,11 +2370,6 @@ function log(msg, type = 'info') {
     window.snackbar(msg, {}, type);
     renderLogs();
     scheduleSave();
-}
-
-
-function rollAnimText(txt) {
-    diceRes.innerHTML = `<span class="roll">${txt}</span>`;
 }
 /* ======================= LONG PRESS UTILS ======================= */
 
@@ -3116,10 +3588,6 @@ function mergeBonuses(pills) {
     return totals;
 }
 
-function fmtSigned(n) {
-    return (n > 0 ? '+' : '') + n;
-}
-
 function bonusesFromLevel(level) {
     return DB.SETTINGS.bonusTable
         .filter(b => level >= b.lvl)
@@ -3748,6 +4216,7 @@ function initModsDiceUI() {
     const btn = document.getElementById('rm-roll');
     const out = document.getElementById('rm-roll-out');
 
+    console.log('btn', btn);
     if (!dieSel || !btn || !out) return;
 
     const signed = (n) => (n >= 0 ? `+ ${n}` : `${n}`);
@@ -3764,6 +4233,8 @@ function initModsDiceUI() {
         const r = rollDie(sides);
         const totMod = getTot();
         const total = r + totMod;
+
+        console.log('test');
 
         out.textContent = `d${sides}: ${r} ${totMod ? `(${signed(totMod)}) = ${total}` : ''}`;
         out.classList.remove('roll'); // retrigger anim
@@ -4292,7 +4763,7 @@ function computeAbilityDamage(giant, ab) {
     const base = rollDiceSpec(ab?.dice || '1d6');
     const bonus = Number(ab?.bonus || 0);
     const addAtk = !!ab?.addAtk;
-    const atk = Math.max(0, getNum(giant, ['atk'], 0));
+    const atk = Math.max(0, getStat(giant, 'atk'));
     return Math.max(1, base + bonus + (addAtk ? atk : 0));
 }
 
@@ -4343,7 +4814,7 @@ function resolveAttack(attackerId, targetId) {
     const isHumanVsGiant = (AisHuman && TisGiant) || (TisHuman && AisGiant);
 
     if (!isHumanVsGiant) {
-        const dmg = Math.max(1, Number(a.atk || 1));
+        const dmg = Math.max(1, Number(getStat(a, 'atk') || 1));
         window.setUnitHp(targetId, (t.currHp ?? t.hp) - dmg);
         log(`${a.name} attacca ${t.name} per ${dmg} danni.`, 'info');
         openAccordionForRole(t.role);
@@ -4365,11 +4836,11 @@ function resolveAttack(attackerId, targetId) {
     const giantId = giant.id;
 
     // Letture robuste
-    const cdGiant = getNum(giant, ['cd'], 12);
-    const tecMod = getNum(human, ['tec'], 0);
-    const agiMod = getNum(human, ['agi'], 0);
-    const forMod = getNum(human, ['atk'], 0);
-    const giantAtk = Math.max(1, getNum(giant, ['atk'], 1));
+    const cdGiant = getStat(giant, 'cd');
+    const tecMod = getStat(human, 'tec');
+    const agiMod = getStat(human, 'agi');
+    const forMod = getStat(human, 'atk');
+    const giantAtk = Math.max(1, getStat(giant, 'atk'));
 
     const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus;
 
@@ -4875,6 +5346,7 @@ function updateSliderFill(inputEl) {
 })();
 
 
+
 document.addEventListener('DOMContentLoaded', async () => {
     unlockAudioOnFirstTap(() => MIXER?._ctx);
     // BOOT dati
@@ -4899,6 +5371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         rebuildUnitIndex();
         refreshRollModsUI();
         initModsDiceUI();
+        mountUnitModsUI();
     }
 
     GAME_STATE.turnEngine.init()

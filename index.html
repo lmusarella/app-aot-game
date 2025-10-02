@@ -106,7 +106,7 @@
         <section class="bench-section accordion-section" id="mods-section" data-open="0">
             <div class="accordion-header">
                 <button class="accordion-trigger" type="button" aria-expanded="true" aria-controls="mods-panel">
-                    <h4 class="accordion-title">Modificatori - Globali</h4>
+                    <h4 class="accordion-title">Modificatori Globali</h4>
                     <span class="accordion-caret" aria-hidden="true">▾</span>
                 </button>
             </div>
@@ -166,6 +166,38 @@
                 </div>
             </div>
         </section>
+
+        <section class="bench-section accordion-section" id="unit-mods-section" data-open="0">
+            <div class="accordion-header">
+                <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="mods-unit-panel">
+                    <h4 class="accordion-title">Modificatori Unità</h4>
+                    <span class="accordion-caret" aria-hidden="true">▾</span>
+                </button>
+            </div>
+
+            <div class="accordion-panel" id="mods-unit-panel" role="region" aria-hidden="true">
+                <div class="accordion-inner" style="padding: 10px;">
+                    <div class="um">
+                        <div class="um-head">
+                            <button id="um-picker" class="um-picker" type="button">
+                                <span class="um-ava"><img id="um-ava" src="assets/img/logo.jpg" alt=""></span>
+                                <span class="um-info">
+                                    <span id="um-name" class="um-name">Seleziona unità</span>
+                                    <span id="um-role" class="um-role">—</span>
+                                </span>
+                                <span class="um-caret">▾</span>
+                            </button>
+                            <button id="um-reset" class="um-reset btn-icon" title="Reset">⟲</button>
+                            <div id="um-menu" class="um-menu" hidden></div>
+                        </div>
+
+                        <!-- ✨ NON mettere qui altri blocchi duplicati "Missione/Round" -->
+                        <div id="um-rows" class="um-rows"><!-- riempito via JS --></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
 
         <!-- LOG PARTITA -->
         <section class="bench-section accordion-section" id="log-section" data-open="0">
