@@ -4049,8 +4049,8 @@ function renderMissionUI() {
     }
 
     // (opzionale) se vuoi mostrare l’evento corrente in testa, aggiungi un <p id="mc-event"> nel skeleton e aggiorna qui:
-    // const evEl = card.querySelector('#mc-event');
-    // if (evEl) evEl.textContent = event ? `Evento: ${event}` : '';
+     const evEl = card.querySelector('#mc-event');
+    if (evEl) evEl.textContent = event ? `Evento: ${event}` : '';
 
     // 3) riallinea contatori/timeline/chip senza toccare lo stato
     renderMissionPanel();
