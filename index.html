@@ -82,22 +82,38 @@
         <section class="bench-section accordion-section" id="mission-section" data-open="1">
             <div class="accordion-header">
                 <button class="accordion-trigger" type="button" aria-expanded="true" aria-controls="mission-panel">
-                    <h4 class="accordion-title">Obiettivo Missione</h4>
+                    <h4 class="accordion-title">Dashboard Missione</h4>
                     <span class="accordion-caret" aria-hidden="true">▾</span>
                 </button>
             </div>
             <div class="accordion-panel" id="mission-panel" role="region" aria-hidden="false">
-                <div class="accordion-inner">
-                    <div id="mission-card" class="mission-card" role="button" tabindex="0"
-                        aria-label="Apri dettagli missione corrente">
-                        <p style="margin:0 0 8px; opacity:.9;"><strong>#<span id="mc-num">3</span> — Scorta
-                                rifornimenti</strong></p>
-                        <ul style="margin:0 0 10px 18px; padding:0; opacity:.9">
-                            <li>Proteggi il convoglio per 5 turni</li>
-                            <li>Evita che più di 2 carri vengano distrutti</li>
-                        </ul>
-                        <p style="margin:0; font-size:12px; opacity:.8">Ricompensa: +2 Morale, +200 XP</p>
+                <div class="accordion-inner" style="padding: 10px;">
+
+                    <div id="mission-card" role="button" tabindex="0" aria-label="Apri dettagli missione corrente">
+
+                        <div id="mission-head" class="mission-head mission-card">
+                            <p class="mission-title">
+                                <strong>#<span id="mc-num"></span> — <span id="mc-title"></span></strong>
+                            </p>
+                            <ul id="mc-brief" class="mission-brief"></ul>
+                            <p id="mc-reward" class="mission-reward"></p>
+                        </div>
+
+                        <div class="mission-stats">
+                            <div class="msn-badge"><span class="lbl">Uccisioni</span><span id="msn-kills">0</span></div>
+                            <div class="msn-badge"><span class="lbl">Perdite</span><span id="msn-losses">0</span></div>
+                            <div class="msn-badge"><span class="lbl">Tentativi</span><span id="msn-attempts">0</span>
+                            </div>
+                            <div class="msn-badge"><span class="lbl">Round</span><span id="msn-round">0</span></div>
+                        </div>
+
+                        <div class="mission-subtitle">Carte attivate</div>
+                        <ul id="msn-evlist" class="msn-list"><!-- cronologia eventi --></ul>
+
+                        <!--<div class="mission-subtitle">Effetti attivi</div>
+                        <div id="msn-evactive" class="msn-chips"> </div>-->
                     </div>
+
                 </div>
             </div>
         </section>

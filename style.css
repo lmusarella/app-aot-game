@@ -4467,3 +4467,51 @@
 }
 .tt-stat-label{ opacity:.9; font-size:12px; min-width:34px; }
 .tt-stat-val{ font-weight:700; }
+.mission-card{
+  border:1px solid #2a2a2a; border-radius:12px; padding:10px;
+  background:#0f1118; transition:.2s; cursor:pointer;
+}
+.mission-card:focus,.mission-card:hover{ border-color:#4b4b4b; }
+
+.mission-title{ margin:0 0 6px; opacity:.95; }
+.mission-brief{ margin:0 0 8px 18px; padding:0; opacity:.9; }
+.mission-reward{ margin:0; font-size:12px; opacity:.8; }
+
+.mission-stats{
+  display:grid; grid-template-columns: repeat(4, minmax(0,1fr));
+  gap:8px; margin:10px 0;
+}
+.msn-badge{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:6px 10px; border:1px solid #2a2a2a; border-radius:10px; background:#11131a;
+  font-size:10px;
+}
+.msn-badge .lbl{ opacity:.75; }
+
+.mission-subtitle{ margin:8px 0 6px; font-size:12px; opacity:.8; }
+
+.msn-list{
+  list-style:none; margin:0; padding:0;
+  overflow:auto;               /* solo la timeline scorre */
+  display:flex; flex-direction:column; gap:8px;
+}
+.msn-item{
+  cursor: pointer;
+  display:flex; align-items:center; gap:8px;
+  padding:6px 8px; border:1px solid gray; border-radius:10px; background:#10121a;
+  font-size:12px;
+}
+.msn-item .when{ opacity:.7; font-variant-numeric:tabular-nums; }
+.msn-item .name{ font-weight:700; }
+.msn-item .desc{ opacity:.85; margin-left:auto; }
+
+.msn-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.msn-chip{
+  display:inline-flex; gap:8px; align-items:center;
+  padding:4px 8px; border:1px solid #2a2a2a; border-radius:999px; background:#10121a;
+  font-size:12px;
+}
+.msn-chip .dur{ opacity:.8; }
+
+.msn-chip.is-pos{ color:#b7ffcf; border-color:#245f3c; background:#0f1713; }
+.msn-chip.is-neg{ color:#ffd0d0; border-color:#5a2a2a; background:#191214; }

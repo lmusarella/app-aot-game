@@ -54,7 +54,7 @@ const TurnEngine = {
             this.setPhase('setup');
             await playBg('./assets/sounds/giganti_puri.mp3');
             startTimer();
-
+            missionStatsBumpAttempt();
             if (!this.teamCreated) {
                 try {
                     pickRandomTeam({ commanders: 1, recruits: 3 });
@@ -106,7 +106,8 @@ const TurnEngine = {
             log(`Round ${this.round} iniziato.`, 'success');
             advanceAllCooldowns(1, { giantsOnly: true });
             tickUnitModsOnNewRound();
-            log(`Fase Movimento ${TurnEngine.round}° ROUND: Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`, 'info');
+            missionStatsSetRound(this.round);
+            log(`Fase Movimento ${this.round}° ROUND: Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`, 'info');
             await playBg('./assets/sounds/commander_march_sound.mp3');
         }
     },
@@ -545,6 +546,7 @@ const GAME_STATE = {
             Mutaforma: 0
         }
     },
+    missionStats: {},
     unitMods: {},
     spawns: [],
     hand: [],
@@ -594,6 +596,7 @@ const countWallsEl = document.getElementById("count-walls");
 const grid = document.getElementById("hex-grid");
 const tooltipEl = document.getElementById("tooltip");
 const missionCard = document.getElementById('mission-card');
+const missionCardHead = document.getElementById('mission-head');
 const logBox = document.getElementById('log-box');
 
 const fabs = Array.from(document.querySelectorAll('.fab'));
@@ -1058,7 +1061,7 @@ function snapshot() {
         // UI/stati
         xpMoraleState: structuredClone(GAME_STATE.xpMoraleState),
         modRolls: structuredClone(GAME_STATE.modRolls),
-
+        missionStats: structuredClone(GAME_STATE.missionStats),
         // log
         logs: structuredClone(GAME_STATE.logs),
         //turnengine
@@ -1112,6 +1115,7 @@ function restore(save) {
     Object.assign(GAME_STATE.modRolls, save.modRolls || {});
     Object.assign(GAME_STATE.missionState, save.missionState || {});
     Object.assign(GAME_STATE.turnEngine, save.turnEngine || TurnEngine);
+    Object.assign(GAME_STATE.missionStats, save.missionStats || {});
     GAME_STATE.missionState.intervalId = null; // sempre nullo a cold start
 
     // 4) ricostruisci unitById dai cataloghi + muri base
@@ -1164,6 +1168,7 @@ function restore(save) {
     refreshRollModsUI();
     initModsDiceUI();
     mountUnitModsUI();
+    loadMissions();
     return true;
 }
 
@@ -1190,6 +1195,162 @@ async function loadDataAndStateFromLocal() {
         return false;
     }
 }
+
+
+// ===== MissionStats – stato per missione e renderer pannello =====
+function getCurrentMissionId() {
+    return GAME_STATE?.missionState?.curIndex + 1;
+}
+
+function ensureMissionStats() {
+    const id = getCurrentMissionId();
+    if (!GAME_STATE.missionStats) GAME_STATE.missionStats = {};
+    if (!GAME_STATE.missionStats[id]) {
+        GAME_STATE.missionStats[id] = {
+            attempts: 0,
+            kills: 0,
+            losses: 0,
+            round: 0,
+            events: [] // {id,name,summary,sign(+1/-1/0),startRound,durationRounds}
+        };
+    }
+    return GAME_STATE.missionStats[id];
+}
+
+// chiamala all'avvio missione
+function missionStatsBumpAttempt() {
+    const ms = ensureMissionStats();
+    ms.attempts++;
+    scheduleSave?.();
+    renderMissionPanel();
+}
+
+function missionStatsSetRound(n) {
+    const ms = ensureMissionStats();
+    ms.round = Math.max(1, Number(n || 0));
+    renderMissionPanel();
+}
+
+function missionStatsOnUnitDeath(unit) {
+    const ms = ensureMissionStats();
+    if (!unit) return;
+    if (unit.role === 'enemy') ms.kills++;
+    else if (unit.role === 'recruit' || unit.role === 'commander') ms.losses++;
+    scheduleSave?.();
+    renderMissionPanel();
+}
+function capitalizeFirstLetter(str) {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+// quando attivi un EVENTO
+function missionStatsRecordEvent(card, { durationRounds = Infinity, sign = 1 } = {}) {
+    const ms = ensureMissionStats();
+    const r = ms.round ?? 1;
+    const now = new Date();
+    const hhmm = now.toLocaleTimeString("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+    ms.events.push({
+        id: card?.id || ('evt_' + Math.random().toString(36).slice(2)),
+        name: card?.type === 'event' ? 'Carta Evento' : 'Carta '.concat(capitalizeFirstLetter(card?.type)),
+        summary: card.name || '',
+        sign: Math.sign(sign | 0),
+        startRound: r,
+        durationRounds: (durationRounds === Infinity ? Infinity : Math.max(1, durationRounds | 0)),
+        hhmm: hhmm,
+        detail: card
+    });
+    scheduleSave?.();
+    renderMissionPanel();
+}
+
+// helper per capire cosa è attivo al round corrente
+function missionStatsActiveEffects() {
+    const ms = ensureMissionStats();
+    const now = ms.round || 1;
+    return (ms.events || []).filter(e => {
+        if (e.durationRounds === Infinity) return true;
+        const end = e.startRound + e.durationRounds - 1;
+        return now >= e.startRound && now <= end;
+    });
+}
+
+function bindMissionListHandlers() {
+    const list = document.getElementById('msn-evlist');
+    if (!list || list._bound) return;
+    list._bound = true;
+
+
+    addLongPress(list, {
+        onLongPress: (ev) => {
+            const trigger = ev.target.closest('.msn-detail, .msn-item, .name, .desc');
+            if (!trigger) return;
+            const li = ev.target.closest('.msn-item');
+            const id = li?.dataset.cardId;
+            if (id) {
+                const ms = ensureMissionStats();
+                const event = ms?.events.find(ev => ev?.detail.id === id);
+                showCardDetail(event?.detail.type, event?.detail);
+            }
+        }
+    });
+}
+
+// ====== RENDER ======
+function renderMissionPanel() {
+    const root = document.getElementById('mission-card');
+    if (!root) return;
+
+    const ms = ensureMissionStats();
+
+    // numeri
+    const kEl = document.getElementById('msn-kills');
+    const lEl = document.getElementById('msn-losses');
+    const aEl = document.getElementById('msn-attempts');
+    const rEl = document.getElementById('msn-round');
+    if (kEl) kEl.textContent = String(ms.kills || 0);
+    if (lEl) lEl.textContent = String(ms.losses || 0);
+    if (aEl) aEl.textContent = String(ms.attempts || 0);
+    if (rEl) rEl.textContent = String(ms.round || 0);
+
+    // timeline eventi (cronologica)
+    const list = document.getElementById('msn-evlist');
+    if (list) {
+        const evs = (ms.events || []).slice().sort((a, b) => {
+            if (a.startRound !== b.startRound) return a.startRound - b.startRound;
+            return (a._ts || 0) - (b._ts || 0);
+        });
+        list.innerHTML = evs.map(e => {
+            return `
+       <li class="msn-item" data-card-id="${e.cardId || e.id}" tabindex="0" role="button">
+  <span class="when">${e.hhmm} - R${e.startRound}</span>
+  <span class="name">${e.name}</span>
+  <span class="desc">${e.summary}</span>
+</li>`;
+        }).join('') || `<li class="msn-item" style="opacity:.7">— nessuna carta attivata —</li>`;
+    }
+
+    // chip “effetti attivi” (ora)
+    /*const chips = document.getElementById('msn-evactive');
+    if (chips) {
+        const active = missionStatsActiveEffects();
+        chips.innerHTML = active.map(e => {
+            const left = (e.durationRounds === Infinity) ? '∞' :
+                Math.max(0, (e.startRound + e.durationRounds - ms.round));
+            const sig = e.sign > 0 ? 'is-pos' : e.sign < 0 ? 'is-neg' : '';
+            const lblDur = (e.durationRounds === Infinity) ? 'Missione' : `${left}r`;
+            return `<span class="msn-chip ${sig}">
+        <span class="nm">${e.name}</span>
+        <span class="dur">${lblDur}</span>
+      </span>`;
+        }).join('') || `<span class="msn-chip">Nessun effetto attivo</span>`;
+    }*/
+    bindMissionListHandlers();
+}
+
+
 
 function debounce(fn, ms = 400) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 const scheduleSave = debounce(saveToLocal, 500);
@@ -2197,7 +2358,7 @@ btnReset.addEventListener('click', async () => {
 /* =======================
    Mission card click (placeholder azione)
    ======================= */
-missionCard.addEventListener('click', async () => {
+missionCardHead.addEventListener('click', async () => {
     const res = await openDialog({
         title: `Completare la Missione #${GAME_STATE.missionState.curIndex + 1}?`,
         message: `
@@ -2216,8 +2377,8 @@ missionCard.addEventListener('click', async () => {
 });
 
 
-missionCard.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); missionCard.click(); }
+missionCardHead.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); missionCardHead.click(); }
 });
 
 /* =======================
@@ -2328,6 +2489,14 @@ async function completeMission(reason) {
         Anomalo: 0,
         Mutaforma: 0
     };
+    GAME_STATE.missionStats[GAME_STATE.missionState.curIndex] = {
+        attempts: 0,
+        kills: 0,
+        losses: 0,
+        round: 0,
+        events: [] // {id,name,summary,sign(+1/-1/0),startRound,durationRounds}
+    };
+
     await clearGrid();
     await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3');
 }
@@ -2453,6 +2622,49 @@ function handCardFocusHTML(entry) {
   </div>`;
 }
 
+function showCardDetail(deckType, card) {
+    const root = document.getElementById('hand-overlay');
+    const strip = document.getElementById('hand-strip');
+    const stage = root?.querySelector('.hand-stage');
+    if (!root || !strip || !stage) return;
+    stage.classList.add('hand-stage--single');
+    strip.classList.remove('hand-strip')
+    strip.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'hand-card';
+
+    const actionCard = [];
+
+    wrap.innerHTML = cardSheetHTML(deckType, card, actionCard);
+
+    wrap.addEventListener('click', (ev) => {
+        closeOverlay();
+    }, { passive: true });
+
+    strip.appendChild(wrap);
+
+    function closeOverlay() {
+        root.setAttribute('hidden', '');
+        root.querySelector('.hand-backdrop').onclick = null;
+        root.querySelector('.hand-close').onclick = null;
+        document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) { if (e.key === 'Escape') closeOverlay(); }
+
+    root.querySelector('.hand-backdrop').onclick = () => {
+        closeOverlay();
+
+    };
+    root.querySelector('.hand-close').onclick = () => {
+        closeOverlay();
+
+    };
+    document.addEventListener('keydown', onKey);
+
+    root.removeAttribute('hidden');
+}
+
+
 function showDrawnCard(deckType, card) {
     const root = document.getElementById('hand-overlay');
     const strip = document.getElementById('hand-strip');
@@ -2502,11 +2714,17 @@ function showDrawnCard(deckType, card) {
             GAME_STATE.hand.push({ deck: deckType, card: structuredClone(card) });
             log(`Aggiunta in mano: "${card.name}".`, 'success');
             updateFabDeckCounters();
+
         }
         if (deckType === 'event') {
             GAME_STATE.decks[deckType]?.discard.push(card);
             log(`Carta Evento "${card.name}" è stata attivata!.`, 'warning');
             updateFabDeckCounters();
+
+            missionStatsRecordEvent(card, {                       // opzionale, se non lo passi usa ms.round
+                durationRounds: card.duration || Infinity, // 1, N oppure Infinity             
+                sign: card.sign || 0                // +1 / -1 / 0 (colore chip)
+            });
         }
     };
     root.querySelector('.hand-close').onclick = () => {
@@ -2520,6 +2738,10 @@ function showDrawnCard(deckType, card) {
             GAME_STATE.decks[deckType]?.discard.push(card);
             log(`Carta Evento "${card.name}" è stata attivata!.`, 'warning');
             updateFabDeckCounters();
+            missionStatsRecordEvent(card, {
+                durationRounds: card.duration || Infinity, // 1, N oppure Infinity                     // testo breve (facoltativo)
+                sign: card.sign || 0                // +1 / -1 / 0 (colore chip)
+            });
         }
     };
     document.addEventListener('keydown', onKey);
@@ -2571,6 +2793,11 @@ function openHandOverlay() {
                     }
                     log(`Usata "${it.card.name}".`, 'success');
                     updateFabDeckCounters();
+
+                    missionStatsRecordEvent(it.card, {
+                        durationRounds: it.card.duration || Infinity, // 1, N oppure Infinity              
+                        sign: it.card.sign || 0                // +1 / -1 / 0 (colore chip)
+                    });
                 }
             }
 
@@ -2723,11 +2950,13 @@ window.setUnitHp = async function (unitId, newHp) {
     // Se è alleato e scende a 0 → morte
     if ((u.role === 'recruit' || u.role === 'commander') && clamped === 0) {
         await handleAllyDeath(u);
+        missionStatsOnUnitDeath(u);
         return; // già refreshato tutto
     }
     // Morte giganti
     if (u.role === 'enemy' && clamped === 0) {
         await handleGiantDeath(u);
+        missionStatsOnUnitDeath(u);
         return; // UI già aggiornata
     }
 
@@ -3612,7 +3841,7 @@ function renderBonusMalus() {
         ...bonusesFromLevel(level),
         ...malusFromMorale(morale),
     ];
-    console.log('pills', pills);
+
     // 2) calcola la somma effettiva
     const totals = mergeBonuses(pills);
     // opzionale: salviamo nello state se vuoi riusarlo altrove
@@ -3728,6 +3957,7 @@ const fmtClock = (sec) => {
 
 function loadMissions() {
     setMissionByIndex(GAME_STATE.missionState.curIndex);
+    renderMissionPanel();
 }
 
 // Imposta missione corrente (per indice nell’array)
@@ -3746,7 +3976,38 @@ function setMissionByIndex(idx) {
     scheduleSave();
 }
 
-// Render UI missione (header + card)
+// Crea la UI avanzata solo se mancano i nodi attesi (non distrugge nulla se già presente)
+function ensureMissionCardSkeleton(card) {
+    if (!card) return;
+    const hasHead = card.querySelector('.mission-head');
+    if (hasHead) return; // già pronto
+
+    card.innerHTML = `
+
+
+    <div id="mission-head" class="mission-head mission-card">
+      <p class="mission-title">
+        <strong>#<span id="mc-num"></span> — <span id="mc-title"></span></strong>
+      </p>
+      <ul id="mc-brief" class="mission-brief"></ul>
+      <p id="mc-reward" class="mission-reward"></p>
+    </div>
+
+    <div class="mission-stats">
+      <div class="msn-badge"><span class="lbl">Uccisioni</span><span id="msn-kills">0</span></div>
+      <div class="msn-badge"><span class="lbl">Perdite</span><span id="msn-losses">0</span></div>
+      <div class="msn-badge"><span class="lbl">Tentativi</span><span id="msn-attempts">0</span></div>
+      <div class="msn-badge"><span class="lbl">Round</span><span id="msn-round">0</span></div>
+    </div>
+
+    <div class="mission-subtitle">Eventi attivati</div>
+    <ul id="msn-evlist" class="msn-list"></ul>
+
+    <div class="mission-subtitle">Effetti attivi</div>
+    <div id="msn-evactive" class="msn-chips"></div>
+  `;
+}
+
 function renderMissionUI() {
     const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
     const num = m?.id ?? (GAME_STATE.missionState.curIndex + 1);
@@ -3754,23 +4015,48 @@ function renderMissionUI() {
     const objectives = Array.isArray(m?.objectives) ? m.objectives : [];
     const reward = m?.reward ?? { morale: 0, xp: 0 };
     const event = m?.event;
+
     if (elMissionNumTop) elMissionNumTop.textContent = String(num);
     if (elMissionNumCard) elMissionNumCard.textContent = String(num);
 
-    // Rigenera il contenuto della card (mantieni il div#mission-card)
-    const card = elMissionCardWrap.querySelector('#mission-card');
-    console.log('card', card);
-    if (card) {
-        card.innerHTML = `
-      <p style="margin:0 0 8px; opacity:.9;"><strong>#<span>${num}</span> — ${title}</strong></p>
-      <ul style="margin:0 0 10px 18px; padding:0; opacity:.9">
-        ${objectives.map(li => `<li> Uccidi ${li.num} Giganti di tipo ${li.type} ➔ ${GAME_STATE.missionState.kills[li.type]} / ${li.num} 💀</li>`).join('')}
-      </ul>
-      <p style="margin:0; font-size:12px; opacity:.8">Ricompensa: ${reward.morale ? `+${reward.morale} Morale` : ''}${(reward.morale && reward.xp) ? ', ' : ''}${reward.xp ? `+${reward.xp} XP` : ''}</p>
-      <p style="margin:0; font-size:12px; opacity:.8">Evento: ${event}</p>
-    `;
+    const card = elMissionCardWrap?.querySelector('#mission-card');
+    if (!card) return;
+
+    // 1) prepara lo scheletro SOLO se manca (no reset)
+    ensureMissionCardSkeleton(card);
+
+    // 2) aggiorna SOLO i campi testuali
+    const numEl = card.querySelector('#mc-num');
+    const titleEl = card.querySelector('#mc-title');
+    const briefEl = card.querySelector('#mc-brief');
+    const rewardEl = card.querySelector('#mc-reward');
+   
+    if (numEl) numEl.textContent = String(num);
+    if (titleEl) titleEl.textContent = title;
+
+    if (briefEl) {
+        const kills = GAME_STATE.missionState?.kills || {};
+        briefEl.innerHTML = objectives.map(li =>
+            `<li>Uccidi ${li.num} Giganti di tipo ${li.type} ➔ ${kills[li.type] || 0} / ${li.num} 💀</li>`
+        ).join('');
     }
+
+    if (rewardEl) {
+        const parts = [];
+        if (reward.morale) parts.push(`+${reward.morale} Morale`);
+        if (reward.xp) parts.push(`+${reward.xp} XP`);
+        rewardEl.textContent = parts.length ? `Ricompensa: ${parts.join(', ')}` : 'Ricompensa: —';
+    }
+
+    // (opzionale) se vuoi mostrare l’evento corrente in testa, aggiungi un <p id="mc-event"> nel skeleton e aggiorna qui:
+    // const evEl = card.querySelector('#mc-event');
+    // if (evEl) evEl.textContent = event ? `Evento: ${event}` : '';
+
+    // 3) riallinea contatori/timeline/chip senza toccare lo stato
+    renderMissionPanel();
+
 }
+
 
 // Render UI timer
 function renderTimerUI() {
@@ -3845,6 +4131,13 @@ elDec?.addEventListener('click', async () => {
         Anomalo: 0,
         Mutaforma: 0
     };
+    GAME_STATE.missionStats[GAME_STATE.missionState.curIndex] = {
+        attempts: 0,
+        kills: 0,
+        losses: 0,
+        round: 0,
+        events: [] // {id,name,summary,sign(+1/-1/0),startRound,durationRounds}
+    };
     await clearGrid();
 });
 elInc?.addEventListener('click', async () => {
@@ -3863,6 +4156,13 @@ elInc?.addEventListener('click', async () => {
         Puro: 0,
         Anomalo: 0,
         Mutaforma: 0
+    };
+    GAME_STATE.missionStats[GAME_STATE.missionState.curIndex] = {
+        attempts: 0,
+        kills: 0,
+        losses: 0,
+        round: 0,
+        events: [] // {id,name,summary,sign(+1/-1/0),startRound,durationRounds}
     };
     await clearGrid();
 });
@@ -4223,7 +4523,6 @@ function initModsDiceUI() {
     const btn = document.getElementById('rm-roll');
     const out = document.getElementById('rm-roll-out');
 
-    console.log('btn', btn);
     if (!dieSel || !btn || !out) return;
 
     const signed = (n) => (n >= 0 ? `+ ${n}` : `${n}`);
@@ -4240,8 +4539,6 @@ function initModsDiceUI() {
         const r = rollDie(sides);
         const totMod = getTot();
         const total = r + totMod;
-
-        console.log('test');
 
         out.textContent = `d${sides}: ${r} ${totMod ? `(${signed(totMod)}) = ${total}` : ''}`;
         out.classList.remove('roll'); // retrigger anim
@@ -4271,7 +4568,7 @@ const renderRollMods = () => {
 
 boxMods.addEventListener('click', (e) => {
     const btn = e.target.closest('.rm-btn');
-    console.log('btn', btn)
+
     if (!btn) return;
     const row = btn.closest('.rm-row');
     const kind = row?.dataset?.kind;
@@ -5244,7 +5541,6 @@ function volumeUI() {
         host.appendChild(wrap);
 
         const MIX = getMixer();
-        console.log('mix init')
 
         // Valori iniziali (da LS oppure dal mixer)
         const initBG = (() => {
@@ -5264,14 +5560,14 @@ function volumeUI() {
         function applyBG(v) {
             v = Math.max(0, Math.min(1, Number(v) || 0));
             MIX.setMusicVolume(v);
-            console.log('applyBG')
+       
             localStorage.setItem(LS_BG, String(v));
             if (bgLabel) bgLabel.textContent = Math.round(v * 100);
         }
         function applySFX(v) {
             v = Math.max(0, Math.min(1, Number(v) || 0));
             MIX.setSfxVolume(v);
-            console.log('applySFX')
+          
             localStorage.setItem(LS_SFX, String(v));
             if (sfxLabel) sfxLabel.textContent = Math.round(v * 100);
         }
