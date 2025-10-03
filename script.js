@@ -4809,6 +4809,7 @@ function humanTargetsWithin2(fromR, fromC) {
     }
     return hits;
 }
+
 function hasHumanInCell(row, col) {
     const stack = getStack(row, col) || [];
     return stack.some(id => {
@@ -4986,7 +4987,7 @@ function renderPickTooltip(attacker, targets) {
 
 function targetsAround(attacker, cell) {
     const out = [];
-    for (const p of hexNeighbors(cell.row, cell.col)) {
+    for (const p of hexWithinRadius(cell.row, cell.col, getStat(attacker, 'rng'), true)) {
         const ids = getStack(p.row, p.col);
         for (const id of ids) {
             const u = unitById.get(id);
@@ -5009,7 +5010,7 @@ function unitsAt(r, c) {
 }
 
 function findTargetsFor(attacker, cell) {
-    const neigh = hexNeighbors(cell.row, cell.col);
+    const neigh = hexWithinRadius(cell.row, cell.col, getStat(attacker, 'rng'), true);
     const all = neigh.flatMap(p => unitsAt(p.row, p.col));
     if (attacker.role === 'enemy') {
         // i giganti colpiscono solo alleati (no mura)
