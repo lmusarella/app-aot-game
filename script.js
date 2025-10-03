@@ -4895,7 +4895,7 @@ function giantsPhaseMove() {
     for (const g of giants) {
         // per ogni esagono di movimento il gigante fa tot step.
         const movimento = getStat(g, 'mov');
-        if (movimento > 0) {          
+        if (movimento > 0) {
             for (let i = 0; i < movimento; i++) {
                 // se stepGiant ritorna false, interrompi i passi residui per quel gigante
                 const ok = stepGiant(g.id);
@@ -5172,14 +5172,14 @@ function resolveAttack(attackerId, targetId) {
     // Log
     const lines = [];
     lines.push(
-        `d20=${d20} | TEC ${totalTec >= 0 ? '+' : ''}${totalTec} vs CD ${cdGiant} → ${humanHits ? 'COLPITO' : 'MANCATO'}`
+        `d20=${d20} | TEC ${totalTec >= 0 ? '+' : ''}${totalTec} vs CD ${cdGiant} → ${humanHits && sameOrAdjCells(human.id, giant.id) ? 'COLPITO' : !sameOrAdjCells(human.id, giant.id) ? 'TROPPO LONTANO' : 'MANCATO'}`
     );
 
     let humanDamageDealt = 0;
     let humanDamageTaken = 0;
 
     // Danno umano (se colpisce): d4 + FOR (min 1)
-    if (humanHits) {
+    if (humanHits && sameOrAdjCells(human.id, giant.id)) {
         const humanDmgRoll = Math.max(1, d(4) + forMod + effectiveBonus.atk);
         humanDamageDealt = humanDmgRoll;
         const gCurr = (giant.currHp ?? giant.hp);
