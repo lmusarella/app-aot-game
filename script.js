@@ -4030,7 +4030,7 @@ function renderMissionUI() {
     const titleEl = card.querySelector('#mc-title');
     const briefEl = card.querySelector('#mc-brief');
     const rewardEl = card.querySelector('#mc-reward');
-   
+
     if (numEl) numEl.textContent = String(num);
     if (titleEl) titleEl.textContent = title;
 
@@ -4049,7 +4049,7 @@ function renderMissionUI() {
     }
 
     // (opzionale) se vuoi mostrare l’evento corrente in testa, aggiungi un <p id="mc-event"> nel skeleton e aggiorna qui:
-     const evEl = card.querySelector('#mc-event');
+    const evEl = card.querySelector('#mc-event');
     if (evEl) evEl.textContent = event ? `Evento: ${event}` : '';
 
     // 3) riallinea contatori/timeline/chip senza toccare lo stato
@@ -4892,11 +4892,17 @@ function stepGiant(giantId) {
 function giantsPhaseMove() {
     const giants = [...unitById.values()].filter(u => u.role === 'enemy');
     for (const g of giants) {
-        stepGiant(g.id);
+        // per ogni esagono di movimento il gigante fa tot step.
+        const movimento = getStat(g, 'mov');
+        if (movimento > 0) {          
+            for (let i = 0; i < movimento; i++) {
+                // se stepGiant ritorna false, interrompi i passi residui per quel gigante
+                const ok = stepGiant(g.id);
+                if (ok === false) break;
+            }
+        }
     }
 }
-
-
 
 let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
@@ -5560,14 +5566,14 @@ function volumeUI() {
         function applyBG(v) {
             v = Math.max(0, Math.min(1, Number(v) || 0));
             MIX.setMusicVolume(v);
-       
+
             localStorage.setItem(LS_BG, String(v));
             if (bgLabel) bgLabel.textContent = Math.round(v * 100);
         }
         function applySFX(v) {
             v = Math.max(0, Math.min(1, Number(v) || 0));
             MIX.setSfxVolume(v);
-          
+
             localStorage.setItem(LS_SFX, String(v));
             if (sfxLabel) sfxLabel.textContent = Math.round(v * 100);
         }
