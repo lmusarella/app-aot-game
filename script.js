@@ -143,7 +143,7 @@ const TurnEngine = {
             if (this.eventCards === this.squadNumber) {
                 this.setPhase('round_start');
             } else {
-                log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`, 6000);
+                log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`, 'info', 6000);
             }
         }
 
