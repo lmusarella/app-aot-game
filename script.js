@@ -3,6 +3,8 @@ const TurnEngine = {
     phase: 'idle',   // 'idle' | 'setup' | 'round_start' | ...
     round: 0,
     teamCreated: false,
+    eventCards: 0,
+    squadNumber: 0,
 
     init() {
         document.body.dataset.phase = this.phase; // utile anche per CSS mirato
@@ -59,6 +61,7 @@ const TurnEngine = {
                 try {
                     pickRandomTeam({ commanders: 1, recruits: 3 });
                     openAccordionForRole('commander');
+                    this.squadNumber = 4;
                 } catch { }
                 this.teamCreated = true;
                 log('Setup: posiziona e sistema la squadra come vuoi con 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info');
@@ -135,8 +138,13 @@ const TurnEngine = {
             await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
 
             showDrawnCard('event', card);
+            this.eventCards++;
 
-            this.setPhase('round_start');
+            if (this.eventCards === this.squadNumber) {
+                this.setPhase('round_start');
+            } else {
+                 log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`);
+            }
         }
 
         if (phase === 'move_phase') {
