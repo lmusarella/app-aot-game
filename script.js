@@ -143,7 +143,7 @@ const TurnEngine = {
             if (this.eventCards === this.squadNumber) {
                 this.setPhase('round_start');
             } else {
-                 log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`, 6000);
+                log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`, 6000);
             }
         }
 
@@ -2490,8 +2490,6 @@ async function completeMission(reason) {
         resetMissionEffectsAllUnits();
     }
 
-    GAME_STATE.turnEngine.setPhase('idle');
-    GAME_STATE.turnEngine.round = 0;
     GAME_STATE.missionState.kills = {
         Puro: 0,
         Anomalo: 0,
@@ -2513,7 +2511,11 @@ async function clearGrid() {
     deleteUnits(GAME_STATE.giantsRoster.map(giant => giant.id));
     deleteUnits(GAME_STATE.alliesRoster.map(ally => ally.id));
     GIANT_ENGAGEMENT.clear();
+    GAME_STATE.turnEngine.setPhase('idle');
+    GAME_STATE.turnEngine.round = 0;
     GAME_STATE.turnEngine.teamCreated = false;
+    GAME_STATE.turnEngine.eventCards = 0;
+    GAME_STATE.turnEngine.squadNumber = 0;
     renderMissionUI();
     scheduleSave();
 }
