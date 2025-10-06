@@ -64,7 +64,7 @@ const TurnEngine = {
                     this.squadNumber = 4;
                 } catch { }
                 this.teamCreated = true;
-                log('Setup: posiziona e sistema la squadra come vuoi con 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info');
+                log('Setup: posiziona e sistema la squadra come vuoi con 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info', 6000);
             } else {
                 log('Setup: Hai 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info');
             }
@@ -110,7 +110,7 @@ const TurnEngine = {
             advanceAllCooldowns(1, { giantsOnly: true });
             tickUnitModsOnNewRound();
             missionStatsSetRound(this.round);
-            log(`Fase Movimento ${this.round}° ROUND: Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`, 'info');
+            log(`Fase Movimento ${this.round}° ROUND: Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`, 'info', 6000);
             await playBg('./assets/sounds/commander_march_sound.mp3');
         }
     },
@@ -120,9 +120,9 @@ const TurnEngine = {
             const flagAlleatoInGriglia = GAME_STATE.alliesRoster.some(ally => GAME_STATE.spawns.some(s => (s.unitIds ?? []).includes(ally.id)));
             if (flagAlleatoInGriglia) {
                 this.setPhase('event_mission');
-                log(`Setup Missione: Clicca su Evento per generare lo spawn dei giganti associati alla missione`, 'info');
+                log(`Setup Missione: Clicca su Evento per generare lo spawn dei giganti associati alla missione`, 'info', 6000);
             } else {
-                log(`Setup Missione: Trascina almeno un'unità della tua squadra in campo`, 'info');
+                log(`Setup Missione: Trascina almeno un'unità della tua squadra in campo`, 'info', 6000);
             }
         }
 
@@ -143,7 +143,7 @@ const TurnEngine = {
             if (this.eventCards === this.squadNumber) {
                 this.setPhase('round_start');
             } else {
-                 log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`);
+                 log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`, 6000);
             }
         }
 
@@ -151,7 +151,7 @@ const TurnEngine = {
             log('I giganti iniziano a muoversi...', 'warning');
             giantsPhaseMove();
             this.setPhase('attack_phase');
-            log(`Fase Attacco ${TurnEngine.round}° ROUND: Scegli i bersagli che ingaggeranno battaglia`, 'info');
+            log(`Fase Attacco ${TurnEngine.round}° ROUND: Scegli i bersagli che ingaggeranno battaglia`, 'info', 6000);
             await playBg('./assets/sounds/start_mission.mp3');
         }
 
