@@ -364,7 +364,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
                     benchClickFocusAndTop(u);
                     const html = getUnitTooltipHTML(u);
                     const rect = card.getBoundingClientRect();
-                    showTooltip(html, rect.right + 6, rect.top + rect.height / 2);
+                    showTooltip(html);
                     // piccolo flash visivo
                     card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
                 }
@@ -541,7 +541,7 @@ function createHexagon(row, col, unitIds = []) {
                         openAccordionForRole(unit.role);
                         focusBenchCard(unit.id, { scroll: true, pulse: true });
                         const html = getUnitTooltipHTML(unit);
-                        showTooltip(html, e.clientX, e.clientY);
+                        showTooltip(html);
                     }
                 },
                 onLongPress: () => {

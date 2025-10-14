@@ -1,5 +1,5 @@
 import { fmtSigned, getUnitBonus, signClass, availableTemplates, countAlive, totalByRole, displayHpForTemplate } from './utils.js';
-import { UNIT_SELECTED } from './data.js';
+import { UNIT_SELECTED, unitById } from './data.js';
 const queue = [];
 const leftEl = document.querySelector('.leftbar');
 const rightEl = document.querySelector('aside');

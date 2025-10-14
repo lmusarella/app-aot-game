@@ -54,10 +54,7 @@ export function startAttackPick(attacker, cell, anchorEl /* es: member/el della 
 
     // Tooltip "appiccicoso": lista bersagli + annulla
     const html = renderPickTooltip(attacker, cand);
-    const rect = anchorEl?.getBoundingClientRect?.();
-    const x = rect ? (rect.right + 8) : 20;
-    const y = rect ? (rect.top + rect.height / 2) : 20;
-    showTooltip(html, x, y);
+    showTooltip(html);
 
     // Listener sul tooltip per click target/annulla
     tooltipEl.onclick = (e) => {
