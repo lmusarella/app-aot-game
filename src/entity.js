@@ -1,6 +1,6 @@
 import {
     sameOrAdjCells, findUnitCell, getStack, focusUnitOnField,
-    grid, hasHumanInCell, targetsAround, renderBenches, renderGrid, removeUnitEverywhere, setStack
+    grid, hasHumanInCell, targetsAround, renderBenches, renderGrid, removeUnitEverywhere, setStack, focusBenchCard
 } from './grid.js';
 import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates } from './utils.js';
 import { playSfx, playBg } from './audio.js';

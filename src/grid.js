@@ -739,7 +739,7 @@ export function focusUnitOnField(unitId, attackFocus = false) {
         })
     });
 }
-function focusBenchCard(unitId, { scroll = true, pulse = true } = {}) {
+export function focusBenchCard(unitId, { scroll = true, pulse = true } = {}) {
     // marca come selezionato e ridisegna panchine
     UNIT_SELECTED.selectedUnitId = unitId;
     renderBenches();
