@@ -1,5 +1,6 @@
 import { fmtSigned, getUnitBonus, signClass, availableTemplates, countAlive, totalByRole, displayHpForTemplate } from './utils.js';
-import { UNIT_SELECTED, unitById } from './data.js';
+import { UNIT_SELECTED, unitById, GIANT_ENGAGEMENT } from './data.js';
+
 const queue = [];
 const leftEl = document.querySelector('.leftbar');
 const rightEl = document.querySelector('aside');
@@ -540,32 +541,58 @@ export function openDialog({
 export function confirmDialog(opts) { return openDialog({ ...opts, cancellable: true }); }
 
 export function renderPickTooltip(attacker, targets) {
+    const engagedTargetId = (attacker.role === 'enemy')
+        ? GIANT_ENGAGEMENT.get(String(attacker.id))
+        : null;
+
+    // per evidenziare anche se il bersaglio (umano) è già ingaggiato da qualche gigante
+    const engagedBy = new Map(); // targetId -> attackerId
+    if (attacker.role !== 'enemy') {
+        // mappa inversa: chi sta colpendo chi
+        for (const [g, t] of GIANT_ENGAGEMENT.entries()) {
+            engagedBy.set(t, g);
+        }
+    }
+
+    console.log('targets', targets)
+    console.log('engagedBy', engagedBy)
+    console.log('GIANT_ENGAGEMENT', GIANT_ENGAGEMENT)
+
     const items = targets.map(t => {
-        const u = t.unit;
+        const u = t;
         const pct = Math.max(0, Math.min(100, Math.round(((u.currHp ?? 0) / (u.hp || 1)) * 100)));
+
+        // badge per lo stato
+        let badge = '';
+        if (attacker.role === 'enemy' && engagedTargetId === String(u.id)) {
+            badge = `<span class="tcard__badge" title="Bersaglio ingaggiato">🎯 Ingaggiato</span>`;
+        } else if (attacker.role !== 'enemy' && engagedBy.get(String(attacker.id))) {
+            const gId = engagedBy.get(String(attacker.id));
+            const g = unitById.get(gId);
+            badge = `<span class="tcard__badge" title="In combattimento con ${g?.name || 'Gigante'}">⚔️ In combat</span>`;
+        }
+
         return `
-    <button class="tcard tcard--mini" data-target-id="${u.id}" type="button" title="${u.name || 'Unità'}">
-      <div class="tcard__avatar"><img src="${u.img || ''}" alt=""></div>
-      <div class="tcard__body">
-        <div class="tcard__name">${u.name || 'Unità'}</div>
-        <div class="tcard__sub">(${t.cell.row}-${t.cell.col})</div>
-        <div class="hpbar"><div class="hpbar-fill" style="width:${pct}%"></div></div>
-        <div class="tcard__meta">❤️ ${u.currHp}/${u.hp}</div>
-      </div>
-    </button>
-  `;
+      <button class="tcard tcard--mini" data-target-id="${u.id}" type="button" title="${u.name || 'Unità'}">
+        <div class="tcard__avatar"><img src="${u.img || ''}" alt=""></div>
+        <div class="tcard__body">
+          <div class="tcard__name">${u.name || 'Unità'} ${badge}</div>
+          <div class="tcard__sub">(${u.cell.row}-${u.cell.col})</div>
+          <div class="hpbar"><div class="hpbar-fill" style="width:${pct}%"></div></div>
+          <div class="tcard__meta">❤️ ${u.currHp}/${u.hp}</div>
+        </div>
+      </button>
+    `;
     }).join('');
 
     return `
-  <div class="tt-card" data-role="${attacker.role}">
-    <div class="tt-title">${attacker.name}</div>
-    <div class="tt-ability-text" style="margin:6px 0 8px">Attacca un bersaglio ⚔️</div>
-    <div class="picklist picklist--grid">${items}</div>
-  </div>
-`;
-
+    <div class="tt-card" data-role="${attacker.role}">
+      <div class="tt-title">${attacker.name}</div>
+      <div class="tt-ability-text" style="margin:6px 0 8px">Attacca un bersaglio ⚔️</div>
+      <div class="picklist picklist--grid">${items}</div>
+    </div>
+  `;
 }
-
 export function addLongPress(el, { onLongPress, onClick }) {
     let t = null, fired = false, startX = 0, startY = 0, pointerId = null;
 

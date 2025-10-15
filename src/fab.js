@@ -1,9 +1,9 @@
 import { GAME_STATE, rebuildUnitIndex, scheduleSave, DB } from './data.js'
 import { missionStatsRecordEvent } from './missions.js'
 import { log } from './log.js';
-import { pickRandomTeam, spawnGiant } from './entity.js';
-import { renderBenches } from './grid.js';
-import { applyHpBar, COLOR_VAR, shuffle, countAlive, totalByRole} from './utils.js';
+import { giantsPhaseMove, pickRandomTeam, spawnGiant } from './entity.js';
+import { renderBenches, renderGrid, grid } from './grid.js';
+import { applyHpBar, COLOR_VAR, shuffle, countAlive, totalByRole } from './utils.js';
 import { playSfx } from './audio.js';
 import { addLongPress, showTooltip, getUnitTooltipHTML, alliesPickerHTML, ensureModal, openAccordionForRole, hideTooltip, cardSheetHTML } from './ui.js';
 
@@ -51,13 +51,19 @@ document.querySelectorAll('#fab-spawn .fab-option').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const type = btn.dataset.type; // "Casuale" | "Puro" | "Anomalo" | "Mutaforma"
-        let ok = false;
-        if (type === 'Casuale') ok = await spawnGiant();
-        else ok = await spawnGiant(type);
-        if (!ok) {
-            const anchor = document.querySelector('#fab-spawn .fab-main');
-            flash(anchor);
+        if (type !== 'Movimento') {
+            let ok = false;
+            if (type === 'Casuale') ok = await spawnGiant();
+            else ok = await spawnGiant(type);
+            if (!ok) {
+                const anchor = document.querySelector('#fab-spawn .fab-main');
+                flash(anchor);
+            }
+        } else {
+            giantsPhaseMove();
+            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
         }
+
         closeAllFabs();
     });
 });

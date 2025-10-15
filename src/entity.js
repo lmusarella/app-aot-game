@@ -1,11 +1,12 @@
 import {
     sameOrAdjCells, findUnitCell, getStack, focusUnitOnField,
-    grid, hasHumanInCell, targetsAround, renderBenches, renderGrid, removeUnitEverywhere, setStack, focusBenchCard
+    grid, hasHumanInCell, nextStepTowards, gridSize, hexDistance, renderBenches,
+    renderGrid, removeUnitEverywhere, humanTargetsWithin2, moveOneUnitBetweenStacks, nearestWallCell, setStack, focusBenchCard
 } from './grid.js';
 import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates } from './utils.js';
 import { playSfx, playBg } from './audio.js';
 import { unitById, rebuildUnitIndex, GAME_STATE, GIANT_ENGAGEMENT, scheduleSave, DB } from './data.js';
-import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip } from './ui.js'
+import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl } from './ui.js'
 import { log } from './log.js';
 import { missionStatsOnUnitDeath } from './missions.js';
 import { addMorale, addXP } from './footer.js';
@@ -15,16 +16,48 @@ export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind?
 let TARGET_CELLS = new Set();
 
 // valida e ritorna l’umano ingaggiato col gigante, se ancora valido
-function getEngagedHuman(gid) {
+export function getEngagedHuman(gid) {
     const hid = GIANT_ENGAGEMENT.get(gid);
     if (!hid) return null;
     const h = unitById.get(hid);
+    const g = unitById.get(gid);
+
+
     if (!unitAlive(h) || !sameOrAdjCells(gid, hid)) {
         GIANT_ENGAGEMENT.delete(gid);
+        log(`Il combattimento tra ${g.name} e ${h.name} è finito`, 'warning');
         return null;
     }
     return hid;
 }
+
+/**
+ * Ritorna l'ID del gigante attualmente ingaggiato con l'umano `humanId`,
+ * oppure null se non ce n'è. Pulisce eventuali legami non più validi.
+ * @param {string} humanId
+ * @returns {string|null}
+ */
+export function getEngagingGiant(humanId) {
+    const hidStr = String(humanId);
+    for (const [gid, hid] of GIANT_ENGAGEMENT) {
+        if (String(hid) !== hidStr) continue;
+
+        const g = unitById.get(gid);
+        const h = unitById.get(hidStr);
+        console.log('le unità sono ancora vicine', sameOrAdjCells(gid, hidStr))
+        // se uno dei due non è valido / non vivo / non più adiacente → rimuovi binding
+        if (!unitAlive(g) || !unitAlive(h) || !sameOrAdjCells(gid, hidStr) || g?.role !== 'enemy') {
+            GIANT_ENGAGEMENT.delete(gid);
+            log(`Il combattimento tra ${g.name} e ${h.name} è finito`, 'warning');
+            continue;
+        }
+
+        // primo match valido: ritorna subito
+        return gid;
+    }
+    return null;
+}
+
 
 function setEngagementIfMelee(gid, hid) {
     if (!gid || !hid) return;
@@ -33,27 +66,14 @@ function setEngagementIfMelee(gid, hid) {
 }
 
 
-export function startAttackPick(attacker, cell, anchorEl /* es: member/el della pedina */) {
-    let cand = targetsAround(attacker, cell);
+export function startAttackPick(attacker, targets) {
 
-    const engaged = getEngagedHuman(attacker.id);
-    if (engaged) {
-        cand = cand.filter(target => target.unit.id === engaged);
-    }
-
-    if (cand.length === 0) {
-        showTooltip(`<div class="tt-card"><div class="tt-title">${attacker.name}</div><div class="tt-ability-text">Nessuno in portata.</div></div>`,
-            anchorEl?.getBoundingClientRect().left ?? 12,
-            anchorEl?.getBoundingClientRect().top ?? 12);
-        setTimeout(hideTooltip, 1100);
-        return;
-    }
-    cand.map(target => target.unit).forEach(unit => focusUnitOnField(unit.id, true))
-    ATTACK_PICK = { attackerId: attacker.id, targets: cand };
-    TARGET_CELLS = new Set(cand.map(t => keyRC(t.cell.row, t.cell.col)));
+    targets.forEach(unit => focusUnitOnField(unit.id, true))
+    ATTACK_PICK = { attackerId: attacker.id, targets: targets };
+    TARGET_CELLS = new Set(targets.map(t => keyRC(t.cell.row, t.cell.col)));
 
     // Tooltip "appiccicoso": lista bersagli + annulla
-    const html = renderPickTooltip(attacker, cand);
+    const html = renderPickTooltip(attacker, targets);
     showTooltip(html);
 
     // Listener sul tooltip per click target/annulla
@@ -72,6 +92,8 @@ export function startAttackPick(attacker, cell, anchorEl /* es: member/el della 
     // evidenzia griglia
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
 }
+
+
 export function adjustUnitHp(unitId, delta) {
     const u = unitById.get(unitId);
     if (!u) return;
@@ -146,13 +168,20 @@ function resolveAttack(attackerId, targetId) {
     let humanDamageDealt = 0;
     let humanDamageTaken = 0;
 
+    const endagedGiant = getEngagingGiant(human.id);
+
     // Danno umano (se colpisce): d4 + FOR (min 1)
-    if (humanHits && sameOrAdjCells(human.id, giant.id)) {
+    if (humanHits && (!endagedGiant || endagedGiant === giant.id) && sameOrAdjCells(human.id, giant.id)) {
         const humanDmgRoll = Math.max(1, d(4) + forMod + effectiveBonus.atk);
         humanDamageDealt = humanDmgRoll;
         const gCurr = (giant.currHp ?? giant.hp);
         setUnitHp(giantId, gCurr - humanDmgRoll);
         lines.push(`${human.name} infligge ${humanDmgRoll} danni a ${giant.name}.`);
+    }
+
+    if (endagedGiant && endagedGiant !== giant.id) {
+        const x = unitById.get(endagedGiant);
+        lines.push(`Attualmente ${human.name} è distratto/a da ${x.name}`);
     }
 
     const engaged = getEngagedHuman(giant.id);
@@ -233,7 +262,7 @@ function resolveAttack(attackerId, targetId) {
     } catch { }
 
     // set/refresh ingaggio se sono a contatto (stessa cella o adiacenti) e entrambi vivi
-    if (!engaged && unitAlive(human) && unitAlive(giant) && sameOrAdjCells(human.id, giant.id)) {
+    if (!engaged && !endagedGiant && unitAlive(human) && unitAlive(giant) && sameOrAdjCells(human.id, giant.id)) {
         setEngagementIfMelee(giant.id, human.id);
         log(`${human.name} è entrato in combattimento con ${giant.name}`, 'warning');
     }
@@ -471,17 +500,27 @@ export function advanceAllCooldowns(
         }
     }
 }
+// helper: tra i candidati ritorna quello con meno HP; a parità usa distanza, poi random
+function pickLowestHpTarget(cands, fromR, fromC) {
+    if (!cands.length) return null;
+    // arr: { unit, row, col }
+    const ranked = cands.map(t => ({
+        ...t,
+        hp: (t.unit.currHp ?? t.unit.hp ?? 0),
+        d: hexDistance(fromR, fromC, t.row, t.col)
+    }));
+    ranked.sort((a, b) => a.hp - b.hp || a.d - b.d);
+    // tra i “pari” (stesso hp e stessa distanza) spezza con random
+    const top = ranked.filter(x => x.hp === ranked[0].hp && x.d === ranked[0].d);
+    return pickRandom(top);
+}
 
-// usa la TUA moveOneUnitBetweenStacks
 export function stepGiant(giantId) {
     const g = unitById.get(giantId);
     if (!g || g.role !== 'enemy') return false;
 
-    // da dove parte il gigante
+    // cella attuale del gigante
     let here = findUnitCell?.(giantId) || null;
-
-
-
     if (!here) {
         // fallback: cerca negli stack
         const { R, C } = gridSize();
@@ -498,41 +537,53 @@ export function stepGiant(giantId) {
 
     const { row: r, col: c } = here;
 
+    // se nella stessa cella ci sono già umani non spostarti
     if (hasHumanInCell(r, c)) return false;
 
-    // 1) se vede umani entro 2, avvicinati al più vicino (se non già adiacente)
-    const humans = humanTargetsWithin2(r, c);
-    if (humans.length) {
-        // scegli il bersaglio più vicino (random tra pari distanza)
-        let best = [], bestD = Infinity;
-        for (const h of humans) {
-            const d = hexDistance(r, c, h.row, h.col);
-            if (d < bestD) { bestD = d; best = [h]; }
-            else if (d === bestD) best.push(h);
+    // ➊ PRIORITÀ: bersaglio ingaggiato (anche fuori vista)
+    const engagedHumanId = getEngagedHuman(String(giantId)); // tua funzione esistente
+    if (engagedHumanId) {
+        const tgtCell = findUnitCell(engagedHumanId);
+        if (tgtCell) {
+            const d = hexDistance(r, c, tgtCell.row, tgtCell.col);
+            if (d > 1) {
+                const step = nextStepTowards(r, c, tgtCell.row, tgtCell.col, {});
+                if (step) {
+                    moveOneUnitBetweenStacks({ row: r, col: c }, { row: step.row, col: step.col }, giantId);
+                    return true;
+                }
+                return false; // bloccato
+            } else if (d === 1) {
+                // prova ad entrare nella cella del bersaglio
+                moveOneUnitBetweenStacks({ row: r, col: c }, { row: tgtCell.row, col: tgtCell.col }, giantId);
+                return true;
+            }
+            // d === 0 → già nella stessa cella: niente movimento
+            return false;
         }
-        const target = pickRandom(best);
+        // se l’ingaggio è sporco (niente cella), lo lascerà la getEngagedHuman
+    }
 
-        if (bestD > 1) {
-            // ancora lontano: fai UN passo verso di lui
+    // ➋ Nessun ingaggio → scegli umano con meno HP tra quelli “visti” entro 2
+    const humansInSight = humanTargetsWithin2(r, c); // [{unit,row,col}, ...]
+    if (humansInSight.length) {
+        const target = pickLowestHpTarget(humansInSight, r, c);
+        const d = hexDistance(r, c, target.row, target.col);
+        if (d > 1) {
             const step = nextStepTowards(r, c, target.row, target.col, {});
             if (step) {
                 moveOneUnitBetweenStacks({ row: r, col: c }, { row: step.row, col: step.col }, giantId);
                 return true;
             }
             return false; // bloccato
-        }
-
-        if (bestD === 1) {
-            // ADIACENTE: prova ad entrare direttamente nella cella del bersaglio
+        } else if (d === 1) {
             moveOneUnitBetweenStacks({ row: r, col: c }, { row: target.row, col: target.col }, giantId);
-            return true; // se la cella è piena, la tua funzione non sposta (ok)
+            return true;
         }
-
-        // bestD === 0: già nella stessa cella -> nessuna mossa
-        return false;
+        return false; // già insieme
     }
 
-    // 2) altrimenti verso le MURA
+    // ➌ Nessun umano in vista → muoviti verso le mura
     const wall = nearestWallCell(r, c);
     if (!wall) return false;
 
@@ -546,6 +597,10 @@ export function stepGiant(giantId) {
 
 export function giantsPhaseMove() {
     const giants = [...unitById.values()].filter(u => u.role === 'enemy');
+
+    if (giants.length) log('I giganti iniziano a muoversi...', 'warning');
+    if (!giants.length) log('Nessun gigante sulla griglia', 'warning');
+
     for (const g of giants) {
         // per ogni esagono di movimento il gigante fa tot step.
         const movimento = getStat(g, 'mov');
@@ -553,6 +608,7 @@ export function giantsPhaseMove() {
             for (let i = 0; i < movimento; i++) {
                 // se stepGiant ritorna false, interrompi i passi residui per quel gigante
                 const ok = stepGiant(g.id);
+                console.log('step ok', ok);
                 if (ok === false) break;
             }
         }

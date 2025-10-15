@@ -212,7 +212,6 @@ export const TurnEngine = {
         }
 
         if (phase === 'move_phase') {
-            log('I giganti iniziano a muoversi...', 'warning');
             giantsPhaseMove();
             this.setPhase('attack_phase');
             log(`Fase Attacco ${TurnEngine.round}° ROUND: Scegli i bersagli che ingaggeranno battaglia`, 'info', 6000);

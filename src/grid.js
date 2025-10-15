@@ -1,11 +1,20 @@
-import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, showSnackBar,addLongPress } from './ui.js';
+import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, showSnackBar, addLongPress, confirmDialog } from './ui.js';
 import { playSfx } from './audio.js';
 import { isClone, getStat, applyHpBar, getMusicUrlById, isHuman, pickRandom, COLOR_VAR, keyRC } from './utils.js';
-import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, scheduleSave,GIANT_ENGAGEMENT } from './data.js';
+import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, scheduleSave, GIANT_ENGAGEMENT } from './data.js';
 import { log } from './log.js';
-import { adjustUnitHp } from './entity.js';
-const baseHpOverride = new Map();
+import { adjustUnitHp, startAttackPick, getEngagedHuman, getEngagingGiant } from './entity.js';
 
+// === HIGHLIGHT CONO =========================================================
+const HILITE = { cone: new Set() };
+
+export function clearHighlights() { HILITE.cone.clear(); }
+function setCone(cells) { HILITE.cone = new Set(cells.map(p => keyRC(p.row, p.col))); }
+function isConeCell(r, c) { return HILITE.cone.has(keyRC(r, c)); }
+// normalizza un indice di direzione su 0..5
+const normDir = (d) => ((d % 6) + 6) % 6;
+
+const baseHpOverride = new Map();
 let isDraggingNow = false;
 
 export const grid = document.getElementById("hex-grid");
@@ -49,6 +58,15 @@ export function inBoundsRC(r, c) {
     } else {
         return r >= 1 && r <= R && c >= 1 && c <= C;
     }
+}
+function normalizeRC(r, c) {
+    if (!HEX_CFG.autoSwapRC) return { r, c };
+
+    const rcOK = inBoundsRC(r, c);
+    if (rcOK) return { r, c };
+
+    const crOK = inBoundsRC(c, r);
+    return crOK ? { r: c, c: r } : { r, c };
 }
 
 // --- VICINI ESAGONALI (row-offset) -----------------------------------------
@@ -100,8 +118,7 @@ export function hexWithinRadius(row, col, radius = 1, includeSelf = false) {
     ({ r: row, c: col } = normalizeRC(row, col));
     radius = Math.max(0, radius | 0);
 
-    const key = (r, c) => `${r}:${c}`;
-    const seen = new Set([key(row, col)]);
+    const seen = new Set([keyRC(row, col)]);
     const out = [];
     let frontier = [{ row, col }];
 
@@ -112,7 +129,7 @@ export function hexWithinRadius(row, col, radius = 1, includeSelf = false) {
         for (const p of frontier) {
             const ns = hexNeighbors(p.row, p.col, false);
             for (const n of ns) {
-                const k = key(n.row, n.col);
+                const k = keyRC(n.row, n.col);
                 if (seen.has(k)) continue;
                 seen.add(k);
                 out.push(n);
@@ -126,20 +143,36 @@ export function hexWithinRadius(row, col, radius = 1, includeSelf = false) {
 }
 
 // offset(r,c) -> cube, rispettando base (0/1) e layout ('even-r'|'odd-r')
+// --- OFFSET <-> CUBE -------------------------------------------------------
 function offsetToCube(row, col) {
     const base = HEX_CFG.base || 0;
-    let r0 = row - base, c0 = col - base;
+    const r0 = row - base;
+    const c0 = col - base;
 
-    let q;
+    let x, z; // cube: (x,y,z) con x+y+z=0
     if (HEX_CFG.layout === 'odd-r') {
-        q = c0 - Math.floor((r0 - (r0 & 1)) / 2);
-    } else { // default 'even-r'
-        q = c0 - Math.floor((r0 + (r0 & 1)) / 2);
+        const q = c0 - ((r0 - (r0 & 1)) >> 1);
+        x = q;
+        z = r0;
+    } else { // 'even-r'
+        const q = c0 - ((r0 + (r0 & 1)) >> 1);
+        x = q;
+        z = r0;
     }
-    const x = q;
-    const z = r0;
     const y = -x - z;
     return { x, y, z };
+}
+
+function cubeToOffset(x, y, z) {
+    const base = HEX_CFG.base || 0;
+    const r0 = z;                    // in cube usiamo (x,y,z) con x+y+z=0
+    let c0;
+    if (HEX_CFG.layout === 'odd-r') {
+        c0 = x + Math.floor((r0 - (r0 & 1)) / 2);
+    } else { // 'even-r'
+        c0 = x + Math.floor((r0 + (r0 & 1)) / 2);
+    }
+    return { row: r0 + base, col: c0 + base };
 }
 
 export function hexDistance(r1, c1, r2, c2) {
@@ -363,7 +396,6 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
                 if (!isDraggingNow) {
                     benchClickFocusAndTop(u);
                     const html = getUnitTooltipHTML(u);
-                    const rect = card.getBoundingClientRect();
                     showTooltip(html);
                     // piccolo flash visivo
                     card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
@@ -491,6 +523,8 @@ function createHexagon(row, col, unitIds = []) {
     if (row === 8 || row === 9) hex.setAttribute("data-color", "gray");
     if (row === 10 || row === 11 || row === 12) hex.setAttribute("data-color", "silver");
 
+    if (isConeCell(row, col)) hex.classList.add('is-cone');
+
     const allUnits = unitIds.map(id => unitById.get(id)).filter(Boolean);
     const overflow = Math.max(0, allUnits.length - DB.SETTINGS.gridSettings.dispalyLimit);
     const visibleUnits = overflow > 0 ? allUnits.slice(-DB.SETTINGS.gridSettings.dispalyLimit) : allUnits;
@@ -533,7 +567,7 @@ function createHexagon(row, col, unitIds = []) {
 
             // Long-press sul membro in campo: mostra tooltip; click breve = focus + bringToFront
             addLongPress(member, {
-                onClick: (e) => {
+                onClick: () => {
                     if (!isDraggingNow) {
                         UNIT_SELECTED.selectedUnitId = unit.id;
                         bringToFront({ row, col }, unit.id);
@@ -547,7 +581,8 @@ function createHexagon(row, col, unitIds = []) {
                 onLongPress: () => {
                     hideTooltip();
                     openAccordionForRole(unit.role);
-                    handleUnitLongPress({ unit, cell: { row, col }, anchorEl: member });
+                    handleUnitLongPress({ unit, cell: { row, col } });
+                    if (unit.role === 'enemy') showGiantCone(unit.id);
                 }
             });
 
@@ -589,6 +624,7 @@ function createHexagon(row, col, unitIds = []) {
         UNIT_SELECTED.selectedUnitId = null;
         document.querySelectorAll('.hex-member.is-selected').forEach(el => el.classList.remove('is-selected'));
         hideTooltip();
+        clearHighlights();
     });
 
     return hex;
@@ -687,7 +723,7 @@ function hasWallInCell(r, c) {
     return stack.some(id => (unitById.get(id)?.role === 'wall'));
 }
 
-function moveOneUnitBetweenStacks(from, to, unitId) {
+export function moveOneUnitBetweenStacks(from, to, unitId) {
     if (hasWallInCell(to.row, to.col)) return;
     // se per qualsiasi motivo source/target coincidono, non fare nulla
     //if (sameCell(from, to)) return;
@@ -826,56 +862,70 @@ export function hasHumanInCell(row, col) {
     });
 }
 
-function handleUnitLongPress({ unit, cell, anchorEl }) {
+function handleUnitLongPress({ unit, cell }) {
     // niente mura
     if (unit.role === 'wall') return;
 
-    const targets = findTargetsFor(unit, cell);
+    let targets = findTargetsFor(unit, cell);
+
+    const engaged = getEngagedHuman(unit.id) || getEngagingGiant(unit.id);
+
+    if (engaged) {
+        targets = targets.filter(target => target.id === engaged);
+    }
 
     if (!targets.length) {
         showSnackBar('Nessun bersaglio a portata.', {}, 'info');
         return;
     }
 
-    startAttackPick(unit, cell, anchorEl)
+    startAttackPick(unit, targets)
 }
 
-function findTargetsFor(attacker, cell) {
-    const neigh = hexWithinRadius(cell.row, cell.col, getStat(attacker, 'rng'), true);
-    const all = neigh.flatMap(p => unitsAt(p.row, p.col));
+export function findTargetsFor(attacker, cell) {
+    const out = [];
+    const rng = getStat(attacker, 'rng') || 1;
+
     if (attacker.role === 'enemy') {
-        // i giganti colpiscono solo alleati (no mura)
-        return all.filter(u => (u.role === 'recruit' || u.role === 'commander' || u.role === 'wall'));
-    } else if (attacker.role === 'recruit' || attacker.role === 'commander') {
-        // alleati colpiscono i giganti
-        return all.filter(u => u.role === 'enemy');
+        // Facing da VISTA (min 2) + ingaggio
+        const { dir } = pickGiantFacing(attacker, cell);
+        const cone = hexCone(cell.row, cell.col, dir, rng, { includeOrigin: true });
+
+        // Se vede almeno un umano (entro vista, non per forza entro rng), colpisce SOLO umani nel cono.
+        const seenHuman = lowestHpHumanWithin(attacker, cell.row, cell.col, Math.max(GIANT_VISION, rng)) != null;
+
+        console.log('cone', cone);
+        console.log('seenHuman', seenHuman);
+        for (const p of cone) {
+            for (const id of getStack(p.row, p.col)) {
+                const u = unitById.get(id);
+                if (!u) continue;
+                if (seenHuman) {
+                    if (u.role === 'recruit' || u.role === 'commander') out.push({ ...u, cell: p });
+                } else {
+                    if (u.role === 'wall') out.push({ ...u, cell: p });
+                }
+            }
+        }
+        return out;
     }
-    return [];
+
+    // Alleati: cerchio entro rng, solo enemy
+    for (const p of hexWithinRadius(cell.row, cell.col, rng, true)) {
+        for (const id of getStack(p.row, p.col)) {
+            const u = unitById.get(id);
+            if (u && u.role === 'enemy') out.push({ ...u, cell: p });
+        }
+    }
+    return out;
 }
+
+
 
 function unitsAt(r, c) {
     return getStack(r, c).map(id => unitById.get(id)).filter(Boolean);
 }
 
-export function targetsAround(attacker, cell) {
-    const out = [];
-    for (const p of hexWithinRadius(cell.row, cell.col, getStat(attacker, 'rng'), true)) {
-        const ids = getStack(p.row, p.col);
-        for (const id of ids) {
-            const u = unitById.get(id);
-            if (!u) continue;
-            // alleati attaccano solo nemici
-            if ((attacker.role === 'recruit' || attacker.role === 'commander') && u.role === 'enemy') {
-                out.push({ unit: u, cell: p });
-            }
-            // giganti attaccano solo alleati
-            if (attacker.role === 'enemy' && (u.role === 'recruit' || u.role === 'commander' || u.role === 'wall')) {
-                out.push({ unit: u, cell: p });
-            }
-        }
-    }
-    return out;
-}
 export function sameOrAdjCells(idA, idB) {
     const a = findUnitCell(idA), b = findUnitCell(idB);
     if (!a || !b) return false;
@@ -1018,4 +1068,190 @@ export async function clearGrid() {
     GAME_STATE.turnEngine.squadNumber = 0;
     renderMissionUI();
     scheduleSave();
+}
+
+// Cono con profondità = range: 3 "raggi" (dir-1, dir, dir+1) dalla cella sorgente
+// Cono largo 3 "raggi" (dir-1, dir, dir+1) profondo = range
+// Cono regolare: profondità = range, 3 "raggi" (dir-1, dir, dir+1)
+export function hexCone(fromR, fromC, dir, range = 1, { includeOrigin = false } = {}) {
+    const main = ((dir % 6) + 6) % 6;
+    const vF = dirVec(main);
+    const vL = dirVec((main + 5) % 6);
+    const vR = dirVec((main + 1) % 6);
+
+    const o = offsetToCube(fromR, fromC);
+    const cells = [];
+    const seen = new Set();
+
+    const push = (x, y, z) => {
+        const { row, col } = cubeToOffset(x, y, z);
+        if (!inBoundsRC(row, col)) return;
+        const k = row + ':' + col;
+        if (seen.has(k)) return;
+        seen.add(k); cells.push({ row, col });
+    };
+
+    console.log('includeOrigin', includeOrigin, o);
+    if (includeOrigin) push(o.x, o.y, o.z);          // <<— NOVITÀ
+
+    for (let d = 1; d <= Math.max(1, range | 0); d++) {
+        for (let s = -d; s <= d; s++) {
+            const a = (s < 0) ? -s : 0;   // passi a sinistra
+            const c = (s > 0) ? s : 0;   // passi a destra
+            const b = d - a - c;          // passi frontali
+            const x = o.x + vL.x * a + vF.x * b + vR.x * c;
+            const y = o.y + vL.y * a + vF.y * b + vR.y * c;
+            const z = o.z + vL.z * a + vF.z * b + vR.z * c;
+            push(x, y, z);
+        }
+    }
+    return cells;
+}
+
+
+// Sceglie la direzione "di facing" verso una destinazione arbitraria:
+// se target è oltre 1, usa lo step migliore verso di essa.
+export function facingDirTowards(fromR, fromC, toR, toC) {
+    if (fromR === toR && fromC === toC) return 0;
+    const step = nextStepTowards(fromR, fromC, toR, toC) || { row: toR, col: toC };
+    let dir = dirIndexTo(fromR, fromC, step.row, step.col);
+    if (dir < 0) dir = bestDirectionToward(fromR, fromC, toR, toC);
+    return normDir(dir);
+}
+
+function lowestHpHumanWithin(attacker, fromR, fromC, radius) {
+    const area = hexWithinRadius(fromR, fromC, radius, true);
+    let best = null, bestHp = Infinity, bestD = Infinity;
+    for (const p of area) {
+        for (const u of unitsAtCell(p.row, p.col)) {
+            if (!isHuman(u)) continue;
+            const cur = u.currHp ?? u.hp ?? 0;
+            const d = hexDistance(fromR, fromC, p.row, p.col);
+            if (cur < bestHp || (cur === bestHp && d < bestD)) {
+                best = { unit: u, row: p.row, col: p.col }; bestHp = cur; bestD = d;
+            }
+        }
+    }
+    return best;
+}
+
+// facing per il gigante: verso umano (entro visione=2), altrimenti verso muro
+export function pickGiantFacing(attacker, cell) {
+    const R = Math.max(2, getStat(attacker, 'rng') || 1); // vista minima 2 come richiesto
+
+    // 1) Priorità: bersaglio ingaggiato
+    const engagedId = GIANT_ENGAGEMENT.get(String(attacker.id));
+    if (engagedId) {
+        const engaged = unitById.get(engagedId);
+        const engagedCell = engaged ? findUnitCell(engaged.id) : null;
+        const alive = engaged && (engaged.currHp ?? engaged.hp) > 0;
+        if (alive && engagedCell) {
+            return {
+                dir: facingDirTowards(cell.row, cell.col, engagedCell.row, engagedCell.col),
+                targetHint: { unit: engaged, row: engagedCell.row, col: engagedCell.col },
+                reason: 'engaged'
+            };
+        } else {
+            // ingaggio non più valido → pulizia
+            GIANT_ENGAGEMENT.delete(String(attacker.id));
+        }
+    }
+
+    // 2) Nessun ingaggio → umano con meno HP entro raggio di VISTA (non di attacco)
+    const human = lowestHpHumanWithin(attacker, cell.row, cell.col, R);
+    if (human) {
+        return {
+            dir: facingDirTowards(cell.row, cell.col, human.row, human.col),
+            targetHint: human,
+            reason: 'lowest-hp'
+        };
+    }
+
+    // 3) Altrimenti mura
+    const wall = nearestWallCell(cell.row, cell.col);
+    if (wall) {
+        return {
+            dir: facingDirTowards(cell.row, cell.col, wall.row, wall.col),
+            targetHint: null,
+            reason: 'wall'
+        };
+    }
+
+    return { dir: 0, targetHint: null, reason: 'fallback' };
+}
+
+// 6 direzioni in offset row-based, ordinate (0..5) in senso orario
+// 6 direzioni in offset row-based, ordinate (N, NE, SE, S, SW, NW)
+// Funziona con base=1 o 0 e con HEX_CFG.layout 'odd-r' / 'even-r'
+// 6 direzioni (odd-r/even-r) in ordine E, NE, NW, W, SW, SE
+function sixDirs(row) {
+    const even = ((row - HEX_CFG.base) % 2 === 0);
+
+    if (HEX_CFG.layout === 'odd-r') {
+        //       E        NE          NW          W         SW           SE
+        return even
+            ? [[0, +1], [-1, 0], [-1, -1], [0, -1], [+1, -1], [+1, 0]]
+            : [[0, +1], [-1, +1], [-1, 0], [0, -1], [+1, 0], [+1, +1]];
+    } else { // 'even-r'
+        return even
+            ? [[0, +1], [-1, +1], [-1, 0], [0, -1], [+1, 0], [+1, +1]]
+            : [[0, +1], [-1, 0], [-1, -1], [0, -1], [+1, -1], [+1, 0]];
+    }
+}
+
+// --- direzione cubica (0..5) -> vettore cube
+const CUBE_DIRS = [
+    { x: +1, y: -1, z: 0 }, { x: +1, y: 0, z: -1 }, { x: 0, y: +1, z: -1 },
+    { x: -1, y: +1, z: 0 }, { x: -1, y: 0, z: +1 }, { x: 0, y: -1, z: +1 },
+];
+
+function dirVec(ix) { const i = ((ix % 6) + 6) % 6; return CUBE_DIRS[i]; }
+
+// passo in direzione ix per N step (usa le conversioni offset<->cube che già hai)
+function stepDir(row, col, dirIx, steps = 1) {
+    const v = dirVec(dirIx);
+    const c = offsetToCube(row, col);
+    const nx = c.x + v.x * steps;
+    const ny = c.y + v.y * steps;
+    const nz = c.z + v.z * steps;
+    return cubeToOffset(nx, ny, nz);
+}
+
+
+function dirIndexTo(fromR, fromC, toR, toC) {
+    const deltas = sixDirs(fromR);
+    for (let k = 0; k < 6; k++) {
+        const [dr, dc] = deltas[k];
+        if (fromR + dr === toR && fromC + dc === toC) return k;
+    }
+    return -1;
+}
+// direzione “principale” (0..5) che più avvicina a (toR,toC)
+// sceglie la direzione che avvicina di più a (toR,toC). Se nessuna riduce, ritorna comunque la “migliore”.
+// direzione (0..5) che più avvicina da (from) a (to)
+const GIANT_VISION = 2; // come richiesto
+
+function bestDirectionToward(fromR, fromC, toR, toC) {
+    // scegli la direzione che riduce di più la distanza in un singolo passo
+    const d0 = hexDistance(fromR, fromC, toR, toC);
+    let bestIx = 0, best = Infinity;
+    for (let i = 0; i < 6; i++) {
+        const p = stepDir(fromR, fromC, i, 1);
+        const d = hexDistance(p.row, p.col, toR, toC);
+        if (d < best && d < d0) { best = d; bestIx = i; }
+    }
+    return bestIx;
+}
+
+export function showGiantCone(giantOrId) {
+    const id = typeof giantOrId === 'string' ? giantOrId : giantOrId.id;
+    const u = unitById.get(id);
+    if (!u || u.role !== 'enemy') return;
+    const cell = findUnitCell(id); if (!cell) return;
+
+    const { dir } = pickGiantFacing(u, cell);     // usa VISIONE=2
+    const rng = Math.max(1, getStat(u, 'rng') || 1); // profondità = range
+    const cells = hexCone(cell.row, cell.col, dir, rng, { includeOrigin: true });
+    setCone(cells);
+    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
 }
