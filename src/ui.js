@@ -541,6 +541,7 @@ export function openDialog({
 export function confirmDialog(opts) { return openDialog({ ...opts, cancellable: true }); }
 
 export function renderPickTooltip(attacker, targets) {
+
     const engagedTargetId = (attacker.role === 'enemy')
         ? GIANT_ENGAGEMENT.get(String(attacker.id))
         : null;
@@ -554,22 +555,21 @@ export function renderPickTooltip(attacker, targets) {
         }
     }
 
-    console.log('targets', targets)
-    console.log('engagedBy', engagedBy)
-    console.log('GIANT_ENGAGEMENT', GIANT_ENGAGEMENT)
+
 
     const items = targets.map(t => {
         const u = t;
         const pct = Math.max(0, Math.min(100, Math.round(((u.currHp ?? 0) / (u.hp || 1)) * 100)));
 
+
         // badge per lo stato
         let badge = '';
         if (attacker.role === 'enemy' && engagedTargetId === String(u.id)) {
-            badge = `<span class="tcard__badge" title="Bersaglio ingaggiato">🎯 Ingaggiato</span>`;
+            badge = `<span class="tcard__badge tag-engaged" title="Bersaglio ingaggiato">🎯 Ingaggiato</span>`;
         } else if (attacker.role !== 'enemy' && engagedBy.get(String(attacker.id))) {
             const gId = engagedBy.get(String(attacker.id));
             const g = unitById.get(gId);
-            badge = `<span class="tcard__badge" title="In combattimento con ${g?.name || 'Gigante'}">⚔️ In combat</span>`;
+            badge = `<span class="tcard__badge tag-engaged" title="In combattimento con ${g?.name || 'Gigante'}">⚔️ In combat</span>`;
         }
 
         return `
@@ -780,4 +780,87 @@ export function ensureMissionCardSkeleton(card) {
     <div class="mission-subtitle">Effetti attivi</div>
     <div id="msn-evactive" class="msn-chips"></div>
   `;
+}
+
+// =============== VS OVERLAY ===============
+let VS_TIMER = null;
+const VS_THROTTLE = new Map(); // key "A|B" -> last ts
+
+function hpPct(u) {
+    const max = u.hp ?? 1; const cur = Math.max(0, Math.min(max, u.currHp ?? max));
+    return (cur / max) * 100;
+}
+function roleLabel(u) {
+    if (u.role === 'enemy') return 'Gigante';
+    if (u.role === 'recruit') return 'Recluta';
+    if (u.role === 'commander') return 'Comandante';
+    if (u.role === 'wall') return 'Muro';
+    return 'Unità';
+}
+function ringColor(u) {
+    return getComputedStyle(document.documentElement).getPropertyValue('--oro') || '#facc15';
+}
+
+export function showVersusOverlay(attacker, defender, {
+    title = 'Scontro',
+    mode = 'attack',          // 'attack' | 'engage'
+    duration = 1600,          // ms
+    throttleMs = 900          // anti-spam
+} = {}) {
+    // throttle: evita spam continuo tra gli stessi due
+    const key = `${attacker.id}|${defender.id}|${mode}`;
+    const now = performance.now();
+    if (VS_THROTTLE.has(key) && (now - VS_THROTTLE.get(key) < throttleMs)) return;
+    VS_THROTTLE.set(key, now);
+
+    const root = document.getElementById('vs-overlay');
+    if (!root) return;
+
+    const left = root.querySelector('.vs-card.vs-left');
+    const right = root.querySelector('.vs-card.vs-right');
+    const badge = root.querySelector('.vs-badge');
+
+    // build card html
+    const makeCard = (u) => {
+        const pct = Math.max(0, Math.min(100, hpPct(u)));
+        const name = u.name || '—';
+        const sub = roleLabel(u);
+        const ring = ringColor(u);
+        const img = u.img || '';
+        return `
+      <div class="vs-avatar" style="--ring:${ring}"><img src="${img}" alt=""></div>
+      <div class="vs-info">
+        <div class="vs-name">${name}</div>
+        <div class="vs-sub">${sub}</div>
+        <div class="vs-hp">❤️ ${u.currHp ?? u.hp}/${u.hp}</div>
+        <div class="vs-bar"><div class="vs-fill" style="width:${pct.toFixed(1)}%"></div></div>
+      </div>
+    `;
+    };
+
+    left.innerHTML = makeCard(attacker);
+    right.innerHTML = makeCard(defender);
+    badge.textContent = mode === 'engage' ? 'ENGAGE' : 'VS';
+
+    // show
+    root.classList.add('show');
+    root.removeAttribute('hidden');
+
+    // auto-hide
+    clearTimeout(VS_TIMER);
+    VS_TIMER = setTimeout(() => hideVersusOverlay(), duration);
+
+    // close handlers (one-shot)
+    const onKey = (e) => { if (e.key === 'Escape') hideVersusOverlay(); };
+    const onClick = () => hideVersusOverlay();
+    root.addEventListener('click', onClick, { once: true });
+    window.addEventListener('keydown', onKey, { once: true });
+}
+
+export function hideVersusOverlay() {
+    const root = document.getElementById('vs-overlay');
+    if (!root) return;
+    root.classList.remove('show');
+    root.setAttribute('hidden', '');
+    clearTimeout(VS_TIMER);
 }

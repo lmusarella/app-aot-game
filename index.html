@@ -359,8 +359,9 @@
                     Anomalo</button>
                 <button class="fab-option" data-type="Mutaforma" title="Gigante Mutaforma" style="--angle:48deg">Spawn
                     Mutaforma</button>
-                <button class="fab-option" data-type="Casuale" title="Gigante Casuale" style="--angle:80deg">Spawn Evento
-                    </button>
+                <button class="fab-option" data-type="Casuale" title="Gigante Casuale" style="--angle:80deg">Spawn
+                    Evento
+                </button>
                 <button class="fab-option" data-type="Movimento" title="Movimento" style="--angle:0deg">Movimento
                 </button>
             </div>
@@ -428,7 +429,14 @@
             </div>
         </div>
     </footer>
-
+    <div id="vs-overlay" hidden>
+        <div class="vs-backdrop"></div>
+        <div class="vs-wrap" role="dialog" aria-label="Scontro in corso" aria-live="polite">
+            <div class="vs-card vs-left"></div>
+            <div class="vs-badge">VS</div>
+            <div class="vs-card vs-right"></div>
+        </div>
+    </div>
     <!-- Overlay Mano (creato/riempito via JS) -->
     <!-- Overlay Carte (mano / pesca) -->
     <div id="hand-overlay" class="hand-overlay" hidden>

@@ -4537,3 +4537,79 @@
   border-radius:6px;
   opacity:.9;
 }
+
+/* ============ VS OVERLAY ============ */
+#vs-overlay { 
+  position: fixed; inset: 0; z-index: 9999; 
+  pointer-events: none; opacity: 0; 
+  transition: opacity .2s ease-out;
+}
+#vs-overlay.show { opacity: 1; pointer-events: auto; }
+#vs-overlay .vs-backdrop {
+  position: absolute; inset: 0; background: rgba(9,12,20,.5); backdrop-filter: blur(2px);
+  opacity: 0; transition: opacity .2s ease-out;
+}
+#vs-overlay.show .vs-backdrop { opacity: 1; }
+
+#vs-overlay .vs-wrap {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  width: min(900px, 92vw); height: min(280px, 48vh);
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px;
+  pointer-events: none;
+}
+
+.vs-card {
+  --ring: var(--oro);
+  background: rgba(16,20,32,.95);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,.5), inset 0 0 0 2px rgba(255,255,255,.02);
+  border-radius: 18px;
+  padding: 16px;
+  display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center;
+  min-height: 160px;
+  color: #fff;
+  pointer-events: auto;
+  opacity: 0;
+}
+.vs-card .vs-avatar {
+  width: 96px; height: 96px; border-radius: 999px; overflow: hidden; 
+  border: 3px solid var(--ring);
+  box-shadow: 0 0 0 6px rgba(255,255,255,.06);
+}
+.vs-card .vs-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.vs-card .vs-name { font-size: 22px; font-weight: 700; line-height: 1.15; }
+.vs-card .vs-sub  { font-size: 13px; opacity: .8; margin-top: 2px; }
+.vs-card .vs-hp   { margin-top: 10px; font-weight: 600; font-size: 14px; }
+.vs-card .vs-bar  { margin-top: 8px; height: 10px; border-radius: 999px; background: #1f2536; overflow: hidden; }
+.vs-card .vs-fill { height: 100%; width: 0%; background: linear-gradient(90deg,#d84848,#eb9a3b,#2acb79); }
+
+.vs-left  { animation: vsInLeft  .35s ease-out forwards; }
+.vs-right { animation: vsInRight .35s ease-out forwards; }
+#vs-overlay.show .vs-left  { animation-delay: .05s; }
+#vs-overlay.show .vs-right { animation-delay: .05s; }
+
+.vs-badge {
+  width: 84px; height: 84px; border-radius: 999px;
+  background: radial-gradient(circle at 35% 35%, #fff, #cbd5e1 35%, #94a3b8 60%, #64748b 100%);
+  color: #0b1020; font-weight: 900; display: grid; place-items: center; font-size: 26px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.45), inset 0 -4px 10px rgba(0,0,0,.25);
+  transform: scale(.8); opacity: 0;
+  animation: vsPop .28s ease-out .12s forwards;
+}
+
+@keyframes vsInLeft  { from { transform: translateX(-40px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+@keyframes vsInRight { from { transform: translateX( 40px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+@keyframes vsPop     { from { transform: scale(.8); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+
+/* prefer reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .vs-left,.vs-right,.vs-badge { animation: none !important; opacity: 1; transform: none; }
+}
+.tag-engaged {
+  display:inline-block; padding:.1rem .4rem; margin-left:.35rem;
+  font-size:11px; border-radius:8px; background:#c2410c; color:#fff;
+}
+
+ .vs-overlay[hidden] {
+   display: none !important;
+ }

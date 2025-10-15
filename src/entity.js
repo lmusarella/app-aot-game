@@ -6,11 +6,10 @@ import {
 import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates } from './utils.js';
 import { playSfx, playBg } from './audio.js';
 import { unitById, rebuildUnitIndex, GAME_STATE, GIANT_ENGAGEMENT, scheduleSave, DB } from './data.js';
-import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl } from './ui.js'
+import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay } from './ui.js'
 import { log } from './log.js';
 import { missionStatsOnUnitDeath } from './missions.js';
 import { addMorale, addXP } from './footer.js';
-
 
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
@@ -62,7 +61,17 @@ export function getEngagingGiant(humanId) {
 function setEngagementIfMelee(gid, hid) {
     if (!gid || !hid) return;
     if (!sameOrAdjCells(gid, hid)) return;
+
+    const already = GIANT_ENGAGEMENT.get(gid);
     GIANT_ENGAGEMENT.set(gid, hid);
+
+    // Mostra overlay ENGAGE solo la prima volta o se cambia bersaglio
+    if (already !== hid) {
+        const g = unitById.get(gid);
+        const h = unitById.get(hid);
+        if (g && h) showVersusOverlay(g, h, { mode: 'engage', title: 'Ingaggio', duration: 1400, throttleMs: 800 });
+    }
+
 }
 
 
@@ -130,12 +139,16 @@ function resolveAttack(attackerId, targetId) {
         return;
     }
 
+
+
     // Normalizza chi è umano e chi è gigante (indipendente da chi inizia)
     const human = AisHuman ? a : t;
     const giant = AisGiant ? a : t;
     const humanId = human.id;
     const giantId = giant.id;
 
+    // Subito dopo aver determinato 'human' e 'giant':
+    try { showVersusOverlay(a, t, { mode: 'attack', duration: 1600 }); } catch { };
     // Letture robuste
     const cdGiant = getStat(giant, 'cd');
     const tecMod = getStat(human, 'tec');
