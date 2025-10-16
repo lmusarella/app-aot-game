@@ -1,4 +1,7 @@
 {
+    "balance": {
+        "modCap": 5
+    },
     "malusTable": [
         {
             "range": {

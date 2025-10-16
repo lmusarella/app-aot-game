@@ -2,9 +2,10 @@ import { GAME_STATE, scheduleSave, DB, unitById } from "./data.js";
 import { levelFromXP, fmtSigned, signClass} from "./utils.js";
 import { log } from "./log.js";
 
-const UM_STAT_LABELS = { atk: 'ATK', tec: 'TEC', agi: 'AGI', cd: 'CD', mov: 'MOV', rng: 'RNG' };
+const UM_STAT_LABELS = { atk: 'ATK', tec: 'TEC', agi: 'AGI', cd: 'CA', mov: 'MOV', rng: 'RNG' };
 const isEnemy = u => u?.role === 'enemy';
 const boxMods = document.getElementById('mods-section');
+
 
 function unitListForPicker() {
     const ids = new Set();

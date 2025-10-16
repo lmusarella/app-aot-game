@@ -1,4 +1,4 @@
-import { fmtSigned, getUnitBonus, signClass, availableTemplates, countAlive, totalByRole, displayHpForTemplate } from './utils.js';
+import { fmtSigned, getUnitBonus, signClass, availableTemplates, countAlive, totalByRole, displayHpForTemplate, cappedDelta } from './utils.js';
 import { UNIT_SELECTED, unitById, GIANT_ENGAGEMENT } from './data.js';
 
 const queue = [];
@@ -51,27 +51,44 @@ export function getUnitTooltipHTML(unit) {
     const img = unit.img ?? "";
     const abi = (unit.abi ?? "").toString();
 
-    // blocco statistiche condizionale
+    // calcoli delta “reali” (cappati) per le stat umane
+    const atkDeltaShown = cappedDelta(atk, getUnitBonus(unit, 'atk'));
+    const tecDeltaShown = cappedDelta(tec, getUnitBonus(unit, 'tec'));
+    const agiDeltaShown = cappedDelta(agi, getUnitBonus(unit, 'agi'));
+
     const statsForRole = (role === "enemy")
         ? `<div class="tt-stats">
-    <div class="tt-row">
-      <div class="tt-label">ATK</div><div class="tt-value">${atk} ${getUnitBonus(unit, 'atk') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'atk'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'atk'))}</span>` : ''}</div>
-      <div class="tt-label">CA</div><div class="tt-value">${cd} ${getUnitBonus(unit, 'cd') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'cd'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'cd'))}</span>` : ''}</div>
-       <div class="tt-label">MOV</div><div class="tt-value">${mov} ${getUnitBonus(unit, 'mov') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'mov'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'mov'))}</span>` : ''}</div>
-    </div>
-       <div class="tt-row">
-      <div class="tt-label">RNG</div><div class="tt-value">${rng} ${getUnitBonus(unit, 'rng') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'rng'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'rng'))}</span>` : ''}</div>
-     
-    </div>
-    </div>
-  `
-        : (role !== "wall") ? `<div class="tt-stats">
-    <div class="tt-row">
-      <div class="tt-label">ATK</div><div class="tt-value">${atk} ${getUnitBonus(unit, 'atk') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'atk'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'atk'))}</span>` : ''}</span></div>
-      <div class="tt-label">TEC</div><div class="tt-value">${tec} ${getUnitBonus(unit, 'tec') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'tec'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'tec'))}</span>` : ''}</div>
-      <div class="tt-label">AGI</div><div class="tt-value">${agi} ${getUnitBonus(unit, 'agi') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'agi'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'agi'))}</span>` : ''}</div>
-    </div></div>
-  ` : '';
+      <div class="tt-row">
+        <div class="tt-label">ATK</div><div class="tt-value">${atk} ${getUnitBonus(unit, 'atk') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'atk'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'atk'))}</span>` : ''}</div>
+        <div class="tt-label">CA</div><div class="tt-value">${cd} ${getUnitBonus(unit, 'cd') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'cd'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'cd'))}</span>` : ''}</div>
+        <div class="tt-label">MOV</div><div class="tt-value">${mov} ${getUnitBonus(unit, 'mov') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'mov'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'mov'))}</span>` : ''}</div>
+      </div>
+      <div class="tt-row">
+        <div class="tt-label">RNG</div><div class="tt-value">${rng} ${getUnitBonus(unit, 'rng') !== 0 ? `<span class="stat-chip ${signClass(getUnitBonus(unit, 'rng'))}" title="Modificatori unità">${fmtSigned(getUnitBonus(unit, 'rng'))}</span>` : ''}</div>
+      </div>
+    </div>`
+        : (role !== "wall")
+            ? `<div class="tt-stats">
+      <div class="tt-row">
+        <div class="tt-label">ATK</div>
+        <div class="tt-value">
+          ${atk}
+          ${atkDeltaShown !== 0 ? `<span class="stat-chip ${signClass(atkDeltaShown)}" title="Modificatori unità (cappati)">${fmtSigned(atkDeltaShown)}</span>` : ''}
+        </div>
+        <div class="tt-label">TEC</div>
+        <div class="tt-value">
+          ${tec}
+          ${tecDeltaShown !== 0 ? `<span class="stat-chip ${signClass(tecDeltaShown)}" title="Modificatori unità (cappati)">${fmtSigned(tecDeltaShown)}</span>` : ''}
+        </div>
+        <div class="tt-label">AGI</div>
+        <div class="tt-value">
+          ${agi}
+          ${agiDeltaShown !== 0 ? `<span class="stat-chip ${signClass(agiDeltaShown)}" title="Modificatori unità (cappati)">${fmtSigned(agiDeltaShown)}</span>` : ''}
+        </div>
+      </div>
+    </div>`
+            : '';
+
 
     return `
     <div class="tt-card" data-role="${role}">

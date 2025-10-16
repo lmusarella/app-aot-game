@@ -148,3 +148,30 @@ export function getMalusRow(moralePct) {
     return DB.SETTINGS.malusTable.find(r => m >= r.range.min && m <= r.range.max) || null;
 }
 
+// --- CAP MODIFICATORI GLOBALI ----------------------------------------------
+const MOD_CAP = (DB?.SETTINGS?.balance?.modCap ?? 5);
+
+/** Somma i modificatori (non le stat base) e li limita a [-MOD_CAP, +MOD_CAP]. */
+export function capModSum(...mods) {
+  const sum = mods.reduce((a, b) => a + (Number(b) || 0), 0);
+  return Math.max(-MOD_CAP, Math.min(MOD_CAP, sum));
+}
+// Cap per le STAT (non per i tiri): default 5 ma leggibile da config
+const STAT_CAP_MAX = DB?.SETTINGS?.balance?.statCapMax ?? 5;
+const STAT_CAP_MIN = DB?.SETTINGS?.balance?.statCapMin ?? -Infinity; 
+// Se vuoi anche un pavimento tipo -5, metti -5 al posto di -Infinity.
+
+/**
+ * Ritorna il delta MOSTRABILE, clampato in modo che:
+ *   base + deltaVis <= STAT_CAP_MAX
+ *   base + deltaVis >= STAT_CAP_MIN
+ * Quindi visualizzi solo la parte di modificatore che non sfora il cap.
+ */
+export function cappedDelta(base, rawDelta) {
+  const baseNum = Number(base ?? 0);
+  const d = Number(rawDelta ?? 0);
+  // totale “reale” con cap
+  const totCapped = Math.max(STAT_CAP_MIN, Math.min(STAT_CAP_MAX, baseNum + d));
+  // delta effettivo che vale davvero (quello da mostrare)
+  return totCapped - baseNum;
+}

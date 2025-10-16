@@ -3,7 +3,7 @@ import {
     grid, hasHumanInCell, nextStepTowards, gridSize, hexDistance, renderBenches,
     renderGrid, removeUnitEverywhere, humanTargetsWithin2, moveOneUnitBetweenStacks, nearestWallCell, setStack, focusBenchCard
 } from './grid.js';
-import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates } from './utils.js';
+import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates, capModSum } from './utils.js';
 import { playSfx, playBg } from './audio.js';
 import { unitById, rebuildUnitIndex, GAME_STATE, GIANT_ENGAGEMENT, scheduleSave, DB } from './data.js';
 import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay } from './ui.js'
@@ -150,23 +150,29 @@ function resolveAttack(attackerId, targetId) {
     // Subito dopo aver determinato 'human' e 'giant':
     try { showVersusOverlay(a, t, { mode: 'attack', duration: 1600 }); } catch { };
     // Letture robuste
-    const cdGiant = getStat(giant, 'cd');
+ 
     const tecMod = getStat(human, 'tec');
     const agiMod = getStat(human, 'agi');
     const forMod = getStat(human, 'atk');
+
+    const cdGiant = getStat(giant, 'cd');
     const giantAtk = Math.max(1, getStat(giant, 'atk'));
 
     const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus;
+
+    const TEC_TOTAL = capModSum(tecMod, effectiveBonus.tec);
+    const AGI_TOTAL = capModSum(agiMod, effectiveBonus.agi);
+    const ATK_TOTAL = capModSum(forMod, effectiveBonus.atk);
 
     // Tiro unico
     const d20 = d(20) + effectiveBonus.all;
 
 
     // Umano → TEC vs CD gigante (per colpire)
-    const humanHits = (d20 + tecMod + effectiveBonus.tec) >= cdGiant;
+    const humanHits = (d20 + TEC_TOTAL) >= cdGiant;
 
     // Umano → AGI vs CD gigante (per schivare attacco/abilità del gigante)
-    const humanDodges = (d20 + agiMod + effectiveBonus.agi) >= cdGiant;
+    const humanDodges = (d20 + AGI_TOTAL) >= cdGiant;
 
     // Abilità gigante pronta?
     const ability = getReadyGiantAbility(giant);
@@ -185,7 +191,7 @@ function resolveAttack(attackerId, targetId) {
 
     // Danno umano (se colpisce): d4 + FOR (min 1)
     if (humanHits && (!endagedGiant || endagedGiant === giant.id) && sameOrAdjCells(human.id, giant.id)) {
-        const humanDmgRoll = Math.max(1, d(4) + forMod + effectiveBonus.atk);
+        const humanDmgRoll = Math.max(1, d(4) + ATK_TOTAL);
         humanDamageDealt = humanDmgRoll;
         const gCurr = (giant.currHp ?? giant.hp);
         setUnitHp(giantId, gCurr - humanDmgRoll);
@@ -205,13 +211,12 @@ function resolveAttack(attackerId, targetId) {
         if (ability) {
             const cdGiantAbi = ability.cd;
             // Se abilità è schivabile → l'esito usa la stessa logica della schivata
-            const humanDodgesAbility = (d20 + agiMod + effectiveBonus.agi) >= cdGiantAbi;
+            const humanDodgesAbility = (d20 + AGI_TOTAL) >= cdGiantAbi;
             const dodgeable = (ability.dodgeable !== false); // default = true
             const giantHits = dodgeable ? !humanDodgesAbility : true;
 
-            const totalAgi = agiMod + effectiveBonus.agi;
             lines.push(
-                `Schivata abilità: d20=${d20} + AGI ${totalAgi >= 0 ? '+' : ''}${totalAgi} vs CD ABI ${cdGiantAbi} → ` +
+                `Schivata abilità: d20=${d20} + AGI ${AGI_TOTAL >= 0 ? '+' : ''}${AGI_TOTAL} vs CD ABI ${cdGiantAbi} → ` +
                 (giantHits ? 'COLPITO' : 'SCHIVATA')
             );
 
@@ -240,9 +245,8 @@ function resolveAttack(attackerId, targetId) {
         } else {
             // Attacco base del gigante (come prima) — solo se niente abilità pronta
             const giantHits = !humanDodges;
-            const totalAgi = agiMod + effectiveBonus.agi
             lines.push(
-                `Schivata: d20=${d20} + AGI ${totalAgi >= 0 ? '+' : ''}${totalAgi} vs CD ${cdGiant} → ` +
+                `Schivata: d20=${d20} + AGI ${AGI_TOTAL >= 0 ? '+' : ''}${AGI_TOTAL} vs CD ${cdGiant} → ` +
                 (giantHits ? 'COLPITO dal gigante' : 'SCHIVATA')
             );
 
