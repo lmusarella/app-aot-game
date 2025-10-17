@@ -1,4 +1,4 @@
-import { fmtSigned, getUnitBonus, signClass, availableTemplates, countAlive, totalByRole, displayHpForTemplate, cappedDelta } from './utils.js';
+import { fmtSigned, getUnitBonus, signClass, availableTemplates, countAlive, totalByRole, displayHpForTemplate, cappedDelta, getStat } from './utils.js';
 import { UNIT_SELECTED, unitById, GIANT_ENGAGEMENT } from './data.js';
 
 const queue = [];
@@ -818,60 +818,101 @@ function ringColor(u) {
     return getComputedStyle(document.documentElement).getPropertyValue('--oro') || '#facc15';
 }
 
-export function showVersusOverlay(attacker, defender, {
+export async function showVersusOverlay(attacker, defender, {
     title = 'Scontro',
-    mode = 'attack',          // 'attack' | 'engage'
-    duration = 1600,          // ms
-    throttleMs = 900          // anti-spam
+    mode = 'attack',     // 'attack' | 'engage'
+    duration = 0,     // ms; se null/0 => non auto-hide
+    throttleMs = 900,
 } = {}) {
-    // throttle: evita spam continuo tra gli stessi due
     const key = `${attacker.id}|${defender.id}|${mode}`;
     const now = performance.now();
-    if (VS_THROTTLE.has(key) && (now - VS_THROTTLE.get(key) < throttleMs)) return;
+    if (VS_THROTTLE.has(key) && (now - VS_THROTTLE.get(key) < throttleMs)) return { hide: hideVersusOverlay };
     VS_THROTTLE.set(key, now);
 
     const root = document.getElementById('vs-overlay');
-    if (!root) return;
+    if (!root) return { hide: () => { } };
 
     const left = root.querySelector('.vs-card.vs-left');
     const right = root.querySelector('.vs-card.vs-right');
     const badge = root.querySelector('.vs-badge');
 
-    // build card html
-    const makeCard = (u) => {
-        const pct = Math.max(0, Math.min(100, hpPct(u)));
-        const name = u.name || '—';
-        const sub = roleLabel(u);
-        const ring = ringColor(u);
-        const img = u.img || '';
-        return `
+   const makeCard = (u) => {
+  const pct  = Math.max(0, Math.min(100, hpPct(u)));
+  const name = u.name || '—';
+  const sub  = roleLabel(u);
+  const ring = ringColor(u);
+  const img  = u.img || '';
+
+  // helper chip
+  const chip = (label, val, cls='') =>
+    `<span class="stat-chip ${cls}">
+       <span class="sc-label">${label}</span>
+       <span class="sc-val">${val}</span>
+     </span>`;
+
+  // ENEMY: CA, CD ABI, ATK, RNG
+  if (u.role === 'enemy') {
+    return `
       <div class="vs-avatar" style="--ring:${ring}"><img src="${img}" alt=""></div>
       <div class="vs-info">
         <div class="vs-name">${name}</div>
         <div class="vs-sub">${sub}</div>
         <div class="vs-hp">❤️ ${u.currHp ?? u.hp}/${u.hp}</div>
         <div class="vs-bar"><div class="vs-fill" style="width:${pct.toFixed(1)}%"></div></div>
-      </div>
-    `;
-    };
+        <div class="vs-chips">
+          ${chip('CA', u.cd ?? '—', 'chip-ca')}
+          ${chip('CD', u?.ability?.cd ?? '—', 'chip-cd')}
+          ${chip('ATK', getStat(u, 'atk'), 'chip-atk')}
+          ${chip('RNG', getStat(u, 'rng'), 'chip-rng')}
+        </div>
+      </div>`;
+  }
+
+  // HUMAN (non-wall): ATK, TEC, AGI
+  if (u.role !== 'enemy' && u.role !== 'wall') {
+    return `
+      <div class="vs-avatar" style="--ring:${ring}"><img src="${img}" alt=""></div>
+      <div class="vs-info">
+        <div class="vs-name">${name}</div>
+        <div class="vs-sub">${sub}</div>
+        <div class="vs-hp">❤️ ${u.currHp ?? u.hp}/${u.hp}</div>
+        <div class="vs-bar"><div class="vs-fill" style="width:${pct.toFixed(1)}%"></div></div>
+        <div class="vs-chips">
+          ${chip('ATK', getStat(u, 'atk'), 'chip-atk')}
+          ${chip('TEC', getStat(u, 'tec'), 'chip-tec')}
+          ${chip('AGI', getStat(u, 'agi'), 'chip-agi')}
+        </div>
+      </div>`;
+  }
+
+  // WALL / altri
+  return `
+    <div class="vs-avatar" style="--ring:${ring}"><img src="${img}" alt=""></div>
+    <div class="vs-info">
+      <div class="vs-name">${name}</div>
+      <div class="vs-sub">${sub}</div>
+      <div class="vs-hp">❤️ ${u.currHp ?? u.hp}/${u.hp}</div>
+      <div class="vs-bar"><div class="vs-fill" style="width:${pct.toFixed(1)}%"></div></div>
+    </div>`;
+};
+
 
     left.innerHTML = makeCard(attacker);
     right.innerHTML = makeCard(defender);
     badge.textContent = mode === 'engage' ? 'ENGAGE' : 'VS';
 
-    // show
     root.classList.add('show');
     root.removeAttribute('hidden');
 
-    // auto-hide
-    clearTimeout(VS_TIMER);
-    VS_TIMER = setTimeout(() => hideVersusOverlay(), duration);
+    // no auto-hide se duration falsy
+    if (duration) {
+        clearTimeout(VS_TIMER);
+        VS_TIMER = setTimeout(() => hideVersusOverlay(), duration);
+    }
 
-    // close handlers (one-shot)
-    const onKey = (e) => { if (e.key === 'Escape') hideVersusOverlay(); };
-    const onClick = () => hideVersusOverlay();
-    root.addEventListener('click', onClick, { once: true });
-    window.addEventListener('keydown', onKey, { once: true });
+    const controller = { hide: hideVersusOverlay };
+
+    return controller;
 }
 
 export function hideVersusOverlay() {
@@ -880,4 +921,244 @@ export function hideVersusOverlay() {
     root.classList.remove('show');
     root.setAttribute('hidden', '');
     clearTimeout(VS_TIMER);
+}
+
+// src/ui/diceOverlay.js
+let overlayEl = null;
+
+function buildMarkup() {
+    // markup identico a quello che avevi, MA incapsulato e con backdrop/close
+    return `
+  <div class="diceov-backdrop" data-close></div>
+  <div class="diceov-stage" role="dialog" aria-modal="true" aria-label="Lancio dadi">
+    <button class="diceov-close" data-close aria-label="Chiudi" hidden>×</button>
+
+    <div id="diceRoller"></div>
+    <main id="diceRollerUI">
+      <div class="top_field" hidden>
+        <input type="text" id="textInput" spellcheck="false" inputmode="none" virtualkeyboardpolicy="manual"
+               value="1d20"/>
+      </div>
+      <div id="diceLimit" style="display:none">Wow that's a lot of dice! <br>[Limit: 20]</div>
+      <div id="center_div" class="center_field">
+        <div id="instructions" style="display: none"><p>Swipe to roll dice</p></div>
+      </div>
+      <div id="numPad" class="center_field" style="display:none">
+        <table class="numPad">
+          <tr><td onclick="main.input('del')" colspan="2">del</td><td onclick="main.input('bksp')" colspan="2">bksp</td></tr>
+          <tr><td onclick="main.input('7')">7</td><td onclick="main.input('8')">8</td><td onclick="main.input('9')">9</td><td onclick="main.input('+')" rowspan="2">+</td></tr>
+          <tr><td onclick="main.input('4')">4</td><td onclick="main.input('5')">5</td><td onclick="main.input('6')">6</td></tr>
+          <tr><td onclick="main.input('1')">1</td><td onclick="main.input('2')">2</td><td onclick="main.input('3')">3</td><td onclick="main.input('-')" rowspan="2">-</td></tr>
+          <tr><td onclick="main.input('0')" colspan="2">0</td><td onclick="main.input('d')">d</td></tr>
+        </table>
+        <button onclick="main.clearInput()">CLEAR</button>
+        <button onclick="main.setInput()">OK</button>
+      </div>
+      <div class="bottom_field" hidden><span id="result"></span></div>
+    </main>
+    
+  </div>`;
+}
+
+function parseLastInt(text) {
+    const m = String(text).match(/\d+/g);
+    return m ? parseInt(m[m.length - 1], 10) : null;
+}
+
+export function openDiceOverlay({ sides = 20, keepOpen = false } = {}) {
+    // crea/reusa l'overlay
+    if (!overlayEl) {
+        overlayEl = document.createElement('div');
+        overlayEl.id = 'dice-overlay';
+        overlayEl.innerHTML = buildMarkup();
+        document.body.appendChild(overlayEl);
+
+        // init libreria dadi una sola volta
+        if (window.main && typeof window.main.init === 'function') {
+            window.main.init();
+        }
+        // init libreria una sola volta
+        if (window.main && typeof window.main.setInput === 'function') {
+            window.main.setInput();
+        }
+
+        overlayEl.addEventListener('click', (e) => {
+            if (e.target.closest('[data-close]')) closeDiceOverlay();
+        });
+        document.addEventListener('keydown', escClose, true);
+    }
+
+    // 🔧 reset UI ad ogni apertura: svuota risultato precedente + nascondi warning
+    try {
+        const res = overlayEl.querySelector('#result');
+        if (res) res.textContent = '—';
+        const lim = overlayEl.querySelector('#diceLimit');
+        if (lim) lim.style.display = 'none';
+    } catch { }
+
+    // opzionale: chiudi eventuale riepilogo precedente sotto ai dadi
+    try { hideAttackOverlayUnderDice(); } catch { }
+
+    // mostra
+    overlayEl.removeAttribute('hidden');
+
+    // preset del dado (es. 1d20)
+    const input = overlayEl.querySelector('#textInput');
+    if (input) input.value = `1d${sides}`;
+
+    // osserva #result e risolvi quando cambia
+    const resultEl = overlayEl.querySelector('#result');
+    let last = null;
+
+    let resolveFn, rejectFn;
+    const waitForRoll = new Promise((resolve, reject) => {
+        resolveFn = resolve; rejectFn = reject;
+    });
+
+    const onMut = () => {
+        const n = parseLastInt(resultEl?.textContent || '');
+        if (n != null) {
+            last = n;
+            if (!keepOpen) closeDiceOverlay();
+            cleanup();
+            resolveFn(n);
+        }
+    };
+
+    const mo = resultEl ? new MutationObserver(onMut) : null;
+    mo?.observe(resultEl, { childList: true, characterData: true, subtree: true });
+
+    function cleanup() {
+        try { mo?.disconnect(); } catch { }
+    }
+
+    // se l'utente chiude prima di tirare → reject
+    const closeRef = closeDiceOverlay;
+    closeDiceOverlay = function () {
+        cleanup();
+        if (overlayEl) overlayEl.setAttribute('hidden', '');
+
+        // se non c'è stato un risultato, reject la promise
+        if (last == null) rejectFn?.(new Error('Dice overlay closed'));
+
+        // ❗ chiudi anche i due overlay
+        try { hideAttackOverlayUnderDice(); } catch { }
+        try { hideVersusOverlay(); } catch { }
+
+        // ripristina la funzione originale
+        closeDiceOverlay = closeRef;
+    };
+
+
+    return {
+        waitForRoll,
+        close: () => { cleanup(); closeRef(); }
+    };
+}
+
+
+function escClose(e) {
+    if (e.key === 'Escape') closeDiceOverlay();
+}
+
+export function closeDiceOverlay() {
+    if (!overlayEl) return;
+    document.removeEventListener('keydown', escClose, true);
+    overlayEl.setAttribute('hidden', '');
+}
+
+export function showAttackOverlayUnderDice({
+    badge = 'Successo',
+    badgeClass = '',             // 'atk-win' | 'atk-lose' | 'atk-tie'
+    // NUOVO: dettagli “Per colpire” e “Tiro salvezza”
+    hit = { d20: null, modLabel: 'TEC', modValue: 0, total: null, target: null, success: false },
+    dodge = { d20: null, modLabel: 'AGI', modValue: 0, total: null, target: null, success: false },
+    // opzionale: lista riepilogo a destra
+    lines = [],
+    gap = 12,
+    autoHideMs = 0
+} = {}) {
+    const root = document.getElementById('dice-overlay');
+    if (!root) return;
+    const stage = root.querySelector('.diceov-stage');
+    if (!stage) return;
+
+    let under = root.querySelector('#atk-under');
+    if (!under) {
+        under = document.createElement('div');
+        under.id = 'atk-under';
+        root.appendChild(under);
+    }
+
+    const fmtMod = (v) => (v === 0 ? '' : `${v > 0 ? '+' : '-'}${Math.abs(v)}`);
+    const hitStr = (hit && hit.d20 != null)
+        ? `(${hit.d20}${fmtMod(hit.modValue ?? 0)}) = <b>${hit.total}</b> • CD <b>${hit.target}</b>`
+        : '—';
+    const dodgeStr = (dodge && dodge.d20 != null)
+        ? `(${dodge.d20}${fmtMod(dodge.modValue ?? 0)}) = <b>${dodge.total}</b> • CD <b>${dodge.target}</b>`
+        : '—';
+
+    under.innerHTML = `
+  <div class="atk-card">
+    <div class="atk-header">
+      <div class="badge-circle ${badgeClass}">${badge}</div>
+    </div>
+
+    <div class="atk-tworows">
+      <div class="atk-row">
+        <span class="r-emoji">🎯</span>
+        <span class="r-label">Attacco</span>
+        <span class="r-formula">${hitStr}</span>
+        <span class="r-outcome ${hit?.success ? 'ok' : 'no'}">${hit?.success ? '🟢' : '🔴'}</span>
+      </div>
+
+      <div class="atk-row">
+        <span class="r-emoji">🛡️</span>
+        <span class="r-label">Schivata</span>
+        <span class="r-formula">${dodgeStr}</span>
+        <span class="r-outcome ${dodge?.success ? 'ok' : 'no'}">${dodge?.success ? '🟢' : '🔴'}</span>
+      </div>
+    </div>
+
+    <div class="atk-tworows">
+      <div class="atk-row-2">
+        <span class="r-formula-2">${lines[0]}</span>
+      </div>
+
+      <div class="atk-row-2">
+         <span class="r-formula-2">${lines[1]}</span>
+      </div>
+    </div>
+
+  </div>
+`;
+
+
+    // posizionamento sotto ai dadi
+    const rect = stage.getBoundingClientRect();
+    under.style.top = `${rect.bottom + gap}px`;
+
+    requestAnimationFrame(() => under.classList.add('show'));
+
+    // reposition on resize
+    const onResize = () => {
+        const r = stage.getBoundingClientRect();
+        under.style.top = `${r.bottom + gap}px`;
+    };
+    window.addEventListener('resize', onResize);
+    under._onResize = onResize;
+
+    if (autoHideMs > 0) {
+        clearTimeout(under._timer);
+        under._timer = setTimeout(() => hideAttackOverlayUnderDice(), autoHideMs);
+    }
+}
+
+
+export function hideAttackOverlayUnderDice() {
+    const under = document.getElementById('atk-under');
+    if (!under) return;
+    if (under._onResize) window.removeEventListener('resize', under._onResize);
+    under.classList.remove('show');
+    setTimeout(() => under.remove(), 240);
 }

@@ -7,6 +7,7 @@
     <link rel="manifest" href="./manifest.json">
     <title>AOT Companion</title>
     <link rel="stylesheet" href="style.css">
+    <link rel='stylesheet' href='src/dice-roller/styles.css' />
     <link rel="icon" type="image/png" sizes="40x40" href="assets/img/logo.jpg">
 
     <!-- iPad/iPhone: icona Home -->
@@ -429,12 +430,24 @@
             </div>
         </div>
     </footer>
+
     <div id="vs-overlay" hidden>
-        <div class="vs-backdrop"></div>
         <div class="vs-wrap" role="dialog" aria-label="Scontro in corso" aria-live="polite">
             <div class="vs-card vs-left"></div>
             <div class="vs-badge">VS</div>
             <div class="vs-card vs-right"></div>
+        </div>
+    </div>
+
+    <div id="atk-overlay" hidden>
+        <div class="vs-backdrop"></div>
+        <div class="vs-wrap atk" role="dialog" aria-label="Esito attacco" aria-live="polite">
+            <div class="vs-card vs-left"></div>
+            <div class="vs-badge" id="atk-badge">—</div>
+            <div class="vs-card vs-right"></div>
+            <div class="atk-details">
+                <ul id="atk-lines"></ul>
+            </div>
         </div>
     </div>
     <!-- Overlay Mano (creato/riempito via JS) -->
@@ -457,7 +470,12 @@
     </button>
 
     <script type="module" src="script.js"></script>
-    <!--<script type="module" src="src/app.js"></script>-->
+
+    <script src="libs/three.min.js"></script>
+    <script src="libs/cannon.min.js"></script>
+    <script src="libs/teal.js"></script>
+    <script src="src/dice-roller/dice.js"></script>
+    <script src="src/dice-roller/main.js"></script>
 </body>
 
 </html>

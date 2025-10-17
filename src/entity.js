@@ -6,9 +6,9 @@ import {
 import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates, capModSum } from './utils.js';
 import { playSfx, playBg } from './audio.js';
 import { unitById, rebuildUnitIndex, GAME_STATE, GIANT_ENGAGEMENT, scheduleSave, DB } from './data.js';
-import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay } from './ui.js'
+import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from './ui.js'
 import { log } from './log.js';
-import { missionStatsOnUnitDeath } from './missions.js';
+import { missionStatsOnUnitDeath, renderMissionUI } from './missions.js';
 import { addMorale, addXP } from './footer.js';
 
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
@@ -61,17 +61,7 @@ export function getEngagingGiant(humanId) {
 function setEngagementIfMelee(gid, hid) {
     if (!gid || !hid) return;
     if (!sameOrAdjCells(gid, hid)) return;
-
-    const already = GIANT_ENGAGEMENT.get(gid);
     GIANT_ENGAGEMENT.set(gid, hid);
-
-    // Mostra overlay ENGAGE solo la prima volta o se cambia bersaglio
-    if (already !== hid) {
-        const g = unitById.get(gid);
-        const h = unitById.get(hid);
-        if (g && h) showVersusOverlay(g, h, { mode: 'engage', title: 'Ingaggio', duration: 1400, throttleMs: 800 });
-    }
-
 }
 
 
@@ -86,11 +76,11 @@ export function startAttackPick(attacker, targets) {
     showTooltip(html);
 
     // Listener sul tooltip per click target/annulla
-    tooltipEl.onclick = (e) => {
+    tooltipEl.onclick = async (e) => {
         const tBtn = e.target.closest('[data-target-id]');
         if (tBtn) {
-            resolveAttack(attacker.id, tBtn.dataset.targetId);
             endAttackPick();
+            await resolveAttack(attacker.id, tBtn.dataset.targetId);
             return;
         }
         if (e.target.closest('[data-cancel]')) {
@@ -111,7 +101,7 @@ export function adjustUnitHp(unitId, delta) {
     setUnitHp(unitId, Math.max(0, Math.min(max, cur)));
 }
 
-function resolveAttack(attackerId, targetId) {
+async function resolveAttack(attackerId, targetId) {
     const a = unitById.get(attackerId);
     const t = unitById.get(targetId);
     if (!a || !t) return;
@@ -122,6 +112,21 @@ function resolveAttack(attackerId, targetId) {
     const AisGiant = a?.role === 'enemy';
     const TisGiant = t?.role === 'enemy';
     const isHumanVsGiant = (AisHuman && TisGiant) || (TisHuman && AisGiant);
+
+    const vs = showVersusOverlay(a, t);
+
+    // apri il roller e aspetta il risultato reale
+    const dice = openDiceOverlay({ sides: 20, keepOpen: true });
+    let d20roll;
+    try {
+        d20roll = await dice.waitForRoll;   // <- numero tirato dall’utente
+    } catch {
+        log('Scontro annullato.', 'warning');
+        return; // esci: niente attacco se ha chiuso il roller
+    }
+
+    const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus;
+    const d20 = d20roll + effectiveBonus.all;
 
     if (!isHumanVsGiant) {
         const dmg = Math.max(1, Number(getStat(a, 'atk') || 1));
@@ -139,18 +144,12 @@ function resolveAttack(attackerId, targetId) {
         return;
     }
 
-
-
     // Normalizza chi è umano e chi è gigante (indipendente da chi inizia)
     const human = AisHuman ? a : t;
     const giant = AisGiant ? a : t;
     const humanId = human.id;
     const giantId = giant.id;
 
-    // Subito dopo aver determinato 'human' e 'giant':
-    try { showVersusOverlay(a, t, { mode: 'attack', duration: 1600 }); } catch { };
-    // Letture robuste
- 
     const tecMod = getStat(human, 'tec');
     const agiMod = getStat(human, 'agi');
     const forMod = getStat(human, 'atk');
@@ -158,14 +157,10 @@ function resolveAttack(attackerId, targetId) {
     const cdGiant = getStat(giant, 'cd');
     const giantAtk = Math.max(1, getStat(giant, 'atk'));
 
-    const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus;
-
     const TEC_TOTAL = capModSum(tecMod, effectiveBonus.tec);
     const AGI_TOTAL = capModSum(agiMod, effectiveBonus.agi);
     const ATK_TOTAL = capModSum(forMod, effectiveBonus.atk);
 
-    // Tiro unico
-    const d20 = d(20) + effectiveBonus.all;
 
 
     // Umano → TEC vs CD gigante (per colpire)
@@ -188,6 +183,7 @@ function resolveAttack(attackerId, targetId) {
     let humanDamageTaken = 0;
 
     const endagedGiant = getEngagingGiant(human.id);
+    const engaged = getEngagedHuman(giant.id);
 
     // Danno umano (se colpisce): d4 + FOR (min 1)
     if (humanHits && (!endagedGiant || endagedGiant === giant.id) && sameOrAdjCells(human.id, giant.id)) {
@@ -203,15 +199,16 @@ function resolveAttack(attackerId, targetId) {
         lines.push(`Attualmente ${human.name} è distratto/a da ${x.name}`);
     }
 
-    const engaged = getEngagedHuman(giant.id);
 
+    let cdGiantAbi;
+    let humanDodgesAbility;
     //il gigante attacca solo un umano alla volta
     if (!engaged || engaged === human.id) {
         // Azione del gigante: abilità se pronta, altrimenti attacco base
         if (ability) {
-            const cdGiantAbi = ability.cd;
+            cdGiantAbi = ability.cd;
             // Se abilità è schivabile → l'esito usa la stessa logica della schivata
-            const humanDodgesAbility = (d20 + AGI_TOTAL) >= cdGiantAbi;
+            humanDodgesAbility = (d20 + AGI_TOTAL) >= cdGiantAbi;
             const dodgeable = (ability.dodgeable !== false); // default = true
             const giantHits = dodgeable ? !humanDodgesAbility : true;
 
@@ -284,6 +281,72 @@ function resolveAttack(attackerId, targetId) {
         log(`${human.name} è entrato in combattimento con ${giant.name}`, 'warning');
     }
 
+    // ==== OVERLAY RIEPILOGO ATTACCO (3 stati) ====
+    const sumLines = [];
+
+    // esiti elementari
+    const humanDidHit = humanDamageDealt > 0;
+    const giantDidHit = humanDamageTaken > 0;
+    const bothHit = humanDidHit && giantDidHit;
+    const neitherHit = !humanDidHit && !giantDidHit;
+
+    // badge + classe (solo 3 stati)
+    let badgeText = 'Pareggio';
+    let badgeClass = 'atk-tie';
+
+    if (bothHit) {
+        if (humanDamageDealt === humanDamageTaken) {
+            badgeText = 'Pareggio';
+            badgeClass = 'atk-tie';
+        } else if (humanDamageDealt > humanDamageTaken) {
+            badgeText = 'Successo';
+            badgeClass = 'atk-win';
+        } else {
+            badgeText = 'Fallito';
+            badgeClass = 'atk-lose';
+        }
+    } else if (neitherHit) {
+        // nessuno ha inflitto danni -> Fallito per l'azione d'attacco corrente
+        badgeText = 'Pareggio';
+        badgeClass = 'atk-tie';
+    } else if (humanDidHit) {
+        badgeText = 'Successo';
+        badgeClass = 'atk-win';
+    } else { // solo il gigante ha colpito
+        badgeText = 'Fallito';
+        badgeClass = 'atk-lose';
+    }
+
+    // righe riepilogo centrali
+
+
+    if (humanDidHit) sumLines.push(`${human.name} infligge ${humanDamageDealt} danni.`);
+    if (!humanDidHit && sameOrAdjCells(human.id, giant.id) && humanHits === false) {
+        sumLines.push(`${human.name} manca il bersaglio.`);
+    }
+
+    if (giantDidHit) sumLines.push(`${giant.name} infligge ${humanDamageTaken} danni.`);
+    if (ability && !giantDidHit) sumLines.push(`${human.name} schiva l'abilità di ${giant.name}.`);
+    if (!ability && !giantDidHit && !neitherHit) sumLines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
+
+    hideVersusOverlay();
+
+    showVersusOverlay(a, t);
+
+    const toHitTotal = d20 + TEC_TOTAL;   // = d20roll + bonusTOT + TEC_TOTAL
+    const toDodgeTotal = d20 + AGI_TOTAL;   // = d20roll + bonusTOT + AG_TOTAL
+
+
+
+    showAttackOverlayUnderDice({
+        badge: badgeText,
+        badgeClass,
+        hit: { d20: d20roll, modLabel: 'TEC', modValue: TEC_TOTAL, total: toHitTotal, target: cdGiant, success: humanHits },
+        dodge: { d20: d20roll, modLabel: 'AGI', modValue: AGI_TOTAL, total: toDodgeTotal, target: cdGiantAbi ? cdGiantAbi : cdGiant, success: humanDodgesAbility ? humanDodgesAbility : humanDodges },
+        lines: sumLines,   // le righe descrittive che già costruisci
+        gap: 12,
+        autoHideMs: 0
+    });
     scheduleSave();
 }
 

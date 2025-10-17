@@ -1,0 +1,285 @@
+/* @brief   3d dice roller app stylesheet
+   @author  Sarah Rosanna Busch
+   @date    10 Aug 2023
+   @version 0.1
+   */
+
+* {
+    box-sizing: border-box; /* padding and border are included in total width/height of all elements */
+    margin: 0px;
+}
+
+
+header {
+    text-align: center;
+    color: white;
+    padding: 5px;
+}
+
+#helpBtn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 1.2rem;
+    height: 1.2rem;
+    border: none;
+    border-radius: 0.6rem;
+}
+
+/* ******* DICE ROLLER *********** */
+
+#diceRoller {
+    position: absolute;
+    top: 0;
+    height: calc(100% - 4.5rem);
+    width: 100%;
+    margin-top: 1.5rem;
+    z-index:-1;
+    overflow: hidden;
+}
+
+#canvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* ************* UI ************* */
+
+#diceRollerUI {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+#diceLimit {
+    text-align: center;
+    color: red;
+    background-color: #050505;
+    padding: 0.5rem;
+    font-size: 10pt;
+    font-weight: bold;
+}
+
+.top_field {
+    text-align: center;
+    width: 100%;
+    background-color: rgba(150,150,150,0.1);
+}
+
+#textInput { 
+    text-align: center;
+    border: none;
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(199, 199, 199, 0.7);
+    width: 100%;
+    text-overflow: ellipsis;
+    padding: 0.2em;
+    text-decoration: none;
+}
+
+#textInput:focus {
+    background-color: rgba(255, 255, 255, 0.7);
+    outline: none;
+}
+
+.center_field {
+    position: relative;
+    flex: 1;
+    text-align: center;
+    height: 80%;
+    width: 100%;
+    z-index: 100;
+}
+
+.center_field * {
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.6);
+    padding: 5px 15px;
+    user-select: none;
+}
+
+#instructions {
+    background: none;
+    height: 100%;
+    width: 100%;
+}
+
+#instructions p {
+    color: rgb(255, 255, 255);
+    background: none;
+    margin: auto;
+    top: 35%;
+    padding: 1em;
+}
+
+#numPad { /* container */
+    position: absolute;
+    width: 200px;
+    height: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.numPad { /* table */
+    width: 200px;
+    margin: auto;
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+.numPad td {
+    cursor: pointer;
+}
+
+#numPad button {
+    padding: 0.5em;
+    margin-top: 5px;
+    width: 97px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.8);
+    color: black;
+}
+
+.bottom_field {
+    position: absolute;
+    bottom: 0;
+    text-align: center;
+    min-height: 3rem;
+    background: rgba(0, 0, 0, 0.4);
+    width: inherit;
+    padding: 0px;
+}
+
+#result {
+    position: relative;
+    display: block;
+    min-height: 1.5em;
+    bottom: 5px;
+    word-spacing: 0.5em;
+    color: rgba(255,255,255,0.9);
+    padding: 0.5em;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+#dice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999; /* sotto al tuo VS se vuoi (o sopra se preferisci) */
+}
+
+.diceov-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  backdrop-filter: blur(2px);
+}
+
+.diceov-stage {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: min(920px, 96vw);
+  max-height: 90vh;
+  overflow: auto;
+  background: #111;
+  color: #eee;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.4);
+  padding: 12px 12px 16px;
+}
+
+.diceov-close {
+  position: absolute;
+  top: 6px; right: 8px;
+  border: 0; background: transparent; color: #fff; font-size: 22px;
+  cursor: pointer;
+}
+
+/* opzionale: spaziatura dentro UI originale */
+#diceRollerUI .top_field,
+#diceRollerUI .center_field,
+#diceRollerUI .bottom_field { padding: 6px 8px; }
+
+/* === OVERRIDES SCOPED PER IL POPUP DEI DADI ============================== */
+#dice-overlay #diceRollerUI {
+  width: 100%;
+  height: auto;              /* ← non a viewport */
+  max-height: none;
+  overflow: visible;         /* ← evita tagli */
+  display: flex;
+  flex-direction: column;
+}
+
+#dice-overlay #diceRoller {
+  position: relative;        /* ← non absolute */
+  top: auto;
+  margin-top: 0;
+  z-index: 0;                /* ← niente -1 */
+  width: 100%;
+  height: clamp(260px, 50vh, 320px);  /* ← un’altezza sensata nel popup */
+  overflow: hidden;
+}
+
+/* il canvas si adatta all’altezza del box sopra */
+#dice-overlay #canvas {
+  width: 100%;
+  height: 100%;
+}
+
+#dice-overlay .center_field {
+  position: relative;
+  flex: 1;                   /* ← cresce in verticale nel popup */
+  height: auto;              /* ← niente 80% fisso */
+  width: 100%;
+  z-index: 0;
+}
+
+#dice-overlay .bottom_field {
+  position: static;          /* ← NON assoluto nel popup */
+  width: 100%;
+  min-height: 2.5rem;
+  margin-top: 8px;
+}
+
+#dice-overlay .top_field {
+  width: 100%;
+}
+
+/* opzionale: l’input meno “full-width” se vuoi */
+#dice-overlay #textInput {
+  max-width: 100%;
+}
+.diceov-stage {
+  padding: 10px 10px 12px;
+  width: min(460px, 96vw);
+}
+/* Il contenitore del popup crea un nuovo stacking context */
+.diceov-stage {
+  position: relative;       /* importa! */
+  z-index: 0;
+}
+
+/* La X sta DAVVERO sopra a tutto dentro lo stage */
+.diceov-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 50;              /* > di tutto il resto nello stage */
+  pointer-events: auto;
+}
+
+/* Canvas e UI del roller: sotto la X */
+#dice-overlay #diceRoller,
+#dice-overlay #diceRollerUI,
+#dice-overlay #canvas {
+  z-index: 1;
+}
+
+/* (opzionale) se hai messo z-index altissimi altrove */
+#dice-overlay .diceov-backdrop { z-index: 0; }
+

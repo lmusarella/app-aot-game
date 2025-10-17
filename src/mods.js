@@ -466,6 +466,7 @@ export function initModsDiceUI() {
     const rollDie = (sides) => Math.floor(Math.random() * sides) + 1;
 
     btn.addEventListener('click', () => {
+      
         const sides = parseInt(dieSel.value, 10) || 20;
         const r = rollDie(sides);
         const totMod = getTot();
