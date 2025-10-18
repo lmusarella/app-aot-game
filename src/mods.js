@@ -1,5 +1,5 @@
 import { GAME_STATE, scheduleSave, DB, unitById } from "./data.js";
-import { levelFromXP, fmtSigned, signClass} from "./utils.js";
+import { levelFromXP, fmtSigned, signClass } from "./utils.js";
 import { log } from "./log.js";
 
 const UM_STAT_LABELS = { atk: 'ATK', tec: 'TEC', agi: 'AGI', cd: 'CA', mov: 'MOV', rng: 'RNG' };
@@ -333,6 +333,16 @@ export function mountUnitModsUI() {
 
     // prima selezione
     setPicker(current);
+
+    function onUnitDeath(e) {
+        
+        console.log('Unit morta:', e);
+        // fai quello che ti serve...
+       
+        setPicker(null);
+    }
+
+    document.addEventListener('unitDeath', onUnitDeath);
 }
 
 // storage semplice: attacco la lista effetti all’oggetto unità
@@ -466,7 +476,7 @@ export function initModsDiceUI() {
     const rollDie = (sides) => Math.floor(Math.random() * sides) + 1;
 
     btn.addEventListener('click', () => {
-      
+
         const sides = parseInt(dieSel.value, 10) || 20;
         const r = rollDie(sides);
         const totMod = getTot();

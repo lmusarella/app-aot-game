@@ -185,6 +185,7 @@ async function resolveAttack(attackerId, targetId) {
     const endagedGiant = getEngagingGiant(human.id);
     const engaged = getEngagedHuman(giant.id);
 
+    let humanDistract = false;
     // Danno umano (se colpisce): d4 + FOR (min 1)
     if (humanHits && (!endagedGiant || endagedGiant === giant.id) && sameOrAdjCells(human.id, giant.id)) {
         const humanDmgRoll = Math.max(1, d(4) + ATK_TOTAL);
@@ -196,12 +197,14 @@ async function resolveAttack(attackerId, targetId) {
 
     if (endagedGiant && endagedGiant !== giant.id) {
         const x = unitById.get(endagedGiant);
+        humanDistract = true;
         lines.push(`Attualmente ${human.name} è distratto/a da ${x.name}`);
     }
 
 
     let cdGiantAbi;
     let humanDodgesAbility;
+    let giantDistract = false;
     //il gigante attacca solo un umano alla volta
     if (!engaged || engaged === human.id) {
         // Azione del gigante: abilità se pronta, altrimenti attacco base
@@ -257,6 +260,7 @@ async function resolveAttack(attackerId, targetId) {
         }
     } else {
         const engagedUnit = unitById.get(engaged);
+        giantDistract = true;
         if (engagedUnit) lines.push(`${giant.name} è distratto, perchè in combattimento con ${engagedUnit.name}`)
     }
 
@@ -321,13 +325,33 @@ async function resolveAttack(attackerId, targetId) {
 
 
     if (humanDidHit) sumLines.push(`${human.name} infligge ${humanDamageDealt} danni.`);
-    if (!humanDidHit && sameOrAdjCells(human.id, giant.id) && humanHits === false) {
-        sumLines.push(`${human.name} manca il bersaglio.`);
+
+    if (!humanDidHit && humanHits === false) {
+        if (humanDistract) {
+            const x = unitById.get(endagedGiant);
+            sumLines.push(`${human.name} è attualmente distratto da ${x.name}`);
+        } else {
+            if (sameOrAdjCells(human.id, giant.id)) {
+                sumLines.push(`${human.name} manca il bersaglio.`);
+            } else {
+                sumLines.push(`${giant.name} è troppo lontanto.`);
+            }
+        }
     }
 
     if (giantDidHit) sumLines.push(`${giant.name} infligge ${humanDamageTaken} danni.`);
     if (ability && !giantDidHit) sumLines.push(`${human.name} schiva l'abilità di ${giant.name}.`);
-    if (!ability && !giantDidHit && !neitherHit) sumLines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
+
+
+    if (!ability && !giantDidHit && !neitherHit) {
+        if (giantDistract) {
+
+            const engagedUnit = unitById.get(engaged);
+            sumLines.push(`${giant.name} è attualmente distratto da ${engagedUnit.name}`);
+        } else {
+            sumLines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
+        }
+    }
 
     hideVersusOverlay();
 
@@ -369,12 +393,20 @@ export async function setUnitHp(unitId, newHp) {
     if ((u.role === 'recruit' || u.role === 'commander') && clamped === 0) {
         await handleAllyDeath(u);
         missionStatsOnUnitDeath(u);
+        try {
+            const ev = new CustomEvent('unitDeath', { unit: u });
+            document.dispatchEvent(ev);
+        } catch { }
         return; // già refreshato tutto
     }
     // Morte giganti
     if (u.role === 'enemy' && clamped === 0) {
         await handleGiantDeath(u);
         missionStatsOnUnitDeath(u);
+        try {
+            const ev = new CustomEvent('unitDeath', { unit: u });
+            document.dispatchEvent(ev);
+        } catch { }
         return; // UI già aggiornata
     }
 
@@ -383,6 +415,8 @@ export async function setUnitHp(unitId, newHp) {
         await handleWallDeath(u);
         return;
     }
+
+
 
     scheduleSave();
     renderBenches();

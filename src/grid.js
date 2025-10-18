@@ -343,6 +343,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             hpRight.textContent = `${u.currHp}/${u.hp}`;
             applyHpBar(hpFill, u);
             hideTooltip();
+            clearHighlights();
         });
         hpPlus.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -351,6 +352,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             hpRight.textContent = `${u.currHp}/${u.hp}`;
             applyHpBar(hpFill, u);
             hideTooltip();
+            clearHighlights();
         });
 
 
@@ -399,10 +401,13 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
                     showTooltip(html);
                     // piccolo flash visivo
                     card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
+                    if (u.role === 'enemy') showGiantCone(u.id);
                 }
             },
             onLongPress: () => {
                 hideTooltip();
+                clearHighlights();
+                if (u.role === 'enemy') showGiantCone(u.id);
             }
         });
 
@@ -418,6 +423,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
                 if (e.target.closest('.btn-detail, .btn-trash')) { e.preventDefault(); return; }
                 isDraggingNow = true;
                 hideTooltip();
+                clearHighlights();
                 card.classList.add("dragging");
                 e.dataTransfer.effectAllowed = "move";
                 e.dataTransfer.setData("application/json", JSON.stringify({
@@ -576,6 +582,7 @@ function createHexagon(row, col, unitIds = []) {
                         focusBenchCard(unit.id, { scroll: true, pulse: true });
                         const html = getUnitTooltipHTML(unit);
                         showTooltip(html);
+                        if (unit.role === 'enemy') showGiantCone(unit.id);
                     }
                 },
                 onLongPress: () => {
@@ -589,6 +596,7 @@ function createHexagon(row, col, unitIds = []) {
             content.addEventListener("dragstart", (e) => {
                 isDraggingNow = true;
                 hideTooltip();
+                clearHighlights();
                 UNIT_SELECTED.selectedUnitId = unit.id;
                 member.classList.add('is-selected');
                 content.classList.add("dragging");
