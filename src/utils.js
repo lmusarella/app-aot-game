@@ -2,7 +2,7 @@ import { GAME_STATE, DB } from "./data.js";
 
 
 export const COLOR_VAR = {
-    red: 'var(--rosso)', yellow: 'var(--oro)', silver: 'var(--argento)', verde: 'var(--verde)',
+    red: 'var(--rosso)', yellow: 'var(--oro)', silver: 'var(--argento)', verde: 'var(--verde)', cone: 'var(--cone)',
     gray: 'var(--grigio)', blu: 'var(--blu)', argento: 'var(--argento)', viola: 'var(--viola)'
 };
 export const clamp = (n, min, max) => Math.max(min, Math.min(max, n));

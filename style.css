@@ -13,6 +13,7 @@
    --event: #7c3aed;
    --arruola: #16a34a;
 
+   --cone: #4bd0f175;
    /* bars */
    --bar-h: 18px;
    --bar-radius: 12px;
@@ -967,6 +968,24 @@
 
  .hexagon[data-color="blu"] {
    background: var(--blu);
+ }
+
+ .hexagon[data-color="cone"] {
+   background: var(--cone);
+   animation: hex-cone-pulse 4s ease-in-out infinite;
+ }
+
+ /* più chiaro a metà ciclo */
+ @keyframes hex-cone-pulse {
+
+   0%,
+   100% {
+     background: color-mix(in srgb, var(--cone) 10%, var(--hex-bg) 90%);
+   }
+
+   50% {
+     background: color-mix(in srgb, var(--cone) 75%, var(--hex-bg) 25%);
+   }
  }
 
  /* ===== FAB ===== */
@@ -4871,47 +4890,75 @@
  }
 
  /* Contenitore chip sotto la barra HP */
-.vs-info .vs-chips{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  margin-top:8px;
-}
+ .vs-info .vs-chips {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 6px;
+   margin-top: 8px;
+ }
 
-/* Chip base */
-.stat-chip{
-  display:inline-flex;
-  align-items:center;
-  gap:3px;
-  border-radius:999px;
-  font-size:11px;
-  line-height:1;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.12);
-  color:#e9eef6;
-  backdrop-filter: blur(2px);
-}
-.stat-chip .sc-label{
-  opacity:.8;
-  font-weight:700;
-  letter-spacing:.2px;
-}
-.stat-chip .sc-val{
-  font-weight:800;
-}
+ /* Chip base */
+ .stat-chip {
+   display: inline-flex;
+   align-items: center;
+   gap: 3px;
+   border-radius: 999px;
+   font-size: 11px;
+   line-height: 1;
+   background: rgba(255, 255, 255, .08);
+   border: 1px solid rgba(255, 255, 255, .12);
+   color: #e9eef6;
+   backdrop-filter: blur(2px);
+ }
 
-/* Accenti per tipi di stat (opzionali ma carini) */
-.stat-chip.chip-ca   { background:rgba(86,140,255,.12);  border-color:rgba(86,140,255,.25); }
-.stat-chip.chip-cd   { background:rgba(156,110,255,.12); border-color:rgba(156,110,255,.25); }
-.stat-chip.chip-atk  { background:rgba(255,105,97,.12);  border-color:rgba(255,105,97,.25); }
-.stat-chip.chip-rng  { background:rgba(255,206,84,.12);  border-color:rgba(255,206,84,.25); }
-.stat-chip.chip-tec  { background:rgba(72,207,173,.12);  border-color:rgba(72,207,173,.25); }
-.stat-chip.chip-agi  { background:rgba(140,198,63,.12);  border-color:rgba(140,198,63,.25); }
+ .stat-chip .sc-label {
+   opacity: .8;
+   font-weight: 700;
+   letter-spacing: .2px;
+ }
 
-/* Responsive: stringi un filo le chip su schermi piccoli */
-@media (max-width: 560px){
-  .stat-chip{ padding:3px 8px; font-size:11px; }
-}
+ .stat-chip .sc-val {
+   font-weight: 800;
+ }
+
+ /* Accenti per tipi di stat (opzionali ma carini) */
+ .stat-chip.chip-ca {
+   background: rgba(86, 140, 255, .12);
+   border-color: rgba(86, 140, 255, .25);
+ }
+
+ .stat-chip.chip-cd {
+   background: rgba(156, 110, 255, .12);
+   border-color: rgba(156, 110, 255, .25);
+ }
+
+ .stat-chip.chip-atk {
+   background: rgba(255, 105, 97, .12);
+   border-color: rgba(255, 105, 97, .25);
+ }
+
+ .stat-chip.chip-rng {
+   background: rgba(255, 206, 84, .12);
+   border-color: rgba(255, 206, 84, .25);
+ }
+
+ .stat-chip.chip-tec {
+   background: rgba(72, 207, 173, .12);
+   border-color: rgba(72, 207, 173, .25);
+ }
+
+ .stat-chip.chip-agi {
+   background: rgba(140, 198, 63, .12);
+   border-color: rgba(140, 198, 63, .25);
+ }
+
+ /* Responsive: stringi un filo le chip su schermi piccoli */
+ @media (max-width: 560px) {
+   .stat-chip {
+     padding: 3px 8px;
+     font-size: 11px;
+   }
+ }
 
 
  /* === Contenitore sotto ai dadi === */

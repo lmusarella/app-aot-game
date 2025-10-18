@@ -326,7 +326,7 @@ async function resolveAttack(attackerId, targetId) {
 
     if (humanDidHit) sumLines.push(`${human.name} infligge ${humanDamageDealt} danni.`);
 
-    if (!humanDidHit && humanHits === false) {
+    if (!humanDidHit) {
         if (humanDistract) {
             const x = unitById.get(endagedGiant);
             sumLines.push(`${human.name} è attualmente distratto da ${x.name}`);
@@ -344,8 +344,8 @@ async function resolveAttack(attackerId, targetId) {
 
 
     if (!ability && !giantDidHit && !neitherHit) {
-        if (giantDistract) {
 
+        if (giantDistract) {
             const engagedUnit = unitById.get(engaged);
             sumLines.push(`${giant.name} è attualmente distratto da ${engagedUnit.name}`);
         } else {
