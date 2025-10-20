@@ -997,6 +997,61 @@
    }
  }
 
+ .hexagon[data-color="conegrigio"] {
+   background: var(--cone);
+   animation: hex-cone-grigio 4s ease-in-out infinite;
+ }
+
+ /* più chiaro a metà ciclo */
+ @keyframes hex-cone-grigio {
+
+   0%,
+   100% {
+     background: color-mix(in srgb, var(--cone) 10%, var(--grigio) 90%);
+   }
+
+   50% {
+     background: color-mix(in srgb, var(--cone) 75%, var(--grigio) 25%);
+   }
+ }
+
+ .hexagon[data-color="coneblu"] {
+   background: var(--cone);
+   animation: hex-cone-blu 4s ease-in-out infinite;
+ }
+
+ /* più chiaro a metà ciclo */
+ @keyframes hex-cone-blu {
+
+   0%,
+   100% {
+     background: color-mix(in srgb, var(--cone) 10%, var(--blu) 90%);
+   }
+
+   50% {
+     background: color-mix(in srgb, var(--cone) 75%, var(--blu) 25%);
+   }
+ }
+
+ .hexagon[data-color="conesilver"] {
+   background: var(--cone);
+   animation: hex-cone-silver 4s ease-in-out infinite;
+ }
+
+ /* più chiaro a metà ciclo */
+ @keyframes hex-cone-silver {
+
+   0%,
+   100% {
+     background: color-mix(in srgb, var(--cone) 10%, var(--argento) 90%);
+   }
+
+   50% {
+     background: color-mix(in srgb, var(--cone) 75%, var(--argento) 25%);
+   }
+ }
+
+
  /* ===== FAB ===== */
  :root {
    --fab-size: 36px;

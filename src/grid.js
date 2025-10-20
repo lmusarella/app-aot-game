@@ -529,7 +529,14 @@ function createHexagon(row, col, unitIds = []) {
     if (row === 8 || row === 9) hex.setAttribute("data-color", "gray");
     if (row === 10 || row === 11 || row === 12) hex.setAttribute("data-color", "silver");
 
-    if (isConeCell(row, col)) hex.setAttribute("data-color", "cone");
+    if (isConeCell(row, col)) {
+        hex.setAttribute("data-color", "cone");
+
+        if (row === 1) hex.setAttribute("data-color", "coneblu");
+        if (row === 8 || row === 9) hex.setAttribute("data-color", "conegrigio");
+        if (row === 10 || row === 11 || row === 12) hex.setAttribute("data-color", "conesilver");
+    }
+
 
     const allUnits = unitIds.map(id => unitById.get(id)).filter(Boolean);
     const overflow = Math.max(0, allUnits.length - DB.SETTINGS.gridSettings.dispalyLimit);
