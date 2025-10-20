@@ -11,7 +11,9 @@ import { log } from './log.js';
 import { missionStatsOnUnitDeath, renderMissionUI } from './missions.js';
 import { addMorale, addXP } from './footer.js';
 import bloodHitClean from './bloodHitClean.js';
-  import swordSlash from './swordSlash.js';
+import { giantFallQuake } from './screenQuake.js';
+import { giantDust } from './giantDust.js';
+import swordSlash from './swordSlash.js';
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
 
@@ -511,6 +513,17 @@ export async function handleGiantDeath(unit) {
     log(`${unit.name} è morto.`, 'success');
     scheduleSave();
     await playSfx('./assets/sounds/morte_gigante.mp3');
+    const prepMs = 450, impactMs = 220, afterMs = 1400;
+
+    giantFallQuake({ delayMs: 300, intensity: 28 }); // target: document.documentElement
+    giantDust({
+        delayMs: prepMs + impactMs - 30,   // parte al picco dell'impatto
+        plumeCount: 140,                   // più particelle
+        durationMs: 2200,                  // durata totale
+        ringLife: 1000,                    // ring al suolo un filo più lungo
+        wind: 0.08,                        // un po' di vento laterale
+        tone: '#a78b6d'                    // sabbia/beige
+    });
 }
 
 export async function handleAllyDeath(unit) {
