@@ -13,7 +13,7 @@
    --event: #7c3aed;
    --arruola: #16a34a;
 
-   --cone: #4bd0f175;
+   --cone: #2c7;
    /* bars */
    --bar-h: 18px;
    --bar-radius: 12px;
@@ -43,6 +43,15 @@
    /* header + contenuto */
    grid-template-columns: 350px 1fr 350px;
    /* sinistra, campo, destra */
+
+   -webkit-user-select: none;
+   /* iOS/Safari */
+   -ms-user-select: none;
+   /* vecchio Edge */
+   user-select: none;
+   /* standard */
+   -webkit-touch-callout: none;
+   /* disabilita menu tap-and-hold su iOS */
 
  }
 
