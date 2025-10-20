@@ -10,7 +10,7 @@ import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tool
 import { log } from './log.js';
 import { missionStatsOnUnitDeath, renderMissionUI } from './missions.js';
 import { addMorale, addXP } from './footer.js';
-
+import bloodHitClean from './bloodHitClean.js';
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
 
@@ -42,7 +42,7 @@ export function getEngagingGiant(humanId) {
         if (String(hid) !== hidStr) continue;
 
         const g = unitById.get(gid);
-        const h = unitById.get(hidStr);    
+        const h = unitById.get(hidStr);
         // se uno dei due non è valido / non vivo / non più adiacente → rimuovi binding
         if (!unitAlive(g) || !unitAlive(h) || !sameOrAdjCells(gid, hidStr) || g?.role !== 'enemy') {
             GIANT_ENGAGEMENT.delete(gid);
@@ -235,8 +235,27 @@ async function resolveAttack(attackerId, targetId) {
             // SFX abilità (se fornito), altrimenti fallback
             try {
                 if (giantHits && ability.sfx) {
+                    bloodHitClean({
+                        side: 'right',   // 'top'|'right'|'bottom'|'left'|'center'
+                        intensity: 1.0,  // 0..1
+                        density: 1.2,    // 0.5..2.0
+                        safeInset: 0.26, // 0..0.45
+                        duration: 120,
+                        fadeAfter: 1400,
+                        fadeMs: 650
+                    });
                     playSfx(ability.sfx, { volume: 0.9 });
+
                 } else if (giantHits) {
+                    bloodHitClean({
+                        side: 'right',   // 'top'|'right'|'bottom'|'left'|'center'
+                        intensity: 1.0,  // 0..1
+                        density: 1.2,    // 0.5..2.0
+                        safeInset: 0.26, // 0..0.45
+                        duration: 120,
+                        fadeAfter: 1400,
+                        fadeMs: 650
+                    });
                     playSfx('./assets/sounds/abilita_gigante.mp3', { volume: 0.9 });
                 }
             } catch { }
@@ -254,6 +273,15 @@ async function resolveAttack(attackerId, targetId) {
                 const hCurr = (human.currHp ?? human.hp);
                 setUnitHp(humanId, hCurr - giantAtk);
                 lines.push(`${giant.name} infligge ${giantAtk} danni a ${human.name}.`);
+                bloodHitClean({
+                    side: 'right',   // 'top'|'right'|'bottom'|'left'|'center'
+                    intensity: 1.0,  // 0..1
+                    density: 1.2,    // 0.5..2.0
+                    safeInset: 0.26, // 0..0.45
+                    duration: 120,
+                    fadeAfter: 1400,
+                    fadeMs: 650
+                });
                 try { playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 }); } catch { }
             }
         }
@@ -720,7 +748,7 @@ export function giantsPhaseMove() {
         if (movimento > 0) {
             for (let i = 0; i < movimento; i++) {
                 // se stepGiant ritorna false, interrompi i passi residui per quel gigante
-                const ok = stepGiant(g.id);            
+                const ok = stepGiant(g.id);
                 if (ok === false) break;
             }
         }
