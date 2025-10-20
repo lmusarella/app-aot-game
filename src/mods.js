@@ -335,10 +335,6 @@ export function mountUnitModsUI() {
     setPicker(current);
 
     function onUnitDeath(e) {
-        
-        console.log('Unit morta:', e);
-        // fai quello che ti serve...
-       
         setPicker(null);
     }
 

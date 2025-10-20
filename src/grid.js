@@ -909,8 +909,6 @@ export function findTargetsFor(attacker, cell) {
         // Se vede almeno un umano (entro vista, non per forza entro rng), colpisce SOLO umani nel cono.
         const seenHuman = lowestHpHumanWithin(attacker, cell.row, cell.col, Math.max(GIANT_VISION, rng)) != null;
 
-        console.log('cone', cone);
-        console.log('seenHuman', seenHuman);
         for (const p of cone) {
             for (const id of getStack(p.row, p.col)) {
                 const u = unitById.get(id);
@@ -1106,7 +1104,6 @@ export function hexCone(fromR, fromC, dir, range = 1, { includeOrigin = false } 
         seen.add(k); cells.push({ row, col });
     };
 
-    console.log('includeOrigin', includeOrigin, o);
     if (includeOrigin) push(o.x, o.y, o.z);          // <<— NOVITÀ
 
     for (let d = 1; d <= Math.max(1, range | 0); d++) {

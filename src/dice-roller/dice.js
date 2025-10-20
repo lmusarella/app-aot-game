@@ -145,8 +145,7 @@ const DICE = (function() {
         this.h = this.ch;
         this.aspect = Math.min(this.cw / this.w, this.ch / this.h);
         vars.scale = Math.sqrt(this.w * this.w + this.h * this.h) / 8;
-        //console.log('scale = ' + vars.scale);
-
+      
         this.renderer.setSize(this.cw * 2, this.ch * 2);
 
         this.wh = this.ch / this.aspect / Math.tan(10 * Math.PI / 180);

@@ -42,8 +42,7 @@ export function getEngagingGiant(humanId) {
         if (String(hid) !== hidStr) continue;
 
         const g = unitById.get(gid);
-        const h = unitById.get(hidStr);
-        console.log('le unità sono ancora vicine', sameOrAdjCells(gid, hidStr))
+        const h = unitById.get(hidStr);    
         // se uno dei due non è valido / non vivo / non più adiacente → rimuovi binding
         if (!unitAlive(g) || !unitAlive(h) || !sameOrAdjCells(gid, hidStr) || g?.role !== 'enemy') {
             GIANT_ENGAGEMENT.delete(gid);
@@ -721,8 +720,7 @@ export function giantsPhaseMove() {
         if (movimento > 0) {
             for (let i = 0; i < movimento; i++) {
                 // se stepGiant ritorna false, interrompi i passi residui per quel gigante
-                const ok = stepGiant(g.id);
-                console.log('step ok', ok);
+                const ok = stepGiant(g.id);            
                 if (ok === false) break;
             }
         }

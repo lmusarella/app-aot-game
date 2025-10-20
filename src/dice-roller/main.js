@@ -7,7 +7,7 @@
  */
 
 window.onkeydown = function(e) {
-    //console.log(e.code);
+  
     if(e.code === "Enter" || e.code === "Escape") {
         main.setInput(); //closes numPad
     }
@@ -24,7 +24,7 @@ window.onkeydown = function(e) {
     var box = null;
 
     that.init = function() {
-        console.log('init dice roller')
+
         elem.container = $t.id('diceRoller');
         elem.result = $t.id('result');
         elem.textInput = $t.id('textInput'); 
