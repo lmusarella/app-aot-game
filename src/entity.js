@@ -14,6 +14,7 @@ import bloodHitClean from './bloodHitClean.js';
 import { giantFallQuake } from './screenQuake.js';
 import { giantDust } from './giantDust.js';
 import swordSlash from './swordSlash.js';
+  import showDeathScreen from './deathOverlay.js';
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
 
@@ -436,6 +437,16 @@ export async function setUnitHp(unitId, newHp) {
             const ev = new CustomEvent('unitDeath', { unit: u });
             document.dispatchEvent(ev);
         } catch { }
+        const death = showDeathScreen({
+            text: `${u.name} è ${u.sex === 'm' ? 'morto' : 'morta'}`,
+            //subtext: 'Premi un tasto per continuare',
+            effect: 'chroma',       // 'none' | 'glitch' | 'chroma'
+            skullOpacity: 0.13,
+            skullScale: 1.0,
+            blur: 2,
+            allowDismiss: false,   // click/tasto per chiudere
+            autoDismissMs: 3000,  // chiudi dopo 3s (opzionale)
+        });
         return; // già refreshato tutto
     }
     // Morte giganti
