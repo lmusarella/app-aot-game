@@ -14,7 +14,9 @@ import bloodHitClean from './bloodHitClean.js';
 import { giantFallQuake } from './screenQuake.js';
 import { giantDust } from './giantDust.js';
 import swordSlash from './swordSlash.js';
-  import showDeathScreen from './deathOverlay.js';
+import showDeathScreen from './deathOverlay.js';
+import showVictoryScreen from './victoryOverlay.js';
+
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
 
@@ -457,6 +459,12 @@ export async function setUnitHp(unitId, newHp) {
             const ev = new CustomEvent('unitDeath', { unit: u });
             document.dispatchEvent(ev);
         } catch { }
+        const victory = showVictoryScreen({
+            text: 'VITTORIA',
+            subtext: `${u.name} è stato abbattuto!}`,
+            confetti: true,
+            autoDismissMs: 3500  // opzionale
+        });
         return; // UI già aggiornata
     }
 
