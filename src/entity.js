@@ -11,6 +11,7 @@ import { log } from './log.js';
 import { missionStatsOnUnitDeath, renderMissionUI } from './missions.js';
 import { addMorale, addXP } from './footer.js';
 import bloodHitClean from './bloodHitClean.js';
+  import swordSlash from './swordSlash.js';
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
 
@@ -303,6 +304,15 @@ async function resolveAttack(attackerId, targetId) {
             // leggero offset se anche il gigante ha colpito, per non accavallare troppo
             const offset = humanDamageTaken > 0 ? 140 : 0;
             setTimeout(() => playSfx(path, { volume: 0.8 }), offset);
+            swordSlash({
+                angle: 'right-down', // 'right-down' | 'left-down' | 'right-up' | 'left-up' oppure angleDeg: <numero>
+                thickness: 24,
+                glow: 22,
+                length: 1.2,
+                splatter: 0.8,       // 0 = nessuno
+                centerSafe: true,
+                safeInset: 0.24
+            });
         }
     } catch { }
 
