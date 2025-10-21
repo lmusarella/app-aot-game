@@ -538,22 +538,26 @@ export async function handleGiantDeath(unit) {
     await playSfx('./assets/sounds/morte_gigante.mp3');
     const prepMs = 450, impactMs = 220, afterMs = 1400;
 
-    giantFallQuake({ delayMs: 300, intensity: 28 }); // target: document.documentElement
-    giantDust({
-        delayMs: prepMs + impactMs - 30,   // parte al picco dell'impatto
-        plumeCount: 140,                   // più particelle
-        durationMs: 2200,                  // durata totale
-        ringLife: 1000,                    // ring al suolo un filo più lungo
-        wind: 0.08,                        // un po' di vento laterale
-        tone: '#a78b6d'                    // sabbia/beige
-    });
+
 
     const victory = showVictoryScreen({
         text: 'VITTORIA',
         subtext: `${unit.name} è stato abbattuto!`,
-        confetti: true,
-        autoDismissMs: 3500  // opzionale
+        confetti: false,
+        autoDismissMs: 3000  // opzionale
     });
+
+    setTimeout(() => {
+        giantFallQuake({ delayMs: 0, intensity: 28 }); // target: document.documentElement
+        giantDust({
+            delayMs: 300,   // parte al picco dell'impatto
+            plumeCount: 140,                   // più particelle
+            durationMs: 2200,                  // durata totale
+            ringLife: 1000,                    // ring al suolo un filo più lungo
+            wind: 0.08,                        // un po' di vento laterale
+            tone: '#a78b6d'                    // sabbia/beige
+        });
+    }, 2200)
 
     setTimeout(() => {
         // 3) NON rimettere nel pool: il gigante è “consumato”

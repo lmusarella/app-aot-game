@@ -7,7 +7,8 @@ import { playBg } from "./audio.js";
 import { resetMissionEffectsAllUnits } from "./entity.js";
 import { addMorale, addXP } from "./footer.js";
 import { stopTimer, renderTimerUI, resetTimer } from "./header.js";
-
+import showDeathScreen from './effects/deathOverlay.js';
+import showVictoryScreen from './effects/victoryOverlay.js';
 
 const elMissionNumTop = document.getElementById('m-num');       // header (numero)
 const elMissionNumCard = document.querySelector('#missione-corrente #mc-num'); // card (numero)
@@ -212,13 +213,31 @@ export async function completeMission(reason) {
     const missioneFallita = m.objectives.some(missione => GAME_STATE.missionState.kills[missione.type] < missione.num);
     if (missioneFallita && reason === 'cancel-button') {
         log(`Missione #${GAME_STATE.missionState.curIndex + 1} Fallita!`, 'error');
+            const death = showDeathScreen({
+                text: `MISSIONE FALLITA`,
+                //subtext: 'Premi un tasto per continuare',
+                effect: 'chroma',       // 'none' | 'glitch' | 'chroma'
+                skullOpacity: 0.13,
+                skullScale: 1.0,
+                blur: 2,
+                allowDismiss: false,   // click/tasto per chiudere
+                autoDismissMs: 3000,  // chiudi dopo 3s (opzionale)
+            });
     } else {
         log(`Missione #${GAME_STATE.missionState.curIndex + 1} completata!`, 'success');
+        const victory = showVictoryScreen({
+            text: 'MISSIONE COMPLETATA',
+            subtext: ``,
+            confetti: true,
+            autoDismissMs: 3000  // opzionale
+        });
+       
         const reward = m?.reward ?? { morale: 0, xp: 0 };
         addMorale(reward.morale);
         addXP(reward?.xp)
         setMissionByIndex(GAME_STATE.missionState.curIndex + 1);
         resetMissionEffectsAllUnits();
+
     }
 
     GAME_STATE.missionState.kills = {
