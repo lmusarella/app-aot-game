@@ -399,6 +399,13 @@ async function resolveAttack(attackerId, targetId) {
         }
     }
 
+    console.log('ability', ability);
+    console.log('giantDidHit', giantDidHit);
+    console.log('neitherHit', neitherHit);
+    console.log('humanDidHit', humanDidHit);
+    console.log('humanDodgesAbility', humanDodgesAbility);
+    console.log('humanDodges', humanDodges);
+
     hideVersusOverlay();
 
     showVersusOverlay(a, t);
@@ -438,18 +445,11 @@ export async function setUnitHp(unitId, newHp) {
     // Se è alleato e scende a 0 → morte
     if ((u.role === 'recruit' || u.role === 'commander') && clamped === 0) {
         await handleAllyDeath(u);
-        missionStatsOnUnitDeath(u);
-        try {
-            const ev = new CustomEvent('unitDeath', { unit: u });
-            document.dispatchEvent(ev);
-        } catch { }
-
         return; // già refreshato tutto
     }
     // Morte giganti
     if (u.role === 'enemy' && clamped === 0) {
         await handleGiantDeath(u);
-
         return; // UI già aggiornata
     }
 
@@ -563,7 +563,7 @@ export async function handleGiantDeath(unit) {
     }, 3000)
 
     missionStatsOnUnitDeath(unit);
-    GIANT_ENGAGEMENT.delete(unit.id);
+    getEngagedHuman(unit.id);
     try {
         const ev = new CustomEvent('unitDeath', { unit });
         document.dispatchEvent(ev);
@@ -602,7 +602,8 @@ export async function handleAllyDeath(unit) {
         addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[unit.role]);
     }, 3000)
 
-    missionStatsOnUnitDeath(u);
+    missionStatsOnUnitDeath(unit);
+    getEngagingGiant(unit.id);
     try {
         const ev = new CustomEvent('unitDeath', { unit });
         document.dispatchEvent(ev);
