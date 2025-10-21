@@ -387,7 +387,7 @@ async function resolveAttack(attackerId, targetId) {
 
     if (giantDidHit) sumLines.push(`${giant.name} infligge ${humanDamageTaken} danni.`);
     if (ability && !giantDidHit) sumLines.push(`${human.name} schiva l'abilità di ${giant.name}.`);
-
+    if (!ability && !giantDidHit) sumLines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
 
     if (!ability && !giantDidHit && !neitherHit) {
 
@@ -398,13 +398,6 @@ async function resolveAttack(attackerId, targetId) {
             sumLines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
         }
     }
-
-    console.log('ability', ability);
-    console.log('giantDidHit', giantDidHit);
-    console.log('neitherHit', neitherHit);
-    console.log('humanDidHit', humanDidHit);
-    console.log('humanDodgesAbility', humanDodgesAbility);
-    console.log('humanDodges', humanDodges);
 
     hideVersusOverlay();
 
@@ -570,6 +563,7 @@ export async function handleGiantDeath(unit) {
     }, 3000)
 
     missionStatsOnUnitDeath(unit);
+    GIANT_ENGAGEMENT.delete(unit.id);
     try {
         const ev = new CustomEvent('unitDeath', { unit });
         document.dispatchEvent(ev);
