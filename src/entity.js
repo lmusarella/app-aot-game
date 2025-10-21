@@ -1,7 +1,7 @@
 import {
     sameOrAdjCells, findUnitCell, getStack, focusUnitOnField,
     grid, hasHumanInCell, nextStepTowards, gridSize, hexDistance, renderBenches,
-    renderGrid, removeUnitEverywhere, humanTargetsWithin2, moveOneUnitBetweenStacks, nearestWallCell, setStack, focusBenchCard
+    renderGrid, removeUnitEverywhere, humanTargetsWithin2, moveOneUnitBetweenStacks, nearestWallCell, setStack, focusBenchCard, clearHighlights
 } from './grid.js';
 import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates, capModSum } from './utils.js';
 import { playSfx, playBg } from './audio.js';
@@ -830,7 +830,11 @@ export function stepGiant(giantId) {
 export function giantsPhaseMove() {
     const giants = [...unitById.values()].filter(u => u.role === 'enemy');
 
-    if (giants.length) log('I giganti iniziano a muoversi...', 'warning');
+    if (giants.length) {
+        log('I giganti iniziano a muoversi...', 'warning');
+        playSfx('./assets/sounds/movimento-gigianti-2.mp3', { volume: 1, loop: false });
+    }
+
     if (!giants.length) log('Nessun gigante sulla griglia', 'warning');
 
     for (const g of giants) {
@@ -844,6 +848,8 @@ export function giantsPhaseMove() {
             }
         }
     }
+
+    clearHighlights();
 }
 
 // Iteratore robusto: passa su tutte le unità utili (mappa globale o roster)
