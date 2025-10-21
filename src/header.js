@@ -66,6 +66,7 @@ export function resetTimer() {
 }
 
 export function initHeaderListeners() {
+    document.addEventListener('resetGame', resetGame);
     btnReset.addEventListener('click', async () => {
         const ok = await confirmDialog({
             title: 'Reset Partita',

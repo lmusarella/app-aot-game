@@ -91,13 +91,20 @@ export function showDeathScreen(options = {}) {
     if (closed) return;
     closed = true;
     root.classList.add('is-hiding');
-    setTimeout(() => { try { root.remove(); } catch {} }, 260);
+    setTimeout(() => { try { root.remove(); } catch { } }, 260);
     detach();
+    if (allowDismiss) {
+      try {
+        console.log('reset game')
+        const ev = new CustomEvent('resetGame');
+        document.dispatchEvent(ev);
+      } catch { }
+    }
   };
 
-  function onKey(e){ if (!allowDismiss) return; if (e.key) close(); }
-  function onClick(){ if (!allowDismiss) return; close(); }
-  function detach(){
+  function onKey(e) { if (!allowDismiss) return; if (e.key) close(); }
+  function onClick() { if (!allowDismiss) return; close(); }
+  function detach() {
     document.removeEventListener('keydown', onKey);
     root.removeEventListener('click', onClick);
   }
@@ -107,11 +114,11 @@ export function showDeathScreen(options = {}) {
     root.addEventListener('click', onClick);
   }
   if (autoDismissMs && Number.isFinite(autoDismissMs)) {
-    setTimeout(close, Math.max(0, autoDismissMs|0));
+    setTimeout(close, Math.max(0, autoDismissMs | 0));
   }
 
-  function setText(t){ const el = root.querySelector('.death-overlay__title'); if (el) el.textContent = t; }
-  function setSubtext(s){ const el = root.querySelector('.death-overlay__subtitle'); if (el) el.textContent = s; }
+  function setText(t) { const el = root.querySelector('.death-overlay__title'); if (el) el.textContent = t; }
+  function setSubtext(s) { const el = root.querySelector('.death-overlay__subtitle'); if (el) el.textContent = s; }
 
   return { close, setText, setSubtext, el: root };
 }

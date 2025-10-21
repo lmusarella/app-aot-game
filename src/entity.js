@@ -10,12 +10,14 @@ import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tool
 import { log } from './log.js';
 import { missionStatsOnUnitDeath, renderMissionUI } from './missions.js';
 import { addMorale, addXP } from './footer.js';
-import bloodHitClean from './bloodHitClean.js';
-import { giantFallQuake } from './screenQuake.js';
-import { giantDust } from './giantDust.js';
-import swordSlash from './swordSlash.js';
-import showDeathScreen from './deathOverlay.js';
-import showVictoryScreen from './victoryOverlay.js';
+import bloodHitClean from './effects/bloodHitClean.js';
+import { giantFallQuake } from './effects/screenQuake.js';
+import { giantDust } from './effects/giantDust.js';
+import swordSlash from './effects/swordSlash.js';
+import showDeathScreen from './effects/deathOverlay.js';
+import showVictoryScreen from './effects/victoryOverlay.js';
+import wallCollapse from './effects/wallCollapse.js';
+
 
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
@@ -342,6 +344,7 @@ async function resolveAttack(attackerId, targetId) {
 
     if (bothHit) {
         if (humanDamageDealt === humanDamageTaken) {
+            try { playSfx('./assets/sounds/scontro.mp3', { volume: 0.8 }); } catch { }
             badgeText = 'Pareggio';
             badgeClass = 'atk-tie';
         } else if (humanDamageDealt > humanDamageTaken) {
@@ -352,6 +355,7 @@ async function resolveAttack(attackerId, targetId) {
             badgeClass = 'atk-lose';
         }
     } else if (neitherHit) {
+        try { playSfx('./assets/sounds/schivata.mp3', { volume: 0.8 }); } catch { }
         // nessuno ha inflitto danni -> Fallito per l'azione d'attacco corrente
         badgeText = 'Pareggio';
         badgeClass = 'atk-tie';
@@ -394,6 +398,13 @@ async function resolveAttack(attackerId, targetId) {
             sumLines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
         }
     }
+
+    console.log('ability', ability);
+    console.log('giantDidHit', giantDidHit);
+    console.log('neitherHit', neitherHit);
+    console.log('humanDidHit', humanDidHit);
+    console.log('humanDodgesAbility', humanDodgesAbility);
+    console.log('humanDodges', humanDodges);
 
     hideVersusOverlay();
 
@@ -439,32 +450,13 @@ export async function setUnitHp(unitId, newHp) {
             const ev = new CustomEvent('unitDeath', { unit: u });
             document.dispatchEvent(ev);
         } catch { }
-        const death = showDeathScreen({
-            text: `${u.name} è ${u.sex === 'm' ? 'morto' : 'morta'}`,
-            //subtext: 'Premi un tasto per continuare',
-            effect: 'chroma',       // 'none' | 'glitch' | 'chroma'
-            skullOpacity: 0.13,
-            skullScale: 1.0,
-            blur: 2,
-            allowDismiss: false,   // click/tasto per chiudere
-            autoDismissMs: 3000,  // chiudi dopo 3s (opzionale)
-        });
+
         return; // già refreshato tutto
     }
     // Morte giganti
     if (u.role === 'enemy' && clamped === 0) {
         await handleGiantDeath(u);
-        missionStatsOnUnitDeath(u);
-        try {
-            const ev = new CustomEvent('unitDeath', { unit: u });
-            document.dispatchEvent(ev);
-        } catch { }
-        const victory = showVictoryScreen({
-            text: 'VITTORIA',
-            subtext: `${u.name} è stato abbattuto!}`,
-            confetti: true,
-            autoDismissMs: 3500  // opzionale
-        });
+
         return; // UI già aggiornata
     }
 
@@ -474,14 +466,20 @@ export async function setUnitHp(unitId, newHp) {
         return;
     }
 
-
-
     scheduleSave();
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
 };
 
 export async function handleWallDeath(wallUnit) {
+    // crollo dall’alto, molti detriti
+    wallCollapse({
+        intensity: 28,
+        debrisCount: 180,
+        durationMs: 2000,
+        emitBand: 'top',
+        bandHeight: 0.22
+    });
     const ROW_BY_WALL_ID = Object.fromEntries(
         Object.entries(DB.SETTINGS.gridSettings.wall).map(([r, id]) => [id, Number(r)])
     );
@@ -503,12 +501,28 @@ export async function handleWallDeath(wallUnit) {
         if (rows.includes(GAME_STATE.spawns[i].row)) GAME_STATE.spawns.splice(i, 1);
     }
 
-    addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[wallUnit.role]);
+    const death = showDeathScreen({
+        text: `${wallUnit.name} è stato distrutto`,
+        //subtext: 'Premi un tasto per continuare',
+        effect: 'chroma',       // 'none' | 'glitch' | 'chroma'
+        skullOpacity: 0.13,
+        skullScale: 1.0,
+        blur: 2,
+        allowDismiss: false,   // click/tasto per chiudere
+        autoDismissMs: 3000,  // chiudi dopo 3s (opzionale)
+    });
+
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     renderBenches();
     log(`${wallUnit.name} è stato distrutto!`, 'error');
     scheduleSave();
     await playSfx('./assets/sounds/muro_distrutto.mp3');
+
+    setTimeout(() => {
+        addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[wallUnit.role]);
+    }, 3000)
+
+
 }
 
 export async function handleGiantDeath(unit) {
@@ -520,10 +534,7 @@ export async function handleGiantDeath(unit) {
     if (i >= 0) GAME_STATE.giantsRoster.splice(i, 1);
 
     GAME_STATE.missionState.kills[unit.type] = GAME_STATE.missionState.kills[unit.type] + 1;
-    // 3) NON rimettere nel pool: il gigante è “consumato”
-    // (quindi niente push in giantsPool)
-    addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[unit.type]);
-    addXP(DB.SETTINGS.xpMoralDefault.giantsDeathXP[unit.type]);
+
     // 4) UI + log
     renderMissionUI();
     rebuildUnitIndex();
@@ -543,6 +554,26 @@ export async function handleGiantDeath(unit) {
         wind: 0.08,                        // un po' di vento laterale
         tone: '#a78b6d'                    // sabbia/beige
     });
+
+    const victory = showVictoryScreen({
+        text: 'VITTORIA',
+        subtext: `${unit.name} è stato abbattuto!`,
+        confetti: true,
+        autoDismissMs: 3500  // opzionale
+    });
+
+    setTimeout(() => {
+        // 3) NON rimettere nel pool: il gigante è “consumato”
+        // (quindi niente push in giantsPool)
+        addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[unit.type]);
+        addXP(DB.SETTINGS.xpMoralDefault.giantsDeathXP[unit.type]);
+    }, 3000)
+
+    missionStatsOnUnitDeath(unit);
+    try {
+        const ev = new CustomEvent('unitDeath', { unit });
+        document.dispatchEvent(ev);
+    } catch { }
 }
 
 export async function handleAllyDeath(unit) {
@@ -557,13 +588,31 @@ export async function handleAllyDeath(unit) {
     const j = GAME_STATE.alliesPool.findIndex(a => a.id === back.id);
     if (j >= 0) GAME_STATE.alliesPool[j] = back; else GAME_STATE.alliesPool.push(back);
 
-    addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[unit.role]);
     rebuildUnitIndex();
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     log(`${unit.name} è morto/a.`, 'error');
     await playSfx('./assets/sounds/morte_umano.mp3');
     await playSfx('./assets/sounds/reclute/morte_recluta_comandante.mp3');
+    const death = showDeathScreen({
+        text: `${unit.name} è ${unit.sex === 'm' ? 'morto' : 'morta'}`,
+        //subtext: 'Premi un tasto per continuare',
+        effect: 'chroma',       // 'none' | 'glitch' | 'chroma'
+        skullOpacity: 0.13,
+        skullScale: 1.0,
+        blur: 2,
+        allowDismiss: false,   // click/tasto per chiudere
+        autoDismissMs: 3000,  // chiudi dopo 3s (opzionale)
+    });
+    setTimeout(() => {
+        addMorale(DB.SETTINGS.xpMoralDefault.unitsDeathMoral[unit.role]);
+    }, 3000)
+
+    missionStatsOnUnitDeath(u);
+    try {
+        const ev = new CustomEvent('unitDeath', { unit });
+        document.dispatchEvent(ev);
+    } catch { }
 
     scheduleSave();
 }

@@ -434,6 +434,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             card.addEventListener("dragend", () => {
                 isDraggingNow = false;
                 card.classList.remove("dragging");
+                if(u.role !== 'enemy' & u.role !== 'wall') try { playSfx('./assets/sounds/movimento_3d.mp3', { volume: 0.8 }); } catch { }
             });
         }
     });
@@ -617,6 +618,7 @@ function createHexagon(row, col, unitIds = []) {
             content.addEventListener("dragend", () => {
                 content.classList.remove("dragging")
                 isDraggingNow = false;
+                  if(unit.role !== 'enemy' & unit.role !== 'wall') try { playSfx('./assets/sounds/movimento_3d.mp3', { volume: 0.8 }); } catch { }
             });
 
             return member;

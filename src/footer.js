@@ -1,7 +1,8 @@
 import { GAME_STATE, scheduleSave, DB } from "./data.js";
 import { log } from "./log.js";
 import { levelFromXP, levelProgressPercent, getMalusRow } from './utils.js';
-import {renderBonusMalus} from './mods.js'
+import { renderBonusMalus } from './mods.js'
+import showDeathScreen from './effects/deathOverlay.js';
 
 const xpDOM = {
     fill: document.getElementById("xp-fill"),
@@ -14,6 +15,7 @@ const moraleDOM = {
     pct: document.getElementById("morale-val"),
 };
 
+export const stack_screen = [];
 
 // Mutatore con logging dettagliato
 export function addMorale(deltaPct) {
@@ -37,6 +39,31 @@ export function addMorale(deltaPct) {
             // Se morale scende, warning; se sale e alleggerisce il malus, info/success
 
             log(`${txt}`, nextBand.type);
+
+            console.log('nextBand', next)
+            if (nextBand.range.min === 0) {
+                const death = showDeathScreen({
+                    text: txt,
+                    subtext: 'Premi un tasto per ricominciare',
+                    effect: 'chroma',       // 'none' | 'glitch' | 'chroma'
+                    skullOpacity: 0.13,
+                    skullScale: 1.0,
+                    blur: 2,
+                    allowDismiss: true,   // click/tasto per chiudere                 
+                });
+                
+            } else if(nextBand.type === 'error') {
+                const death = showDeathScreen({
+                    text: txt,
+                    //subtext: 'Premi un tasto per continuare',
+                    effect: 'chroma',       // 'none' | 'glitch' | 'chroma'
+                    skullOpacity: 0.13,
+                    skullScale: 1.0,
+                    blur: 2,
+                    allowDismiss: false,   // click/tasto per chiudere
+                    autoDismissMs: 3000,  // chiudi dopo 3s (opzionale)
+                }); 
+            }
         } else {
             // Uscito da ogni fascia (nessun malus attivo)
             log(`Nessun malus attivo.`, 'info');
