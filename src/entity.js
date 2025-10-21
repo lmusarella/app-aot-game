@@ -17,7 +17,7 @@ import swordSlash from './effects/swordSlash.js';
 import showDeathScreen from './effects/deathOverlay.js';
 import showVictoryScreen from './effects/victoryOverlay.js';
 import wallCollapse from './effects/wallCollapse.js';
-
+import showWarningC from './effects/warningOverlayC.js';
 
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
@@ -832,24 +832,34 @@ export function giantsPhaseMove() {
 
     if (giants.length) {
         log('I giganti iniziano a muoversi...', 'warning');
+        showWarningC({
+            text: 'ATTENZIONE',
+            subtext: 'I giganti iniziano a muoversi...',
+            theme: 'red',
+            ringAmp: 1.0,
+            autoDismissMs: 2500
+        });
         playSfx('./assets/sounds/movimento-gigianti-2.mp3', { volume: 1, loop: false });
-    }
-
-    if (!giants.length) log('Nessun gigante sulla griglia', 'warning');
-
-    for (const g of giants) {
-        // per ogni esagono di movimento il gigante fa tot step.
-        const movimento = getStat(g, 'mov');
-        if (movimento > 0) {
-            for (let i = 0; i < movimento; i++) {
-                // se stepGiant ritorna false, interrompi i passi residui per quel gigante
-                const ok = stepGiant(g.id);
-                if (ok === false) break;
+        setTimeout(() => {
+            for (const g of giants) {
+                // per ogni esagono di movimento il gigante fa tot step.
+                const movimento = getStat(g, 'mov');
+                if (movimento > 0) {
+                    for (let i = 0; i < movimento; i++) {
+                        // se stepGiant ritorna false, interrompi i passi residui per quel gigante
+                        const ok = stepGiant(g.id);
+                        if (ok === false) break;
+                    }
+                }
             }
-        }
+
+            clearHighlights();
+            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+        }, 2500)
+    } else {
+        log('Nessun gigante sulla griglia', 'warning');
     }
 
-    clearHighlights();
 }
 
 // Iteratore robusto: passa su tutte le unità utili (mappa globale o roster)

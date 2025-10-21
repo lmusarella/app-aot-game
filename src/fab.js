@@ -61,7 +61,6 @@ document.querySelectorAll('#fab-spawn .fab-option').forEach(btn => {
             }
         } else {
             giantsPhaseMove();
-            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
         }
 
         closeAllFabs();
