@@ -8,6 +8,7 @@ import { missionStatsBumpAttempt } from './missions.js';
 import { stopTimer, startTimer } from "./header.js";
 import { log } from "./log.js";
 import showPhaseBanner from './effects/phaseBanner.js';
+import showWarningC from './effects/warningOverlayC.js';
 
 const PHASE_UI = {
     // cosa si vede in ciascuna fase (modifica liberamente i selettori!)
@@ -123,94 +124,35 @@ export const TurnEngine = {
             startTimer();
             missionStatsBumpAttempt();
 
-            // Esempio: fase combattimento
-            showPhaseBanner({
-                text: 'FASE DI MOVIMENTO',
-                subtext: `Posiziona la tua squadra in griglia`,
-                theme: 'blue',
-                autoDismissMs: 3000
+            showWarningC({
+                text: 'MISSIONE INIZIATA',
+                subtext: '',
+                theme: 'green',
+                ringAmp: 1.0,
+                autoDismissMs: 2500
             });
 
-            if (!this.teamCreated) {
-                try {
-                    pickRandomTeam({ commanders: 1, recruits: 3 });
-                    openAccordionForRole('commander');
-                    this.squadNumber = 4;
-                } catch { }
-                this.teamCreated = true;
-                log('Setup: posiziona e sistema la squadra come vuoi con 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info', 6000);
-            } else {
-                log('Setup: Hai 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info');
-            }
-        }
-
-        if (phase === 'event_mission') {
-            this.setPhase('event_card');
-            const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
-            const spawnEvents = m.event_spawn;
-            const ids = [];
-            if (spawnEvents && spawnEvents.length > 0) {
-
-                for (const event of spawnEvents) {
-                    const id = await spawnGiant(event, true);
-                    ids.push(id);
-                }
-
-                await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
-
-                if (spawnEvents.every(event => event === "Puro")) {
-                    await playBg('./assets/sounds/start_app.mp3');
-                }
-
-                if (spawnEvents.some(event => event === "Anomalo")) {
-                    await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/ape_titan_sound.mp3');
-                }
-
-                if (spawnEvents.some(event => event === "Mutaforma")) {
-                    await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/start_app.mp3');
-                }
-
-                openAccordionForRole("enemy");
-            }
-
-
-        }
-
-        if (phase === 'round_start') {
-            this.setPhase('move_phase');
-            showPhaseBanner({
-                text: 'FASE DI MOVIMENTO',
-                subtext: `Round "${this.round}".`,
-                theme: 'blue',
-                autoDismissMs: 2000
-            });
-            startTimer();
-            this.round++;
-            log(`Round ${this.round} iniziato.`, 'success');
-            advanceAllCooldowns(1, { giantsOnly: true });
-            tickUnitModsOnNewRound();
-            missionStatsSetRound(this.round);
-            log(`Fase Movimento ${this.round}° ROUND: Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`, 'info', 6000);
-            await playBg('./assets/sounds/commander_march_sound.mp3');
-        }
-    },
-
-    async endPhase(phase) {
-        if (phase === 'setup') {
-            const flagAlleatoInGriglia = GAME_STATE.alliesRoster.some(ally => GAME_STATE.spawns.some(s => (s.unitIds ?? []).includes(ally.id)));
-
-            if (flagAlleatoInGriglia) {
-                this.setPhase('event_mission');
+            setTimeout(() => {
+                // Esempio: fase combattimento
                 showPhaseBanner({
-                    text: 'PESCA CARTE EVENTO',
-                    subtext: `Round "${this.round}".`,
-                    theme: 'green',
-                    autoDismissMs: 2000
+                    text: 'FASE DI MOVIMENTO',
+                    subtext: `Posiziona la tua squadra in griglia`,
+                    theme: 'blue',
+                    autoDismissMs: 3500
                 });
-                log(`Setup Missione: Clicca su Evento per generare lo spawn dei giganti associati alla missione`, 'info', 6000);
-            } else {
-                log(`Setup Missione: Trascina almeno un'unità della tua squadra in campo`, 'info', 6000);
-            }
+
+                if (!this.teamCreated) {
+                    try {
+                        pickRandomTeam({ commanders: 1, recruits: 3 });
+                        openAccordionForRole('commander');
+                        this.squadNumber = 4;
+                    } catch { }
+                    this.teamCreated = true;
+                    log('Setup: posiziona e sistema la squadra come vuoi con 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info', 6000);
+                } else {
+                    log('Setup: Hai 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info');
+                }
+            }, 2500)
         }
 
         if (phase === 'event_card') {
@@ -229,14 +171,93 @@ export const TurnEngine = {
 
             if (this.eventCards === this.squadNumber) {
                 this.setPhase('round_start');
-                showPhaseBanner({
-                    text: 'INIZIO ROUND',
-                    subtext: `Round "${this.round}".`,
-                    theme: 'green',
-                    autoDismissMs: 2000
-                });
             } else {
                 log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`, 'info', 6000);
+            }
+        }
+
+        if (phase === 'round_start') {
+            this.round++;
+            showWarningC({
+                text: 'INIZIO ROUND',
+                subtext: `Sta per cominciare il ${this.round} round!`,
+                theme: 'violet',
+                ringAmp: 1.0,
+                autoDismissMs: 3000
+            });
+            await playBg('./assets/sounds/commander_march_sound.mp3');
+
+            setTimeout(async () => {
+                this.setPhase('move_phase');
+                showPhaseBanner({
+                    text: 'FASE DI MOVIMENTO',
+                    subtext: `Round ${this.round}. Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`,
+                    theme: 'blue',
+                    autoDismissMs: 6000
+                });
+                startTimer();
+                advanceAllCooldowns(1, { giantsOnly: true });
+                tickUnitModsOnNewRound();
+                missionStatsSetRound(this.round);
+            }, 3000)
+        }
+    },
+
+    async endPhase(phase) {
+        if (phase === 'setup') {
+            const flagAlleatoInGriglia = GAME_STATE.alliesRoster.some(ally => GAME_STATE.spawns.some(s => (s.unitIds ?? []).includes(ally.id)));
+
+            if (flagAlleatoInGriglia) {
+                this.setPhase('event_card');
+
+                showWarningC({
+                    text: 'ATTENZIONE',
+                    subtext: 'Sono stati avvistati dei giganti...',
+                    theme: 'red',
+                    ringAmp: 1.0,
+                    autoDismissMs: 3000
+                });
+
+                setTimeout(async () => {
+                    const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
+                    const spawnEvents = m.event_spawn;
+                    const ids = [];
+                    if (spawnEvents && spawnEvents.length > 0) {
+
+                        for (const event of spawnEvents) {
+                            const id = await spawnGiant(event, true);
+                            ids.push(id);
+                        }
+
+                        await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
+
+                        if (spawnEvents.every(event => event === "Puro")) {
+                            await playBg('./assets/sounds/start_app.mp3');
+                        }
+
+                        if (spawnEvents.some(event => event === "Anomalo")) {
+                            await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/ape_titan_sound.mp3');
+                        }
+
+                        if (spawnEvents.some(event => event === "Mutaforma")) {
+                            await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/start_app.mp3');
+                        }
+
+                        openAccordionForRole("enemy");
+                    }
+
+                    showPhaseBanner({
+                        text: 'PESCA CARTE EVENTO',
+                        subtext: `Pesca una carta evento per ogni membro della squadra`,
+                        theme: 'green',
+                        autoDismissMs: 3500
+                    });
+
+                }, 3000)
+
+
+            } else {
+                log(`Setup Missione: Trascina almeno un'unità della tua squadra in campo`, 'info', 6000);
             }
         }
 
@@ -327,8 +348,8 @@ function renderStartBtn() {
         btnStart.textContent = 'EVENTO MISSIONE';
     } else if (p === 'event_card') {
         btnStart.hidden = false;
-        btnStart.dataset.mode = 'end';
-        btnStart.textContent = 'CARTA EVENTO';
+        btnStart.dataset.mode = 'start';
+        btnStart.textContent = 'PESCA EVENTO';
     } else if (p === 'round_start') {
         btnStart.hidden = false;
         btnStart.dataset.mode = 'start';
