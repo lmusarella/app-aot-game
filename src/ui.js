@@ -732,11 +732,7 @@ export function alliesPickerHTML(role) {
      
       <div class="unit-avatar"><img src="${u.img}" alt="${u.name}"></div>
       <div class="unit-info">
-        <div class="unit-name">${u.name}</div>
-        <div class="unit-sub">
-          ${u.role === 'recruit' ? 'Recluta' : 'Comandante'}
-          • ATK ${u.atk} • ${u.abi ?? ''}
-        </div>
+        <div class="unit-name">${u.name}</div>      
         <div class="pick-hprow">
           <div class="hpbar"><div class="hpbar-fill"></div></div>
           <span class="hp-inline-right">${hpIcon} ${hpNow}/${u.hp}</span>

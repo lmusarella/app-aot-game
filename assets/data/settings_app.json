@@ -5,8 +5,8 @@
     "malusTable": [
         {
             "range": {
-                "min": 75,
-                "max": 90
+                "min": 7,
+                "max": 9
             },
             "text": "Tensione crescente",
             "bonus": {
@@ -18,8 +18,8 @@
         },
         {
             "range": {
-                "min": 50,
-                "max": 75
+                "min": 5,
+                "max": 7
             },
             "text": "Scarsa disciplina",
             "bonus": {
@@ -31,8 +31,8 @@
         },
         {
             "range": {
-                "min": 25,
-                "max": 50
+                "min": 3,
+                "max": 5
             },
             "text": "Catena di comando instabile",
             "bonus": {
@@ -45,7 +45,7 @@
         {
             "range": {
                 "min": 1,
-                "max": 25
+                "max": 3
             },
             "text": "Panico tra la popolazione",
             "bonus": {
@@ -177,19 +177,19 @@
     ],
     "xpMoralDefault": {
         "xp": 0,
-        "moralePct": 100,
+        "moralePct": 10,
         "unitsDeathMoral": {
-            "recruit": -20,
-            "commander": -33,
-            "Puro": 10,
-            "Anomalo": 20,
-            "Mutaforma": 33,
-            "wall": -50
+            "recruit": -2,
+            "commander": -3,
+            "Puro": 1,
+            "Anomalo": 2,
+            "Mutaforma": 3,
+            "wall": -5
         },
         "giantsDeathXP": {
-            "Puro": 10,
-            "Anomalo": 20,
-            "Mutaforma": 33        
+            "Puro": 1,
+            "Anomalo": 2,
+            "Mutaforma": 5        
         },
         "effectiveBonus": {
             "agi": 0,

@@ -19,9 +19,9 @@ export const stack_screen = [];
 
 // Mutatore con logging dettagliato
 export function addMorale(deltaPct) {
-    const prev = Math.max(0, Math.min(100, Number(GAME_STATE.xpMoraleState.moralePct) || 0));
+    const prev = Math.max(0, Math.min(10, Number(GAME_STATE.xpMoraleState.moralePct) || 0));
     const delta = Number(deltaPct) || 0;
-    const next = Math.max(0, Math.min(100, prev + delta));
+    const next = Math.max(0, Math.min(10, prev + delta));
 
     // Aggiorna stato
     GAME_STATE.xpMoraleState.moralePct = next;
@@ -109,7 +109,8 @@ export function refreshXPUI() {
 }
 
 export function refreshMoraleUI() {
-    const pct = Math.max(0, Math.min(100, Number(GAME_STATE.xpMoraleState.moralePct) || 0));
+    const pct = Math.max(0, Math.min(100, Number(GAME_STATE.xpMoraleState.moralePct * 10) || 0));
+    
     if (moraleDOM.fill) moraleDOM.fill.style.width = pct + "%";
     if (moraleDOM.pct) moraleDOM.pct.textContent = Math.round(pct) + "%";
     renderBonusMalus();

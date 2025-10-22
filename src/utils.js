@@ -144,7 +144,7 @@ export function levelProgressPercent(xp, level) {
     return Math.max(0, Math.min(99.999, pct));
 }
 export function getMalusRow(moralePct) {
-    const m = Math.max(0, Math.min(100, Number(moralePct) || 0));
+    const m = Math.max(0, Math.min(10, Number(moralePct) || 0));
     return DB.SETTINGS.malusTable.find(r => m >= r.range.min && m <= r.range.max) || null;
 }
 

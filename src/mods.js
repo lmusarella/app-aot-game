@@ -349,7 +349,7 @@ function ensureModsStore(u) {
 
 // === MALUS da Morale (allineato DB.SETTINGS.malusTable) ===
 function malusFromMorale(moralePctRaw) {
-    const moralePct = Math.max(0, Math.min(100, Number(moralePctRaw) || 0));
+    const moralePct = Math.max(0, Math.min(10, Number(moralePctRaw) || 0));
     // Trova la riga di tabella che copre il range del morale corrente (inclusivo)
     const row = DB.SETTINGS.malusTable.find(r =>
         moralePct >= r.range.min && moralePct <= r.range.max
