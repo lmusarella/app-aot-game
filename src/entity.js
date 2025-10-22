@@ -123,7 +123,6 @@ async function resolveAttack(attackerId, targetId) {
 
     showVersusOverlay(a, t);
 
-
     // apri il roller e aspetta il risultato reale
     const dice = openDiceOverlay({ sides: 20, keepOpen: true });
     let d20roll;
@@ -170,8 +169,6 @@ async function resolveAttack(attackerId, targetId) {
     const AGI_TOTAL = capModSum(agiMod, effectiveBonus.agi);
     const ATK_TOTAL = capModSum(forMod, effectiveBonus.atk);
 
-
-
     // Umano → TEC vs CD gigante (per colpire)
     const humanHits = (d20 + TEC_TOTAL) >= cdGiant;
 
@@ -180,13 +177,6 @@ async function resolveAttack(attackerId, targetId) {
 
     // Abilità gigante pronta?
     const ability = getReadyGiantAbility(giant);
-
-    const totalTec = tecMod + effectiveBonus.tec;
-    // Log
-    const lines = [];
-    lines.push(
-        `d20=${d20} | TEC ${totalTec >= 0 ? '+' : ''}${totalTec} vs CD ${cdGiant} → ${humanHits && sameOrAdjCells(human.id, giant.id) ? 'COLPITO' : !sameOrAdjCells(human.id, giant.id) ? 'TROPPO LONTANO' : 'MANCATO'}`
-    );
 
     let humanDamageDealt = 0;
     let humanDamageTaken = 0;
@@ -201,13 +191,13 @@ async function resolveAttack(attackerId, targetId) {
         humanDamageDealt = humanDmgRoll;
         const gCurr = (giant.currHp ?? giant.hp);
         setUnitHp(giantId, gCurr - humanDmgRoll);
-        lines.push(`${human.name} infligge ${humanDmgRoll} danni a ${giant.name}.`);
+
     }
 
     if (endagedGiant && endagedGiant !== giant.id) {
         const x = unitById.get(endagedGiant);
         humanDistract = true;
-        lines.push(`Attualmente ${human.name} è distratto/a da ${x.name}`);
+
     }
 
 
@@ -224,19 +214,18 @@ async function resolveAttack(attackerId, targetId) {
             const dodgeable = (ability.dodgeable !== false); // default = true
             const giantHits = dodgeable ? !humanDodgesAbility : true;
 
-            lines.push(
-                `Schivata abilità: d20=${d20} + AGI ${AGI_TOTAL >= 0 ? '+' : ''}${AGI_TOTAL} vs CD ABI ${cdGiantAbi} → ` +
-                (giantHits ? 'COLPITO' : 'SCHIVATA')
-            );
-
             if (giantHits) {
+                showWarningC({
+                    text: "ABILITA' ATTIVATA",
+                    subtext: `${giant.name} attiva **${ability.name || 'Abilità'}`,
+                    theme: 'red',
+                    ringAmp: 1.0,
+                    autoDismissMs: 3000
+                });
                 const dmg = computeAbilityDamage(giant, ability);
                 humanDamageTaken = dmg;
                 const hCurr = (human.currHp ?? human.hp);
                 setUnitHp(humanId, hCurr - dmg);
-                lines.push(`${giant.name} usa **${ability.name || 'Abilità'}** e infligge ${dmg} danni a ${human.name}.`);
-            } else {
-                lines.push(`${human.name} schiva **${ability.name || 'l\'abilità'}** di ${giant.name}.`);
             }
 
             // metti in cooldown
@@ -273,16 +262,12 @@ async function resolveAttack(attackerId, targetId) {
         } else {
             // Attacco base del gigante (come prima) — solo se niente abilità pronta
             const giantHits = !humanDodges;
-            lines.push(
-                `Schivata: d20=${d20} + AGI ${AGI_TOTAL >= 0 ? '+' : ''}${AGI_TOTAL} vs CD ${cdGiant} → ` +
-                (giantHits ? 'COLPITO dal gigante' : 'SCHIVATA')
-            );
 
             if (giantHits) {
                 humanDamageTaken = giantAtk;
                 const hCurr = (human.currHp ?? human.hp);
                 setUnitHp(humanId, hCurr - giantAtk);
-                lines.push(`${giant.name} infligge ${giantAtk} danni a ${human.name}.`);
+
                 bloodHitClean({
                     side: 'right',   // 'top'|'right'|'bottom'|'left'|'center'
                     intensity: 1.0,  // 0..1
@@ -298,11 +283,7 @@ async function resolveAttack(attackerId, targetId) {
     } else {
         const engagedUnit = unitById.get(engaged);
         giantDistract = true;
-        if (engagedUnit) lines.push(`${giant.name} è distratto, perchè in combattimento con ${engagedUnit.name}`)
     }
-
-    // Log compatto
-    log(`${human.name} vs ${giant.name}\n` + lines.join('\n'), 'info', 6000);
 
     // SFX umano (se ha colpito)
     try {
@@ -399,12 +380,6 @@ async function resolveAttack(attackerId, targetId) {
         }
     }
 
-    console.log('ability', ability);
-    console.log('giantDidHit', giantDidHit);
-    console.log('neitherHit', neitherHit);
-    console.log('humanDidHit', humanDidHit);
-    console.log('humanDodgesAbility', humanDodgesAbility);
-    console.log('humanDodges', humanDodges);
 
     hideVersusOverlay();
 
@@ -412,8 +387,6 @@ async function resolveAttack(attackerId, targetId) {
 
     const toHitTotal = d20 + TEC_TOTAL;   // = d20roll + bonusTOT + TEC_TOTAL
     const toDodgeTotal = d20 + AGI_TOTAL;   // = d20roll + bonusTOT + AG_TOTAL
-
-
 
     showAttackOverlayUnderDice({
         badge: badgeText,
@@ -424,6 +397,10 @@ async function resolveAttack(attackerId, targetId) {
         gap: 12,
         autoHideMs: 0
     });
+
+    log(sumLines[0], 'info', 3000, true);
+    log(sumLines[1], 'info', 3000, true);
+
     scheduleSave();
 }
 

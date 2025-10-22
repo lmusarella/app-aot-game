@@ -147,7 +147,7 @@ export const TurnEngine = {
                         openAccordionForRole('commander');
                         this.squadNumber = 4;
                     } catch { }
-                    this.teamCreated = true;               
+                    this.teamCreated = true;
                 } else {
                     log('Setup: Hai 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info', 3000, true);
                 }
@@ -268,24 +268,29 @@ export const TurnEngine = {
                 subtext: `Round ${this.round}. Scegli i bersagli che ingaggeranno battaglia`,
                 theme: 'red',
                 autoDismissMs: 6000
-            });          
+            });
             await playBg('./assets/sounds/start_mission.mp3');
         }
 
         if (phase === 'attack_phase') {
-            this.setPhase('round_start');
-            log(`Fase Finale ${TurnEngine.round}° ROUND`, 'info');
-
+            this.setPhase('round_start');         
+            showPhaseBanner({
+                text: 'FASE FINALE',
+                subtext: `${this.round}° ROUND`,
+                theme: 'neutral',
+                autoDismissMs: 6000
+            });
+            
             const flagTempoNonScaduto = GAME_STATE.missionState.remainingSec;
             if (this.round % 2 === 0 || flagTempoNonScaduto === 0) {
                 const card = drawCard('event');
 
                 if (!card) {
-                    log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning');
+                    log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
                     closeAllFabs();
                     return;
                 }
-                log(`Pescata carta evento: "${card.name}".`);
+                log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
                 await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
 
                 showDrawnCard('event', card);
