@@ -386,16 +386,14 @@ async function resolveAttack(attackerId, targetId) {
     }
 
     if (giantDidHit) sumLines.push(`${giant.name} infligge ${humanDamageTaken} danni.`);
-    if (ability && !giantDidHit) sumLines.push(`${human.name} schiva l'abilità di ${giant.name}.`);
-    if (!ability && !giantDidHit) sumLines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
 
-    if (!ability && !giantDidHit && !neitherHit) {
-
+    if (!giantDidHit) {
         if (giantDistract) {
             const engagedUnit = unitById.get(engaged);
             sumLines.push(`${giant.name} è attualmente distratto da ${engagedUnit.name}`);
         } else {
-            sumLines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
+            if (ability) sumLines.push(`${human.name} schiva l'abilità di ${giant.name}.`);
+            else sumLines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
         }
     }
 
@@ -526,19 +524,13 @@ export async function handleGiantDeath(unit) {
     const i = GAME_STATE.giantsRoster.findIndex(g => g.id === unit.id);
     if (i >= 0) GAME_STATE.giantsRoster.splice(i, 1);
 
-    GAME_STATE.missionState.kills[unit.type] = GAME_STATE.missionState.kills[unit.type] + 1;
 
-    // 4) UI + log
-    renderMissionUI();
     rebuildUnitIndex();
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     log(`${unit.name} è morto.`, 'success');
     scheduleSave();
     await playSfx('./assets/sounds/morte_gigante.mp3');
-    const prepMs = 450, impactMs = 220, afterMs = 1400;
-
-
 
     const victory = showVictoryScreen({
         text: 'VITTORIA',
@@ -566,6 +558,9 @@ export async function handleGiantDeath(unit) {
         addXP(DB.SETTINGS.xpMoralDefault.giantsDeathXP[unit.type]);
     }, 3000)
 
+    GAME_STATE.missionState.kills[unit.type] = GAME_STATE.missionState.kills[unit.type] + 1;
+    // 4) UI + log
+    renderMissionUI();
     missionStatsOnUnitDeath(unit);
     getEngagedHuman(unit.id);
     try {

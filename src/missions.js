@@ -141,6 +141,62 @@ function bindMissionListHandlers() {
         }
     });
 }
+// Ordine d'importanza (alto -> basso)
+const HIERARCHY = ["Mutaforma", "Anomalo", "Puro"];
+
+/**
+ * Calcola il progresso per ciascun item della lista `objectives`,
+ * allocando le kill per priorità (prima il proprio tier, poi i tier inferiori).
+ * 
+ * @param {Array<{type:string, num:number}>} objectives
+ * @param {{[type:string]: number}} kills  // es: { Puro: 3, Anomalo: 1, Mutaforma: 0 }
+ * @returns {{ perItem:number[], perType:{[type:string]:number} }}
+ */
+function computeObjectiveProgress(objectives, kills) {
+    // 1) Richieste per tipo aggregate
+    const req = { Puro: 0, Anomalo: 0, Mutaforma: 0 };
+    for (const o of objectives) req[o.type] = (req[o.type] || 0) + o.num;
+
+    // 2) Fulfillment tracker per tipo (quanti obiettivi soddisfatti per ciascun tipo, a prescindere dalla fonte)
+    const fulfilled = { Puro: 0, Anomalo: 0, Mutaforma: 0 };
+    // 3) Rimanenze richieste per tipo
+    const left = { ...req };
+
+    // Helper: consuma un certo numero di kill seguendo un percorso di “downgrade”
+    // path esempio per Mutaforma: ["Mutaforma","Anomalo","Puro"]
+    const consume = (count, path) => {
+        let rem = count;
+        for (const t of path) {
+            if (!rem) break;
+            const take = Math.min(rem, left[t]);
+            if (take > 0) {
+                left[t] -= take;
+                fulfilled[t] += take;
+                rem -= take;
+            }
+        }
+    };
+
+    // 4) Applica le kill per priorità corretta:
+    //    - Mutaforma: copre Mutaforma -> Anomalo -> Puro
+    //    - Anomalo:   copre Anomalo   -> Puro
+    //    - Puro:      copre Puro
+    consume(kills?.Mutaforma || 0, ["Mutaforma", "Anomalo", "Puro"]);
+    consume(kills?.Anomalo || 0, ["Anomalo", "Puro"]);
+    consume(kills?.Puro || 0, ["Puro"]);
+
+    // 5) Ripartisci il fulfilled di ciascun tipo sulle righe degli obiettivi, nell’ordine dato,
+    //    così ogni riga mostra il suo “cur / num” coerente.
+    const remainingForType = { ...fulfilled };
+    const perItem = objectives.map(o => {
+        const cur = Math.min(o.num, remainingForType[o.type] || 0);
+        remainingForType[o.type] = Math.max(0, (remainingForType[o.type] || 0) - cur);
+        return cur;
+    });
+
+    return { perItem, perType: fulfilled };
+}
+
 
 export function renderMissionUI() {
     const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
@@ -169,12 +225,16 @@ export function renderMissionUI() {
     if (titleEl) titleEl.textContent = title;
 
     if (briefEl) {
-        const kills = GAME_STATE.missionState?.kills || {};
-        briefEl.innerHTML = objectives.map(li =>
-            `<li>Uccidi ${li.num} Giganti di tipo ${li.type} ➔ ${kills[li.type] || 0} / ${li.num} 💀</li>`
+        const kills = GAME_STATE.missionState?.kills || {}; // es: { Puro: 2, Anomalo: 1, Mutaforma: 1 }
+        const prog = computeObjectiveProgress(objectives, kills); // { perItem: [...], perType: {...} }
+
+        briefEl.innerHTML = objectives.map((li, idx) =>
+            `<li>
+       Uccidi ${li.num} Giganti di tipo ${li.type}
+       ➔ ${prog.perItem[idx]} / ${li.num} 💀
+     </li>`
         ).join('');
     }
-
     if (rewardEl) {
         const parts = [];
         if (reward.morale) parts.push(`+${reward.morale} Morale`);
@@ -213,16 +273,16 @@ export async function completeMission(reason) {
     const missioneFallita = m.objectives.some(missione => GAME_STATE.missionState.kills[missione.type] < missione.num);
     if (missioneFallita && reason === 'cancel-button') {
         log(`Missione #${GAME_STATE.missionState.curIndex + 1} Fallita!`, 'error');
-            const death = showDeathScreen({
-                text: `MISSIONE FALLITA`,
-                //subtext: 'Premi un tasto per continuare',
-                effect: 'chroma',       // 'none' | 'glitch' | 'chroma'
-                skullOpacity: 0.13,
-                skullScale: 1.0,
-                blur: 2,
-                allowDismiss: false,   // click/tasto per chiudere
-                autoDismissMs: 3000,  // chiudi dopo 3s (opzionale)
-            });
+        const death = showDeathScreen({
+            text: `MISSIONE FALLITA`,
+            //subtext: 'Premi un tasto per continuare',
+            effect: 'chroma',       // 'none' | 'glitch' | 'chroma'
+            skullOpacity: 0.13,
+            skullScale: 1.0,
+            blur: 2,
+            allowDismiss: false,   // click/tasto per chiudere
+            autoDismissMs: 3000,  // chiudi dopo 3s (opzionale)
+        });
     } else {
         log(`Missione #${GAME_STATE.missionState.curIndex + 1} completata!`, 'success');
         const victory = showVictoryScreen({
@@ -231,13 +291,12 @@ export async function completeMission(reason) {
             confetti: true,
             autoDismissMs: 3000  // opzionale
         });
-       
+
         const reward = m?.reward ?? { morale: 0, xp: 0 };
         addMorale(reward.morale);
         addXP(reward?.xp)
         setMissionByIndex(GAME_STATE.missionState.curIndex + 1);
         resetMissionEffectsAllUnits();
-
     }
 
     GAME_STATE.missionState.kills = {
@@ -252,6 +311,9 @@ export async function completeMission(reason) {
         round: 0,
         events: [] // {id,name,summary,sign(+1/-1/0),startRound,durationRounds}
     };
+
+    renderMissionUI();
+    renderMissionPanel();
 
     await clearGrid();
     await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3');
