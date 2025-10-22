@@ -147,10 +147,9 @@ export const TurnEngine = {
                         openAccordionForRole('commander');
                         this.squadNumber = 4;
                     } catch { }
-                    this.teamCreated = true;
-                    log('Setup: posiziona e sistema la squadra come vuoi con 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info', 6000);
+                    this.teamCreated = true;               
                 } else {
-                    log('Setup: Hai 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info');
+                    log('Setup: Hai 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info', 3000, true);
                 }
             }, 2500)
         }
@@ -159,11 +158,11 @@ export const TurnEngine = {
             const card = drawCard('event');
 
             if (!card) {
-                log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning');
+                log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
                 closeAllFabs();
                 return;
             }
-            log(`Pescata carta evento: "${card.name}".`);
+            log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
             await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
 
             showDrawnCard('event', card);
@@ -172,7 +171,7 @@ export const TurnEngine = {
             if (this.eventCards === this.squadNumber) {
                 this.setPhase('round_start');
             } else {
-                log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`, 'info', 6000);
+                log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`, 'info', 6000, true);
             }
         }
 
@@ -191,7 +190,7 @@ export const TurnEngine = {
                 this.setPhase('move_phase');
                 showPhaseBanner({
                     text: 'FASE DI MOVIMENTO',
-                    subtext: `Round ${this.round}. Effettua una azione di movimento per unità, poi clicca su Termina Fase Movimento`,
+                    subtext: `Round ${this.round}. Effettua una azione di movimento per unità.`,
                     theme: 'blue',
                     autoDismissMs: 6000
                 });
@@ -257,7 +256,7 @@ export const TurnEngine = {
 
 
             } else {
-                log(`Setup Missione: Trascina almeno un'unità della tua squadra in campo`, 'info', 6000);
+                log(`Setup Missione: Trascina almeno un'unità della tua squadra in campo`, 'info', 6000, true);
             }
         }
 
@@ -266,11 +265,10 @@ export const TurnEngine = {
             this.setPhase('attack_phase');
             showPhaseBanner({
                 text: 'FASE DI COMBATTIMENTO',
-                subtext: `Round "${this.round}".`,
+                subtext: `Round ${this.round}. Scegli i bersagli che ingaggeranno battaglia`,
                 theme: 'red',
-                autoDismissMs: 2000
-            });
-            log(`Fase Attacco ${TurnEngine.round}° ROUND: Scegli i bersagli che ingaggeranno battaglia`, 'info', 6000);
+                autoDismissMs: 6000
+            });          
             await playBg('./assets/sounds/start_mission.mp3');
         }
 

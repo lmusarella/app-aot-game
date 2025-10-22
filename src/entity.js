@@ -827,7 +827,7 @@ export function giantsPhaseMove() {
     const giants = [...unitById.values()].filter(u => u.role === 'enemy');
 
     if (giants.length) {
-        log('I giganti iniziano a muoversi...', 'warning');
+        log('I giganti iniziano a muoversi...', 'warning', 3000, true);
         showWarningC({
             text: 'ATTENZIONE',
             subtext: 'I giganti iniziano a muoversi...',

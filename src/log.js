@@ -1,9 +1,9 @@
-import {showSnackBar} from './ui.js'
-import {scheduleSave, GAME_STATE} from './data.js'
+import { showSnackBar } from './ui.js'
+import { scheduleSave, GAME_STATE } from './data.js'
 
 const logBox = document.getElementById('log-box');
 
-export function log(msg, type = 'info', time = 3000) {
+export function log(msg, type = 'info', time = 3000, silent = false) {
     const now = new Date();
     const hhmm = now.toLocaleTimeString("it-IT", {
         hour: "2-digit",
@@ -11,7 +11,7 @@ export function log(msg, type = 'info', time = 3000) {
     });
     const message = `[${hhmm}] - ${msg}`
     GAME_STATE.logs.push({ message, type });
-    showSnackBar(msg, { duration: time }, type);
+    if (!silent) showSnackBar(msg, { duration: time }, type);
     renderLogs();
     scheduleSave();
 }
