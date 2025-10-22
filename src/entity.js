@@ -217,11 +217,11 @@ async function resolveAttack(attackerId, targetId) {
             if (giantHits) {
                 showWarningC({
                     text: "ABILITA' ATTIVATA",
-                    subtext: `${giant.name} attiva **${ability.name || 'Abilità'}`,
-                    theme: 'red',
+                    subtext: `${giant.name} usa ${ability.name || 'Abilità'}`,
+                    theme: 'orange',
                     ringAmp: 1.0,
-                    autoDismissMs: 3000
-                });
+                    autoDismissMs: 2000
+                });     
                 const dmg = computeAbilityDamage(giant, ability);
                 humanDamageTaken = dmg;
                 const hCurr = (human.currHp ?? human.hp);
