@@ -330,17 +330,8 @@ async function resolveAttack(attackerId, targetId) {
     let badgeClass = 'atk-tie';
 
     if (bothHit) {
-        if (humanDamageDealt === humanDamageTaken) {
-            try { playSfx('./assets/sounds/scontro.mp3', { volume: 0.8 }); } catch { }
-            badgeText = 'Pareggio';
-            badgeClass = 'atk-tie';
-        } else if (humanDamageDealt > humanDamageTaken) {
-            badgeText = 'Successo';
-            badgeClass = 'atk-win';
-        } else {
-            badgeText = 'Fallito';
-            badgeClass = 'atk-lose';
-        }
+        badgeText = 'Pareggio';
+        badgeClass = 'atk-tie';
     } else if (neitherHit) {
         try { playSfx('./assets/sounds/schivata.mp3', { volume: 0.8 }); } catch { }
         // nessuno ha inflitto danni -> Fallito per l'azione d'attacco corrente
@@ -353,9 +344,6 @@ async function resolveAttack(attackerId, targetId) {
         badgeText = 'Fallito';
         badgeClass = 'atk-lose';
     }
-
-    // righe riepilogo centrali
-
 
     if (humanDidHit) sumLines.push(`${human.name} infligge ${humanDamageDealt} danni.`);
 
