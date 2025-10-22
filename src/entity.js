@@ -281,7 +281,6 @@ async function resolveAttack(attackerId, targetId) {
             }
         }
     } else {
-        const engagedUnit = unitById.get(engaged);
         giantDistract = true;
     }
 
@@ -311,6 +310,8 @@ async function resolveAttack(attackerId, targetId) {
         setEngagementIfMelee(giant.id, human.id);
         log(`${human.name} è entrato in combattimento con ${giant.name}`, 'warning');
     }
+
+    if(ability && giantDidHit) log(`${giant.name} usa ${ability.name || 'Abilità'}`, 'warning', 3000, true);
 
     // ==== OVERLAY RIEPILOGO ATTACCO (3 stati) ====
     const sumLines = [];
