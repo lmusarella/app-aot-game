@@ -175,3 +175,7 @@ export function cappedDelta(base, rawDelta) {
   // delta effettivo che vale davvero (quello da mostrare)
   return totCapped - baseNum;
 }
+// utils/time.js
+export function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

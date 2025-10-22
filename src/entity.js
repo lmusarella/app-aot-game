@@ -3,7 +3,7 @@ import {
     grid, hasHumanInCell, nextStepTowards, gridSize, hexDistance, renderBenches,
     renderGrid, removeUnitEverywhere, humanTargetsWithin2, moveOneUnitBetweenStacks, nearestWallCell, setStack, focusBenchCard, clearHighlights
 } from './grid.js';
-import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates, capModSum } from './utils.js';
+import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates, capModSum, wait } from './utils.js';
 import { playSfx, playBg } from './audio.js';
 import { unitById, rebuildUnitIndex, GAME_STATE, GIANT_ENGAGEMENT, scheduleSave, DB } from './data.js';
 import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from './ui.js'
@@ -221,7 +221,8 @@ async function resolveAttack(attackerId, targetId) {
                     theme: 'orange',
                     ringAmp: 1.0,
                     autoDismissMs: 2000
-                });     
+                }); 
+                await wait(2000);    
                 const dmg = computeAbilityDamage(giant, ability);
                 humanDamageTaken = dmg;
                 const hCurr = (human.currHp ?? human.hp);
