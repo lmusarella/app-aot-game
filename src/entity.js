@@ -221,8 +221,8 @@ async function resolveAttack(attackerId, targetId) {
                     theme: 'orange',
                     ringAmp: 1.0,
                     autoDismissMs: 2000
-                }); 
-                await wait(2000);    
+                });
+                await wait(2000);
                 const dmg = computeAbilityDamage(giant, ability);
                 humanDamageTaken = dmg;
                 const hCurr = (human.currHp ?? human.hp);
@@ -312,7 +312,7 @@ async function resolveAttack(attackerId, targetId) {
         log(`${human.name} è entrato in combattimento con ${giant.name}`, 'warning');
     }
 
-    if(ability && giantDidHit) log(`${giant.name} usa ${ability.name || 'Abilità'}`, 'warning', 3000, true);
+
 
     // ==== OVERLAY RIEPILOGO ATTACCO (3 stati) ====
     const sumLines = [];
@@ -322,6 +322,8 @@ async function resolveAttack(attackerId, targetId) {
     const giantDidHit = humanDamageTaken > 0;
     const bothHit = humanDidHit && giantDidHit;
     const neitherHit = !humanDidHit && !giantDidHit;
+
+    if (ability && giantDidHit) log(`${giant.name} usa ${ability.name || 'Abilità'}`, 'warning', 3000, true);
 
     // badge + classe (solo 3 stati)
     let badgeText = 'Pareggio';

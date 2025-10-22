@@ -4,7 +4,7 @@ import { openAccordionForRole } from './ui.js';
 import { playBg, playSfx } from './audio.js';
 import { showDrawnCard, closeAllFabs, drawCard } from './fab.js';
 import { DB, GAME_STATE, scheduleSave } from './data.js';
-import { missionStatsBumpAttempt } from './missions.js';
+import { missionStatsBumpAttempt, missionStatsSetRound } from './missions.js';
 import { stopTimer, startTimer } from "./header.js";
 import { log } from "./log.js";
 import showPhaseBanner from './effects/phaseBanner.js';
