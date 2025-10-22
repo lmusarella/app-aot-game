@@ -113,6 +113,7 @@ async function resolveAttack(attackerId, targetId) {
     const t = unitById.get(targetId);
     if (!a || !t) return;
 
+    await playBg('./assets/sounds/duel_sound.mp3');
     // Se non è scontro UMANO vs GIGANTE → vecchio comportamento
     const AisHuman = isHuman(a);
     const TisHuman = isHuman(t);
@@ -120,7 +121,8 @@ async function resolveAttack(attackerId, targetId) {
     const TisGiant = t?.role === 'enemy';
     const isHumanVsGiant = (AisHuman && TisGiant) || (TisHuman && AisGiant);
 
-    const vs = showVersusOverlay(a, t);
+    showVersusOverlay(a, t);
+
 
     // apri il roller e aspetta il risultato reale
     const dice = openDiceOverlay({ sides: 20, keepOpen: true });
