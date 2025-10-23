@@ -108,293 +108,347 @@ export function adjustUnitHp(unitId, delta) {
     setUnitHp(unitId, Math.max(0, Math.min(max, cur)));
 }
 
+/**
+ * Risolve uno scontro fra due unità, gestendo anche UI/SFX/overlay.
+ * Conserva la semantica originale ma con struttura più modulare.
+ */
 async function resolveAttack(attackerId, targetId) {
     const a = unitById.get(attackerId);
     const t = unitById.get(targetId);
     if (!a || !t) return;
 
-    await playBg('./assets/sounds/duel_sound.mp3');
-    // Se non è scontro UMANO vs GIGANTE → vecchio comportamento
+    await safePlayBg('./assets/sounds/duel_sound.mp3');
+    showVersusOverlay(a, t);
+
+    // Se il target è un muro non faccio aprire il roll dei dadi
+    const d20roll = t.role === 'wall' ? d(20) : await rollD20OrAbort();
+    if (d20roll == null) return;
+
+    const ctx = buildContext(a, t, d20roll);
+
+    // Caso semplice: NON umano vs gigante → danno flat “vecchio comportamento”
+    if (!ctx.flags.isHumanVsGiant) {
+        await resolveWallAttack(ctx);
+        scheduleSave();
+        return;
+    }
+
+    // === Umano vs Gigante ===
+    const outcome = await resolveHumanVsGiant(ctx);
+
+    // Engagement: set/refresh se adiacenti & vivi & non già impegnati
+    if (!ctx.state.engagedHumanId &&
+        !ctx.state.engagingGiantId &&
+        unitAlive(ctx.units.human) &&
+        unitAlive(ctx.units.giant) &&
+        sameOrAdjCells(ctx.ids.humanId, ctx.ids.giantId)) {
+        setEngagementIfMelee(ctx.ids.giantId, ctx.ids.humanId);
+        log(`${ctx.units.human.name} è entrato in combattimento con ${ctx.units.giant.name}`, 'warning');
+    }
+
+    // Overlay riepilogo sotto i dadi
+    showSummaryOverlay(ctx, outcome);
+
+    // Log sintetico (primi 2 messaggi se presenti)
+    for (let i = 0; i < Math.min(2, outcome.summaryLines.length); i++) {
+        log(outcome.summaryLines[i], 'info', 3000, true);
+    }
+
+    hideVersusOverlay();
+    showVersusOverlay(a, t); // come da codice originale
+
+    scheduleSave();
+}
+
+/* --------------------------- Helper: IO/Wrapper --------------------------- */
+
+async function safePlayBg(path) {
+    try { await playBg(path); } catch { /* noop */ }
+}
+
+async function rollD20OrAbort() {
+    const dice = openDiceOverlay({ sides: 20, keepOpen: true });
+    try {
+        return await dice.waitForRoll;
+    } catch {
+        log('Scontro annullato.', 'warning');
+        return null;
+    }
+}
+
+/* ------------------------------- Build ctx -------------------------------- */
+
+function buildContext(a, t, d20roll) {
     const AisHuman = isHuman(a);
     const TisHuman = isHuman(t);
     const AisGiant = a?.role === 'enemy';
     const TisGiant = t?.role === 'enemy';
     const isHumanVsGiant = (AisHuman && TisGiant) || (TisHuman && AisGiant);
 
-    showVersusOverlay(a, t);
+    const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus || { all: 0, tec: 0, agi: 0, atk: 0 };
+    const d20Total = d20roll + (effectiveBonus.all || 0);
 
-    // apri il roller e aspetta il risultato reale
-    const dice = openDiceOverlay({ sides: 20, keepOpen: true });
-    let d20roll;
-    try {
-        d20roll = await dice.waitForRoll;   // <- numero tirato dall’utente
-    } catch {
-        log('Scontro annullato.', 'warning');
-        return; // esci: niente attacco se ha chiuso il roller
-    }
-
-    const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus;
-    const d20 = d20roll + effectiveBonus.all;
-
-    if (!isHumanVsGiant) {
-        const dmg = Math.max(1, Number(getStat(a, 'atk') || 1));
-        setUnitHp(targetId, (t.currHp ?? t.hp) - dmg);
-        log(`${a.name} attacca ${t.name} per ${dmg} danni.`, 'info');
-        openAccordionForRole(t.role);
-        focusUnitOnField(targetId);
-        focusBenchCard(targetId);
-        try {
-            if (a.role === "enemy")
-                playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 });
-            else
-                playSfx(a.sex === 'm' ? './assets/sounds/attacco_uomo.mp3' : './assets/sounds/attacco_donna.mp3', { volume: 0.8 });
-        } catch { }
-        return;
-    }
-
-    // Normalizza chi è umano e chi è gigante (indipendente da chi inizia)
-    const human = AisHuman ? a : t;
+    // Normalizzazione ruoli
+    const human = isHuman(a) ? a : t;
     const giant = AisGiant ? a : t;
-    const humanId = human.id;
-    const giantId = giant.id;
 
-    const tecMod = getStat(human, 'tec');
-    const agiMod = getStat(human, 'agi');
-    const forMod = getStat(human, 'atk');
+    // Stat pre-calc (evita ripetere getStat)
+    const TEC = getStat(human, 'tec') || 0;
+    const AGI = getStat(human, 'agi') || 0;
+    const ATK = getStat(human, 'atk') || 0;
+    const G_CD = getStat(giant, 'cd') || 0;
+    const G_ATK = Math.max(1, getStat(giant, 'atk') || 1);
 
-    const cdGiant = getStat(giant, 'cd');
-    const giantAtk = Math.max(1, getStat(giant, 'atk'));
+    const TEC_TOTAL = capModSum(TEC, effectiveBonus.tec);
+    const AGI_TOTAL = capModSum(AGI, effectiveBonus.agi);
+    const ATK_TOTAL = capModSum(ATK, effectiveBonus.atk);
 
-    const TEC_TOTAL = capModSum(tecMod, effectiveBonus.tec);
-    const AGI_TOTAL = capModSum(agiMod, effectiveBonus.agi);
-    const ATK_TOTAL = capModSum(forMod, effectiveBonus.atk);
+    const engagingGiantId = getEngagingGiant(human.id); // gigante che distrae l’umano
+    const engagedHumanId = getEngagedHuman(giant.id);  // umano impegnato dal gigante
 
-    // Umano → TEC vs CD gigante (per colpire)
-    const humanHits = (d20 + TEC_TOTAL) >= cdGiant;
+    return {
+        roll: { d20roll, d20Total },
+        bonus: { effectiveBonus, TEC_TOTAL, AGI_TOTAL, ATK_TOTAL },
+        units: { a, t, human, giant },
+        ids: { attackerId: a.id, targetId: t.id, humanId: human.id, giantId: giant.id },
+        stats: { giantCd: G_CD, giantAtk: G_ATK },
+        flags: { AisHuman, TisHuman, AisGiant, TisGiant, isHumanVsGiant },
+        state: { engagingGiantId, engagedHumanId }
+    };
+}
 
-    // Umano → AGI vs CD gigante (per schivare attacco/abilità del gigante)
-    const humanDodges = (d20 + AGI_TOTAL) >= cdGiant;
+/* -------------------------- Caso semplice (non HvG) ----------------------- */
 
-    // Abilità gigante pronta?
+async function resolveWallAttack(ctx) {
+    const { a, t } = ctx.units;
+
+    showWarningC({
+        text: `ATTENZIONE`,
+        subtext: `${a.name} sta per attaccare le mura`,
+        theme: 'red',
+        ringAmp: 1.0,
+        autoDismissMs: 3000
+    });
+
+    await awaitWait(3000);
+
+
+    const dmg = Math.max(1, Number(getStat(a, 'atk') || 1));
+    const tHp = (t.currHp ?? t.hp) - dmg;
+    setUnitHp(t.id, tHp);
+
+    openAccordionForRole(t.role);
+    focusUnitOnField(t.id);
+    focusBenchCard(t.id);
+
+    wallCollapse({
+        intensity: 28,
+        debrisCount: 180,
+        durationMs: 2000,
+        emitBand: 'top',
+        bandHeight: 0.22
+    });
+
+    try {
+        playSfx('./assets/sounds/colpo_mura.mp3', { volume: 0.8 });
+    } catch { /* noop */ }
+
+    awaitWait(2000);
+    hideVersusOverlay();
+}
+
+/* ----------------------------- Core HvG logic ----------------------------- */
+
+async function resolveHumanVsGiant(ctx) {
+    const { human, giant } = ctx.units;
+    const { humanId, giantId } = ctx.ids;
+    const { d20roll, d20Total } = ctx.roll;
+    const { TEC_TOTAL, AGI_TOTAL, ATK_TOTAL } = ctx.bonus;
+    const { giantCd, giantAtk } = ctx.stats;
+    const { engagingGiantId, engagedHumanId } = ctx.state;
+
+    const humanHits = (d20Total + TEC_TOTAL) >= giantCd;
+    const humanDodges = (d20Total + AGI_TOTAL) >= giantCd;
+
     const ability = getReadyGiantAbility(giant);
 
     let humanDamageDealt = 0;
     let humanDamageTaken = 0;
 
-    const endagedGiant = getEngagingGiant(human.id);
-    const engaged = getEngagedHuman(giant.id);
+    // HUM → danno solo se non distratto e a contatto
+    const humanDistracted = !!(engagingGiantId && engagingGiantId !== giantId);
+    const inMelee = sameOrAdjCells(humanId, giantId);
 
-    let humanDistract = false;
-    // Danno umano (se colpisce): d4 + FOR (min 1)
-    if (humanHits && (!endagedGiant || endagedGiant === giant.id) && sameOrAdjCells(human.id, giant.id)) {
-        const humanDmgRoll = Math.max(1, d(4) + ATK_TOTAL);
-        humanDamageDealt = humanDmgRoll;
-        const gCurr = (giant.currHp ?? giant.hp);
-        setUnitHp(giantId, gCurr - humanDmgRoll);
-
+    if (humanHits && !humanDistracted && inMelee) {
+        const dmg = Math.max(1, d(4) + ATK_TOTAL);
+        humanDamageDealt = dmg;
+        setUnitHp(giantId, (giant.currHp ?? giant.hp) - dmg);
+        // SFX lama
+        try {
+            const path = human.sex === 'm'
+                ? './assets/sounds/attacco_uomo.mp3'
+                : './assets/sounds/attacco_donna.mp3';
+            const offset = /* se anche il gigante colpisce lo metto dopo */ 0;
+            setTimeout(() => playSfx(path, { volume: 0.8 }), offset);
+            swordSlash({
+                angle: 'right-down', thickness: 24, glow: 22, length: 1.2,
+                splatter: 0.8, centerSafe: true, safeInset: 0.24
+            });
+        } catch { /* noop */ }
     }
 
-    if (endagedGiant && endagedGiant !== giant.id) {
-        const x = unitById.get(endagedGiant);
-        humanDistract = true;
+    // GIA → attacca un solo umano; se distratto non attacca
+    let giantDistracted = false;
+    let cdGiantAbi = null;
+    let humanDodgesAbility = null;
+    let giantHitsThisTurn = false;
 
-    }
-
-
-    let cdGiantAbi;
-    let humanDodgesAbility;
-    let giantDistract = false;
-    //il gigante attacca solo un umano alla volta
-    if (!engaged || engaged === human.id) {
-        // Azione del gigante: abilità se pronta, altrimenti attacco base
+    if (!engagedHumanId || engagedHumanId === humanId) {
         if (ability) {
             cdGiantAbi = ability.cd;
-            // Se abilità è schivabile → l'esito usa la stessa logica della schivata
-            humanDodgesAbility = (d20 + AGI_TOTAL) >= cdGiantAbi;
-            const dodgeable = (ability.dodgeable !== false); // default = true
+            const dodgeable = (ability.dodgeable !== false);
+            humanDodgesAbility = (d20Total + AGI_TOTAL) >= cdGiantAbi;
             const giantHits = dodgeable ? !humanDodgesAbility : true;
 
             if (giantHits) {
+                giantHitsThisTurn = true;
                 showWarningC({
                     text: "ABILITA' ATTIVATA",
                     subtext: `${giant.name} usa ${ability.name || 'Abilità'}`,
-                    theme: 'orange',
-                    ringAmp: 1.0,
-                    autoDismissMs: 2000
+                    theme: 'orange', ringAmp: 1.0, autoDismissMs: 3500
                 });
-                await wait(2000);
+                try { playSfx(ability.sfx || './assets/sounds/abilita_gigante.mp3', { volume: 0.9 }); } catch { }
+                await awaitWait(3500);
+
                 const dmg = computeAbilityDamage(giant, ability);
                 humanDamageTaken = dmg;
-                const hCurr = (human.currHp ?? human.hp);
-                setUnitHp(humanId, hCurr - dmg);
+                setUnitHp(humanId, (human.currHp ?? human.hp) - dmg);
+
+                bloodImpact();
+                giantFallQuake({ delayMs: 0, intensity: 28 });
             }
 
-            // metti in cooldown
             consumeGiantAbilityCooldown(giant);
-
-            // SFX abilità (se fornito), altrimenti fallback
-            try {
-                if (giantHits && ability.sfx) {
-                    bloodHitClean({
-                        side: 'right',   // 'top'|'right'|'bottom'|'left'|'center'
-                        intensity: 1.0,  // 0..1
-                        density: 1.2,    // 0.5..2.0
-                        safeInset: 0.26, // 0..0.45
-                        duration: 120,
-                        fadeAfter: 1400,
-                        fadeMs: 650
-                    });
-                    playSfx(ability.sfx, { volume: 0.9 });
-
-                } else if (giantHits) {
-                    bloodHitClean({
-                        side: 'right',   // 'top'|'right'|'bottom'|'left'|'center'
-                        intensity: 1.0,  // 0..1
-                        density: 1.2,    // 0.5..2.0
-                        safeInset: 0.26, // 0..0.45
-                        duration: 120,
-                        fadeAfter: 1400,
-                        fadeMs: 650
-                    });
-                    playSfx('./assets/sounds/abilita_gigante.mp3', { volume: 0.9 });
-                }
-            } catch { }
-
         } else {
-            // Attacco base del gigante (come prima) — solo se niente abilità pronta
+            // Attacco base
             const giantHits = !humanDodges;
-
             if (giantHits) {
+                giantHitsThisTurn = true;
                 humanDamageTaken = giantAtk;
-                const hCurr = (human.currHp ?? human.hp);
-                setUnitHp(humanId, hCurr - giantAtk);
-
-                bloodHitClean({
-                    side: 'right',   // 'top'|'right'|'bottom'|'left'|'center'
-                    intensity: 1.0,  // 0..1
-                    density: 1.2,    // 0.5..2.0
-                    safeInset: 0.26, // 0..0.45
-                    duration: 120,
-                    fadeAfter: 1400,
-                    fadeMs: 650
-                });
+                setUnitHp(humanId, (human.currHp ?? human.hp) - giantAtk);
+                bloodImpact();
                 try { playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 }); } catch { }
             }
         }
     } else {
-        giantDistract = true;
+        giantDistracted = true;
     }
 
-    // SFX umano (se ha colpito)
-    try {
-        if (humanDamageDealt > 0) {
-            const path = human.sex === 'm'
-                ? './assets/sounds/attacco_uomo.mp3'
-                : './assets/sounds/attacco_donna.mp3';
-            // leggero offset se anche il gigante ha colpito, per non accavallare troppo
-            const offset = humanDamageTaken > 0 ? 140 : 0;
-            setTimeout(() => playSfx(path, { volume: 0.8 }), offset);
-            swordSlash({
-                angle: 'right-down', // 'right-down' | 'left-down' | 'right-up' | 'left-up' oppure angleDeg: <numero>
-                thickness: 24,
-                glow: 22,
-                length: 1.2,
-                splatter: 0.8,       // 0 = nessuno
-                centerSafe: true,
-                safeInset: 0.24
-            });
+    // Costruzione riepilogo
+    const summary = buildSummary({
+        ctx, ability, humanHits, humanDodges, humanDodgesAbility, cdGiantAbi,
+        humanDistracted, giantDistracted, humanDamageDealt, humanDamageTaken
+    });
+
+    return {
+        ...summary,
+        uiTotals: {
+            toHit: { d20: d20roll, modLabel: 'TEC', modValue: TEC_TOTAL, total: d20Total + TEC_TOTAL, target: giantCd, success: humanHits },
+            toDodge: { d20: d20roll, modLabel: 'AGI', modValue: AGI_TOTAL, total: d20Total + AGI_TOTAL, target: cdGiantAbi || giantCd, success: (humanDodgesAbility ?? humanDodges) }
         }
-    } catch { }
+    };
+}
 
-    // set/refresh ingaggio se sono a contatto (stessa cella o adiacenti) e entrambi vivi
-    if (!engaged && !endagedGiant && unitAlive(human) && unitAlive(giant) && sameOrAdjCells(human.id, giant.id)) {
-        setEngagementIfMelee(giant.id, human.id);
-        log(`${human.name} è entrato in combattimento con ${giant.name}`, 'warning');
-    }
+/* ----------------------------- Summary & UI ------------------------------- */
 
+function buildSummary({
+    ctx, ability, humanHits, humanDodges, humanDodgesAbility, cdGiantAbi,
+    humanDistracted, giantDistracted, humanDamageDealt, humanDamageTaken
+}) {
+    const { human, giant } = ctx.units;
+    const lines = [];
 
-
-    // ==== OVERLAY RIEPILOGO ATTACCO (3 stati) ====
-    const sumLines = [];
-
-    // esiti elementari
     const humanDidHit = humanDamageDealt > 0;
     const giantDidHit = humanDamageTaken > 0;
     const bothHit = humanDidHit && giantDidHit;
     const neitherHit = !humanDidHit && !giantDidHit;
 
-    if (ability && giantDidHit) log(`${giant.name} usa ${ability.name || 'Abilità'}`, 'warning', 3000, true);
+    if (ability && giantDidHit)
+        log(`${giant.name} usa ${ability.name || 'Abilità'}`, 'warning', 3000, true);
 
-    // badge + classe (solo 3 stati)
     let badgeText = 'Pareggio';
     let badgeClass = 'atk-tie';
 
     if (bothHit) {
-        badgeText = 'Pareggio';
-        badgeClass = 'atk-tie';
+        badgeText = 'Pareggio'; badgeClass = 'atk-tie';
     } else if (neitherHit) {
         try { playSfx('./assets/sounds/schivata.mp3', { volume: 0.8 }); } catch { }
-        // nessuno ha inflitto danni -> Fallito per l'azione d'attacco corrente
-        badgeText = 'Pareggio';
-        badgeClass = 'atk-tie';
+        badgeText = 'Pareggio'; badgeClass = 'atk-tie';
     } else if (humanDidHit) {
-        badgeText = 'Successo';
-        badgeClass = 'atk-win';
-    } else { // solo il gigante ha colpito
-        badgeText = 'Fallito';
-        badgeClass = 'atk-lose';
+        badgeText = 'Successo'; badgeClass = 'atk-win';
+    } else {
+        badgeText = 'Fallito'; badgeClass = 'atk-lose';
     }
 
-    if (humanDidHit) sumLines.push(`${human.name} infligge ${humanDamageDealt} danni.`);
-
-    if (!humanDidHit) {
-        if (humanDistract) {
-            const x = unitById.get(endagedGiant);
-            sumLines.push(`${human.name} è attualmente distratto da ${x.name}`);
+    if (humanDidHit) {
+        lines.push(`${human.name} infligge ${humanDamageDealt} danni.`);
+    } else {
+        if (humanDistracted) {
+            const x = unitById.get(ctx.state.engagingGiantId);
+            lines.push(`${human.name} è attualmente distratto da ${x?.name || 'un gigante'}.`);
         } else {
-            if (sameOrAdjCells(human.id, giant.id)) {
-                sumLines.push(`${human.name} manca il bersaglio.`);
-            } else {
-                sumLines.push(`${giant.name} è troppo lontanto.`);
-            }
+            if (sameOrAdjCells(ctx.ids.humanId, ctx.ids.giantId)) lines.push(`${human.name} manca il bersaglio.`);
+            else lines.push(`${ctx.units.giant.name} è troppo lontanto.`);
         }
     }
 
-    if (giantDidHit) sumLines.push(`${giant.name} infligge ${humanDamageTaken} danni.`);
-
-    if (!giantDidHit) {
-        if (giantDistract) {
-            const engagedUnit = unitById.get(engaged);
-            sumLines.push(`${giant.name} è attualmente distratto da ${engagedUnit.name}`);
+    if (giantDidHit) {
+        lines.push(`${giant.name} infligge ${humanDamageTaken} danni.`);
+    } else {
+        if (giantDistracted) {
+            const engagedUnit = unitById.get(ctx.state.engagedHumanId);
+            lines.push(`${giant.name} è attualmente distratto da ${engagedUnit?.name || 'un umano'}.`);
         } else {
-            if (ability) sumLines.push(`${human.name} schiva l'abilità di ${giant.name}.`);
-            else sumLines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
+            if (ability) lines.push(`${human.name} schiva l'abilità di ${giant.name}.`);
+            else lines.push(`${human.name} schiva l'attacco di ${giant.name}.`);
         }
     }
 
+    return { badgeText, badgeClass, summaryLines: lines, ability };
+}
 
-    hideVersusOverlay();
-
-    showVersusOverlay(a, t);
-
-    const toHitTotal = d20 + TEC_TOTAL;   // = d20roll + bonusTOT + TEC_TOTAL
-    const toDodgeTotal = d20 + AGI_TOTAL;   // = d20roll + bonusTOT + AG_TOTAL
+function showSummaryOverlay(ctx, outcome) {
+    const { badgeText, badgeClass, summaryLines } = outcome;
+    const { uiTotals } = outcome;
+    const { a, t } = ctx.units;
 
     showAttackOverlayUnderDice({
         badge: badgeText,
         badgeClass,
-        hit: { d20: d20roll, modLabel: 'TEC', modValue: TEC_TOTAL, total: toHitTotal, target: cdGiant, success: humanHits },
-        dodge: { d20: d20roll, modLabel: 'AGI', modValue: AGI_TOTAL, total: toDodgeTotal, target: cdGiantAbi ? cdGiantAbi : cdGiant, success: humanDodgesAbility ? humanDodgesAbility : humanDodges },
-        lines: sumLines,   // le righe descrittive che già costruisci
+        hit: uiTotals.toHit,
+        dodge: uiTotals.toDodge,
+        lines: summaryLines,
         gap: 12,
         autoHideMs: 0
     });
 
-    log(sumLines[0], 'info', 3000, true);
-    log(sumLines[1], 'info', 3000, true);
-
-    scheduleSave();
+    // Manteniamo anche questi focus come nel codice originale “semplice”
+    openAccordionForRole(t.role);
+    focusUnitOnField(t.id);
+    focusBenchCard(t.id);
 }
+
+/* ------------------------------- Utilities -------------------------------- */
+
+function bloodImpact() {
+    bloodHitClean({
+        side: 'right', intensity: 1.0, density: 1.2,
+        safeInset: 0.26, duration: 120, fadeAfter: 1400, fadeMs: 650
+    });
+}
+
+// wrapper awaitabile per compat con “wait(2000)” già nel tuo codice
+function awaitWait(ms) { try { return wait(ms); } catch { return Promise.resolve(); } }
 
 /* =======================
    API: set HP a runtime
