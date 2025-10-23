@@ -549,7 +549,7 @@ export async function handleGiantDeath(unit) {
     const i = GAME_STATE.giantsRoster.findIndex(g => g.id === unit.id);
     if (i >= 0) GAME_STATE.giantsRoster.splice(i, 1);
 
-    clearConeGiantData();
+    clearConeGiantData(unit.id);
 
     rebuildUnitIndex();
     renderBenches();

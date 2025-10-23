@@ -10,7 +10,7 @@ const HILITE = { cone: new Set() };
 const GIANT_CONE_CELLS = new Map();
 const GIANT_NEMESI_TARGET = new Map();
 
-export function clearConeGiantData() { GIANT_CONE_CELLS.clear(); GIANT_NEMESI_TARGET.clear();}
+export function clearConeGiantData(gid) { GIANT_CONE_CELLS.delete(String(gid)); GIANT_NEMESI_TARGET.delete(String(gid));}
 export function clearHighlights() { HILITE.cone.clear(); }
 
 function setGiantConeCells(gid, cells) { GIANT_CONE_CELLS.set(String(gid), cells) };
@@ -898,6 +898,7 @@ function handleUnitLongPress({ unit, cell }) {
     let filteredtargets = [];
 
     const { targets, nemesi } = findTargetsFor(unit, cell);
+
     filteredtargets = targets;
 
     const engaged = getEngagedHuman(unit.id) || getEngagingGiant(unit.id);
@@ -914,7 +915,7 @@ function handleUnitLongPress({ unit, cell }) {
     startAttackPick(unit, filteredtargets, nemesi)
 }
 
-export function findTargetsFor(attacker, cell) {
+function findTargetsFor(attacker, cell) {
     const out = [];
     const rng = getStat(attacker, 'rng') || 1;
 
@@ -1165,7 +1166,7 @@ function lowestHpHumanWithin(attacker, fromR, fromC, radius) {
 
 // facing per il gigante: verso umano (entro visione=2), altrimenti verso muro
 export function pickGiantFacing(attacker, cell) {
-    const R = Math.max(2, getStat(attacker, 'rng') || 1); // vista minima 2 come richiesto
+    const R = Math.max(GIANT_VISION, getStat(attacker, 'rng') || 1); // vista minima 2 come richiesto
 
     // 1) Priorità: bersaglio ingaggiato
     const engagedId = GIANT_ENGAGEMENT.get(String(attacker.id));
