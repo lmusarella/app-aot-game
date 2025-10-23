@@ -1,6 +1,6 @@
 import {
     sameOrAdjCells, findUnitCell, getStack, focusUnitOnField,
-    grid, hasHumanInCell, nextStepTowards, gridSize, hexDistance, renderBenches,
+    grid, hasHumanInCell, nextStepTowards, gridSize, hexDistance, renderBenches, clearConeGiantData,
     renderGrid, removeUnitEverywhere, humanTargetsWithin2, moveOneUnitBetweenStacks, nearestWallCell, setStack, focusBenchCard, clearHighlights
 } from './grid.js';
 import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates, capModSum, wait } from './utils.js';
@@ -72,14 +72,14 @@ function setEngagementIfMelee(gid, hid) {
 }
 
 
-export function startAttackPick(attacker, targets) {
+export function startAttackPick(attacker, targets, nemesi) {
 
     targets.forEach(unit => focusUnitOnField(unit.id, true))
     ATTACK_PICK = { attackerId: attacker.id, targets: targets };
     TARGET_CELLS = new Set(targets.map(t => keyRC(t.cell.row, t.cell.col)));
 
     // Tooltip "appiccicoso": lista bersagli + annulla
-    const html = renderPickTooltip(attacker, targets);
+    const html = renderPickTooltip(attacker, targets, nemesi);
     showTooltip(html);
 
     // Listener sul tooltip per click target/annulla
@@ -549,15 +549,19 @@ export async function handleGiantDeath(unit) {
     const i = GAME_STATE.giantsRoster.findIndex(g => g.id === unit.id);
     if (i >= 0) GAME_STATE.giantsRoster.splice(i, 1);
 
+    clearConeGiantData();
 
     rebuildUnitIndex();
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-    log(`${unit.name} è morto.`, 'success');
+
+    log(`${unit.name} è morto.`, 'success', 3000, true);
+
     scheduleSave();
+    
     await playSfx('./assets/sounds/morte_gigante.mp3');
 
-    const victory = showVictoryScreen({
+    showVictoryScreen({
         text: 'VITTORIA',
         subtext: `${unit.name} è stato abbattuto!`,
         confetti: false,

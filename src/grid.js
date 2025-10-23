@@ -7,8 +7,20 @@ import { adjustUnitHp, startAttackPick, getEngagedHuman, getEngagingGiant } from
 
 // === HIGHLIGHT CONO =========================================================
 const HILITE = { cone: new Set() };
+const GIANT_CONE_CELLS = new Map();
+const GIANT_NEMESI_TARGET = new Map();
 
+export function clearConeGiantData() { GIANT_CONE_CELLS.clear(); GIANT_NEMESI_TARGET.clear();}
 export function clearHighlights() { HILITE.cone.clear(); }
+
+function setGiantConeCells(gid, cells) { GIANT_CONE_CELLS.set(String(gid), cells) };
+function getGiantConeCells(gid) { return GIANT_CONE_CELLS.get(String(gid)) };
+
+
+function setGiantNemesiTarget(gid, nemesi) { GIANT_NEMESI_TARGET.set(String(gid), nemesi) };
+function getGiantNemesiTarget(gid) { return GIANT_NEMESI_TARGET.get(String(gid)) };
+
+
 function setCone(cells) { HILITE.cone = new Set(cells.map(p => keyRC(p.row, p.col))); }
 function isConeCell(r, c) { return HILITE.cone.has(keyRC(r, c)); }
 // normalizza un indice di direzione su 0..5
@@ -434,7 +446,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             card.addEventListener("dragend", () => {
                 isDraggingNow = false;
                 card.classList.remove("dragging");
-                if(u.role !== 'enemy' & u.role !== 'wall') try { playSfx('./assets/sounds/movimento_3d.mp3', { volume: 0.8 }); } catch { }
+                if (u.role !== 'enemy' & u.role !== 'wall') try { playSfx('./assets/sounds/movimento_3d.mp3', { volume: 0.8 }); } catch { }
             });
         }
     });
@@ -596,8 +608,8 @@ function createHexagon(row, col, unitIds = []) {
                 onLongPress: () => {
                     hideTooltip();
                     openAccordionForRole(unit.role);
-                    handleUnitLongPress({ unit, cell: { row, col } });
                     if (unit.role === 'enemy') showGiantCone(unit.id);
+                    handleUnitLongPress({ unit, cell: { row, col } });
                 }
             });
 
@@ -618,7 +630,7 @@ function createHexagon(row, col, unitIds = []) {
             content.addEventListener("dragend", () => {
                 content.classList.remove("dragging")
                 isDraggingNow = false;
-                  if(unit.role !== 'enemy' & unit.role !== 'wall') try { playSfx('./assets/sounds/movimento_3d.mp3', { volume: 0.8 }); } catch { }
+                if (unit.role !== 'enemy' & unit.role !== 'wall') try { playSfx('./assets/sounds/movimento_3d.mp3', { volume: 0.8 }); } catch { }
             });
 
             return member;
@@ -883,31 +895,33 @@ function handleUnitLongPress({ unit, cell }) {
     // niente mura
     if (unit.role === 'wall') return;
 
-    let targets = findTargetsFor(unit, cell);
+    let filteredtargets = [];
+
+    const { targets, nemesi } = findTargetsFor(unit, cell);
+    filteredtargets = targets;
 
     const engaged = getEngagedHuman(unit.id) || getEngagingGiant(unit.id);
 
     if (engaged) {
-        targets = targets.filter(target => target.id === engaged);
+        filteredtargets = targets.filter(target => target.id === engaged);
     }
 
-    if (!targets.length) {
+    if (!filteredtargets.length && !nemesi) {
         showSnackBar('Nessun bersaglio a portata.', {}, 'info');
         return;
     }
 
-    startAttackPick(unit, targets)
+    startAttackPick(unit, filteredtargets, nemesi)
 }
 
 export function findTargetsFor(attacker, cell) {
     const out = [];
     const rng = getStat(attacker, 'rng') || 1;
 
+    const nemesi = getGiantNemesiTarget(attacker.id) || null;
     if (attacker.role === 'enemy') {
-        // Facing da VISTA (min 2) + ingaggio
-        const { dir } = pickGiantFacing(attacker, cell);
-        const cone = hexCone(cell.row, cell.col, dir, rng, { includeOrigin: true });
-
+        //Mi prendo il cone salvato precedentemente
+        const cone = getGiantConeCells(attacker.id);
         // Se vede almeno un umano (entro vista, non per forza entro rng), colpisce SOLO umani nel cono.
         const seenHuman = lowestHpHumanWithin(attacker, cell.row, cell.col, Math.max(GIANT_VISION, rng)) != null;
 
@@ -922,7 +936,7 @@ export function findTargetsFor(attacker, cell) {
                 }
             }
         }
-        return out;
+        return { targets: out, nemesi };
     }
 
     // Alleati: cerchio entro rng, solo enemy
@@ -932,7 +946,7 @@ export function findTargetsFor(attacker, cell) {
             if (u && u.role === 'enemy') out.push({ ...u, cell: p });
         }
     }
-    return out;
+    return { targets: out, nemesi };
 }
 
 
@@ -1263,9 +1277,11 @@ export function showGiantCone(giantOrId) {
     if (!u || u.role !== 'enemy') return;
     const cell = findUnitCell(id); if (!cell) return;
 
-    const { dir } = pickGiantFacing(u, cell);     // usa VISIONE=2
+    const { dir, targetHint } = pickGiantFacing(u, cell);
     const rng = Math.max(1, getStat(u, 'rng') || 1); // profondità = range
     const cells = hexCone(cell.row, cell.col, dir, rng, { includeOrigin: true });
+    setGiantConeCells(id, cells);
+    setGiantNemesiTarget(id, targetHint?.unit);
     setCone(cells);
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
 }

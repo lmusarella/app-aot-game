@@ -40,7 +40,6 @@ export function addMorale(deltaPct) {
 
             log(`${txt}`, nextBand.type);
 
-            console.log('nextBand', next)
             if (nextBand.range.min === 0) {
                 const death = showDeathScreen({
                     text: txt,

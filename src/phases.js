@@ -1,5 +1,5 @@
 import { advanceAllCooldowns, giantsPhaseMove, spawnGiant, tickUnitModsOnNewRound, pickRandomTeam } from './entity.js';
-import { getMusicUrlById } from './utils.js';
+import { getMusicUrlById, wait } from './utils.js';
 import { openAccordionForRole } from './ui.js';
 import { playBg, playSfx } from './audio.js';
 import { showDrawnCard, closeAllFabs, drawCard } from './fab.js';
@@ -262,6 +262,7 @@ export const TurnEngine = {
 
         if (phase === 'move_phase') {
             giantsPhaseMove();
+            await wait(2500);
             this.setPhase('attack_phase');
             showPhaseBanner({
                 text: 'FASE DI COMBATTIMENTO',

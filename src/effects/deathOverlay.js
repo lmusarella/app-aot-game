@@ -95,7 +95,6 @@ export function showDeathScreen(options = {}) {
     detach();
     if (allowDismiss) {
       try {
-        console.log('reset game')
         const ev = new CustomEvent('resetGame');
         document.dispatchEvent(ev);
       } catch { }

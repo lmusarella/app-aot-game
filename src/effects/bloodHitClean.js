@@ -29,7 +29,6 @@
  * @returns {{ dispose: () => void }} controller per interrompere/forzare cleanup.
  */
 export function bloodHitClean(opts = {}) {
-  console.log('colpisce')
   const {
     duration = 120,
     fadeAfter = 1400,

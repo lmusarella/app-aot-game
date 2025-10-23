@@ -557,7 +557,7 @@ export function openDialog({
 
 export function confirmDialog(opts) { return openDialog({ ...opts, cancellable: true }); }
 
-export function renderPickTooltip(attacker, targets) {
+export function renderPickTooltip(attacker, targets, nemesi) {
 
     const engagedTargetId = (attacker.role === 'enemy')
         ? GIANT_ENGAGEMENT.get(String(attacker.id))
@@ -602,10 +602,13 @@ export function renderPickTooltip(attacker, targets) {
     `;
     }).join('');
 
+    const textnemesi = nemesi ? `Tiene d'occhio ${nemesi?.name} 👁️` : '';
+    const textBersaglio = targets.length ? 'Scegli un bersaglio ⚔️' : '';
     return `
     <div class="tt-card" data-role="${attacker.role}">
       <div class="tt-title">${attacker.name}</div>
-      <div class="tt-ability-text" style="margin:6px 0 8px">Attacca un bersaglio ⚔️</div>
+      <div class="tt-ability-text" style="margin:6px 0 8px">${textnemesi}</div>
+      <div class="tt-ability-text" style="margin:6px 0 8px">${textBersaglio}</div>
       <div class="picklist picklist--grid">${items}</div>
     </div>
   `;
