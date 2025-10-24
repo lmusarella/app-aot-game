@@ -1,4 +1,4 @@
-import { fmtSigned, getUnitBonus, signClass, availableTemplates, countAlive, totalByRole, displayHpForTemplate, cappedDelta, getStat } from './utils.js';
+import { fmtSigned, getUnitBonus, signClass, availableTemplates, countAlive, totalByRole, displayHpForTemplate, cappedDelta, getStat, capModSum } from './utils.js';
 import { UNIT_SELECTED, unitById, GIANT_ENGAGEMENT, GAME_STATE } from './data.js';
 import { initAudio, playBg } from './audio.js'
 
@@ -42,6 +42,8 @@ export function getUnitTooltipHTML(unit) {
   const hp = Math.min(max, Math.max(0, unit.currHp ?? max));
   const hpPct = max > 0 ? Math.round((hp / max) * 100) : 0;
 
+ const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus || { all: 0, tec: 0, agi: 0, atk: 0 };
+
   const atk = unit.atk ?? "—";
   const tec = unit.tec ?? "—";         // per reclute/commanders
   const agi = unit.agi ?? "—";         // per reclute/commanders
@@ -53,9 +55,9 @@ export function getUnitTooltipHTML(unit) {
   const abi = (unit.abi ?? "").toString();
 
   // calcoli delta “reali” (cappati) per le stat umane
-  const atkDeltaShown = cappedDelta(atk, getUnitBonus(unit, 'atk'));
-  const tecDeltaShown = cappedDelta(tec, getUnitBonus(unit, 'tec'));
-  const agiDeltaShown = cappedDelta(agi, getUnitBonus(unit, 'agi'));
+  const atkDeltaShown = cappedDelta(atk, getUnitBonus(unit, 'atk') + effectiveBonus.atk);
+  const tecDeltaShown = cappedDelta(tec, getUnitBonus(unit, 'tec') + effectiveBonus.tec);
+  const agiDeltaShown = cappedDelta(agi, getUnitBonus(unit, 'agi') + effectiveBonus.agi);
 
   const statsForRole = (role === "enemy")
     ? `<div class="tt-stats">
@@ -842,6 +844,14 @@ export async function showVersusOverlay(attacker, defender, {
     const sub = roleLabel(u);
     const ring = ringColor(u);
     const img = u.img || '';
+    const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus || { all: 0, tec: 0, agi: 0, atk: 0 };
+
+    const TEC = getStat(u, 'tec') || 0;
+    const AGI = getStat(u, 'agi') || 0;
+    const ATK = getStat(u, 'atk') || 0;
+    const TEC_TOTAL = capModSum(TEC, effectiveBonus.tec);
+    const AGI_TOTAL = capModSum(AGI, effectiveBonus.agi);
+    const ATK_TOTAL = capModSum(ATK, effectiveBonus.atk);
 
     // helper chip
     const chip = (label, val, cls = '') =>
@@ -878,9 +888,9 @@ export async function showVersusOverlay(attacker, defender, {
         <div class="vs-hp">❤️ ${u.currHp ?? u.hp}/${u.hp}</div>
         <div class="vs-bar"><div class="vs-fill" style="width:${pct.toFixed(1)}%"></div></div>
         <div class="vs-chips">
-          ${chip('ATK', getStat(u, 'atk'), 'chip-atk')}
-          ${chip('TEC', getStat(u, 'tec'), 'chip-tec')}
-          ${chip('AGI', getStat(u, 'agi'), 'chip-agi')}
+          ${chip('ATK', ATK_TOTAL, 'chip-atk')}
+          ${chip('TEC', TEC_TOTAL, 'chip-tec')}
+          ${chip('AGI', AGI_TOTAL, 'chip-agi')}
         </div>
       </div>`;
     }
@@ -1296,7 +1306,7 @@ export async function showTutorialPopupViaDialog({ startIndex = 0, force = false
 
       // Bottoni dinamici:
       const isFirst = i === 0;
-      const isLast  = i === slides.length - 1;
+      const isLast = i === slides.length - 1;
 
       // Se sei sulla prima slide: Cancel = Chiudi
       // Altrimenti: Cancel = Indietro
@@ -1316,7 +1326,7 @@ export async function showTutorialPopupViaDialog({ startIndex = 0, force = false
       if (res) { // conferma
         if (isLast) {
           // completato
-          try { localStorage.setItem(TUTORIAL_DONE_KEY, '1'); } catch {}
+          try { localStorage.setItem(TUTORIAL_DONE_KEY, '1'); } catch { }
           break;
         } else {
           i++; // avanti

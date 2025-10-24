@@ -198,7 +198,7 @@ function buildContext(a, t, d20roll) {
     const ATK = getStat(human, 'atk') || 0;
     const G_CD = getStat(giant, 'cd') || 0;
     const G_ATK = Math.max(1, getStat(giant, 'atk') || 1);
-
+ 
     const TEC_TOTAL = capModSum(TEC, effectiveBonus.tec);
     const AGI_TOTAL = capModSum(AGI, effectiveBonus.agi);
     const ATK_TOTAL = capModSum(ATK, effectiveBonus.atk);

@@ -315,8 +315,7 @@ export async function playBg(url, { volume = 0.18, loop = true } = {}) {
 export async function playSfx(url, { volume = 1, loop = false } = {}) {
     const sfx = await play(url, { loop, volume });
     MIXER.trackSfx(sfx, volume);
-    try { await sfx.play();
-        console.log('ha suonato')
+    try { await sfx.play();      
      } catch { }
     return sfx;
 }
