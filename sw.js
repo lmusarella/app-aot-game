@@ -4,7 +4,7 @@ const ASSETS = [
   './',
   './index.html',
   './style.css',
-  './script.js',
+  './app.js',
   './manifest.json',
 
   // === img/cards ===
