@@ -2,15 +2,15 @@ import { initHeaderListeners, renderHeader, startTimer, stopTimer, playCornoGuer
 import { initFooterListeners, refreshMoraleUI, refreshXPUI } from "./footer.js";
 import { initModsListeners, initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "./mods.js";
 import { initPhasesListeners, TurnEngine } from "./phases.js";
-import { initAudioListeners,initAudio, playBg } from './audio.js'
+import { initAudioListeners, initAudio, playBg } from './audio.js'
 import { initSidebarsListeners, initTooltipListeners, setupAccordions, setupLeftAccordions, setupRightAccordions, setupLeftCollapse, hideTooltip, openDialog } from "./ui.js";
-import { renderGrid, renderBenches, grid,clearHighlights } from "./grid.js";
+import { renderGrid, renderBenches, grid, clearHighlights } from "./grid.js";
 import { ATTACK_PICK, endAttackPick, seedWallRows } from "./entity.js";
-import { DB, GAME_STATE, UNIT_SELECTED, getLastSaveInfo,rebuildUnitIndex } from "./data.js";
+import { DB, GAME_STATE, UNIT_SELECTED, getLastSaveInfo, rebuildUnitIndex } from "./data.js";
 import { closeAllFabs, resetDeckFromPool, updateFabDeckCounters } from './fab.js'
-import { log, renderLogs } from './log.js';
+import { renderLogs } from './log.js';
 import { loadMissions } from "./missions.js";
-
+import showWarningC from './effects/warningOverlayC.js';
 
 export function initAppListeners() {
 
@@ -66,7 +66,13 @@ export function initRenderApp(booted) {
                     startTimer();
                 } else {
                     stopTimer();
-                    log("Tempo Scaduto! Ogni turno apparirà un gigante!");
+                    showWarningC({
+                        text: `TEMPO SCADUTO`,
+                        subtext: `Ad ogni fine turno verrà pescata una carta evento`,
+                        theme: 'red',
+                        ringAmp: 1.0,
+                        autoDismissMs: 3000
+                    });
                     playCornoGuerra();
                 }
             }

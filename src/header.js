@@ -1,9 +1,10 @@
 import { GAME_STATE, scheduleSave, resetGame } from './data.js';
-import { log } from './log.js';
 import { confirmDialog, openDialog } from './ui.js';
 import { clearGrid } from './grid.js';
 import { completeMission, setMissionByIndex, renderMissionUI } from './missions.js';
 import { fmtClock, clamp } from './utils.js';
+import { playSfx } from './audio.js';
+import showWarningC from './effects/warningOverlayC.js';
 
 const missionCardHead = document.getElementById('mission-head');
 const btnReset = document.getElementById('btn-reset-game');
@@ -32,20 +33,26 @@ export function startTimer() {
     GAME_STATE.missionState.ticking = true;
     renderTimerUI();
 
-    GAME_STATE.missionState.intervalId = setInterval(() => {
+    GAME_STATE.missionState.intervalId = setInterval(async () => {
         GAME_STATE.missionState.remainingSec = clamp(GAME_STATE.missionState.remainingSec - 1, 0, GAME_STATE.missionState.timerTotalSec);
         renderTimerUI();
 
         if (GAME_STATE.missionState.remainingSec <= 0) {
             stopTimer();
-            log("Tempo Scaduto! Ogni turno apparirà un gigante!")
-            playCornoGuerra();
+            showWarningC({
+                text: `TEMPO SCADUTO`,
+                subtext: `Ad ogni fine turno verrà pescata una carta evento`,
+                theme: 'red',
+                ringAmp: 1.0,
+                autoDismissMs: 3000
+            });
+            await playCornoGuerra();
         }
     }, 1000);
 }
 
-export function playCornoGuerra() {
-
+export async function playCornoGuerra() {
+    await playSfx('./assets/sounds/corno_guerra.mp3');
 }
 
 export function stopTimer() {
