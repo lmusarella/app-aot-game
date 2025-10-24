@@ -161,19 +161,14 @@ export async function showWelcomePopup(isFirstRun, imgUrl) {
             ? 'Questa è la tua plancia: gestisci Reclute e Comandanti, difendi le Mura e sconfiggi i Giganti.'
             : `Abbiamo ripristinato il tuo stato${last ? ` (ultimo salvataggio: <small>${last}</small>)` : ''}.`}
         </p>
-        <ul>
-          <li>Usa i pulsanti in basso per <em>Spawn</em>, <em>Carte</em> e <em>Arruolo</em>.</li>
-          <li>Tieni premuto su unità e card per visualizzare il dettaglio, drag per spostare.</li>
-          <li>Timer, Morale e XP si salvano in automatico.</li>
-        </ul>
       </div>
     </div>
   `;
 
     await openDialog({
-        title: isFirstRun ? 'Benvenuto/a! Soldato!' : 'Bentornato/a! Soldato!',
+        title: 'Bentornato/a! Soldato!',
         message: html,
-        confirmText: isFirstRun ? 'Inizia' : 'Riprendi',
+        confirmText: 'Riprendi',
         cancelText: 'Chiudi',
         danger: true,
         cancellable: true
@@ -182,3 +177,4 @@ export async function showWelcomePopup(isFirstRun, imgUrl) {
     initAudio();
     GAME_STATE.turnEngine.phase === 'idle' ? await playBg('./assets/sounds/risorsa_audio_avvio_app.mp3') : await GAME_STATE.turnEngine.setPhaseMusic();
 }
+
