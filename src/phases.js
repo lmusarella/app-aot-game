@@ -9,6 +9,7 @@ import { stopTimer, startTimer } from "./header.js";
 import { log } from "./log.js";
 import showPhaseBanner from './effects/phaseBanner.js';
 import showWarningC from './effects/warningOverlayC.js';
+import lightningStrike from './effects/lightningStrike.js';
 
 const PHASE_UI = {
     // cosa si vede in ciascuna fase (modifica liberamente i selettori!)
@@ -229,6 +230,9 @@ export const TurnEngine = {
                         }
 
                         await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
+                        lightningStrike();
+                        setTimeout(() => lightningStrike({ angleDeg: 80 }), 140);
+                        setTimeout(() => lightningStrike({ angleDeg: 100 }), 280);
 
                         if (spawnEvents.every(event => event === "Puro")) {
                             await playBg('./assets/sounds/start_app.mp3');
@@ -274,14 +278,14 @@ export const TurnEngine = {
         }
 
         if (phase === 'attack_phase') {
-            this.setPhase('round_start');         
+            this.setPhase('round_start');
             showPhaseBanner({
                 text: 'FASE FINALE',
                 subtext: `${this.round}° ROUND`,
                 theme: 'neutral',
                 autoDismissMs: 6000
             });
-            
+
             const flagTempoNonScaduto = GAME_STATE.missionState.remainingSec;
             if (this.round % 2 === 0 || flagTempoNonScaduto === 0) {
                 const card = drawCard('event');

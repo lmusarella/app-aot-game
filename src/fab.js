@@ -2,10 +2,11 @@ import { GAME_STATE, rebuildUnitIndex, scheduleSave, DB } from './data.js'
 import { missionStatsRecordEvent } from './missions.js'
 import { log } from './log.js';
 import { giantsPhaseMove, pickRandomTeam, spawnGiant } from './entity.js';
-import { renderBenches, renderGrid, grid } from './grid.js';
+import { renderBenches } from './grid.js';
 import { applyHpBar, COLOR_VAR, shuffle, countAlive, totalByRole } from './utils.js';
 import { playSfx } from './audio.js';
 import { addLongPress, showTooltip, getUnitTooltipHTML, alliesPickerHTML, ensureModal, openAccordionForRole, hideTooltip, cardSheetHTML } from './ui.js';
+import lightningStrike from './effects/lightningStrike.js';
 
 const fabs = Array.from(document.querySelectorAll('.fab'));
 
@@ -58,6 +59,10 @@ document.querySelectorAll('#fab-spawn .fab-option').forEach(btn => {
             if (!ok) {
                 const anchor = document.querySelector('#fab-spawn .fab-main');
                 flash(anchor);
+            } else {
+                lightningStrike();
+                setTimeout(() => lightningStrike({ angleDeg: 80 }), 140);
+                setTimeout(() => lightningStrike({ angleDeg: 100 }), 280);
             }
         } else {
             giantsPhaseMove();
