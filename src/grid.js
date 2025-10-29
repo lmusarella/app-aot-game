@@ -14,9 +14,9 @@ const FORCE_PTR = /dnd=ptr/.test(location.search) || localStorage.forcePointerDn
 const FORCE_HTML5 = /dnd=html5/.test(location.search) || localStorage.forceHtml5Dnd === '1';
 
 const USE_POINTER_DND =
-  FORCE_PTR ? true :
-  FORCE_HTML5 ? false :
-  (IS_COARSE || IS_ANDROID);
+    FORCE_PTR ? true :
+        FORCE_HTML5 ? false :
+            (IS_COARSE || IS_ANDROID);
 
 // === HIGHLIGHT CONO =========================================================
 const HILITE = { cone: new Set() };
@@ -455,6 +455,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
                     handleDrop(payload, { row, col });
                     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
                     renderBenches();
+                    clearHighlights();
                 }
             });
         }
@@ -628,6 +629,10 @@ function createHexagon(row, col, unitIds = []) {
             member.style.setProperty('--sel', colVar);
             if (unit.id === UNIT_SELECTED.selectedUnitId) { member.classList.add('is-selected'); }
 
+
+            console.log('IS_COARSE',IS_COARSE);
+             console.log('USE_POINTER_DND',USE_POINTER_DND);
+             
             if (IS_COARSE) {
                 addLongPress(member, {
                     onClick: () => {
@@ -637,6 +642,7 @@ function createHexagon(row, col, unitIds = []) {
                             renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
                             openAccordionForRole(unit.role);
                             focusBenchCard(unit.id, { scroll: true, pulse: true });
+                            focusUnitOnField(unit.id);
                             const html = getUnitTooltipHTML(unit);
                             showTooltip(html);
                             if (unit.role === 'enemy') showGiantCone(unit.id);
@@ -656,6 +662,7 @@ function createHexagon(row, col, unitIds = []) {
                     bringToFront({ row, col }, unit.id);
                     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
                     openAccordionForRole(unit.role);
+                    focusUnitOnField(unit.id);
                     focusBenchCard(unit.id, { scroll: true, pulse: true });
                     const html = getUnitTooltipHTML(unit);
                     showTooltip(html);
@@ -680,6 +687,7 @@ function createHexagon(row, col, unitIds = []) {
                             handleDrop(payload, to);
                             renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
                             renderBenches();
+                            clearHighlights();
                             return;
                         }
                         // drop su panchina (se serve): troviamo il container più vicino
@@ -744,6 +752,7 @@ function createHexagon(row, col, unitIds = []) {
         const raw = e.dataTransfer.getData("application/json"); if (!raw) return;
         let payload; try { payload = JSON.parse(raw); } catch { return; }
         handleDrop(payload, { row, col });
+        clearHighlights();
     });
 
     hex.addEventListener("click", () => {
@@ -842,7 +851,7 @@ async function placeFromBench(target, unitId) {
     UNIT_SELECTED.selectedUnitId = unitId;
     setStack(target.row, target.col, tgt);
     renderBenches();
-    await playSfx(getMusicUrlById(unitId));
+    if (unit?.role !== 'enemy') await playSfx(getMusicUrlById(unitId));
 }
 function hasWallInCell(r, c) {
     const stack = getStack(r, c);
@@ -1393,58 +1402,102 @@ function enablePointerDrag(el, {
     let ghost = null;
     let startX = 0, startY = 0;
     let activeId = null;
+    let dragging = false;
+    const MOVE_THRESHOLD = 8; // px
 
-    const onDown = (e) => {
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        activeId = e.pointerId;
-        el.setPointerCapture(activeId);
-        startX = e.clientX; startY = e.clientY;
+    // 🔒 blocca qualsiasi drag nativo (specie su <img>)
+    const killNativeDrag = (e) => e.preventDefault();
+    el.addEventListener('dragstart', killNativeDrag, { passive: false });
+    el.querySelectorAll('img').forEach(img => {
+        img.draggable = false;
+        img.addEventListener('dragstart', killNativeDrag, { passive: false });
+    });
 
-        // ghost (avatar oppure un cerchio generico)
+    const createGhost = (x, y) => {
+        if (ghost) return; // evita stacking
         const img = el.querySelector('img');
         ghost = document.createElement('div');
         ghost.className = 'dragging-ghost';
         ghost.innerHTML = img ? `<img src="${img.src}" alt="">` : '';
         document.body.appendChild(ghost);
-        ghost.style.left = `${startX}px`;
-        ghost.style.top = `${startY}px`;
+        ghost.style.left = `${x}px`;
+        ghost.style.top = `${y}px`;
+    };
 
-        isDraggingNow = true; // riusa il tuo flag
+    const destroyGhost = () => {
+        if (ghost) ghost.remove();
+        ghost = null;
+    };
+
+    const onDown = (e) => {
+        // mouse: solo tasto sinistro
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        activeId = e.pointerId;
+        try { el.setPointerCapture(activeId); } catch { }
+        startX = e.clientX; startY = e.clientY;
+        dragging = false; // ancora no: aspetta la soglia
+        isDraggingNow = true;
     };
 
     const onMove = (e) => {
         if (activeId == null || e.pointerId !== activeId) return;
-        e.preventDefault(); // blocca scroll
-        ghost && (ghost.style.left = `${e.clientX}px`, ghost.style.top = `${e.clientY}px`);
+
+        // mouse: se non è premuto il tasto, annulla
+        if (e.pointerType === 'mouse' && e.buttons !== 1) {
+            return cleanup();
+        }
+
+        // serve per iOS/Android per bloccare lo scroll
+        e.preventDefault();
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const dist2 = dx * dx + dy * dy;
+
+        if (!dragging) {
+            if (dist2 < MOVE_THRESHOLD * MOVE_THRESHOLD) return; // non ancora
+            // ora parte davvero il drag custom
+            dragging = true;
+            createGhost(startX, startY);
+        }
+
+        if (ghost) {
+            ghost.style.left = `${e.clientX}px`;
+            ghost.style.top = `${e.clientY}px`;
+        }
+    };
+
+    const dropAtPoint = (clientX, clientY) => {
+        const target = document.elementFromPoint(clientX, clientY);
+        const hex = target?.closest?.('.hexagon');
+        const payload = makePayload?.();
+        if (hex && payload) onDrop(hex, payload);
     };
 
     const onUp = (e) => {
         if (activeId == null || e.pointerId !== activeId) return;
-
-        try {
-            // trova hex sotto il dito
-            const target = document.elementFromPoint(e.clientX, e.clientY);
-            const hex = target?.closest?.('.hexagon');
-            const payload = makePayload?.();
-            if (hex && payload) {
-                // chiama la TUA logica di drop, con lo stesso tipo di payload che usi su H5 DnD
-                onDrop(hex, payload);
-            }
-        } finally {
-            cleanup();
-        }
+        if (dragging) dropAtPoint(e.clientX, e.clientY);
+        cleanup();
     };
+
+    const onCancel = () => cleanup();
 
     const cleanup = () => {
         try { el.releasePointerCapture(activeId); } catch { }
         activeId = null;
+        dragging = false;
         isDraggingNow = false;
-        ghost?.remove(); ghost = null;
+        destroyGhost();
         document.removeEventListener('pointermove', onMove, { passive: false });
         document.removeEventListener('pointerup', onUp, { passive: true });
+        document.removeEventListener('pointercancel', onCancel, { passive: true });
+        document.removeEventListener('lostpointercapture', onCancel, { passive: true });
     };
 
     el.addEventListener('pointerdown', onDown);
     document.addEventListener('pointermove', onMove, { passive: false });
     document.addEventListener('pointerup', onUp, { passive: true });
+    document.addEventListener('pointercancel', onCancel, { passive: true });
+    document.addEventListener('lostpointercapture', onCancel, { passive: true });
 }
+

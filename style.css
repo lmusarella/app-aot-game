@@ -5374,3 +5374,26 @@
 }
 .dragging-ghost img { width: 100%; height: 100%; object-fit: cover; }
 .unit-card[draggable="true"], .hex-content[draggable="true"] { -webkit-user-drag: element; }
+
+.dragging-ghost {
+  position: fixed;
+  left: 0; top: 0;
+  width: 64px; height: 64px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 99999;
+}
+.dragging-ghost img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* evita selezione e callout */
+.hex-content, .unit-card, .unit-avatar, .hex-member, img {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
