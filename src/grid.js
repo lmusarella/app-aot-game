@@ -453,9 +453,9 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
                 onDrop: (hexEl, payload) => {
                     const row = +hexEl.dataset.row, col = +hexEl.dataset.col;
                     handleDrop(payload, { row, col });
+                    clearHighlights();
                     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
                     renderBenches();
-                    clearHighlights();
                 }
             });
         }
@@ -630,9 +630,10 @@ function createHexagon(row, col, unitIds = []) {
             if (unit.id === UNIT_SELECTED.selectedUnitId) { member.classList.add('is-selected'); }
 
 
-            console.log('IS_COARSE',IS_COARSE);
-             console.log('USE_POINTER_DND',USE_POINTER_DND);
-             
+            console.log('IS_COARSE', IS_COARSE);
+            console.log('USE_POINTER_DND', USE_POINTER_DND);
+            log('USE_POINTER_DND'.concat(USE_POINTER_DND), 'info');
+            log('IS_COARSE'.concat(IS_COARSE), 'info');
             if (IS_COARSE) {
                 addLongPress(member, {
                     onClick: () => {
@@ -685,9 +686,9 @@ function createHexagon(row, col, unitIds = []) {
                         if (hexEl.classList.contains('hexagon')) {
                             const to = { row: +hexEl.dataset.row, col: +hexEl.dataset.col };
                             handleDrop(payload, to);
+                            clearHighlights();
                             renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
                             renderBenches();
-                            clearHighlights();
                             return;
                         }
                         // drop su panchina (se serve): troviamo il container più vicino
@@ -751,8 +752,9 @@ function createHexagon(row, col, unitIds = []) {
         e.preventDefault(); hex.classList.remove("drop-ok");
         const raw = e.dataTransfer.getData("application/json"); if (!raw) return;
         let payload; try { payload = JSON.parse(raw); } catch { return; }
-        handleDrop(payload, { row, col });
         clearHighlights();
+        handleDrop(payload, { row, col });
+
     });
 
     hex.addEventListener("click", () => {
