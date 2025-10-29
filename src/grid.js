@@ -627,6 +627,7 @@ function createHexagon(row, col, unitIds = []) {
             addLongPress(member, {
                 onClick: () => {
                     console.log('click', isDraggingNow);
+                    log(`click qua`);
                     if (!isDraggingNow) {
                         UNIT_SELECTED.selectedUnitId = unit.id;
                         bringToFront({ row, col }, unit.id);
@@ -635,11 +636,13 @@ function createHexagon(row, col, unitIds = []) {
                         focusBenchCard(unit.id, { scroll: true, pulse: true });
                         focusUnitOnField(unit.id);
                         const html = getUnitTooltipHTML(unit);
+                        log(`apri tooltip`);
                         showTooltip(html);
                         if (unit.role === 'enemy') showGiantCone(unit.id);
                     }
                 },
                 onLongPress: () => {
+                    log(`click onLongPress`);
                     hideTooltip();
                     openAccordionForRole(unit.role);
                     if (unit.role === 'enemy') showGiantCone(unit.id);
@@ -647,7 +650,7 @@ function createHexagon(row, col, unitIds = []) {
                 }
             });
 
-     
+
 
             if (USE_POINTER_DND) {
                 content.draggable = false; // evita l'H5 su touch
@@ -698,6 +701,7 @@ function createHexagon(row, col, unitIds = []) {
 
             content.addEventListener("dragstart", (e) => {
                 isDraggingNow = true;
+                log(`click dragstart`);
                 hideTooltip();
                 clearHighlights();
                 UNIT_SELECTED.selectedUnitId = unit.id;
@@ -738,6 +742,7 @@ function createHexagon(row, col, unitIds = []) {
         UNIT_SELECTED.selectedUnitId = null;
         document.querySelectorAll('.hex-member.is-selected').forEach(el => el.classList.remove('is-selected'));
         console.log('chiudo da qua')
+        log(`chiudo da qua click finale`);
         hideTooltip();
         clearHighlights();
     });
@@ -1374,111 +1379,111 @@ export function showGiantCone(giantOrId) {
 }
 
 function enablePointerDrag(el, { makePayload, onDrop }) {
-  el.style.touchAction = 'none';
+    el.style.touchAction = 'none';
 
-  let ghost = null;
-  let startX = 0, startY = 0;
-  let activeId = null;
-  let dragging = false;
-  let lastHoverHex = null;        // 👈 tracking dell'hex evidenziato
-  const MOVE_THRESHOLD = 8;
+    let ghost = null;
+    let startX = 0, startY = 0;
+    let activeId = null;
+    let dragging = false;
+    let lastHoverHex = null;        // 👈 tracking dell'hex evidenziato
+    const MOVE_THRESHOLD = 8;
 
-  const highlightHexAt = (x, y) => {
-    const target = document.elementFromPoint(x, y);
-    const hex = target?.closest?.('.hexagon') || null;
+    const highlightHexAt = (x, y) => {
+        const target = document.elementFromPoint(x, y);
+        const hex = target?.closest?.('.hexagon') || null;
 
-    if (hex !== lastHoverHex) {
-      // rimuovi highlight dal precedente
-      if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
-      // aggiungi highlight al nuovo
-      if (hex) hex.classList.add('drop-ok');
-      lastHoverHex = hex;
-    }
-  };
+        if (hex !== lastHoverHex) {
+            // rimuovi highlight dal precedente
+            if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
+            // aggiungi highlight al nuovo
+            if (hex) hex.classList.add('drop-ok');
+            lastHoverHex = hex;
+        }
+    };
 
-  const clearHover = () => {
-    if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
-    lastHoverHex = null;
-  };
+    const clearHover = () => {
+        if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
+        lastHoverHex = null;
+    };
 
-  const createGhost = (x, y) => {
-    if (ghost) return;
-    const img = el.querySelector('img');
-    ghost = document.createElement('div');
-    ghost.className = 'dragging-ghost';
-    ghost.innerHTML = img ? `<img src="${img.src}" alt="">` : '';
-    ghost.style.position = 'fixed';
-    ghost.style.left = `${x}px`;
-    ghost.style.top  = `${y}px`;
-    ghost.style.transform = 'translate(-50%,-50%)';
-    ghost.style.pointerEvents = 'none';
-    ghost.style.zIndex = '99999';
-    document.body.appendChild(ghost);
-  };
+    const createGhost = (x, y) => {
+        if (ghost) return;
+        const img = el.querySelector('img');
+        ghost = document.createElement('div');
+        ghost.className = 'dragging-ghost';
+        ghost.innerHTML = img ? `<img src="${img.src}" alt="">` : '';
+        ghost.style.position = 'fixed';
+        ghost.style.left = `${x}px`;
+        ghost.style.top = `${y}px`;
+        ghost.style.transform = 'translate(-50%,-50%)';
+        ghost.style.pointerEvents = 'none';
+        ghost.style.zIndex = '99999';
+        document.body.appendChild(ghost);
+    };
 
-  const destroyGhost = () => { ghost?.remove(); ghost = null; };
+    const destroyGhost = () => { ghost?.remove(); ghost = null; };
 
-  const onDown = (e) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    activeId = e.pointerId;
-    try { el.setPointerCapture(activeId); } catch {}
-    startX = e.clientX; startY = e.clientY;
-    dragging = false;
-    isDraggingNow = true;
-  };
+    const onDown = (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        activeId = e.pointerId;
+        try { el.setPointerCapture(activeId); } catch { }
+        startX = e.clientX; startY = e.clientY;
+        dragging = false;
+        isDraggingNow = true;
+    };
 
-  const onMove = (e) => {
-    if (activeId == null || e.pointerId !== activeId) return;
-    if (e.pointerType === 'mouse' && e.buttons !== 1) return cleanup();
-    e.preventDefault();
+    const onMove = (e) => {
+        if (activeId == null || e.pointerId !== activeId) return;
+        if (e.pointerType === 'mouse' && e.buttons !== 1) return cleanup();
+        e.preventDefault();
 
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    if (!dragging && (dx*dx + dy*dy) >= MOVE_THRESHOLD*MOVE_THRESHOLD) {
-      dragging = true;
-      createGhost(startX, startY);
-    }
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (!dragging && (dx * dx + dy * dy) >= MOVE_THRESHOLD * MOVE_THRESHOLD) {
+            dragging = true;
+            createGhost(startX, startY);
+        }
 
-    if (dragging) {
-      if (ghost) { ghost.style.left = `${e.clientX}px`; ghost.style.top = `${e.clientY}px`; }
-      highlightHexAt(e.clientX, e.clientY);    // 👈 simula dragover/leave
-    }
-  };
+        if (dragging) {
+            if (ghost) { ghost.style.left = `${e.clientX}px`; ghost.style.top = `${e.clientY}px`; }
+            highlightHexAt(e.clientX, e.clientY);    // 👈 simula dragover/leave
+        }
+    };
 
-  const dropAtPoint = (x, y) => {
-    const target = document.elementFromPoint(x, y);
-    const hex = target?.closest?.('.hexagon');
-    const payload = makePayload?.();
-    if (hex && payload) onDrop(hex, payload);
-  };
+    const dropAtPoint = (x, y) => {
+        const target = document.elementFromPoint(x, y);
+        const hex = target?.closest?.('.hexagon');
+        const payload = makePayload?.();
+        if (hex && payload) onDrop(hex, payload);
+    };
 
-  const onUp = (e) => {
-    if (activeId == null || e.pointerId !== activeId) return;
-    if (dragging) dropAtPoint(e.clientX, e.clientY);
-    cleanup();
-  };
+    const onUp = (e) => {
+        if (activeId == null || e.pointerId !== activeId) return;
+        if (dragging) dropAtPoint(e.clientX, e.clientY);
+        cleanup();
+    };
 
-  const onCancel = () => cleanup();
+    const onCancel = () => cleanup();
 
-  const cleanup = () => {
-    try { el.releasePointerCapture(activeId); } catch {}
-    activeId = null;
-    dragging = false;
-    isDraggingNow = false;
-    clearHover();                 // 👈 rimuovi evidenziazione residua
-    destroyGhost();
-    document.removeEventListener('pointermove', onMove, { passive: false });
-    document.removeEventListener('pointerup', onUp, { passive: true });
-    document.removeEventListener('pointercancel', onCancel, { passive: true });
-  };
+    const cleanup = () => {
+        try { el.releasePointerCapture(activeId); } catch { }
+        activeId = null;
+        dragging = false;
+        isDraggingNow = false;
+        clearHover();                 // 👈 rimuovi evidenziazione residua
+        destroyGhost();
+        document.removeEventListener('pointermove', onMove, { passive: false });
+        document.removeEventListener('pointerup', onUp, { passive: true });
+        document.removeEventListener('pointercancel', onCancel, { passive: true });
+    };
 
-  // Blocca drag nativo su img
-  el.addEventListener('dragstart', e => e.preventDefault(), { passive: false });
-  el.querySelectorAll('img').forEach(img => { img.draggable = false; img.addEventListener('dragstart', e => e.preventDefault(), { passive: false }); });
+    // Blocca drag nativo su img
+    el.addEventListener('dragstart', e => e.preventDefault(), { passive: false });
+    el.querySelectorAll('img').forEach(img => { img.draggable = false; img.addEventListener('dragstart', e => e.preventDefault(), { passive: false }); });
 
-  el.addEventListener('pointerdown', onDown);
-  document.addEventListener('pointermove', onMove, { passive: false });
-  document.addEventListener('pointerup', onUp, { passive: true });
-  document.addEventListener('pointercancel', onCancel, { passive: true });
+    el.addEventListener('pointerdown', onDown);
+    document.addEventListener('pointermove', onMove, { passive: false });
+    document.addEventListener('pointerup', onUp, { passive: true });
+    document.addEventListener('pointercancel', onCancel, { passive: true });
 }
 
