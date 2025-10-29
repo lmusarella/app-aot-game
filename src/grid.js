@@ -18,6 +18,11 @@ const USE_POINTER_DND =
         FORCE_HTML5 ? false :
             (IS_COARSE || IS_ANDROID);
 
+log('FORCE_PTR: '.concat(FORCE_PTR), 'info');
+log('FORCE_HTML5: '.concat(FORCE_HTML5), 'info');
+log('USE_POINTER_DND: '.concat(USE_POINTER_DND), 'info');
+log('IS_COARSE: '.concat(IS_COARSE), 'info');
+log('IS_ANDROID: '.concat(IS_ANDROID), 'info');
 // === HIGHLIGHT CONO =========================================================
 const HILITE = { cone: new Set() };
 const GIANT_CONE_CELLS = new Map();
@@ -629,11 +634,6 @@ function createHexagon(row, col, unitIds = []) {
             member.style.setProperty('--sel', colVar);
             if (unit.id === UNIT_SELECTED.selectedUnitId) { member.classList.add('is-selected'); }
 
-
-            console.log('IS_COARSE', IS_COARSE);
-            console.log('USE_POINTER_DND', USE_POINTER_DND);
-            log('USE_POINTER_DND'.concat(USE_POINTER_DND), 'info');
-            log('IS_COARSE'.concat(IS_COARSE), 'info');
             if (IS_COARSE) {
                 addLongPress(member, {
                     onClick: () => {
