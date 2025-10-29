@@ -5,12 +5,25 @@ import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, scheduleSave
 import { log } from './log.js';
 import { adjustUnitHp, startAttackPick, getEngagedHuman, getEngagingGiant } from './entity.js';
 
+// --- TOUCH/PTR ENV FLAGS ---------------------------------------------------
+const HAS_TOUCH = (navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
+const IS_COARSE = window.matchMedia?.('(pointer:coarse)').matches || HAS_TOUCH;
+const IS_ANDROID = /Android/i.test(navigator.userAgent);
+
+const FORCE_PTR = /dnd=ptr/.test(location.search) || localStorage.forcePointerDnd === '1';
+const FORCE_HTML5 = /dnd=html5/.test(location.search) || localStorage.forceHtml5Dnd === '1';
+
+const USE_POINTER_DND =
+  FORCE_PTR ? true :
+  FORCE_HTML5 ? false :
+  (IS_COARSE || IS_ANDROID);
+
 // === HIGHLIGHT CONO =========================================================
 const HILITE = { cone: new Set() };
 const GIANT_CONE_CELLS = new Map();
 const GIANT_NEMESI_TARGET = new Map();
 
-export function clearConeGiantData(gid) { GIANT_CONE_CELLS.delete(String(gid)); GIANT_NEMESI_TARGET.delete(String(gid));}
+export function clearConeGiantData(gid) { GIANT_CONE_CELLS.delete(String(gid)); GIANT_NEMESI_TARGET.delete(String(gid)); }
 export function clearHighlights() { HILITE.cone.clear(); }
 
 function setGiantConeCells(gid, cells) { GIANT_CONE_CELLS.set(String(gid), cells) };
@@ -367,9 +380,6 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             clearHighlights();
         });
 
-
-
-
         // se è muro distrutto, disattiva i controlli HP
         if (isDestroyed) {
             hpMinus.disabled = true;
@@ -404,24 +414,51 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             card.appendChild(trashTop);
         }
 
-        // CLICK = focus/porta in cima. LONG-PRESS = tooltip (senza trascinare)
-        addLongPress(card, {
-            onClick: () => {
-                if (!isDraggingNow) {
-                    benchClickFocusAndTop(u);
-                    const html = getUnitTooltipHTML(u);
-                    showTooltip(html);
-                    // piccolo flash visivo
-                    card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
+        // Desktop: niente long-press, lascia drag H5; Touch: long-press attivo
+        if (IS_COARSE) {
+            addLongPress(card, {
+                onClick: () => {
+                    if (!isDraggingNow) {
+                        benchClickFocusAndTop(u);
+                        const html = getUnitTooltipHTML(u);
+                        showTooltip(html);
+                        card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
+                        if (u.role === 'enemy') showGiantCone(u.id);
+                    }
+                },
+                onLongPress: () => {
+                    hideTooltip();
+                    clearHighlights();
                     if (u.role === 'enemy') showGiantCone(u.id);
                 }
-            },
-            onLongPress: () => {
-                hideTooltip();
-                clearHighlights();
+            });
+        } else {
+            // mouse/trackpad: click “semplice”, no preventDefault che rompa il drag
+            card.addEventListener('click', () => {
+                if (isDraggingNow) return;
+                benchClickFocusAndTop(u);
+                const html = getUnitTooltipHTML(u);
+                showTooltip(html);
                 if (u.role === 'enemy') showGiantCone(u.id);
-            }
-        });
+            });
+        }
+
+
+        if (!readOnly && USE_POINTER_DND) {
+            // disattiva drag H5 per evitare conflitti su touch
+            card.draggable = false;
+
+            enablePointerDrag(card, {
+                makePayload: () => ({ type: 'from-bench', unitId: u.id }),
+                onDrop: (hexEl, payload) => {
+                    const row = +hexEl.dataset.row, col = +hexEl.dataset.col;
+                    handleDrop(payload, { row, col });
+                    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+                    renderBenches();
+                }
+            });
+        }
+
 
         container.appendChild(card);
 
@@ -591,27 +628,87 @@ function createHexagon(row, col, unitIds = []) {
             member.style.setProperty('--sel', colVar);
             if (unit.id === UNIT_SELECTED.selectedUnitId) { member.classList.add('is-selected'); }
 
-            // Long-press sul membro in campo: mostra tooltip; click breve = focus + bringToFront
-            addLongPress(member, {
-                onClick: () => {
-                    if (!isDraggingNow) {
-                        UNIT_SELECTED.selectedUnitId = unit.id;
-                        bringToFront({ row, col }, unit.id);
-                        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+            if (IS_COARSE) {
+                addLongPress(member, {
+                    onClick: () => {
+                        if (!isDraggingNow) {
+                            UNIT_SELECTED.selectedUnitId = unit.id;
+                            bringToFront({ row, col }, unit.id);
+                            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+                            openAccordionForRole(unit.role);
+                            focusBenchCard(unit.id, { scroll: true, pulse: true });
+                            const html = getUnitTooltipHTML(unit);
+                            showTooltip(html);
+                            if (unit.role === 'enemy') showGiantCone(unit.id);
+                        }
+                    },
+                    onLongPress: () => {
+                        hideTooltip();
                         openAccordionForRole(unit.role);
-                        focusBenchCard(unit.id, { scroll: true, pulse: true });
-                        const html = getUnitTooltipHTML(unit);
-                        showTooltip(html);
                         if (unit.role === 'enemy') showGiantCone(unit.id);
+                        handleUnitLongPress({ unit, cell: { row, col } });
                     }
-                },
-                onLongPress: () => {
-                    hideTooltip();
+                });
+            } else {
+                member.addEventListener('click', () => {
+                    if (isDraggingNow) return;
+                    UNIT_SELECTED.selectedUnitId = unit.id;
+                    bringToFront({ row, col }, unit.id);
+                    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
                     openAccordionForRole(unit.role);
+                    focusBenchCard(unit.id, { scroll: true, pulse: true });
+                    const html = getUnitTooltipHTML(unit);
+                    showTooltip(html);
                     if (unit.role === 'enemy') showGiantCone(unit.id);
-                    handleUnitLongPress({ unit, cell: { row, col } });
-                }
-            });
+                });
+            }
+
+
+            if (USE_POINTER_DND) {
+                content.draggable = false; // evita l'H5 su touch
+
+                enablePointerDrag(content, {
+                    makePayload: () => ({
+                        type: 'from-cell',
+                        unitId: unit.id,
+                        from: { row, col, stackIndex: i }
+                    }),
+                    onDrop: (hexEl, payload) => {
+                        // drop su cella
+                        if (hexEl.classList.contains('hexagon')) {
+                            const to = { row: +hexEl.dataset.row, col: +hexEl.dataset.col };
+                            handleDrop(payload, to);
+                            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+                            renderBenches();
+                            return;
+                        }
+                        // drop su panchina (se serve): troviamo il container più vicino
+                        const bench = hexEl.closest?.('#bench-allies, #bench-enemies, #bench-walls');
+                        if (bench) {
+                            // Simula il branch che oggi gestisci nel drop delle benches
+                            if (payload.type === 'from-cell') {
+                                const unit = unitById.get(payload.unitId);
+                                if (!unit) return;
+                                // Rimetti in panchina solo se il ruolo coincide
+                                const accept = bench.id === 'bench-allies' ? (unit.role !== 'enemy' && unit.role !== 'wall')
+                                    : bench.id === 'bench-enemies' ? (unit.role === 'enemy')
+                                        : (unit.role === 'wall');
+                                if (!accept) return;
+
+                                // togli da cella
+                                const src = getStack(payload.from.row, payload.from.col);
+                                const idx = src.indexOf(payload.unitId);
+                                if (idx >= 0) { src.splice(idx, 1); setStack(payload.from.row, payload.from.col, src); }
+
+                                UNIT_SELECTED.selectedUnitId = null;
+                                renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+                                renderBenches();
+                            }
+                        }
+                    }
+                });
+            }
+
 
             content.addEventListener("dragstart", (e) => {
                 isDraggingNow = true;
@@ -1285,4 +1382,69 @@ export function showGiantCone(giantOrId) {
     setGiantNemesiTarget(id, targetHint?.unit);
     setCone(cells);
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+}
+
+function enablePointerDrag(el, {
+    makePayload,               // () => {type, unitId, from?}
+    onDrop                     // (targetHexEl, payload) => void
+}) {
+    el.style.touchAction = 'none';
+
+    let ghost = null;
+    let startX = 0, startY = 0;
+    let activeId = null;
+
+    const onDown = (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        activeId = e.pointerId;
+        el.setPointerCapture(activeId);
+        startX = e.clientX; startY = e.clientY;
+
+        // ghost (avatar oppure un cerchio generico)
+        const img = el.querySelector('img');
+        ghost = document.createElement('div');
+        ghost.className = 'dragging-ghost';
+        ghost.innerHTML = img ? `<img src="${img.src}" alt="">` : '';
+        document.body.appendChild(ghost);
+        ghost.style.left = `${startX}px`;
+        ghost.style.top = `${startY}px`;
+
+        isDraggingNow = true; // riusa il tuo flag
+    };
+
+    const onMove = (e) => {
+        if (activeId == null || e.pointerId !== activeId) return;
+        e.preventDefault(); // blocca scroll
+        ghost && (ghost.style.left = `${e.clientX}px`, ghost.style.top = `${e.clientY}px`);
+    };
+
+    const onUp = (e) => {
+        if (activeId == null || e.pointerId !== activeId) return;
+
+        try {
+            // trova hex sotto il dito
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const hex = target?.closest?.('.hexagon');
+            const payload = makePayload?.();
+            if (hex && payload) {
+                // chiama la TUA logica di drop, con lo stesso tipo di payload che usi su H5 DnD
+                onDrop(hex, payload);
+            }
+        } finally {
+            cleanup();
+        }
+    };
+
+    const cleanup = () => {
+        try { el.releasePointerCapture(activeId); } catch { }
+        activeId = null;
+        isDraggingNow = false;
+        ghost?.remove(); ghost = null;
+        document.removeEventListener('pointermove', onMove, { passive: false });
+        document.removeEventListener('pointerup', onUp, { passive: true });
+    };
+
+    el.addEventListener('pointerdown', onDown);
+    document.addEventListener('pointermove', onMove, { passive: false });
+    document.addEventListener('pointerup', onUp, { passive: true });
 }

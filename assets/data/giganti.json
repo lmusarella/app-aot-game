@@ -33,6 +33,10 @@
     "hp": 18,
     "atk": 4,
     "cd": 14,
+    "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "abi": "Abilità: 'Pioggia di Pietre' CD 12 - 3 ⟲ Scaglia pietre fino a 4 esagoni di distanza a tutti i nemici nel suo cono di visuale. Infligge 3 danni + 1 danno bonus per ogni esagono di distanza da ogni bersaglio.",
     "mov": 1,
     "rng": 2,
