@@ -419,34 +419,23 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             card.appendChild(trashTop);
         }
 
-        // Desktop: niente long-press, lascia drag H5; Touch: long-press attivo
-        if (IS_COARSE) {
-            addLongPress(card, {
-                onClick: () => {
-                    if (!isDraggingNow) {
-                        benchClickFocusAndTop(u);
-                        const html = getUnitTooltipHTML(u);
-                        showTooltip(html);
-                        card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
-                        if (u.role === 'enemy') showGiantCone(u.id);
-                    }
-                },
-                onLongPress: () => {
-                    hideTooltip();
-                    clearHighlights();
+
+        addLongPress(card, {
+            onClick: () => {
+                if (!isDraggingNow) {
+                    benchClickFocusAndTop(u);
+                    const html = getUnitTooltipHTML(u);
+                    showTooltip(html);
+                    card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
                     if (u.role === 'enemy') showGiantCone(u.id);
                 }
-            });
-        } else {
-            // mouse/trackpad: click “semplice”, no preventDefault che rompa il drag
-            card.addEventListener('click', () => {
-                if (isDraggingNow) return;
-                benchClickFocusAndTop(u);
-                const html = getUnitTooltipHTML(u);
-                showTooltip(html);
+            },
+            onLongPress: () => {
+                hideTooltip();
+                clearHighlights();
                 if (u.role === 'enemy') showGiantCone(u.id);
-            });
-        }
+            }
+        });
 
 
         if (!readOnly && USE_POINTER_DND) {
@@ -634,43 +623,31 @@ function createHexagon(row, col, unitIds = []) {
             member.style.setProperty('--sel', colVar);
             if (unit.id === UNIT_SELECTED.selectedUnitId) { member.classList.add('is-selected'); }
 
-            if (IS_COARSE) {
-                addLongPress(member, {
-                    onClick: () => {
-                        if (!isDraggingNow) {
-                            UNIT_SELECTED.selectedUnitId = unit.id;
-                            bringToFront({ row, col }, unit.id);
-                            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-                            openAccordionForRole(unit.role);
-                            focusBenchCard(unit.id, { scroll: true, pulse: true });
-                            focusUnitOnField(unit.id);
-                            const html = getUnitTooltipHTML(unit);
-                            showTooltip(html);
-                            if (unit.role === 'enemy') showGiantCone(unit.id);
-                        }
-                    },
-                    onLongPress: () => {
-                        hideTooltip();
-                        openAccordionForRole(unit.role);
-                        if (unit.role === 'enemy') showGiantCone(unit.id);
-                        handleUnitLongPress({ unit, cell: { row, col } });
-                    }
-                });
-            } else {
-                member.addEventListener('click', () => {
-                    if (isDraggingNow) return;
-                    UNIT_SELECTED.selectedUnitId = unit.id;
-                    bringToFront({ row, col }, unit.id);
-                    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-                    openAccordionForRole(unit.role);
-                    focusUnitOnField(unit.id);
-                    focusBenchCard(unit.id, { scroll: true, pulse: true });
-                    const html = getUnitTooltipHTML(unit);
-                    showTooltip(html);
-                    if (unit.role === 'enemy') showGiantCone(unit.id);
-                });
-            }
 
+            addLongPress(member, {
+                onClick: () => {
+                    console.log('click', isDraggingNow);
+                    if (!isDraggingNow) {
+                        UNIT_SELECTED.selectedUnitId = unit.id;
+                        bringToFront({ row, col }, unit.id);
+                        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+                        openAccordionForRole(unit.role);
+                        focusBenchCard(unit.id, { scroll: true, pulse: true });
+                        focusUnitOnField(unit.id);
+                        const html = getUnitTooltipHTML(unit);
+                        showTooltip(html);
+                        if (unit.role === 'enemy') showGiantCone(unit.id);
+                    }
+                },
+                onLongPress: () => {
+                    hideTooltip();
+                    openAccordionForRole(unit.role);
+                    if (unit.role === 'enemy') showGiantCone(unit.id);
+                    handleUnitLongPress({ unit, cell: { row, col } });
+                }
+            });
+
+     
 
             if (USE_POINTER_DND) {
                 content.draggable = false; // evita l'H5 su touch
@@ -760,6 +737,7 @@ function createHexagon(row, col, unitIds = []) {
     hex.addEventListener("click", () => {
         UNIT_SELECTED.selectedUnitId = null;
         document.querySelectorAll('.hex-member.is-selected').forEach(el => el.classList.remove('is-selected'));
+        console.log('chiudo da qua')
         hideTooltip();
         clearHighlights();
     });

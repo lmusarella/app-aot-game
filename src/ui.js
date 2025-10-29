@@ -128,7 +128,9 @@ export function showTooltip(html) {
   positionTooltip(0, 45);
 }
 
-export function hideTooltip() { tooltipEl.style.display = "none"; }
+export function hideTooltip() { 
+  console.log('hide')
+  tooltipEl.style.display = "none"; }
 
 function positionTooltip(mouseX, mouseY) {
   const offset = 14; const { innerWidth: vw, innerHeight: vh } = window;
