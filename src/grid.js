@@ -5,24 +5,6 @@ import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, scheduleSave
 import { log } from './log.js';
 import { adjustUnitHp, startAttackPick, getEngagedHuman, getEngagingGiant } from './entity.js';
 
-// --- TOUCH/PTR ENV FLAGS ---------------------------------------------------
-const HAS_TOUCH = (navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
-const IS_COARSE = window.matchMedia?.('(pointer:coarse)').matches || HAS_TOUCH;
-const IS_ANDROID = /Android/i.test(navigator.userAgent);
-
-const FORCE_PTR = /dnd=ptr/.test(location.search) || localStorage.forcePointerDnd === '1';
-const FORCE_HTML5 = /dnd=html5/.test(location.search) || localStorage.forceHtml5Dnd === '1';
-
-const USE_POINTER_DND =
-    FORCE_PTR ? true :
-        FORCE_HTML5 ? false :
-            (IS_COARSE || IS_ANDROID);
-
-log('FORCE_PTR: '.concat(FORCE_PTR), 'info');
-log('FORCE_HTML5: '.concat(FORCE_HTML5), 'info');
-log('USE_POINTER_DND: '.concat(USE_POINTER_DND), 'info');
-log('IS_COARSE: '.concat(IS_COARSE), 'info');
-log('IS_ANDROID: '.concat(IS_ANDROID), 'info');
 // === HIGHLIGHT CONO =========================================================
 const HILITE = { cone: new Set() };
 const GIANT_CONE_CELLS = new Map();

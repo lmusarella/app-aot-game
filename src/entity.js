@@ -198,7 +198,7 @@ function buildContext(a, t, d20roll) {
     const ATK = getStat(human, 'atk') || 0;
     const G_CD = getStat(giant, 'cd') || 0;
     const G_ATK = Math.max(1, getStat(giant, 'atk') || 1);
- 
+
     const TEC_TOTAL = capModSum(TEC, effectiveBonus.tec);
     const AGI_TOTAL = capModSum(AGI, effectiveBonus.agi);
     const ATK_TOTAL = capModSum(ATK, effectiveBonus.atk);
@@ -558,7 +558,7 @@ export async function handleGiantDeath(unit) {
     log(`${unit.name} è morto.`, 'success', 3000, true);
 
     scheduleSave();
-    
+
     await playSfx('./assets/sounds/morte_gigante.mp3');
 
     showVictoryScreen({
@@ -937,7 +937,7 @@ export async function spawnGiant(type = null, flagNoSound = false) {
     }
 
     const unit = putGiantIntoRoster(pick);
-    const cell = spawnGiantToFieldRandom(unit.id);
+    const cell = spawnGiantToFieldRandom(unit);
 
     if (cell) {
         const url = getMusicUrlById(unit.id);
@@ -973,17 +973,18 @@ function putGiantIntoRoster(giant) {
     renderBenches();
     return unit;
 }
-function spawnGiantToFieldRandom(unitId) {
+function spawnGiantToFieldRandom(unit) {
+    const { id, spawnArea } = unit;
     const attempts = 100;
     for (let i = 0; i < attempts; i++) {
-        const x = Math.floor(d(6)); // 0..5
-        const y = Math.floor(d(6)); // 0..5
-        const r = x + 1; // 1..6
-        const c = y; // 1..6
+        const x = spawnArea ? d(spawnArea.x) : d(6); // 0..5
+        const y = spawnArea ? d(spawnArea.y) : d(6); // 0..5
+        const r = y + 1; // 1..6
+        const c = x; // 1..6
         const s = getStack(r, c);
         if (s.length < DB.SETTINGS.gridSettings.maxUnitHexagon) {
-            removeUnitEverywhere(unitId);
-            s.push(unitId);
+            removeUnitEverywhere(id);
+            s.push(id);
             setStack(r, c, s);
             renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
             return { row: r, col: c };

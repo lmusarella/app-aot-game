@@ -9,6 +9,10 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+    "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "mov": 1,
     "rng": 1,
     "ability": {
@@ -64,6 +68,10 @@
     "atk": 2,
     "cd": 14,
     "abi": "Test",
+    "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "mov": 1,
     "rng": 1,
     "ability": {
@@ -90,6 +98,10 @@
     "cd": 14,
     "abi": "Test",
     "mov": 1,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "rng": 1,
     "ability": {
       "name": "Schianto",
@@ -114,6 +126,10 @@
     "atk": 3,
     "cd": 14,
     "abi": "Test",
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "mov": 1,
     "rng": 1,
     "ability": {
@@ -139,6 +155,10 @@
     "atk": 6,
     "cd": 10,
     "mov": 1,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "rng": 1,
     "abi": "Test",
     "ability": {
@@ -162,6 +182,10 @@
     "color": "red",
     "hp": 18,
     "atk": 4,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "cd": 16,
     "abi": "Test",
     "mov": 1,
@@ -189,6 +213,10 @@
     "atk": 4,
     "cd": 14,
     "mov": 1,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "rng": 1,
     "abi": "Test",
     "ability": {
@@ -213,6 +241,10 @@
     "hp": 16,
     "atk": 4,
     "cd": 14,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "abi": "Test",
     "rng": 1,
     "mov": 1,
@@ -239,6 +271,10 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "mov": 1,
     "rng": 1,
     "ability": {
@@ -264,6 +300,10 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+    "spawnArea": {
+      "x": 6,
+      "y": 1
+    },
     "mov": 1,
     "rng": 1,
     "ability": {
@@ -288,6 +328,10 @@
     "hp": 16,
     "atk": 4,
     "cd": 14,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "mov": 1,
     "rng": 1,
     "abi": "Test",
@@ -315,6 +359,10 @@
     "cd": 14,
     "abi": "Test",
     "mov": 1,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "rng": 1,
     "ability": {
       "name": "Schianto",
@@ -339,6 +387,10 @@
     "atk": 4,
     "cd": 14,
     "abi": "Test",
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "mov": 1,
     "rng": 1,
     "ability": {
@@ -363,6 +415,10 @@
     "hp": 14,
     "atk": 4,
     "cd": 14,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "abi": "Test",
     "mov": 1,
     "rng": 1,
@@ -391,6 +447,10 @@
     "abi": "Nessuna",
     "mov": 1,
     "rng": 1,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "ability": {
       "name": "Schianto",
       "dice": "1d6",
@@ -413,6 +473,10 @@
     "hp": 12,
     "atk": 2,
     "cd": 12,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "abi": "Nessuna",
     "mov": 1,
     "rng": 1,
@@ -440,6 +504,10 @@
     "cd": 12,
     "abi": "Nessuna",
     "mov": 1,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "rng": 1,
     "ability": {
       "name": "Schianto",
@@ -464,6 +532,10 @@
     "atk": 2,
     "cd": 12,
     "abi": "Nessuna",
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "mov": 1,
     "rng": 1,
     "ability": {
@@ -491,6 +563,10 @@
     "atk": 2,
     "cd": 12,
     "abi": "Nessuna",
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "ability": {
       "name": "Schianto",
       "dice": "1d8",
@@ -515,6 +591,10 @@
     "cd": 12,
     "mov": 1,
     "rng": 1,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "abi": "Nessuna",
     "ability": {
       "name": "Schianto",
@@ -539,6 +619,10 @@
     "atk": 2,
     "cd": 12,
     "abi": "Nessuna",
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "mov": 1,
     "rng": 1,
     "ability": {
@@ -564,6 +648,10 @@
     "atk": 2,
     "cd": 12,
     "abi": "Nessuna",
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "mov": 1,
     "rng": 1,
     "ability": {
@@ -590,6 +678,10 @@
     "cd": 12,
     "mov": 1,
     "rng": 1,
+     "spawnArea": {
+      "x": 6,
+      "y": 6
+    },
     "abi": "Nessuna",
     "ability": {
       "name": "Schianto",
