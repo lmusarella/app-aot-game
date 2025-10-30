@@ -402,7 +402,6 @@ function renderBenchSection(container, units, readOnly = false) {
 
         addLongPress(card, {
             onClick: () => {
-
                 benchClickFocusAndTop(u);
                 const html = getUnitTooltipHTML(u);
                 showTooltip(html);
@@ -578,8 +577,7 @@ function createHexagon(row, col, unitIds = []) {
                     if (unit.role === 'enemy') showGiantCone(unit.id);
 
                 },
-                onLongPress: () => {
-                    log(`click onLongPress`);
+                onLongPress: () => {                  
                     hideTooltip();
                     openAccordionForRole(unit.role);
                     if (unit.role === 'enemy') showGiantCone(unit.id);
