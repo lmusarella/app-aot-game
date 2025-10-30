@@ -45,7 +45,7 @@ function isConeCell(r, c) { return HILITE.cone.has(keyRC(r, c)); }
 const normDir = (d) => ((d % 6) + 6) % 6;
 
 const baseHpOverride = new Map();
-let isDraggingNow = false;
+
 
 export const grid = document.getElementById("hex-grid");
 
@@ -229,9 +229,9 @@ export function findUnitCell(unitId) {
 
 
 export function renderBenches() {
-    renderBenchSection(alliesEl, GAME_STATE.alliesRoster, ["recruit", "commander"]);
-    renderBenchSection(enemiesEl, GAME_STATE.giantsRoster, ["enemy"]);
-    renderBenchSection(wallsEl, GAME_STATE.walls, ["wall"], /*readOnly*/ true);
+    renderBenchSection(alliesEl, GAME_STATE.alliesRoster);
+    renderBenchSection(enemiesEl, GAME_STATE.giantsRoster);
+    renderBenchSection(wallsEl, GAME_STATE.walls, true);
 
     countAlliesEl.textContent = `${GAME_STATE.alliesRoster.length} unità`;
     countEnemiesEl.textContent = `${GAME_STATE.giantsRoster.length} unità`;
@@ -286,7 +286,7 @@ function benchClickFocusAndTop(u) {
 function isOnField(unitId) {
     return GAME_STATE.spawns?.some(s => Array.isArray(s.unitIds) ? s.unitIds.includes(unitId) : s.unitId === unitId) || false;
 }
-function renderBenchSection(container, units, acceptRoles, readOnly = false) {
+function renderBenchSection(container, units, readOnly = false) {
     container.textContent = "";
     units.forEach(u => {
         const card = document.createElement("div");
@@ -294,7 +294,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
 
         card.dataset.role = u.role;
         if (isOnField(u.id)) card.classList.add("is-fielded");
-        if (!readOnly) card.draggable = true;
+       
         card.dataset.unitId = u.id;
 
         const avatar = document.createElement("div");
@@ -367,6 +367,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
         if (isDestroyed) card.classList.add("is-destroyed");
         /* handlers */
         hpMinus.addEventListener("click", (e) => {
+            console.log('minus')
             e.stopPropagation();
             if (isWall && isDestroyed) return;
             adjustUnitHp(u.id, e.shiftKey ? -5 : -1);
@@ -376,6 +377,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             clearHighlights();
         });
         hpPlus.addEventListener("click", (e) => {
+            console.log('plus')
             e.stopPropagation();
             if (isWall && isDestroyed) return;
             adjustUnitHp(u.id, e.shiftKey ? +5 : +1);
@@ -392,11 +394,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             hpMinus.classList.add('is-disabled');
             hpPlus.classList.add('is-disabled');
         }
-        /* monta riga: - [bar] HP + */
-        hpRow.append(hpMinus, hpWrap, hpPlus, hpRight);
-
-        /* append nella card: avatar, info, actions (se ti servono), hpRow */
-        card.append(avatar, info, actions, hpRow);
+       
         // ===== Bottone Cestino =====
         // Cestino in alto a destra
         if (!readOnly) {
@@ -411,6 +409,7 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
     <path d="M9 9v8M12 9v8M15 9v8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
   </svg>`;
             trashTop.addEventListener("click", async (e) => {
+                console.log('trash');
                 e.preventDefault(); e.stopPropagation();
                 card.classList.add('removing');
                 const ok = await deleteUnit(u.id);
@@ -419,16 +418,14 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
             card.appendChild(trashTop);
         }
 
-
         addLongPress(card, {
             onClick: () => {
-                if (!isDraggingNow) {
-                    benchClickFocusAndTop(u);
-                    const html = getUnitTooltipHTML(u);
-                    showTooltip(html);
-                    card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
-                    if (u.role === 'enemy') showGiantCone(u.id);
-                }
+
+                benchClickFocusAndTop(u);
+                const html = getUnitTooltipHTML(u);
+                showTooltip(html);
+                card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 450);
+                if (u.role === 'enemy') showGiantCone(u.id);
             },
             onLongPress: () => {
                 hideTooltip();
@@ -438,10 +435,9 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
         });
 
 
-        if (!readOnly && USE_POINTER_DND) {
+        if (!readOnly) {
             // disattiva drag H5 per evitare conflitti su touch
             card.draggable = false;
-
             enablePointerDrag(card, {
                 makePayload: () => ({ type: 'from-bench', unitId: u.id }),
                 onDrop: (hexEl, payload) => {
@@ -450,61 +446,19 @@ function renderBenchSection(container, units, acceptRoles, readOnly = false) {
                     clearHighlights();
                     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
                     renderBenches();
+                    hideTooltip();
                 }
             });
         }
 
+         /* monta riga: - [bar] HP + */
+        hpRow.append(hpMinus, hpWrap, hpPlus, hpRight);
+
+             /* append nella card: avatar, info, actions (se ti servono), hpRow */
+        card.append(avatar, info, actions, hpRow);
 
         container.appendChild(card);
-
-        card.addEventListener("click", () => {
-            if (isDraggingNow) return;
-            benchClickFocusAndTop(u);
-        });
-
-        if (!readOnly) {
-            card.addEventListener("dragstart", (e) => {
-                if (e.target.closest('.btn-detail, .btn-trash')) { e.preventDefault(); return; }
-                isDraggingNow = true;
-                hideTooltip();
-                clearHighlights();
-                card.classList.add("dragging");
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("application/json", JSON.stringify({
-                    type: "from-bench",
-                    unitId: u.id
-                }));
-            });
-            card.addEventListener("dragend", () => {
-                isDraggingNow = false;
-                card.classList.remove("dragging");
-                if (u.role !== 'enemy' & u.role !== 'wall') try { playSfx('./assets/sounds/movimento_3d.mp3', { volume: 0.8 }); } catch { }
-            });
-        }
     });
-
-    if (!readOnly) {
-        container.addEventListener("dragover", (e) => { e.preventDefault(); container.classList.add("drop-ok"); });
-        container.addEventListener("dragleave", () => container.classList.remove("drop-ok"));
-        container.addEventListener("drop", (e) => {
-            e.preventDefault(); container.classList.remove("drop-ok");
-            const raw = e.dataTransfer.getData("application/json"); if (!raw) return;
-            let payload; try { payload = JSON.parse(raw); } catch { return; }
-            if (payload.type === "from-cell") {
-                const unit = unitById.get(payload.unitId);
-                if (!unit) return;
-                if (!acceptRoles.includes(unit.role)) return;
-
-                const src = getStack(payload.from.row, payload.from.col);
-                const idx = src.indexOf(payload.unitId);
-                if (idx >= 0) { src.splice(idx, 1); setStack(payload.from.row, payload.from.col, src); }
-
-                UNIT_SELECTED.selectedUnitId = null;
-                renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-                renderBenches();
-            }
-        });
-    }
 }
 
 export function renderGrid(container, rows, cols, occupancy = []) {
@@ -576,7 +530,6 @@ function createHexagon(row, col, unitIds = []) {
 
     if (isConeCell(row, col)) {
         hex.setAttribute("data-color", "cone");
-
         if (row === 1) hex.setAttribute("data-color", "coneblu");
         if (row === 8 || row === 9) hex.setAttribute("data-color", "conegrigio");
         if (row === 10 || row === 11 || row === 12) hex.setAttribute("data-color", "conesilver");
@@ -591,6 +544,12 @@ function createHexagon(row, col, unitIds = []) {
 
     if (visibleUnits.length === 0) {
         hex.classList.add("is-empty");
+        hex.addEventListener("click", () => {
+            UNIT_SELECTED.selectedUnitId = null;
+            document.querySelectorAll('.hex-member.is-selected').forEach(el => el.classList.remove('is-selected'));
+            hideTooltip();
+            clearHighlights();
+        });
     } else {
         const stackEl = document.createElement("div");
         stackEl.className = "hex-stack";
@@ -602,7 +561,6 @@ function createHexagon(row, col, unitIds = []) {
 
             const content = document.createElement("div");
             content.className = "hex-content";
-            content.draggable = true;
             content.dataset.unitId = unit.id;
             content.dataset.stackIndex = String(i);
 
@@ -626,20 +584,17 @@ function createHexagon(row, col, unitIds = []) {
 
             addLongPress(member, {
                 onClick: () => {
-                    console.log('click', isDraggingNow);
-                    log(`click qua`);
-                    if (!isDraggingNow) {
-                        UNIT_SELECTED.selectedUnitId = unit.id;
-                        bringToFront({ row, col }, unit.id);
-                        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-                        openAccordionForRole(unit.role);
-                        focusBenchCard(unit.id, { scroll: true, pulse: true });
-                        focusUnitOnField(unit.id);
-                        const html = getUnitTooltipHTML(unit);
-                        log(`apri tooltip`);
-                        showTooltip(html);
-                        if (unit.role === 'enemy') showGiantCone(unit.id);
-                    }
+               
+                    UNIT_SELECTED.selectedUnitId = unit.id;
+                    bringToFront({ row, col }, unit.id);
+                    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+                    openAccordionForRole(unit.role);
+                    focusBenchCard(unit.id, { scroll: true, pulse: true });
+                    focusUnitOnField(unit.id);
+                    const html = getUnitTooltipHTML(unit);
+                    showTooltip(html);
+                    if (unit.role === 'enemy') showGiantCone(unit.id);
+
                 },
                 onLongPress: () => {
                     log(`click onLongPress`);
@@ -651,73 +606,50 @@ function createHexagon(row, col, unitIds = []) {
             });
 
 
+            content.draggable = false; // evita l'H5 su touch
 
-            if (USE_POINTER_DND) {
-                content.draggable = false; // evita l'H5 su touch
-
-                enablePointerDrag(content, {
-                    makePayload: () => ({
-                        type: 'from-cell',
-                        unitId: unit.id,
-                        from: { row, col, stackIndex: i }
-                    }),
-                    onDrop: (hexEl, payload) => {
-                        // drop su cella
-                        if (hexEl.classList.contains('hexagon')) {
-                            const to = { row: +hexEl.dataset.row, col: +hexEl.dataset.col };
-                            handleDrop(payload, to);
-                            clearHighlights();
-                            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-                            renderBenches();
-                            return;
-                        }
-                        // drop su panchina (se serve): troviamo il container più vicino
-                        const bench = hexEl.closest?.('#bench-allies, #bench-enemies, #bench-walls');
-                        if (bench) {
-                            // Simula il branch che oggi gestisci nel drop delle benches
-                            if (payload.type === 'from-cell') {
-                                const unit = unitById.get(payload.unitId);
-                                if (!unit) return;
-                                // Rimetti in panchina solo se il ruolo coincide
-                                const accept = bench.id === 'bench-allies' ? (unit.role !== 'enemy' && unit.role !== 'wall')
-                                    : bench.id === 'bench-enemies' ? (unit.role === 'enemy')
-                                        : (unit.role === 'wall');
-                                if (!accept) return;
-
-                                // togli da cella
-                                const src = getStack(payload.from.row, payload.from.col);
-                                const idx = src.indexOf(payload.unitId);
-                                if (idx >= 0) { src.splice(idx, 1); setStack(payload.from.row, payload.from.col, src); }
-
-                                UNIT_SELECTED.selectedUnitId = null;
-                                renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-                                renderBenches();
-                            }
-                        }
-                    }
-                });
-            }
-
-
-            content.addEventListener("dragstart", (e) => {
-                isDraggingNow = true;
-                log(`click dragstart`);
-                hideTooltip();
-                clearHighlights();
-                UNIT_SELECTED.selectedUnitId = unit.id;
-                member.classList.add('is-selected');
-                content.classList.add("dragging");
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("application/json", JSON.stringify({
-                    type: "from-cell",
+            enablePointerDrag(content, {
+                makePayload: () => ({
+                    type: 'from-cell',
                     unitId: unit.id,
                     from: { row, col, stackIndex: i }
-                }));
-            });
-            content.addEventListener("dragend", () => {
-                content.classList.remove("dragging")
-                isDraggingNow = false;
-                if (unit.role !== 'enemy' & unit.role !== 'wall') try { playSfx('./assets/sounds/movimento_3d.mp3', { volume: 0.8 }); } catch { }
+                }),
+                onDrop: (hexEl, payload) => {
+                    // drop su cella
+                    if (hexEl.classList.contains('hexagon')) {
+                        const to = { row: +hexEl.dataset.row, col: +hexEl.dataset.col };
+                        handleDrop(payload, to);
+                        clearHighlights();
+                        renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+                        renderBenches();
+                        hideTooltip();
+                        return;
+                    }
+                    // drop su panchina (se serve): troviamo il container più vicino
+                    const bench = hexEl.closest?.('#bench-allies, #bench-enemies, #bench-walls');
+                    if (bench) {
+                        // Simula il branch che oggi gestisci nel drop delle benches
+                        if (payload.type === 'from-cell') {
+                            const unit = unitById.get(payload.unitId);
+                            if (!unit) return;
+                            // Rimetti in panchina solo se il ruolo coincide
+                            const accept = bench.id === 'bench-allies' ? (unit.role !== 'enemy' && unit.role !== 'wall')
+                                : bench.id === 'bench-enemies' ? (unit.role === 'enemy')
+                                    : (unit.role === 'wall');
+                            if (!accept) return;
+
+                            // togli da cella
+                            const src = getStack(payload.from.row, payload.from.col);
+                            const idx = src.indexOf(payload.unitId);
+                            if (idx >= 0) { src.splice(idx, 1); setStack(payload.from.row, payload.from.col, src); }
+
+                            UNIT_SELECTED.selectedUnitId = null;
+                            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+                            renderBenches();
+                            clearHighlights();
+                        }
+                    }
+                }
             });
 
             return member;
@@ -726,27 +658,6 @@ function createHexagon(row, col, unitIds = []) {
         layoutMembers(hex, members, allUnits.length);
         hex.appendChild(stackEl);
     }
-
-    hex.addEventListener("dragover", (e) => { e.preventDefault(); hex.classList.add("drop-ok"); });
-    hex.addEventListener("dragleave", () => hex.classList.remove("drop-ok"));
-    hex.addEventListener("drop", (e) => {
-        e.preventDefault(); hex.classList.remove("drop-ok");
-        const raw = e.dataTransfer.getData("application/json"); if (!raw) return;
-        let payload; try { payload = JSON.parse(raw); } catch { return; }
-        clearHighlights();
-        handleDrop(payload, { row, col });
-
-    });
-
-    hex.addEventListener("click", () => {
-        UNIT_SELECTED.selectedUnitId = null;
-        document.querySelectorAll('.hex-member.is-selected').forEach(el => el.classList.remove('is-selected'));
-        console.log('chiudo da qua')
-        log(`chiudo da qua click finale`);
-        hideTooltip();
-        clearHighlights();
-    });
-
     return hex;
 }
 
@@ -1039,12 +950,6 @@ function findTargetsFor(attacker, cell) {
         }
     }
     return { targets: out, nemesi };
-}
-
-
-
-function unitsAt(r, c) {
-    return getStack(r, c).map(id => unitById.get(id)).filter(Boolean);
 }
 
 export function sameOrAdjCells(idA, idB) {
@@ -1379,111 +1284,128 @@ export function showGiantCone(giantOrId) {
 }
 
 function enablePointerDrag(el, { makePayload, onDrop }) {
-    el.style.touchAction = 'none';
+  const INTERACTIVE_SEL = 'button, a, input, textarea, select, [role="button"], .hp-btn, .card-trash';
+  const isInteractiveTarget = (t) => !!t?.closest?.(INTERACTIVE_SEL);
 
-    let ghost = null;
-    let startX = 0, startY = 0;
-    let activeId = null;
-    let dragging = false;
-    let lastHoverHex = null;        // 👈 tracking dell'hex evidenziato
-    const MOVE_THRESHOLD = 8;
+  // Blocca drag nativo sulle immagini
+  el.addEventListener('dragstart', e => e.preventDefault(), { passive: false });
+  el.querySelectorAll('img').forEach(img => {
+    img.draggable = false;
+    img.addEventListener('dragstart', e => e.preventDefault(), { passive: false });
+  });
 
-    const highlightHexAt = (x, y) => {
-        const target = document.elementFromPoint(x, y);
-        const hex = target?.closest?.('.hexagon') || null;
+  // Rendi i controlli liberi da gesture della card
+  el.querySelectorAll(INTERACTIVE_SEL).forEach(btn => {
+    // NON bloccare mai il "click" in capture, altrimenti il tuo handler non parte
+    const stop = (ev) => ev.stopPropagation();
+    btn.addEventListener('pointerdown', stop, { capture: true });
+    btn.addEventListener('pointerup',   stop, { capture: true });
+    // opzionale per ambienti touch
+    btn.addEventListener('touchstart',  stop, { capture: true });
+    btn.addEventListener('touchend',    stop, { capture: true });
 
-        if (hex !== lastHoverHex) {
-            // rimuovi highlight dal precedente
-            if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
-            // aggiungi highlight al nuovo
-            if (hex) hex.classList.add('drop-ok');
-            lastHoverHex = hex;
-        }
-    };
+    btn.style.touchAction = 'auto';          // lascia gesti nativi sul bottone
+    btn.style.pointerEvents = 'auto';        // assicura che riceva eventi
+  });
 
-    const clearHover = () => {
-        if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
-        lastHoverHex = null;
-    };
+  // La card gestisce il drag sul resto della superficie
+  el.style.touchAction = 'none';
 
-    const createGhost = (x, y) => {
-        if (ghost) return;
-        const img = el.querySelector('img');
-        ghost = document.createElement('div');
-        ghost.className = 'dragging-ghost';
-        ghost.innerHTML = img ? `<img src="${img.src}" alt="">` : '';
-        ghost.style.position = 'fixed';
-        ghost.style.left = `${x}px`;
-        ghost.style.top = `${y}px`;
-        ghost.style.transform = 'translate(-50%,-50%)';
-        ghost.style.pointerEvents = 'none';
-        ghost.style.zIndex = '99999';
-        document.body.appendChild(ghost);
-    };
+  let ghost = null;
+  let startX = 0, startY = 0;
+  let activeId = null;
+  let dragging = false;
+  let lastHoverHex = null;
+  const MOVE_THRESHOLD = 8;
 
-    const destroyGhost = () => { ghost?.remove(); ghost = null; };
+  const highlightHexAt = (x, y) => {
+    const target = document.elementFromPoint(x, y);
+    const hex = target?.closest?.('.hexagon') || null;
+    if (hex !== lastHoverHex) {
+      if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
+      if (hex) hex.classList.add('drop-ok');
+      lastHoverHex = hex;
+    }
+  };
 
-    const onDown = (e) => {
-        if (e.pointerType === 'mouse' && e.button !== 0) return;
-        activeId = e.pointerId;
-        try { el.setPointerCapture(activeId); } catch { }
-        startX = e.clientX; startY = e.clientY;
-        dragging = false;
-        isDraggingNow = true;
-    };
+  const clearHover = () => {
+    if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
+    lastHoverHex = null;
+  };
 
-    const onMove = (e) => {
-        if (activeId == null || e.pointerId !== activeId) return;
-        if (e.pointerType === 'mouse' && e.buttons !== 1) return cleanup();
-        e.preventDefault();
+  const createGhost = (x, y) => {
+    if (ghost) return;
+    const img = el.querySelector('img');
+    ghost = document.createElement('div');
+    ghost.className = 'dragging-ghost';
+    ghost.innerHTML = img ? `<img src="${img.src}" alt="">` : '';
+    ghost.style.position = 'fixed';
+    ghost.style.left = `${x}px`;
+    ghost.style.top = `${y}px`;
+    ghost.style.transform = 'translate(-50%,-50%)';
+    ghost.style.pointerEvents = 'none';
+    ghost.style.zIndex = '99999';
+    document.body.appendChild(ghost);
+  };
 
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        if (!dragging && (dx * dx + dy * dy) >= MOVE_THRESHOLD * MOVE_THRESHOLD) {
-            dragging = true;
-            createGhost(startX, startY);
-        }
+  const destroyGhost = () => { ghost?.remove(); ghost = null; };
 
-        if (dragging) {
-            if (ghost) { ghost.style.left = `${e.clientX}px`; ghost.style.top = `${e.clientY}px`; }
-            highlightHexAt(e.clientX, e.clientY);    // 👈 simula dragover/leave
-        }
-    };
+  const onDown = (e) => {
+    // Se parti da un controllo, niente drag
+    if (isInteractiveTarget(e.target)) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    activeId = e.pointerId;
+    try { el.setPointerCapture(activeId); } catch {}
+    startX = e.clientX; startY = e.clientY;
+    dragging = false;
+  };
 
-    const dropAtPoint = (x, y) => {
-        const target = document.elementFromPoint(x, y);
-        const hex = target?.closest?.('.hexagon');
-        const payload = makePayload?.();
-        if (hex && payload) onDrop(hex, payload);
-    };
+  const onMove = (e) => {
+    if (activeId == null || e.pointerId !== activeId) return;
+    if (e.pointerType === 'mouse' && e.buttons !== 1) return cleanup();
+    if (isInteractiveTarget(e.target)) return; // non interferire sopra bottoni
+    e.preventDefault();
 
-    const onUp = (e) => {
-        if (activeId == null || e.pointerId !== activeId) return;
-        if (dragging) dropAtPoint(e.clientX, e.clientY);
-        cleanup();
-    };
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!dragging && (dx*dx + dy*dy) >= MOVE_THRESHOLD*MOVE_THRESHOLD) {
+      dragging = true;
+      createGhost(startX, startY);
+    }
+    if (dragging) {
+      if (ghost) { ghost.style.left = `${e.clientX}px`; ghost.style.top = `${e.clientY}px`; }
+      highlightHexAt(e.clientX, e.clientY);
+    }
+  };
 
-    const onCancel = () => cleanup();
+  const dropAtPoint = (x, y) => {
+    const target = document.elementFromPoint(x, y);
+    const hex = target?.closest?.('.hexagon');
+    const payload = makePayload?.();
+    if (hex && payload) onDrop(hex, payload);
+  };
 
-    const cleanup = () => {
-        try { el.releasePointerCapture(activeId); } catch { }
-        activeId = null;
-        dragging = false;
-        isDraggingNow = false;
-        clearHover();                 // 👈 rimuovi evidenziazione residua
-        destroyGhost();
-        document.removeEventListener('pointermove', onMove, { passive: false });
-        document.removeEventListener('pointerup', onUp, { passive: true });
-        document.removeEventListener('pointercancel', onCancel, { passive: true });
-    };
+  const onUp = (e) => {
+    if (activeId == null || e.pointerId !== activeId) return;
+    if (dragging) dropAtPoint(e.clientX, e.clientY);
+    cleanup();
+  };
 
-    // Blocca drag nativo su img
-    el.addEventListener('dragstart', e => e.preventDefault(), { passive: false });
-    el.querySelectorAll('img').forEach(img => { img.draggable = false; img.addEventListener('dragstart', e => e.preventDefault(), { passive: false }); });
+  const onCancel = () => cleanup();
 
-    el.addEventListener('pointerdown', onDown);
-    document.addEventListener('pointermove', onMove, { passive: false });
-    document.addEventListener('pointerup', onUp, { passive: true });
-    document.addEventListener('pointercancel', onCancel, { passive: true });
+  const cleanup = () => {
+    try { el.releasePointerCapture(activeId); } catch {}
+    activeId = null;
+    dragging = false;
+    clearHover();
+    destroyGhost();
+    document.removeEventListener('pointermove', onMove, { passive: false });
+    document.removeEventListener('pointerup', onUp, { passive: true });
+    document.removeEventListener('pointercancel', onCancel, { passive: true });
+  };
+
+  el.addEventListener('pointerdown', onDown);
+  document.addEventListener('pointermove', onMove, { passive: false });
+  document.addEventListener('pointerup', onUp, { passive: true });
+  document.addEventListener('pointercancel', onCancel, { passive: true });
 }
-
