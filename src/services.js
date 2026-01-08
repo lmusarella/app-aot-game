@@ -11,6 +11,7 @@ import { closeAllFabs, resetDeckFromPool, updateFabDeckCounters } from './fab.js
 import { renderLogs } from './log.js';
 import { loadMissions } from "./missions.js";
 import showWarningC from './effects/warningOverlayC.js';
+import { applyCommanderAccess } from './core/permissions.js';
 
 export function initAppListeners() {
 
@@ -56,6 +57,7 @@ export function initRenderApp(booted) {
 
         GAME_STATE.turnEngine = TurnEngine;
         GAME_STATE.turnEngine.init()
+        applyCommanderAccess();
     } else {
         // 6) riprendi il TIMER in modo resiliente
         try {
@@ -93,6 +95,7 @@ export function initRenderApp(booted) {
       
         GAME_STATE.turnEngine = TurnEngine;
         GAME_STATE.turnEngine.init()
+        applyCommanderAccess();
     }
 }
 
@@ -128,4 +131,3 @@ function initGeneralListeners() {
         }
     });
 }
-

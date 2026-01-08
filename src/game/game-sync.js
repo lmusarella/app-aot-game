@@ -3,6 +3,7 @@ import { supabase } from '../supabase/supabaseClient.js'
 import { APP_STATE, GAME_STATE, gameAPI, snapshot } from '../core/app-state.js'
 import { getTurnInfo } from '../core/turn-helpers.js';
 import { initTurnTracker, startTurnCountdown, renderTurnTracker } from '../core/turn-tracker.js';
+import { initEventManager, consumeGameEvents } from './event-manager.js';
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -22,6 +23,7 @@ export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
   await loadOrInitGameState(roomId, isLeader, allPlayers)
   bindGameRealtime(roomId)
   gameAPI.renderGameFromState()
+  initEventManager();
 
   // Turn tracker
   initTurnTracker();
@@ -168,6 +170,7 @@ function bindGameRealtime(roomId) {
     gameAPI.applyLoadedState(newState)
     // se la tua render accetta (state, me, players) puoi passare solo state
     gameAPI.renderGameFromState(GAME_STATE)
+    consumeGameEvents();
 
     // ogni update dal DB → aggiorno il tracker & riavvio countdown
     renderTurnTracker();

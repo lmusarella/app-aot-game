@@ -12,7 +12,7 @@ import showPhaseBanner from './effects/phaseBanner.js';
 import showWarningC from './effects/warningOverlayC.js';
 import lightningStrike from './effects/lightningStrike.js';
 // in cima
-import { APP_STATE } from './core/app-state.js'
+import { guardCommanderAction } from './core/permissions.js';
 import { getTurnInfo, advanceTurn } from './core/turn-helpers.js';
 import { scheduleSave } from './game/game-sync.js';
 
@@ -60,8 +60,7 @@ export function initPhasesListeners() {
     const mode = btnStart.dataset.mode;
 
     // 1) Solo il "driver" può scrivere sul game_state
-    if (!APP_STATE.isGameDriver) {
-      log('Solo il comandante può cambiare fase.', 'warning', 3000, true);
+    if (!guardCommanderAction('cambiare fase')) {
       return;
     }
 

@@ -1168,12 +1168,21 @@
    box-shadow: var(--shadow-outer-strong), var(--shadow-inset-top), var(--shadow-inset-bottom);
  }
 
- .fab-options {
-   position: absolute;
-   inset: 0;
-   pointer-events: none;
-   z-index: 2;
- }
+.fab-options {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.is-commander-locked {
+  opacity: 0.45;
+  filter: grayscale(0.35);
+}
+
+.is-commander-locked[aria-disabled="true"] {
+  cursor: not-allowed;
+}
 
  .fab-option {
    position: absolute;

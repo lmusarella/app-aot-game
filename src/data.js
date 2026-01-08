@@ -46,6 +46,7 @@ export const GAME_STATE = {
     giantsRoster: [],
     walls: [],
     logs: [],
+    events: [],
     modRolls: {
         atk: 0,
         tec: 0,
@@ -139,6 +140,7 @@ export function snapshot() {
         missionStats: structuredClone(GAME_STATE.missionStats),
         // log
         logs: structuredClone(GAME_STATE.logs),
+        events: structuredClone(GAME_STATE.events),
         //turnengine
         turnEngine: GAME_STATE.turnEngine,
         missionState: (() => {
@@ -183,6 +185,7 @@ export function restore(save) {
     GAME_STATE.decks.consumable.discard = save.decks?.consumable?.discard ?? [];
     GAME_STATE.decks.consumable.removed = save.decks?.consumable?.removed ?? [];
     GAME_STATE.logs = save.logs ?? [];
+    GAME_STATE.events = Array.isArray(save.events) ? save.events : [];
     //mano
     GAME_STATE.hand = Array.isArray(save.hand) ? save.hand : [];
 

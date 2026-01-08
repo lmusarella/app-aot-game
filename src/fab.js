@@ -8,6 +8,7 @@ import { applyHpBar, COLOR_VAR, shuffle, countAlive, totalByRole } from './utils
 import { playSfx } from './audio.js';
 import { addLongPress, showTooltip, getUnitTooltipHTML, alliesPickerHTML, ensureModal, openAccordionForRole, hideTooltip, cardSheetHTML } from './ui.js';
 import lightningStrike from './effects/lightningStrike.js';
+import { guardCommanderAction } from './core/permissions.js';
 
 const fabs = Array.from(document.querySelectorAll('.fab'));
 
@@ -34,6 +35,7 @@ document.addEventListener('click', (e) => { if (!e.target.closest('.fab')) close
 document.querySelectorAll('#fab-arruola .fab-option').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        if (!guardCommanderAction('gestire la squadra')) return;
         const role = btn.dataset.role; // 'recruit' | 'commander' | 'random-team'
 
         if (role === 'random-team') {
@@ -52,6 +54,7 @@ document.querySelectorAll('#fab-arruola .fab-option').forEach(btn => {
 document.querySelectorAll('#fab-spawn .fab-option').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        if (!guardCommanderAction('gestire la fase giganti')) return;
         const type = btn.dataset.type; // "Casuale" | "Puro" | "Anomalo" | "Mutaforma"
         if (type !== 'Movimento') {
             let ok = false;
@@ -128,6 +131,7 @@ export function drawCard(type /* 'event' | 'consumable' */) {
 document.querySelectorAll('#fab-event .fab-option').forEach(btn => {
     btn.addEventListener('click', async (e) => {
         e.stopPropagation();
+        if (!guardCommanderAction('gestire le carte')) return;
         const t = btn.dataset.ev; // "evento" | "consumabile"
 
         if (t === 'reshuffle') {
