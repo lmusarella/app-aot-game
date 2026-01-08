@@ -1,9 +1,10 @@
 // sw.js - Service Worker base per PWA
-const CACHE_NAME = 'aot-cache-v1';
+const CACHE_NAME = 'aot-cache-v2';
 const ASSETS = [
   './',
   './index.html',
-  './style.css',
+  './styles/game.css',
+  './styles/screens.css',
   './app.js',
   './manifest.json',
 
