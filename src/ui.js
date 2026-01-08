@@ -9,6 +9,7 @@ const btnL = document.getElementById('toggle-left');
 const btnR = document.getElementById('toggle-right');
 const region = document.getElementById('snackbar-region');
 
+
 export const tooltipEl = document.getElementById("tooltip");
 let _modalEls = null;
 const LONG_PRESS_MS = 320;
@@ -42,7 +43,7 @@ export function getUnitTooltipHTML(unit) {
   const hp = Math.min(max, Math.max(0, unit.currHp ?? max));
   const hpPct = max > 0 ? Math.round((hp / max) * 100) : 0;
 
- const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus || { all: 0, tec: 0, agi: 0, atk: 0 };
+  const effectiveBonus = GAME_STATE.xpMoraleState.effectiveBonus || { all: 0, tec: 0, agi: 0, atk: 0 };
 
   const atk = unit.atk ?? "—";
   const tec = unit.tec ?? "—";         // per reclute/commanders
@@ -128,9 +129,9 @@ export function showTooltip(html) {
   positionTooltip(0, 45);
 }
 
-export function hideTooltip() { 
-  console.log('hide')
-  tooltipEl.style.display = "none"; }
+export function hideTooltip() {
+  tooltipEl.style.display = "none";
+}
 
 function positionTooltip(mouseX, mouseY) {
   const offset = 14; const { innerWidth: vw, innerHeight: vh } = window;

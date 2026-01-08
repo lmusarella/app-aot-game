@@ -90,7 +90,7 @@ export function initRenderApp(booted) {
         refreshRollModsUI();
         initModsDiceUI();
         mountUnitModsUI();
-        loadMissions();
+      
         GAME_STATE.turnEngine = TurnEngine;
         GAME_STATE.turnEngine.init()
     }

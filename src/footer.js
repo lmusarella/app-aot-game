@@ -1,4 +1,5 @@
-import { GAME_STATE, scheduleSave, DB } from "./data.js";
+import { GAME_STATE, DB } from "./data.js";
+import {scheduleSave} from './game/game-sync.js';
 import { log } from "./log.js";
 import { levelFromXP, levelProgressPercent, getMalusRow } from './utils.js';
 import { renderBonusMalus } from './mods.js'
@@ -28,7 +29,7 @@ export function addMorale(deltaPct) {
 
     // UI + pillole
     refreshMoraleUI();     // richiama già renderBonusMalus()
-    scheduleSave();
+    scheduleSave('footer');
     // Cambio fascia malus?
     const prevBand = getMalusRow(prev);
     const nextBand = getMalusRow(next);
@@ -80,7 +81,7 @@ export function addXP(delta) {
 
     // UI immediata
     refreshXPUI();   // aggiorna barra, % e pillole
-    scheduleSave();
+    scheduleSave('footer');
 
     // Annunci di livello
     if (nextLevel > prevLevel) {

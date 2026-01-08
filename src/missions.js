@@ -1,4 +1,5 @@
-import { GAME_STATE, scheduleSave, DB } from "./data.js";
+import { GAME_STATE, DB } from "./data.js";
+import {scheduleSave} from './game/game-sync.js';
 import { capitalizeFirstLetter, clamp } from "./utils.js";
 import { addLongPress, showCardDetail, ensureMissionCardSkeleton } from "./ui.js";
 import { log } from "./log.js";
@@ -22,11 +23,10 @@ function getCurrentMissionId() {
 export function missionStatsBumpAttempt() {
     const ms = ensureMissionStats();
     ms.attempts++;
-    scheduleSave?.();
+    scheduleSave?.('mission');
     renderMissionPanel();
 }
 export function loadMissions() {
-    setMissionByIndex(GAME_STATE.missionState.curIndex);
     renderMissionPanel();
 }
 
@@ -56,7 +56,7 @@ export function missionStatsOnUnitDeath(unit) {
     if (!unit) return;
     if (unit.role === 'enemy') ms.kills++;
     else if (unit.role === 'recruit' || unit.role === 'commander') ms.losses++;
-    scheduleSave();
+    scheduleSave('mission');
     renderMissionPanel();
 }
 
@@ -79,7 +79,7 @@ export function missionStatsRecordEvent(card, { durationRounds = Infinity, sign 
         hhmm: hhmm,
         detail: card
     });
-    scheduleSave?.();
+    scheduleSave?.('mission');
     renderMissionPanel();
 }
 
@@ -263,7 +263,7 @@ export function setMissionByIndex(idx) {
     stopTimer();
     renderMissionUI();
     renderTimerUI();
-    scheduleSave();
+    scheduleSave('mission');
 }
 
 export async function completeMission(reason) {

@@ -1,5 +1,6 @@
-import { GAME_STATE, scheduleSave, DB, unitById } from "./data.js";
+import { GAME_STATE, DB, unitById } from "./data.js";
 import { levelFromXP, fmtSigned, signClass } from "./utils.js";
+import {scheduleSave} from './game/game-sync.js';
 import { log } from "./log.js";
 
 const UM_STAT_LABELS = { atk: 'ATK', tec: 'TEC', agi: 'AGI', cd: 'CA', mov: 'MOV', rng: 'RNG' };
@@ -221,7 +222,7 @@ export function mountUnitModsUI() {
             effs.push({ id: 'e' + Math.random().toString(36).slice(2), stat, delta, rounds, type: scope });
             renderList();
             renderTotals();
-            scheduleSave?.();
+            scheduleSave?.('mod');
         });
 
         renderList();
@@ -298,7 +299,7 @@ export function mountUnitModsUI() {
                 if (i >= 0) effs.splice(i, 1);
                 renderList();
                 renderTotals();
-                scheduleSave?.();
+                scheduleSave?.('mod');
             });
         });
     }
@@ -328,7 +329,7 @@ export function mountUnitModsUI() {
         if (!current) return;
         current._effects = [];
         renderRows();
-        scheduleSave?.();
+        scheduleSave?.('mod');
     });
 
     // prima selezione
@@ -441,7 +442,7 @@ export function initModsListeners() {
 
         renderBonusMalus();
         refreshRollModsUI();
-        scheduleSave();
+        scheduleSave('mod');
     });
 }
 

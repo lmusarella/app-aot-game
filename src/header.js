@@ -1,6 +1,7 @@
-import { GAME_STATE, scheduleSave, resetGame } from './data.js';
+import { GAME_STATE, resetGame } from './data.js';
 import { confirmDialog, openDialog } from './ui.js';
 import { clearGrid } from './grid.js';
+import {scheduleSave} from './game/game-sync.js';
 import { completeMission, setMissionByIndex, renderMissionUI } from './missions.js';
 import { fmtClock, clamp } from './utils.js';
 import { playSfx } from './audio.js';
@@ -62,14 +63,14 @@ export function stopTimer() {
         GAME_STATE.missionState.intervalId = null;
     }
     renderTimerUI();
-    scheduleSave();
+    //scheduleSave();
 }
 
 export function resetTimer() {
     GAME_STATE.missionState.remainingSec = GAME_STATE.missionState.timerTotalSec || 1200;
     stopTimer();
     renderTimerUI();
-    scheduleSave();
+    //scheduleSave();
 }
 
 export function initHeaderListeners() {

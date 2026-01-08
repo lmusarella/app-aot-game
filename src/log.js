@@ -1,5 +1,6 @@
 import { showSnackBar } from './ui.js'
-import { scheduleSave, GAME_STATE } from './data.js'
+import { GAME_STATE } from './data.js'
+import {scheduleSave} from './game/game-sync.js';
 
 const logBox = document.getElementById('log-box');
 
@@ -13,7 +14,7 @@ export function log(msg, type = 'info', time = 3000, silent = false) {
     GAME_STATE.logs.push({ message, type });
     if (!silent) showSnackBar(msg, { duration: time }, type);
     renderLogs();
-    scheduleSave();
+    scheduleSave('log');
 }
 
 export function renderLogs() {

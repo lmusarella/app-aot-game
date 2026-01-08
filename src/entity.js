@@ -5,7 +5,8 @@ import {
 } from './grid.js';
 import { unitAlive, isHuman, pickRandom, getStat, getMusicUrlById, keyRC, rollDiceSpec, d, shuffle, availableTemplates, capModSum, wait } from './utils.js';
 import { playSfx, playBg } from './audio.js';
-import { unitById, rebuildUnitIndex, GAME_STATE, GIANT_ENGAGEMENT, scheduleSave, DB } from './data.js';
+import { unitById, rebuildUnitIndex, GAME_STATE, GIANT_ENGAGEMENT, DB } from './data.js';
+import {scheduleSave} from './game/game-sync.js';
 import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from './ui.js'
 import { log } from './log.js';
 import { missionStatsOnUnitDeath, renderMissionUI } from './missions.js';
@@ -129,7 +130,7 @@ async function resolveAttack(attackerId, targetId) {
     // Caso semplice: NON umano vs gigante → danno flat “vecchio comportamento”
     if (!ctx.flags.isHumanVsGiant) {
         await resolveWallAttack(ctx);
-        scheduleSave();
+        scheduleSave('entity');
         return;
     }
 
@@ -157,7 +158,7 @@ async function resolveAttack(attackerId, targetId) {
     hideVersusOverlay();
     showVersusOverlay(a, t); // come da codice originale
 
-    scheduleSave();
+    scheduleSave('entity');
 }
 
 /* --------------------------- Helper: IO/Wrapper --------------------------- */
@@ -482,7 +483,7 @@ export async function setUnitHp(unitId, newHp) {
         return;
     }
 
-    scheduleSave();
+    scheduleSave('entity');
     renderBenches();
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
 };
@@ -531,7 +532,7 @@ export async function handleWallDeath(wallUnit) {
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     renderBenches();
     log(`${wallUnit.name} è stato distrutto!`, 'error');
-    scheduleSave();
+    scheduleSave('entity');
     await playSfx('./assets/sounds/muro_distrutto.mp3');
 
     setTimeout(() => {
@@ -557,7 +558,7 @@ export async function handleGiantDeath(unit) {
 
     log(`${unit.name} è morto.`, 'success', 3000, true);
 
-    scheduleSave();
+    scheduleSave('entity');
 
     await playSfx('./assets/sounds/morte_gigante.mp3');
 
@@ -637,7 +638,7 @@ export async function handleAllyDeath(unit) {
         document.dispatchEvent(ev);
     } catch { }
 
-    scheduleSave();
+    scheduleSave('entity');
 }
 
 export function endAttackPick() {
@@ -703,7 +704,7 @@ export function resetMissionEffectsAllUnits({ includeRoles = ['recruit', 'comman
         if (u._effects.length !== before) touched.push(u.id);
     }
 
-    try { scheduleSave?.(); } catch { }
+    try { scheduleSave?.('entity'); } catch { }
     try { log?.(`Reset modificatori di missione per ${touched.length} unità.`, 'info'); } catch { }
 
     // Notifica opzionale (se vuoi rinfrescare UI che ascolta questo evento)
@@ -912,7 +913,7 @@ export function tickUnitModsOnNewRound() {
         // rimuovi scaduti (<= 0). Lascia Infinity intatto
         u._effects = arr.filter(ef => !Number.isFinite(ef.rounds) || ef.rounds > 0);
     }
-    scheduleSave();
+    scheduleSave('entity');
 }
 function getSpawnType(roll, spawnRate) {
     for (const [tipo, range] of Object.entries(spawnRate)) {
@@ -1028,7 +1029,7 @@ export function pickRandomTeam({ commanders = 1, recruits = 3 } = {}) {
     renderBenches();
     log(`Squadra casuale arruolata: ${movedNames.join(', ')}.`, 'success');
     openAccordionForRole('commander');
-    scheduleSave();
+    scheduleSave('entity');
     return true;
 }
 

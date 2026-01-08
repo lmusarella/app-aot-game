@@ -1,21 +1,33 @@
 
 
-import { loadDataAndGameState } from './src/data.js'
+import { bootDataApplication } from './src/data.js'
 import { initAppListeners, initRenderApp, showWelcomePopup } from './src/services.js';
 import { showTutorialPopupViaDialog } from './src/ui.js';
-
+import { initAuthUI } from './src/auth/auth.js'
+import { initLobbyUI } from './src/lobby/lobby-ui.js';
+import { showScreen } from './src/core/ui-helpers.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    showScreen('login');
+
     initAppListeners();
-    const booted = await loadDataAndGameState();
-    initRenderApp(booted);
+    
+    await bootDataApplication();
+
+    initRenderApp(false);
 
     setTimeout(async () => {
-        if (booted)
-            await showWelcomePopup(!booted, "assets/img/comandanti/erwin_popup_benvenuto.jpg");
-        else
-            await showTutorialPopupViaDialog({ startIndex: 0, force: true });
+        initAuthUI();
+        initLobbyUI();
 
+        /*if (booted) {
+            await showWelcomePopup(!booted, "assets/img/comandanti/erwin_popup_benvenuto.jpg");
+        } else {
+            await showTutorialPopupViaDialog({ startIndex: 0, force: true });
+            // main.js         
+        }*/
+       
     }, 60);
 
     const btn = document.getElementById('btn-tutorial');

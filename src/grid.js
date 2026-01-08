@@ -1,7 +1,8 @@
 import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, showSnackBar, addLongPress, confirmDialog } from './ui.js';
 import { playSfx } from './audio.js';
 import { isClone, getStat, applyHpBar, getMusicUrlById, isHuman, pickRandom, COLOR_VAR, keyRC } from './utils.js';
-import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, scheduleSave, GIANT_ENGAGEMENT } from './data.js';
+import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, GIANT_ENGAGEMENT } from './data.js';
+import {scheduleSave} from './game/game-sync.js';
 import { log } from './log.js';
 import { adjustUnitHp, startAttackPick, getEngagedHuman, getEngagingGiant } from './entity.js';
 
@@ -276,7 +277,7 @@ function renderBenchSection(container, units, readOnly = false) {
 
         card.dataset.role = u.role;
         if (isOnField(u.id)) card.classList.add("is-fielded");
-       
+
         card.dataset.unitId = u.id;
 
         const avatar = document.createElement("div");
@@ -307,7 +308,17 @@ function renderBenchSection(container, units, readOnly = false) {
         sub.textContent = (u.role === "recruit") ? "Recluta" :
             (u.role === "commander") ? "Comandante" :
                 (u.role === "enemy") ? "Gigante" : "Muro";
-        info.append(name, sub);
+
+
+        // 👇 NUOVO: riga con nickname giocatore (solo per alleati)
+        if (u.owner_nickname && (u.role === "recruit" || u.role === "commander")) {
+            const owner = document.createElement("div");
+            owner.className = "unit-owner";
+            owner.textContent = `Giocatore: ${u.owner_nickname}`;
+            info.append(name, sub, owner);
+        } else {
+            info.append(name, sub);
+        }
 
         const actions = document.createElement("div"); actions.className = "unit-actions";
 
@@ -349,7 +360,7 @@ function renderBenchSection(container, units, readOnly = false) {
         if (isDestroyed) card.classList.add("is-destroyed");
         /* handlers */
         hpMinus.addEventListener("click", (e) => {
-            console.log('minus')
+           
             e.stopPropagation();
             if (isWall && isDestroyed) return;
             adjustUnitHp(u.id, e.shiftKey ? -5 : -1);
@@ -359,7 +370,7 @@ function renderBenchSection(container, units, readOnly = false) {
             clearHighlights();
         });
         hpPlus.addEventListener("click", (e) => {
-            console.log('plus')
+           
             e.stopPropagation();
             if (isWall && isDestroyed) return;
             adjustUnitHp(u.id, e.shiftKey ? +5 : +1);
@@ -376,7 +387,7 @@ function renderBenchSection(container, units, readOnly = false) {
             hpMinus.classList.add('is-disabled');
             hpPlus.classList.add('is-disabled');
         }
-       
+
         // ===== Bottone Cestino =====
         // Cestino in alto a destra
         if (!readOnly) {
@@ -391,7 +402,7 @@ function renderBenchSection(container, units, readOnly = false) {
     <path d="M9 9v8M12 9v8M15 9v8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
   </svg>`;
             trashTop.addEventListener("click", async (e) => {
-                console.log('trash');
+               
                 e.preventDefault(); e.stopPropagation();
                 card.classList.add('removing');
                 const ok = await deleteUnit(u.id);
@@ -432,10 +443,10 @@ function renderBenchSection(container, units, readOnly = false) {
             });
         }
 
-         /* monta riga: - [bar] HP + */
+        /* monta riga: - [bar] HP + */
         hpRow.append(hpMinus, hpWrap, hpPlus, hpRight);
 
-             /* append nella card: avatar, info, actions (se ti servono), hpRow */
+        /* append nella card: avatar, info, actions (se ti servono), hpRow */
         card.append(avatar, info, actions, hpRow);
 
         container.appendChild(card);
@@ -480,7 +491,7 @@ export function setStack(r, c, arr) {
     if (!arr || arr.length === 0) { if (idx >= 0) GAME_STATE.spawns.splice(idx, 1); return; }
     if (idx < 0) GAME_STATE.spawns.push({ row: r, col: c, unitIds: [...arr] });
     else GAME_STATE.spawns[idx] = { row: r, col: c, unitIds: [...arr] };
-    scheduleSave();
+    scheduleSave('grid');
 }
 
 function findCellIndex(r, c) { return GAME_STATE.spawns.findIndex(s => s.row === r && s.col === c); }
@@ -565,7 +576,7 @@ function createHexagon(row, col, unitIds = []) {
 
             addLongPress(member, {
                 onClick: () => {
-               
+
                     UNIT_SELECTED.selectedUnitId = unit.id;
                     bringToFront({ row, col }, unit.id);
                     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
@@ -577,7 +588,7 @@ function createHexagon(row, col, unitIds = []) {
                     if (unit.role === 'enemy') showGiantCone(unit.id);
 
                 },
-                onLongPress: () => {                  
+                onLongPress: () => {
                     hideTooltip();
                     openAccordionForRole(unit.role);
                     if (unit.role === 'enemy') showGiantCone(unit.id);
@@ -709,7 +720,7 @@ export function removeUnitEverywhere(unitId) {
             arr.splice(idx, 1);
             if (arr.length === 0) GAME_STATE.spawns.splice(i, 1);
             else GAME_STATE.spawns[i] = { row: s.row, col: s.col, unitIds: arr };
-            scheduleSave();
+            scheduleSave('grid');
             return;
         }
     }
@@ -1000,7 +1011,7 @@ async function deleteUnit(unitId, flagPopup = true) {
     renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     // 5) Log
     log(`Rimossa unità: ${name}.`);
-    scheduleSave();
+    scheduleSave('grid');
     return true;
 }
 
@@ -1057,7 +1068,7 @@ export function deleteUnits(ids) {
         renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
         log(removedCount === 1 ? `Rimossa unità: ${removedNames[0]}.`
             : `Rimosse ${removedCount} unità.`, 'info');
-        scheduleSave();
+        scheduleSave('grid');
     }
 
     return removedCount;
@@ -1073,7 +1084,7 @@ export async function clearGrid() {
     GAME_STATE.turnEngine.eventCards = 0;
     GAME_STATE.turnEngine.squadNumber = 0;
     renderMissionUI();
-    scheduleSave();
+    scheduleSave('grid');
 }
 
 // Cono con profondità = range: 3 "raggi" (dir-1, dir, dir+1) dalla cella sorgente
@@ -1265,10 +1276,10 @@ export function showGiantCone(giantOrId) {
 
 // === DROP-IN REPLACEMENT (ghost con immagine completamente dentro) ===
 function enablePointerDrag(el, { makePayload, onDrop }) {
-  // --- 1) CSS per il ghost: iniettato una sola volta ---
-  (function ensureDragGhostStyles(){
-    if (document.getElementById('drag-ghost-styles')) return;
-    const css = `
+    // --- 1) CSS per il ghost: iniettato una sola volta ---
+    (function ensureDragGhostStyles() {
+        if (document.getElementById('drag-ghost-styles')) return;
+        const css = `
     .drag-ghost {
       position: fixed;
       left: 0; top: 0;
@@ -1342,68 +1353,68 @@ function enablePointerDrag(el, { makePayload, onDrop }) {
       50%{ filter: drop-shadow(0 6px 10px rgba(0,0,0,.18)); }
     }
     `;
-    const tag = document.createElement('style');
-    tag.id = 'drag-ghost-styles';
-    tag.textContent = css;
-    document.head.appendChild(tag);
-  })();
+        const tag = document.createElement('style');
+        tag.id = 'drag-ghost-styles';
+        tag.textContent = css;
+        document.head.appendChild(tag);
+    })();
 
-  // --- 2) Config interazioni/drag (con fix bottoni) ---
-  const INTERACTIVE_SEL = 'button, a, input, textarea, select, [role="button"], .hp-btn, .card-trash';
-  const isInteractiveTarget = (t) => !!t?.closest?.(INTERACTIVE_SEL);
+    // --- 2) Config interazioni/drag (con fix bottoni) ---
+    const INTERACTIVE_SEL = 'button, a, input, textarea, select, [role="button"], .hp-btn, .card-trash';
+    const isInteractiveTarget = (t) => !!t?.closest?.(INTERACTIVE_SEL);
 
-  el.addEventListener('dragstart', e => e.preventDefault(), { passive: false });
-  el.querySelectorAll('img').forEach(img => {
-    img.draggable = false;
-    img.addEventListener('dragstart', e => e.preventDefault(), { passive: false });
-  });
+    el.addEventListener('dragstart', e => e.preventDefault(), { passive: false });
+    el.querySelectorAll('img').forEach(img => {
+        img.draggable = false;
+        img.addEventListener('dragstart', e => e.preventDefault(), { passive: false });
+    });
 
-  el.querySelectorAll(INTERACTIVE_SEL).forEach(btn => {
-    const stop = (ev) => ev.stopPropagation();
-    btn.addEventListener('pointerdown', stop, { capture: true });
-    btn.addEventListener('pointerup',   stop, { capture: true });
-    btn.addEventListener('touchstart',  stop, { capture: true });
-    btn.addEventListener('touchend',    stop, { capture: true });
-    btn.style.touchAction   = 'auto';
-    btn.style.pointerEvents = 'auto';
-  });
+    el.querySelectorAll(INTERACTIVE_SEL).forEach(btn => {
+        const stop = (ev) => ev.stopPropagation();
+        btn.addEventListener('pointerdown', stop, { capture: true });
+        btn.addEventListener('pointerup', stop, { capture: true });
+        btn.addEventListener('touchstart', stop, { capture: true });
+        btn.addEventListener('touchend', stop, { capture: true });
+        btn.style.touchAction = 'auto';
+        btn.style.pointerEvents = 'auto';
+    });
 
-  el.style.touchAction = 'none';
+    el.style.touchAction = 'none';
 
-  let ghost = null;
-  let startX = 0, startY = 0;
-  let prevX = 0, prevY = 0;
-  let activeId = null;
-  let dragging = false;
-  let lastHoverHex = null;
-  const MOVE_THRESHOLD = 8;
+    let ghost = null;
+    let startX = 0, startY = 0;
+    let prevX = 0, prevY = 0;
+    let activeId = null;
+    let dragging = false;
+    let lastHoverHex = null;
+    const MOVE_THRESHOLD = 8;
 
-  // --- 3) Ghost helpers ---
-  const createGhost = (x, y) => {
-    if (ghost) return;
-    const imgEl =
-      el.querySelector('img') ||
-      el.closest('.unit-card')?.querySelector('.unit-avatar img');
+    // --- 3) Ghost helpers ---
+    const createGhost = (x, y) => {
+        if (ghost) return;
+        const imgEl =
+            el.querySelector('img') ||
+            el.closest('.unit-card')?.querySelector('.unit-avatar img');
 
-    // dimensione coerente con pedina
-    let size = 72;
-    const hex = el.closest?.('.hexagon');
-    if (hex) {
-      size = parseFloat(getComputedStyle(hex).getPropertyValue('--member-size')) || size;
-    } else {
-      const av = el.closest?.('.unit-card')?.querySelector('.unit-avatar img');
-      if (av) size = Math.min(86, Math.max(56, av.clientWidth || size));
-    }
+        // dimensione coerente con pedina
+        let size = 72;
+        const hex = el.closest?.('.hexagon');
+        if (hex) {
+            size = parseFloat(getComputedStyle(hex).getPropertyValue('--member-size')) || size;
+        } else {
+            const av = el.closest?.('.unit-card')?.querySelector('.unit-avatar img');
+            if (av) size = Math.min(86, Math.max(56, av.clientWidth || size));
+        }
 
-    const sel = getComputedStyle(el).getPropertyValue('--sel') || '#66f';
+        const sel = getComputedStyle(el).getPropertyValue('--sel') || '#66f';
 
-    ghost = document.createElement('div');
-    ghost.className = 'drag-ghost dg-pop';
-    ghost.style.setProperty('--ghost-size', `${size}px`);
-    ghost.style.setProperty('--sel', sel.trim());
-    ghost.style.left = `${x}px`;
-    ghost.style.top  = `${y}px`;
-    ghost.innerHTML = `
+        ghost = document.createElement('div');
+        ghost.className = 'drag-ghost dg-pop';
+        ghost.style.setProperty('--ghost-size', `${size}px`);
+        ghost.style.setProperty('--sel', sel.trim());
+        ghost.style.left = `${x}px`;
+        ghost.style.top = `${y}px`;
+        ghost.innerHTML = `
       <div class="dg-shadow"></div>
       <div class="dg-chip">
         <div class="dg-circle">
@@ -1412,92 +1423,92 @@ function enablePointerDrag(el, { makePayload, onDrop }) {
           </div>
         </div>
       </div>`;
-    document.body.appendChild(ghost);
-  };
+        document.body.appendChild(ghost);
+    };
 
-  const destroyGhost = () => { ghost?.remove(); ghost = null; };
+    const destroyGhost = () => { ghost?.remove(); ghost = null; };
 
-  const highlightHexAt = (x, y) => {
-    const target = document.elementFromPoint(x, y);
-    const hex = target?.closest?.('.hexagon') || null;
-    if (hex !== lastHoverHex) {
-      if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
-      if (hex) hex.classList.add('drop-ok');
-      lastHoverHex = hex;
-    }
-  };
+    const highlightHexAt = (x, y) => {
+        const target = document.elementFromPoint(x, y);
+        const hex = target?.closest?.('.hexagon') || null;
+        if (hex !== lastHoverHex) {
+            if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
+            if (hex) hex.classList.add('drop-ok');
+            lastHoverHex = hex;
+        }
+    };
 
-  const clearHover = () => {
-    if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
-    lastHoverHex = null;
-  };
+    const clearHover = () => {
+        if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
+        lastHoverHex = null;
+    };
 
-  // --- 4) Pointer lifecycle ---
-  const onDown = (e) => {
-    if (isInteractiveTarget(e.target)) return;
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    activeId = e.pointerId;
-    try { el.setPointerCapture(activeId); } catch {}
-    startX = prevX = e.clientX; startY = prevY = e.clientY;
-    dragging = false;
-  };
+    // --- 4) Pointer lifecycle ---
+    const onDown = (e) => {
+        if (isInteractiveTarget(e.target)) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        activeId = e.pointerId;
+        try { el.setPointerCapture(activeId); } catch { }
+        startX = prevX = e.clientX; startY = prevY = e.clientY;
+        dragging = false;
+    };
 
-  const onMove = (e) => {
-    if (activeId == null || e.pointerId !== activeId) return;
-    if (e.pointerType === 'mouse' && e.buttons !== 1) return cleanup();
-    if (isInteractiveTarget(e.target)) return;
-    e.preventDefault();
+    const onMove = (e) => {
+        if (activeId == null || e.pointerId !== activeId) return;
+        if (e.pointerType === 'mouse' && e.buttons !== 1) return cleanup();
+        if (isInteractiveTarget(e.target)) return;
+        e.preventDefault();
 
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    if (!dragging && (dx*dx + dy*dy) >= MOVE_THRESHOLD*MOVE_THRESHOLD) {
-      dragging = true;
-      createGhost(startX, startY);
-    }
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (!dragging && (dx * dx + dy * dy) >= MOVE_THRESHOLD * MOVE_THRESHOLD) {
+            dragging = true;
+            createGhost(startX, startY);
+        }
 
-    if (dragging && ghost) {
-      const vx = e.clientX - prevX;
-      const speed = Math.hypot(vx, e.clientY - prevY);
-      const maxTilt = 10;
-      const tilt = Math.max(-maxTilt, Math.min(maxTilt, vx * 0.5));
-      ghost.style.setProperty('--tilt', tilt.toFixed(2) + 'deg');
-      ghost.style.opacity = Math.max(.85, Math.min(1, 0.9 + speed*0.005));
-      ghost.style.left = `${e.clientX}px`;
-      ghost.style.top  = `${e.clientY}px`;
-      highlightHexAt(e.clientX, e.clientY);
-      prevX = e.clientX; prevY = e.clientY;
-    }
-  };
+        if (dragging && ghost) {
+            const vx = e.clientX - prevX;
+            const speed = Math.hypot(vx, e.clientY - prevY);
+            const maxTilt = 10;
+            const tilt = Math.max(-maxTilt, Math.min(maxTilt, vx * 0.5));
+            ghost.style.setProperty('--tilt', tilt.toFixed(2) + 'deg');
+            ghost.style.opacity = Math.max(.85, Math.min(1, 0.9 + speed * 0.005));
+            ghost.style.left = `${e.clientX}px`;
+            ghost.style.top = `${e.clientY}px`;
+            highlightHexAt(e.clientX, e.clientY);
+            prevX = e.clientX; prevY = e.clientY;
+        }
+    };
 
-  const dropAtPoint = (x, y) => {
-    const target = document.elementFromPoint(x, y);
-    const hex = target?.closest?.('.hexagon');
-    const payload = makePayload?.();
-    if (hex && payload) onDrop(hex, payload);
-  };
+    const dropAtPoint = (x, y) => {
+        const target = document.elementFromPoint(x, y);
+        const hex = target?.closest?.('.hexagon');
+        const payload = makePayload?.();
+        if (hex && payload) onDrop(hex, payload);
+    };
 
-  const onUp = (e) => {
-    if (activeId == null || e.pointerId !== activeId) return;
-    if (dragging) dropAtPoint(e.clientX, e.clientY);
-    cleanup();
-  };
+    const onUp = (e) => {
+        if (activeId == null || e.pointerId !== activeId) return;
+        if (dragging) dropAtPoint(e.clientX, e.clientY);
+        cleanup();
+    };
 
-  const onCancel = () => cleanup();
+    const onCancel = () => cleanup();
 
-  const cleanup = () => {
-    try { el.releasePointerCapture(activeId); } catch {}
-    activeId = null;
-    dragging = false;
-    clearHover();
-    destroyGhost();
-    document.removeEventListener('pointermove', onMove, { passive: false });
-    document.removeEventListener('pointerup', onUp, { passive: true });
-    document.removeEventListener('pointercancel', onCancel, { passive: true });
-  };
+    const cleanup = () => {
+        try { el.releasePointerCapture(activeId); } catch { }
+        activeId = null;
+        dragging = false;
+        clearHover();
+        destroyGhost();
+        document.removeEventListener('pointermove', onMove, { passive: false });
+        document.removeEventListener('pointerup', onUp, { passive: true });
+        document.removeEventListener('pointercancel', onCancel, { passive: true });
+    };
 
-  // --- 5) Bind globali ---
-  el.addEventListener('pointerdown', onDown);
-  document.addEventListener('pointermove', onMove, { passive: false });
-  document.addEventListener('pointerup', onUp, { passive: true });
-  document.addEventListener('pointercancel', onCancel, { passive: true });
+    // --- 5) Bind globali ---
+    el.addEventListener('pointerdown', onDown);
+    document.addEventListener('pointermove', onMove, { passive: false });
+    document.addEventListener('pointerup', onUp, { passive: true });
+    document.addEventListener('pointercancel', onCancel, { passive: true });
 }

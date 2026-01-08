@@ -3,13 +3,19 @@ import { getMusicUrlById, wait } from './utils.js';
 import { openAccordionForRole } from './ui.js';
 import { playBg, playSfx } from './audio.js';
 import { showDrawnCard, closeAllFabs, drawCard } from './fab.js';
-import { DB, GAME_STATE, scheduleSave } from './data.js';
+import { DB, GAME_STATE } from './data.js';
+
 import { missionStatsBumpAttempt, missionStatsSetRound } from './missions.js';
 import { stopTimer, startTimer } from "./header.js";
 import { log } from "./log.js";
 import showPhaseBanner from './effects/phaseBanner.js';
 import showWarningC from './effects/warningOverlayC.js';
 import lightningStrike from './effects/lightningStrike.js';
+// in cima
+import { APP_STATE } from './core/app-state.js'
+import { getTurnInfo, advanceTurn } from './core/turn-helpers.js';
+import { scheduleSave } from './game/game-sync.js';
+
 
 const PHASE_UI = {
     // cosa si vede in ciascuna fase (modifica liberamente i selettori!)
@@ -50,16 +56,31 @@ const PHASE_UI = {
 const btnStart = document.getElementById('btn-start');
 
 export function initPhasesListeners() {
-    // click handler
-    btnStart?.addEventListener('click', async () => {
-        const mode = btnStart.dataset.mode;
-        if (mode === 'start') {
-            await GAME_STATE.turnEngine.startPhase(TurnEngine.phase);
-        } else if (mode === 'end') {
-            await GAME_STATE.turnEngine.endPhase(TurnEngine.phase);
-        }
-    });
+  btnStart?.addEventListener('click', async () => {
+    const mode = btnStart.dataset.mode;
 
+    // 1) Solo il "driver" può scrivere sul game_state
+    if (!APP_STATE.isGameDriver) {
+      log('Solo il comandante può cambiare fase.', 'warning', 3000, true);
+      return;
+    }
+
+    // 2) E solo se è il suo turno
+    const { isMyTurn } = getTurnInfo();
+    if (!isMyTurn) {
+      log('Non è il tuo turno.', 'warning', 3000, true);
+      return;
+    }
+
+    if (mode === 'start') {
+      await GAME_STATE.turnEngine.startPhase(TurnEngine.phase);
+    } else if (mode === 'end') {
+      await GAME_STATE.turnEngine.endPhase(TurnEngine.phase);
+    }
+
+    // dopo un cambio fase → salva su DB (debounced)
+    scheduleSave('phase-change');
+  });
 }
 
 
@@ -113,7 +134,7 @@ export const TurnEngine = {
         document.body.dataset.phase = p; // utile anche per CSS mirato
         applyPhaseUI(p);
         renderStartBtn();
-        scheduleSave();
+        //scheduleSave();
     },
 
     async startPhase(phase) {

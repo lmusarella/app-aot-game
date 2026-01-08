@@ -67,7 +67,7 @@ async function loadJSON(url) {
     return res.json();
 }
 
-async function bootDataApplication() {
+export async function bootDataApplication() {
     // Config delle sorgenti JSON
     const BOOT_CONFIG = {
         allies: 'assets/data/unita.json',
@@ -113,10 +113,10 @@ function populateGameStateData() {
     GAME_STATE.giantsPool = DB.GIANTS.map(u => ({ role: "enemy", ...u, currHp: u.hp, template: true }));
     GAME_STATE.decks.event.draw = DB.EVENTS;
     GAME_STATE.decks.consumable.draw = DB.CONSUMABLE;
-    console.log('gamestate', GAME_STATE);
+    console.log('init gamestate', GAME_STATE);
 }
 
-function snapshot() {
+export function snapshot() {
    
     return {
         ver: SAVE_VERSION,
@@ -162,7 +162,7 @@ export function resetGame() {
     }
 }
 
-function restore(save) {
+export function restore(save) {    
     // ver check
     if (!save || save.ver !== SAVE_VERSION) return false;
 
@@ -209,19 +209,8 @@ function saveToLocal() {
 
 export async function loadDataAndGameState() {
     await bootDataApplication()
-    try {
-        const gameState = localStorage.getItem(SAVE_KEY);
-        if (!gameState) return false;
-        const gameStateData = JSON.parse(gameState);
-        return restore(gameStateData);
-    } catch (e) {
-        console.warn('Restore fallito, riparto pulito.', e);
-        return false;
-    }
 }
 
-function debounce(fn, ms = 400) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
-export const scheduleSave = debounce(saveToLocal, 500);
 
 export function getLastSaveInfo() {
     try {

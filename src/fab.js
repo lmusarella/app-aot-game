@@ -1,4 +1,5 @@
-import { GAME_STATE, rebuildUnitIndex, scheduleSave, DB } from './data.js'
+import { GAME_STATE, rebuildUnitIndex, DB } from './data.js'
+import {scheduleSave} from './game/game-sync.js';
 import { missionStatsRecordEvent } from './missions.js'
 import { log } from './log.js';
 import { giantsPhaseMove, pickRandomTeam, spawnGiant } from './entity.js';
@@ -91,7 +92,7 @@ function reshuffleDiscardsOf(type /* 'event' | 'consumable' */) {
 
     d.draw.push(...moved);     // rientrano nel mazzo
     shuffle(d.draw);           // rimescola
-    scheduleSave();
+    scheduleSave('fab');
     return moved.length;
 }
 
@@ -120,7 +121,7 @@ export function drawCard(type /* 'event' | 'consumable' */) {
         d.draw = shuffle(d.discard.splice(0));
     }
     const pop = d.draw.pop();
-    scheduleSave();
+    scheduleSave('fab');
     updateFabDeckCounters();
     return pop; // pesca dal top
 }
@@ -353,7 +354,7 @@ export async function openAlliesPicker(role) {
 
     log(moved.length === 1 ? `Aggiunto in panchina ${moved[0].name}` : `Aggiunte ${moved.length} unità in panchina.`);
     openAccordionForRole(moved[0].role);
-    scheduleSave();
+    scheduleSave('fab');
 }
 
 function pickAlliesDialog(role) {
@@ -561,7 +562,7 @@ function resurrectInPool(id) {
     if (!u) return false;
     u.dead = false;
     u.currHp = u.hp; // full heal; se preferisci metà vita, metti Math.ceil(u.hp/2)
-    scheduleSave();
+    scheduleSave('fab');
     return true;
 }
 
@@ -571,6 +572,6 @@ export function resetDeckFromPool(type) {
     d.draw = shuffle(pool.slice()); // copia + shuffle
     d.discard = [];
     d.removed = [];
-    scheduleSave();
+    
     updateFabDeckCounters();
 }
