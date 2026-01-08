@@ -1,10 +1,13 @@
 import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, showSnackBar, addLongPress, confirmDialog } from './ui.js';
 import { playSfx } from './audio.js';
 import { isClone, getStat, applyHpBar, getMusicUrlById, isHuman, pickRandom, COLOR_VAR, keyRC } from './utils.js';
+import { HEX_CFG, gridSize, inBoundsRC, hexNeighbors, hexWithinRadius, hexDistance, offsetToCube, cubeToOffset } from './grid/hex.js';
 import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, GIANT_ENGAGEMENT } from './data.js';
 import {scheduleSave} from './game/game-sync.js';
 import { log } from './log.js';
 import { adjustUnitHp, startAttackPick, getEngagedHuman, getEngagingGiant } from './entity.js';
+
+export { HEX_CFG, gridSize, inBoundsRC, hexNeighbors, hexWithinRadius, hexDistance } from './grid/hex.js';
 
 // === HIGHLIGHT CONO =========================================================
 const HILITE = { cone: new Set() };
@@ -38,14 +41,6 @@ const wallsEl = document.getElementById("bench-walls");
 const countAlliesEl = document.getElementById("count-allies");
 const countEnemiesEl = document.getElementById("count-enemies");
 const countWallsEl = document.getElementById("count-walls");
-const HEX_CFG = {
-    // base indici (0 o 1) dedotta dal DOM delle celle
-    base: 1,
-    // layout righe offset: 'even-r' | 'odd-r' | 'auto' (sceglie da solo)
-    layout: 'odd-r',
-    autoSwapRC: false
-};
-
 // muri più vicini (scansione griglia usando hasWallInCell)
 export function nearestWallCell(fromR, fromC) {
     const { R, C } = gridSize();
@@ -63,143 +58,6 @@ export function nearestWallCell(fromR, fromC) {
         }
     }
     return best;
-}
-export function inBoundsRC(r, c) {
-    const { R, C } = gridSize();
-    if (HEX_CFG.base === 0) {
-        return r >= 0 && r < R && c >= 0 && c < C;
-    } else {
-        return r >= 1 && r <= R && c >= 1 && c <= C;
-    }
-}
-function normalizeRC(r, c) {
-    if (!HEX_CFG.autoSwapRC) return { r, c };
-
-    const rcOK = inBoundsRC(r, c);
-    if (rcOK) return { r, c };
-
-    const crOK = inBoundsRC(c, r);
-    return crOK ? { r: c, c: r } : { r, c };
-}
-
-// --- VICINI ESAGONALI (row-offset) -----------------------------------------
-export function hexNeighbors(row, col, includeSelf = true) {
-    // normalizza input (swap se abilitato)
-    ({ r: row, c: col } = normalizeRC(row, col));
-
-    // parità riga corretta anche con base 1
-    const evenRow = ((row - HEX_CFG.base) % 2 === 0);
-
-    const DELTAS_EVENR = evenRow
-        ? [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0], [1, 1]]
-        : [[-1, -1], [-1, 0], [0, -1], [0, 1], [1, -1], [1, 0]];
-
-    const DELTAS_ODDR = evenRow
-        ? [[-1, -1], [-1, 0], [0, -1], [0, 1], [1, -1], [1, 0]]
-        : [[-1, 0], [-1, 1], [0, -1], [0, 1], [1, 0], [1, 1]];
-
-    const build = (deltas) =>
-        deltas.map(([dr, dc]) => ({ row: row + dr, col: col + dc }))
-            .filter(p => inBoundsRC(p.row, p.col));
-
-    let neigh;
-    if (HEX_CFG.layout === 'odd-r') {
-        neigh = build(DELTAS_ODDR);
-    } else if (HEX_CFG.layout === 'even-r') {
-        neigh = build(DELTAS_EVENR);
-    } else {
-        // 'auto' => UNIONE di ODDR ed EVENR (deduplicata)
-        const a = build(DELTAS_ODDR);
-        const b = build(DELTAS_EVENR);
-        const seen = new Set();
-        neigh = [...a, ...b].filter(p => {
-            const k = p.row + ':' + p.col;
-            if (seen.has(k)) return false;
-            seen.add(k);
-            return true;
-        });
-    }
-
-    if (includeSelf) neigh.unshift({ row, col, self: true });
-    return neigh;
-}
-
-// ===== RAGGIO & DISTANZA ====================================================
-
-// celle entro 'radius' passi (BFS sul grafo dei vicini)
-export function hexWithinRadius(row, col, radius = 1, includeSelf = false) {
-    ({ r: row, c: col } = normalizeRC(row, col));
-    radius = Math.max(0, radius | 0);
-
-    const seen = new Set([keyRC(row, col)]);
-    const out = [];
-    let frontier = [{ row, col }];
-
-    if (includeSelf) out.push({ row, col, self: true });
-
-    for (let dist = 1; dist <= radius; dist++) {
-        const next = [];
-        for (const p of frontier) {
-            const ns = hexNeighbors(p.row, p.col, false);
-            for (const n of ns) {
-                const k = keyRC(n.row, n.col);
-                if (seen.has(k)) continue;
-                seen.add(k);
-                out.push(n);
-                next.push(n);
-            }
-        }
-        frontier = next;
-        if (frontier.length === 0) break;
-    }
-    return out;
-}
-
-// offset(r,c) -> cube, rispettando base (0/1) e layout ('even-r'|'odd-r')
-// --- OFFSET <-> CUBE -------------------------------------------------------
-function offsetToCube(row, col) {
-    const base = HEX_CFG.base || 0;
-    const r0 = row - base;
-    const c0 = col - base;
-
-    let x, z; // cube: (x,y,z) con x+y+z=0
-    if (HEX_CFG.layout === 'odd-r') {
-        const q = c0 - ((r0 - (r0 & 1)) >> 1);
-        x = q;
-        z = r0;
-    } else { // 'even-r'
-        const q = c0 - ((r0 + (r0 & 1)) >> 1);
-        x = q;
-        z = r0;
-    }
-    const y = -x - z;
-    return { x, y, z };
-}
-
-function cubeToOffset(x, y, z) {
-    const base = HEX_CFG.base || 0;
-    const r0 = z;                    // in cube usiamo (x,y,z) con x+y+z=0
-    let c0;
-    if (HEX_CFG.layout === 'odd-r') {
-        c0 = x + Math.floor((r0 - (r0 & 1)) / 2);
-    } else { // 'even-r'
-        c0 = x + Math.floor((r0 + (r0 & 1)) / 2);
-    }
-    return { row: r0 + base, col: c0 + base };
-}
-
-export function hexDistance(r1, c1, r2, c2) {
-    ({ r: r1, c: c1 } = normalizeRC(r1, c1));
-    ({ r: r2, c: c2 } = normalizeRC(r2, c2));
-    const a = offsetToCube(r1, c1), b = offsetToCube(r2, c2);
-    return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y), Math.abs(a.z - b.z));
-}
-
-// --- UTILS -----------------------------------------------------------------
-export function gridSize() {
-    const R = DB?.SETTINGS?.gridSettings?.rows ?? 0;
-    const C = DB?.SETTINGS?.gridSettings?.cols ?? 0;
-    return { R, C };
 }
 
 export function findUnitCell(unitId) {
