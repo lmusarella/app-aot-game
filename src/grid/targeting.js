@@ -1,12 +1,11 @@
 import { showSnackBar } from '../ui.js';
-import { startAttackPick } from '../entity.js';
+import { startAttackPick, getEngagedHuman, getEngagingGiant } from '../entity.js';
 import { getStat, isHuman } from '../utils.js';
 import { unitById } from '../data.js';
 import { hexWithinRadius, hexNeighbors, hexDistance } from './hex.js';
 import { getStack } from './stacks.js';
 import { findUnitCell } from './queries.js';
 import { getGiantNemesiTarget, getGiantConeCells } from './cone.js';
-import { getEngagedHuman, getEngagingGiant } from '../entity.js';
 
 const GIANT_VIEW_RADIUS = 2;
 

@@ -1,7 +1,7 @@
 // lobby/room-ui.js
 import { supabase } from '../supabase/supabaseClient.js'
 import { APP_STATE } from '../core/app-state.js'
-import { showScreen } from '../core/ui-helpers.js'
+import { showScreen, setError } from '../core/ui-helpers.js'
 import {
   getCommanderPool,
   getRecruitPool,
@@ -11,7 +11,6 @@ import {
   pickManyUnique
 } from '../core/random-helpers.js'
 import { initGameForRoom } from '../game/game-sync.js'
-import { setError } from '../core/ui-helpers.js' // se in ui-helpers esporti anche setError
 
 // =========================
 // DOM SPECIFICI ROOM
