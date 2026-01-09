@@ -28,6 +28,7 @@ export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
   startPresenceHeartbeat(roomId)
   gameAPI.renderGameFromState()
   initEventManager();
+  await tryAutoStartMission(room);
 
   // Turn tracker
   initTurnTracker();
@@ -213,12 +214,28 @@ function createDefaultGameState(players = []) {
     .map(p => p.user_id);
 
   base.turnState = {
-    order: players.map(p => p.user_id),  // o ordinati come vuoi
+    order,
     currentIndex: 0,
-    currentPlayerId: players[0]?.user_id || null
+    currentPlayerId: order[0] || null
   };
+  base.turnEngine = { ...(base.turnEngine || {}), autoStarted: false };
 
   return base
+}
+
+async function tryAutoStartMission(room) {
+  if (!room || room.status !== 'in_game') return;
+  if (GAME_STATE.turnEngine?.phase !== 'idle') return;
+  if (GAME_STATE.turnEngine?.autoStarted) return;
+  const { isMyTurn } = getTurnInfo();
+  if (!isMyTurn) return;
+
+  GAME_STATE.turnEngine.autoStarted = true;
+  try {
+    await GAME_STATE.turnEngine.startPhase('idle');
+  } finally {
+    scheduleSave('auto-start');
+  }
 }
 
 
