@@ -376,6 +376,7 @@ async function handleAuthenticatedSession(user) {
 
   authRestoreInFlight = true
   APP_STATE.user = user
+  onUserLoggedIn(user)
   try {
     await restoreLocation(user)
   } finally {
