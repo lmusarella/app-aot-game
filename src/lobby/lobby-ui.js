@@ -3,6 +3,7 @@ import { supabase } from '../supabase/supabaseClient.js'
 import { APP_STATE } from '../core/app-state.js'
 import { showScreen } from '../core/ui-helpers.js'
 import { enterRoomScreen, stopRoomPresence } from './room-ui.js'
+import { initGameForSinglePlayer, initGameForRoom } from '../game/game-sync.js'
 
 // =========================
 // DOM REFERENCES LOBBY
@@ -16,6 +17,8 @@ const createRoomMsg    = document.getElementById('create-room-msg')
 const joinRoomMsg      = document.getElementById('join-room-msg')
 const btnRefreshRooms  = document.getElementById('btn-refresh-rooms')
 const roomList         = document.getElementById('room-list')
+const myRoomList       = document.getElementById('my-room-list')
+const myRoomsMsg       = document.getElementById('my-rooms-msg')
 
 const btnSinglePlayer  = document.getElementById('btn-singleplayer')
 const btnLogout        = document.getElementById('btn-logout')
@@ -112,6 +115,7 @@ async function onCreateRoom() {
 
   APP_STATE.roomId = room.id
   APP_STATE.role = null
+  APP_STATE.gameMode = 'multiplayer'
 
   createRoomMsg.textContent = 'Stanza creata!'
   currentRoom.textContent = `Stanza: ${room.name} (ID: ${room.id})`
@@ -125,8 +129,10 @@ function onStartSinglePlayer() {
   APP_STATE.role = 'commander';
   APP_STATE.isGameDriver = true;
   APP_STATE.roomPlayers = [];
+  APP_STATE.gameMode = 'single';
   currentRoom.textContent = 'Modalità singolo giocatore';
   showScreen('game');
+  initGameForSinglePlayer();
 }
 
 // =========================
@@ -139,10 +145,12 @@ async function loadAvailableRooms() {
     return
   }
 
-  if (!roomList) return
+  if (!roomList || !myRoomList) return
 
   roomList.innerHTML = ''
+  myRoomList.innerHTML = ''
   if (joinRoomMsg) joinRoomMsg.textContent = 'Carico le partite...'
+  if (myRoomsMsg) myRoomsMsg.textContent = 'Carico le tue partite...'
 
   // 1) prendo le stanze attive (escludo in_game se vuoi solo quelle in attesa)
   const { data: rooms, error: errRooms } = await supabase
@@ -158,30 +166,83 @@ async function loadAvailableRooms() {
     return
   }
 
+  const { data: myRoomRows, error: errMyRooms } = await supabase
+    .from('room_players')
+    .select('room_id')
+    .eq('user_id', APP_STATE.user.id)
+
+  if (errMyRooms) {
+    console.error('Errore caricando le tue partite:', errMyRooms)
+  }
+
+  const myRoomIds = Array.isArray(myRoomRows)
+    ? [...new Set(myRoomRows.map(row => row.room_id).filter(Boolean))]
+    : []
+
+  let myRooms = []
+  if (myRoomIds.length > 0) {
+    const { data: myRoomsData, error: errMyRoomsData } = await supabase
+      .from('rooms')
+      .select('id, name, status, created_at')
+      .in('id', myRoomIds)
+      .order('created_at', { ascending: false })
+
+    if (errMyRoomsData) {
+      console.error('Errore caricando le stanze personali:', errMyRoomsData)
+    } else {
+      myRooms = myRoomsData || []
+    }
+  }
+
   if (!rooms || rooms.length === 0) {
     if (joinRoomMsg) joinRoomMsg.textContent = 'Nessuna partita disponibile al momento.'
-    return
   }
 
   // 2) prendo tutti i giocatori per queste stanze e conto per room_id
-  const roomIds = rooms.map(r => r.id)
-
-  const { data: players, error: errPlayers } = await supabase
-    .from('room_players')
-    .select('room_id')
-    .in('room_id', roomIds)
-
+  const roomIds = [...rooms.map(r => r.id), ...myRooms.map(r => r.id)]
   const countByRoom = {}
-  if (!errPlayers && players) {
-    players.forEach(p => {
-      countByRoom[p.room_id] = (countByRoom[p.room_id] || 0) + 1
-    })
+
+  if (roomIds.length > 0) {
+    const { data: players, error: errPlayers } = await supabase
+      .from('room_players')
+      .select('room_id')
+      .in('room_id', roomIds)
+
+    if (!errPlayers && players) {
+      players.forEach(p => {
+        countByRoom[p.room_id] = (countByRoom[p.room_id] || 0) + 1
+      })
+    }
   }
 
   // 3) render lista
   roomList.innerHTML = ''
+  myRoomList.innerHTML = ''
   if (joinRoomMsg) joinRoomMsg.textContent = ''
+  if (myRoomsMsg) myRoomsMsg.textContent = ''
 
+  if (myRooms.length === 0) {
+    if (myRoomsMsg) myRoomsMsg.textContent = 'Non hai partite attive.'
+  } else {
+    renderRoomList(myRoomList, myRooms, countByRoom, room => {
+      const label = room.status === 'in_game' ? 'Rientra' : 'Apri'
+      return { label, onClick: () => resumeRoom(room) }
+    })
+  }
+
+  const availableRooms = rooms.filter(room => !myRoomIds.includes(room.id))
+  if (!availableRooms || availableRooms.length === 0) {
+    if (joinRoomMsg) joinRoomMsg.textContent = 'Nessuna partita disponibile al momento.'
+    return
+  }
+
+  renderRoomList(roomList, availableRooms, countByRoom, room => ({
+    label: 'Entra',
+    onClick: () => joinExistingRoom(room.id)
+  }))
+}
+
+function renderRoomList(targetList, rooms, countByRoom, actionBuilder) {
   rooms.forEach(room => {
     const li = document.createElement('li')
     li.className = 'room-list-item'
@@ -201,16 +262,15 @@ async function loadAvailableRooms() {
     info.appendChild(nameEl)
     info.appendChild(metaEl)
 
+    const { label, onClick } = actionBuilder(room)
     const btn = document.createElement('button')
     btn.type = 'button'
     btn.className = 'btn-primary room-list-join'
-    btn.textContent = 'Entra'
-    btn.addEventListener('click', () => {
-      joinExistingRoom(room.id)
-    })
+    btn.textContent = label
+    btn.addEventListener('click', onClick)
 
     li.append(info, btn)
-    roomList.appendChild(li)
+    targetList.appendChild(li)
   })
 }
 
@@ -268,6 +328,7 @@ async function joinExistingRoom(roomId) {
 
     APP_STATE.roomId = roomId
     APP_STATE.role = null
+    APP_STATE.gameMode = 'multiplayer'
 
     if (joinRoomMsg) joinRoomMsg.textContent = 'Sei entrato nella stanza!'
     currentRoom.textContent = `Stanza: ${room.name} (ID: ${room.id})`
@@ -277,6 +338,42 @@ async function joinExistingRoom(roomId) {
     console.error('Eccezione in joinExistingRoom:', e)
     if (joinRoomMsg) joinRoomMsg.textContent = 'Errore inatteso entrando nella stanza.'
   }
+}
+
+async function resumeRoom(room) {
+  if (!APP_STATE.user) {
+    if (joinRoomMsg) joinRoomMsg.textContent = 'Non sei loggato.'
+    return
+  }
+
+  APP_STATE.roomId = room.id
+  APP_STATE.role = null
+  APP_STATE.gameMode = 'multiplayer'
+  currentRoom.textContent = `Stanza: ${room.name} (ID: ${room.id})`
+
+  if (room.status !== 'in_game') {
+    enterRoomScreen(room.id)
+    return
+  }
+
+  const { data: players, error: errPlayers } = await supabase
+    .from('room_players')
+    .select('user_id, last_seen, ready_to_field, unit_code, ready_unit, is_commander, nickname, commander_code, recruit_codes')
+    .eq('room_id', room.id)
+
+  if (errPlayers || !players || players.length === 0) {
+    if (joinRoomMsg) joinRoomMsg.textContent = 'Errore caricando i giocatori.'
+    return
+  }
+
+  const meRow = players.find(p => p.user_id === APP_STATE.user.id)
+  if (!meRow || !meRow.unit_code || !meRow.ready_unit) {
+    enterRoomScreen(room.id)
+    return
+  }
+
+  showScreen('game')
+  initGameForRoom(room.id, meRow, players, room)
 }
 
 // =========================
@@ -291,6 +388,7 @@ async function onLogout() {
 
   APP_STATE.roomId = null
   APP_STATE.role = null
+  APP_STATE.gameMode = null
   currentRoom.textContent = ''
 
   // Torna allo screen login

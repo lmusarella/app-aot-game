@@ -8,6 +8,7 @@ const APP_STATE = {
   role: null,
   roomPlayers: [],
   isGameDriver: false,
+  gameMode: null,
   gameChannel: null,
   presenceChannel: null,
   presenceTimerId: null

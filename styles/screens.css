@@ -267,6 +267,16 @@
   margin: 0 0 8px;
 }
 
+.lobby-join-group {
+  margin-top: 12px;
+}
+
+.lobby-join-group h3 {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
 .lobby-footer,
 .room-footer {
   margin-top: 14px;
