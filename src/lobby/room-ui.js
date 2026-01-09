@@ -100,8 +100,8 @@ function startRoomLoops() {
   stopRoomLoops()
   if (!APP_STATE.roomId) return
 
-  roomHeartbeat = setInterval(updateLastSeen, 10000)
-  roomStatePoll = setInterval(refreshRoomState, 5000)
+  roomHeartbeat = setInterval(updateLastSeen, 3000)
+  roomStatePoll = setInterval(refreshRoomState, 3000)
 
   updateLastSeen()
 }

@@ -11,6 +11,7 @@ import {
 } from '../core/ui-helpers.js'
 import { enterRoomScreen, stopRoomPresence } from '../lobby/room-ui.js'   // lo creiamo dopo
 import { initGameForRoom } from '../game/game-sync.js'
+import { confirmDialog } from '../ui.js'
 
 // DOM auth
 const tabLogin = document.getElementById('tab-login')
@@ -320,6 +321,20 @@ async function restoreLocation(user) {
   }
 
   if (room.status === 'in_game') {
+    const enterExisting = await confirmDialog({
+      title: 'Partita trovata',
+      message: 'Vuoi rientrare nella partita in corso o restare in lobby?',
+      confirmText: 'Rientra in partita',
+      cancelText: 'Vai in lobby',
+      danger: false
+    })
+    if (!enterExisting) {
+      APP_STATE.roomId = null
+      APP_STATE.role = null
+      APP_STATE.gameMode = null
+      onUserLoggedIn(user)
+      return
+    }
     // recupero tutti i giocatori
     const { data: players, error: errPlayers } = await supabase
       .from('room_players')

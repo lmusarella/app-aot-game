@@ -132,7 +132,7 @@ function startPresenceHeartbeat(roomId) {
     } catch (err) {
       console.warn('Aggiornamento presenza fallito:', err);
     }
-  }, 10000);
+  }, 3000);
 }
 
 async function loadOrInitGameState(roomId, isDriver, players = []) {
