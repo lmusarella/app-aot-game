@@ -210,14 +210,15 @@ export const TurnEngine = {
                             const rosterCount = GAME_STATE.alliesRoster?.length || 0;
                             const playersCount = APP_STATE.roomPlayers?.length || 0;
                             this.squadNumber = Math.max(1, rosterCount || playersCount || 0);
+                            this.teamCreated = true;
                         } else {
                             pickRandomTeam({ commanders: 1, recruits: 3 });
                             openAccordionForRole('commander');
                             this.squadNumber = 4;
+                            this.teamCreated = true;
                         }
                     } catch { }
-                    this.teamCreated = true;
-                } else {
+                } else if (!isMultiplayer()) {
                     log('Setup: Hai 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info', 3000, true);
                 }
             }, 2500)
