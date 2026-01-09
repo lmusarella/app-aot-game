@@ -13,6 +13,7 @@ import showWarningC from './effects/warningOverlayC.js';
 import lightningStrike from './effects/lightningStrike.js';
 // in cima
 import { guardCommanderAction } from './core/permissions.js';
+import { APP_STATE } from './core/app-state.js';
 import { getTurnInfo, advanceTurn } from './core/turn-helpers.js';
 import { scheduleSave } from './game/game-sync.js';
 
@@ -59,29 +60,61 @@ export function initPhasesListeners() {
   btnStart?.addEventListener('click', async () => {
     const mode = btnStart.dataset.mode;
 
-    // 1) Solo il "driver" può scrivere sul game_state
-    if (!guardCommanderAction('cambiare fase')) {
-      return;
-    }
-
-    // 2) E solo se è il suo turno
-    const { isMyTurn } = getTurnInfo();
-    if (!isMyTurn) {
-      log('Non è il tuo turno.', 'warning', 3000, true);
-      return;
-    }
-
     if (mode === 'start') {
+      if (!guardCommanderAction('cambiare fase')) {
+        return;
+      }
+      const { isMyTurn } = getTurnInfo();
+      if (!isMyTurn) {
+        log('Non è il tuo turno.', 'warning', 3000, true);
+        return;
+      }
       await GAME_STATE.turnEngine.startPhase(TurnEngine.phase);
-    } else if (mode === 'end') {
-      await GAME_STATE.turnEngine.endPhase(TurnEngine.phase);
+      scheduleSave('phase-change');
+      return;
     }
-
-    // dopo un cambio fase → salva su DB (debounced)
-    scheduleSave('phase-change');
+    if (mode === 'end') {
+      if (!isMultiplayer() && !guardCommanderAction('cambiare fase')) {
+        return;
+      }
+      const { isMyTurn } = getTurnInfo();
+      if (!isMyTurn) {
+        log('Non è il tuo turno.', 'warning', 3000, true);
+        return;
+      }
+      if (isMultiplayer()) {
+        await handleMultiplayerPhaseEnd(TurnEngine.phase);
+        return;
+      }
+      await GAME_STATE.turnEngine.endPhase(TurnEngine.phase);
+      scheduleSave('phase-change');
+    }
   });
 }
 
+function isMultiplayer() {
+  return !!APP_STATE.roomId;
+}
+
+async function handleMultiplayerPhaseEnd(phase) {
+  const ts = GAME_STATE.turnState || {};
+  const order = ts.order || [];
+  const myId = APP_STATE.user?.id || null;
+  if (!myId || order.length === 0) return;
+
+  if (!Array.isArray(ts.phaseDoneBy)) ts.phaseDoneBy = [];
+  if (!ts.phaseDoneBy.includes(myId)) ts.phaseDoneBy.push(myId);
+
+  if (ts.phaseDoneBy.length >= order.length) {
+    ts.phaseDoneBy = [];
+    ts.currentIndex = 0;
+    ts.currentPlayerId = order[0] || null;
+    await GAME_STATE.turnEngine.endPhase(phase);
+  } else {
+    advanceTurn();
+  }
+  scheduleSave('phase-turn');
+}
 
 export const TurnEngine = {
     phase: 'idle',   // 'idle' | 'setup' | 'round_start' | ...
@@ -133,6 +166,15 @@ export const TurnEngine = {
         document.body.dataset.phase = p; // utile anche per CSS mirato
         applyPhaseUI(p);
         renderStartBtn();
+        if (isMultiplayer()) {
+            const ts = GAME_STATE.turnState || {};
+            if (Array.isArray(ts.order) && ts.order.length > 0) {
+                ts.currentIndex = 0;
+                ts.currentPlayerId = ts.order[0] || null;
+            }
+            ts.phaseDoneBy = [];
+            GAME_STATE.turnState = ts;
+        }
         //scheduleSave();
     },
 
@@ -164,9 +206,15 @@ export const TurnEngine = {
 
                 if (!this.teamCreated) {
                     try {
-                        pickRandomTeam({ commanders: 1, recruits: 3 });
-                        openAccordionForRole('commander');
-                        this.squadNumber = 4;
+                        if (isMultiplayer()) {
+                            const rosterCount = GAME_STATE.alliesRoster?.length || 0;
+                            const playersCount = APP_STATE.roomPlayers?.length || 0;
+                            this.squadNumber = Math.max(1, rosterCount || playersCount || 0);
+                        } else {
+                            pickRandomTeam({ commanders: 1, recruits: 3 });
+                            openAccordionForRole('commander');
+                            this.squadNumber = 4;
+                        }
                     } catch { }
                     this.teamCreated = true;
                 } else {

@@ -47,6 +47,7 @@ export const GAME_STATE = {
     walls: [],
     logs: [],
     events: [],
+    turnState: null,
     modRolls: {
         atk: 0,
         tec: 0,
@@ -141,6 +142,7 @@ export function snapshot() {
         // log
         logs: structuredClone(GAME_STATE.logs),
         events: structuredClone(GAME_STATE.events),
+        turnState: structuredClone(GAME_STATE.turnState),
         //turnengine
         turnEngine: GAME_STATE.turnEngine,
         missionState: (() => {
@@ -186,6 +188,7 @@ export function restore(save) {
     GAME_STATE.decks.consumable.removed = save.decks?.consumable?.removed ?? [];
     GAME_STATE.logs = save.logs ?? [];
     GAME_STATE.events = Array.isArray(save.events) ? save.events : [];
+    GAME_STATE.turnState = save.turnState ?? GAME_STATE.turnState ?? null;
     //mano
     GAME_STATE.hand = Array.isArray(save.hand) ? save.hand : [];
 
