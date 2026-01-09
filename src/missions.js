@@ -1,4 +1,5 @@
 import { GAME_STATE, DB } from "./data.js";
+import { APP_STATE } from "./core/app-state.js";
 import {scheduleSave} from './game/game-sync.js';
 import { capitalizeFirstLetter, clamp } from "./utils.js";
 import { addLongPress, showCardDetail, ensureMissionCardSkeleton } from "./ui.js";
@@ -101,6 +102,8 @@ function renderMissionPanel() {
     if (aEl) aEl.textContent = String(ms.attempts || 0);
     if (rEl) rEl.textContent = String(ms.round || 0);
 
+    renderSquadStatus();
+
     // timeline eventi (cronologica)
     const list = document.getElementById('msn-evlist');
     if (list) {
@@ -119,6 +122,33 @@ function renderMissionPanel() {
     }
 
     bindMissionListHandlers();
+}
+
+function renderSquadStatus() {
+    const list = document.getElementById('msn-squad');
+    if (!list) return;
+
+    const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
+    if (players.length === 0) {
+        list.innerHTML = '<li class="msn-squad-item is-empty">— squadra non disponibile —</li>';
+        return;
+    }
+
+    const now = Date.now();
+    list.innerHTML = players.map(p => {
+        const last = p.last_seen ? new Date(p.last_seen).getTime() : 0;
+        const online = last && now - last < 20000;
+        const name = p.nickname || p.user_id?.slice(0, 8) || 'Giocatore';
+        const roleLabel = p.is_commander ? 'Comandante' : 'Recluta';
+        const statusClass = online ? 'msn-squad-dot--online' : 'msn-squad-dot--offline';
+        const statusLabel = online ? 'Online' : 'Offline';
+        return `
+      <li class="msn-squad-item">
+        <span class="msn-squad-dot ${statusClass}" title="${statusLabel}"></span>
+        <span class="msn-squad-name">${name}</span>
+        <span class="msn-squad-role">${roleLabel}</span>
+      </li>`;
+    }).join('');
 }
 
 function bindMissionListHandlers() {

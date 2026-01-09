@@ -6,8 +6,11 @@ const APP_STATE = {
   user: null,
   roomId: null,
   role: null,
+  roomPlayers: [],
   isGameDriver: false,
-  gameChannel: null
+  gameChannel: null,
+  presenceChannel: null,
+  presenceTimerId: null
 }
 
 let gameAPI = {

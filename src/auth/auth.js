@@ -9,8 +9,9 @@ import {
   setSuccess,
   setLoading
 } from '../core/ui-helpers.js'
-import { enterRoomScreen } from '../lobby/room-ui.js'   // lo creiamo dopo
+import { enterRoomScreen, stopRoomPresence } from '../lobby/room-ui.js'   // lo creiamo dopo
 import { initGameForRoom } from '../game/game-sync.js'
+import { confirmDialog } from '../ui.js'
 
 // DOM auth
 const tabLogin = document.getElementById('tab-login')
@@ -315,6 +316,20 @@ async function restoreLocation(user) {
   }
 
   if (room.status === 'in_game') {
+    const enterExisting = await confirmDialog({
+      title: 'Partita trovata',
+      message: 'Vuoi rientrare nella partita in corso oppure giocare in singolo?',
+      confirmText: 'Rientra in partita',
+      cancelText: 'Gioca in singolo',
+      danger: false
+    });
+    if (!enterExisting) {
+      APP_STATE.roomId = null;
+      APP_STATE.role = 'commander';
+      APP_STATE.isGameDriver = true;
+      showScreen('game');
+      return;
+    }
     // recupero tutti i giocatori
     const { data: players, error: errPlayers } = await supabase
       .from('room_players')

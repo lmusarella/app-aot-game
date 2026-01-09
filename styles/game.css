@@ -1168,12 +1168,21 @@
    box-shadow: var(--shadow-outer-strong), var(--shadow-inset-top), var(--shadow-inset-bottom);
  }
 
- .fab-options {
-   position: absolute;
-   inset: 0;
-   pointer-events: none;
-   z-index: 2;
- }
+.fab-options {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.is-commander-locked {
+  opacity: 0.45;
+  filter: grayscale(0.35);
+}
+
+.is-commander-locked[aria-disabled="true"] {
+  cursor: not-allowed;
+}
 
  .fab-option {
    position: absolute;
@@ -4630,14 +4639,63 @@
    opacity: .75;
  }
 
- .mission-subtitle {
-   margin: 8px 0 6px;
-   font-size: 12px;
-   opacity: .8;
- }
+.mission-subtitle {
+  margin: 8px 0 6px;
+  font-size: 12px;
+  opacity: .8;
+}
 
- .msn-list {
-   list-style: none;
+.msn-squad {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.msn-squad-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  background: #10121a;
+  font-size: 12px;
+}
+
+.msn-squad-item.is-empty {
+  opacity: .7;
+  justify-content: center;
+}
+
+.msn-squad-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #6b7280;
+  box-shadow: 0 0 0 2px rgba(15, 17, 24, 0.8);
+}
+
+.msn-squad-dot--online {
+  background: #34d399;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+}
+
+.msn-squad-dot--offline {
+  background: #f87171;
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.5);
+}
+
+.msn-squad-role {
+  margin-left: auto;
+  opacity: .75;
+  font-size: 11px;
+}
+
+.msn-list {
+  list-style: none;
    margin: 0;
    padding: 0;
    overflow: auto;

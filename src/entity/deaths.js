@@ -11,6 +11,7 @@ import showDeathScreen from '../effects/deathOverlay.js';
 import showVictoryScreen from '../effects/victoryOverlay.js';
 import wallCollapse from '../effects/wallCollapse.js';
 import { getEngagedHuman, getEngagingGiant } from './engagement.js';
+import { pushGameEvent } from '../game/event-manager.js';
 
 export async function handleWallDeath(wallUnit) {
   wallCollapse({
@@ -51,6 +52,7 @@ export async function handleWallDeath(wallUnit) {
   renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
   renderBenches();
   log(`${wallUnit.name} è stato distrutto!`, 'error');
+  pushGameEvent('death', { unitId: wallUnit.id, role: wallUnit.role, name: wallUnit.name });
   scheduleSave('entity');
   await playSfx('./assets/sounds/muro_distrutto.mp3');
 
@@ -73,6 +75,7 @@ export async function handleGiantDeath(unit) {
 
   log(`${unit.name} è morto.`, 'success', 3000, true);
 
+  pushGameEvent('death', { unitId: unit.id, role: unit.role, name: unit.name });
   scheduleSave('entity');
 
   await playSfx('./assets/sounds/morte_gigante.mp3');
@@ -123,6 +126,7 @@ export async function handleAllyDeath(unit) {
   renderBenches();
   renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
   log(`${unit.name} è morto/a.`, 'error');
+  pushGameEvent('death', { unitId: unit.id, role: unit.role, name: unit.name });
   await playSfx('./assets/sounds/morte_umano.mp3');
   await playSfx('./assets/sounds/reclute/morte_recluta_comandante.mp3');
   showDeathScreen({

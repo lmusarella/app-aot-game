@@ -17,6 +17,7 @@ const joinRoomMsg      = document.getElementById('join-room-msg')
 const btnRefreshRooms  = document.getElementById('btn-refresh-rooms')
 const roomList         = document.getElementById('room-list')
 
+const btnSinglePlayer  = document.getElementById('btn-singleplayer')
 const btnLogout        = document.getElementById('btn-logout')
 const currentRoom      = document.getElementById('current-room')
 
@@ -43,6 +44,7 @@ export function initLobbyUI() {
   if (btnRefreshRooms) {
     btnRefreshRooms.addEventListener('click', loadAvailableRooms)
   }
+  btnSinglePlayer?.addEventListener('click', onStartSinglePlayer)
   btnLogout.addEventListener('click', onLogout)
 }
 
@@ -115,6 +117,16 @@ async function onCreateRoom() {
   currentRoom.textContent = `Stanza: ${room.name} (ID: ${room.id})`
 
   enterRoomScreen(room.id)
+}
+
+function onStartSinglePlayer() {
+  stopRoomPresence();
+  APP_STATE.roomId = null;
+  APP_STATE.role = 'commander';
+  APP_STATE.isGameDriver = true;
+  APP_STATE.roomPlayers = [];
+  currentRoom.textContent = 'Modalità singolo giocatore';
+  showScreen('game');
 }
 
 // =========================

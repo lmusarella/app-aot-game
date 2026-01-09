@@ -6,6 +6,7 @@ import { unitAlive, isHuman, getStat, keyRC, rollDiceSpec, d, capModSum, wait } 
 import { playSfx, playBg } from '../audio.js';
 import { unitById, GAME_STATE, GIANT_ENGAGEMENT, DB } from '../data.js';
 import { scheduleSave } from '../game/game-sync.js';
+import { pushGameEvent } from '../game/event-manager.js';
 import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from '../ui.js';
 import { log } from '../log.js';
 import bloodHitClean from '../effects/bloodHitClean.js';
@@ -202,6 +203,7 @@ async function resolveWallAttack(ctx) {
   const dmg = Math.max(1, Number(getStat(a, 'atk') || 1));
   const tHp = (t.currHp ?? t.hp) - dmg;
   setUnitHp(t.id, tHp);
+  pushGameEvent('attack', { attackerId: a.id, targetId: t.id, effect: 'wall' });
 
   openAccordionForRole(t.role);
   focusUnitOnField(t.id);
@@ -246,6 +248,7 @@ async function resolveHumanVsGiant(ctx) {
     const dmg = Math.max(1, d(4) + ATK_TOTAL);
     humanDamageDealt = dmg;
     setUnitHp(giantId, (giant.currHp ?? giant.hp) - dmg);
+    pushGameEvent('attack', { attackerId: humanId, targetId: giantId, effect: 'slash' });
     try {
       const path = human.sex === 'm'
         ? './assets/sounds/attacco_uomo.mp3'
@@ -282,6 +285,7 @@ async function resolveHumanVsGiant(ctx) {
         const dmg = computeAbilityDamage(giant, ability);
         humanDamageTaken = dmg;
         setUnitHp(humanId, (human.currHp ?? human.hp) - dmg);
+        pushGameEvent('attack', { attackerId: giantId, targetId: humanId, effect: 'giant' });
 
         bloodImpact();
         giantFallQuake({ delayMs: 0, intensity: 28 });
@@ -293,6 +297,7 @@ async function resolveHumanVsGiant(ctx) {
       if (giantHits) {
         humanDamageTaken = giantAtk;
         setUnitHp(humanId, (human.currHp ?? human.hp) - giantAtk);
+        pushGameEvent('attack', { attackerId: giantId, targetId: humanId, effect: 'giant' });
         bloodImpact();
         try { playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 }); } catch { }
       }
