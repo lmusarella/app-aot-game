@@ -88,6 +88,7 @@ async function fetchRoomPlayers(roomId) {
 }
 
 function bindPresenceRealtime(roomId) {
+  if (APP_STATE.gameMode === 'single') return;
   if (APP_STATE.presenceChannel) {
     APP_STATE.presenceChannel.unsubscribe();
     APP_STATE.presenceChannel = null;
@@ -276,6 +277,7 @@ async function tryAutoStartMission(room) {
 
 
 function bindGameRealtime(roomId) {
+  if (APP_STATE.gameMode === 'single') return;
   if (APP_STATE.gameChannel) {
     APP_STATE.gameChannel.unsubscribe()
     APP_STATE.gameChannel = null
@@ -356,6 +358,7 @@ function saveLocalState() {
 }
 
 async function pushGameState() {
+  if (APP_STATE.gameMode === 'single') return;
   if (!APP_STATE.roomId) return;
 
   // === NUOVA PROTEZIONE ===
