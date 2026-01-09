@@ -13,6 +13,7 @@ function delay(ms) {
 export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
 
   APP_STATE.roomId = roomId
+  APP_STATE.roomPlayers = Array.isArray(allPlayers) ? allPlayers : [];
 
   const isLeader =
     room.leader_id === APP_STATE.user.id ||

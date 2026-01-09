@@ -7,12 +7,13 @@ export function getTurnInfo() {
   const idx = ts.currentIndex ?? 0;
   const currentPlayerId = ts.currentPlayerId || order[idx] || null;
   const myId = APP_STATE.user?.id || null;
+  const hasTurnInfo = order.length > 0 && currentPlayerId;
 
   return {
     order,
     currentIndex: idx,
     currentPlayerId,
-    isMyTurn: myId && currentPlayerId === myId
+    isMyTurn: hasTurnInfo ? (myId && currentPlayerId === myId) : true
   };
 }
 

@@ -6,6 +6,7 @@ const APP_STATE = {
   user: null,
   roomId: null,
   role: null,
+  roomPlayers: [],
   isGameDriver: false,
   gameChannel: null
 }

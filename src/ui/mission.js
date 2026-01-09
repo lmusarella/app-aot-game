@@ -21,6 +21,9 @@ export function ensureMissionCardSkeleton(card) {
       <div class="msn-badge"><span class="lbl">Round</span><span id="msn-round">0</span></div>
     </div>
 
+    <div class="mission-subtitle">Squadra</div>
+    <ul id="msn-squad" class="msn-squad"></ul>
+
     <div class="mission-subtitle">Eventi attivati</div>
     <ul id="msn-evlist" class="msn-list"></ul>
 
