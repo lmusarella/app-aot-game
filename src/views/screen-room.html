@@ -1,0 +1,53 @@
+<div id="screen-room" class="screen hidden">
+    <div class="room-card">
+        <h1 class="auth-title">Stanza di gioco</h1>
+        <p class="auth-subtitle">
+            ID stanza: <code id="room-id-label"></code>
+        </p>
+
+        <div class="room-players-box">
+            <h2>Giocatori collegati</h2>
+            <ul id="room-players-list" class="room-players-list">
+                <!-- riempito via JS -->
+            </ul>
+            <p id="room-players-msg" class="msg"></p>
+        </div>
+
+        <p id="room-phase" class="msg phase-label"></p>
+
+        <!-- Box unità assegnata -->
+        <div id="room-unit-box" class="room-unit-box hidden">
+            <p id="room-unit-label"></p>
+
+            <!-- Select reale (nascosta) -->
+            <select id="room-unit-select" class="hidden"></select>
+
+            <!-- UI visuale con avatar -->
+            <div id="room-unit-grid" class="unit-grid"></div>
+
+            <button id="btn-room-ready-unit" class="btn-primary" type="button">
+                Sono pronto
+            </button>
+        </div>
+
+
+
+        <!-- Footer comandi stanza -->
+        <div class="room-footer">
+            <button id="btn-room-enter-field" class="btn-secondary" type="button">
+                Entra in campo
+            </button>
+
+            <!-- visibile solo al leader in fase giusta -->
+            <button id="btn-room-assign" class="btn-secondary hidden" type="button">
+                Estrai comandante & reclute
+            </button>
+
+            <button id="btn-room-to-game" class="btn-primary hidden" type="button">
+                Vai al campo di battaglia
+            </button>
+        </div>
+
+        <button id="btn-room-back-lobby" class="btn-link" type="button">Esci</button>
+    </div>
+</div>
