@@ -4,6 +4,7 @@ import { APP_STATE, GAME_STATE, gameAPI, snapshot } from '../core/app-state.js'
 import { getTurnInfo } from '../core/turn-helpers.js';
 import { initTurnTracker, startTurnCountdown, renderTurnTracker } from '../core/turn-tracker.js';
 import { initEventManager, consumeGameEvents } from './event-manager.js';
+import { renderMissionUI } from '../missions.js';
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -23,12 +24,77 @@ export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
 
   await loadOrInitGameState(roomId, isLeader, allPlayers)
   bindGameRealtime(roomId)
+  bindPresenceRealtime(roomId)
+  startPresenceHeartbeat(roomId)
   gameAPI.renderGameFromState()
   initEventManager();
 
   // Turn tracker
   initTurnTracker();
   startTurnCountdown();
+}
+
+async function fetchRoomPlayers(roomId) {
+  if (!roomId) return [];
+  const { data, error } = await supabase
+    .from('room_players')
+    .select('user_id, last_seen, ready_to_field, unit_code, ready_unit, is_commander, nickname, commander_code, recruit_codes')
+    .eq('room_id', roomId)
+    .order('user_id', { ascending: true });
+
+  if (error) {
+    console.error('Errore caricando room_players:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+function bindPresenceRealtime(roomId) {
+  if (APP_STATE.presenceChannel) {
+    APP_STATE.presenceChannel.unsubscribe();
+    APP_STATE.presenceChannel = null;
+  }
+
+  const handlePresenceChange = async () => {
+    const players = await fetchRoomPlayers(roomId);
+    APP_STATE.roomPlayers = players;
+    renderMissionUI();
+  };
+
+  const channel = supabase
+    .channel(`room_players:${roomId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'room_players',
+        filter: `room_id=eq.${roomId}`
+      },
+      handlePresenceChange
+    )
+    .subscribe();
+
+  APP_STATE.presenceChannel = channel;
+}
+
+function startPresenceHeartbeat(roomId) {
+  if (APP_STATE.presenceTimerId) {
+    clearInterval(APP_STATE.presenceTimerId);
+  }
+  APP_STATE.presenceTimerId = setInterval(async () => {
+    if (!APP_STATE.user?.id || !roomId) return;
+    try {
+      await supabase
+        .from('room_players')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('room_id', roomId)
+        .eq('user_id', APP_STATE.user.id);
+    } catch (err) {
+      console.warn('Aggiornamento presenza fallito:', err);
+    }
+  }, 10000);
 }
 
 async function loadOrInitGameState(roomId, isDriver, players = []) {
