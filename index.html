@@ -68,58 +68,7 @@
     <div id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
 
 
-    <!-- === FAB DOCK === -->
-    <div class="fab-dock" aria-label="Azioni rapide">
-        <!-- SPAWN -->
-        <div id="fab-spawn" class="fab spawn" aria-expanded="false">
-            <button class="fab-main spawn" data-commander-only type="button" title="Spawna un gigante">GIGANTI</button>
-            <div class="fab-options" aria-hidden="true">
-                <button class="fab-option" data-commander-only data-type="Puro" title="Gigante Puro" style="--angle:-70deg">Spawn
-                    Puro</button>
-                <button class="fab-option" data-commander-only data-type="Anomalo" title="Gigante Anomalo" style="--angle:-45deg">Spawn
-                    Anomalo</button>
-                <button class="fab-option" data-commander-only data-type="Mutaforma" title="Gigante Mutaforma" style="--angle:45deg">Spawn
-                    Mutaforma</button>
-                <button class="fab-option" data-commander-only data-type="Casuale" title="Gigante Casuale" style="--angle:70deg">Spawn
-                    Evento
-                </button>
-                <button class="fab-option" data-commander-only data-type="Movimento" title="Movimento" style="--angle:0deg">Movimento
-                </button>
-            </div>
-        </div>
-        <!-- EVENTO -->
-        <div id="fab-event" class="fab event" aria-expanded="false">
-            <button class="fab-main event" data-commander-only type="button" title="Carte">CARTE</button>
-            <div class="fab-options" aria-hidden="true">
-                <button class="fab-option" data-commander-only data-ev="evento" title="Pesca Evento" style="--angle:-65deg">Pesca
-                    Evento <span class="deck-badge" data-deck-badge="event"></span></button>
-                <button class="fab-option" data-commander-only data-ev="reshuffle" title="Rimescola gli scarti di tutti i mazzi"
-                    style="--angle:-35deg">
-                    Rimescola Mazzi
-                </button>
-                <button class="fab-option" data-commander-only data-ev="showhand" title="Carte in mano" style="--angle:35deg">Carte in
-                    mano <span class="deck-badge" data-deck-badge="showhand"></span></button>
-                <button class="fab-option" data-commander-only data-ev="consumabile" title="Pesca Consumabile" style="--angle:65deg">Pesca
-                    Consumabile <span class="deck-badge" data-deck-badge="consumable"></span> </button>
-            </div>
-        </div>
-
-        <!-- ARRUOLA -->
-        <div id="fab-arruola" class="fab arruola" aria-expanded="false">
-            <button class="fab-main arruola" data-commander-only type="button" title="Arruola unità">SQUADRA</button>
-            <div class="fab-options" aria-hidden="true">
-                <button class="fab-option" data-commander-only data-role="recruit" title="Arruola Reclute" style="--angle:-50deg">Arruola
-                    Reclute</button>
-                <button class="fab-option" data-commander-only data-role="random-team" title="Squadra casuale" style="--angle:0deg">
-                    Squadra casuale
-                </button>
-                <button class="fab-option" data-commander-only data-role="commander" title="Arruola Comandanti"
-                    style="--angle:50deg">Arruola Comandanti</button>
-            </div>
-        </div>
-
-
-    </div>
+    <div id="view-fabs"></div>
 
     <!-- ===== FOOTER overlay ===== -->
     <div id="view-footer"></div>

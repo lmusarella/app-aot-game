@@ -11,6 +11,7 @@ const viewPartials = [
     { id: 'view-layout-controls', path: 'src/views/layout-controls.html', init: './src/views/view-layout-controls.js' },
     { id: 'view-audio', path: 'src/views/audio-modal.html', init: './src/views/view-audio.js' },
     { id: 'view-overlays', path: 'src/views/overlays.html' },
+    { id: 'view-fabs', path: 'src/views/fabs.html', init: './src/views/view-fabs.js' },
 ];
 
 const loadViews = async () => {
