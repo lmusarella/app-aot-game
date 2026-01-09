@@ -1,0 +1,72 @@
+<div id="screen-login" class="screen">
+    <div class="auth-card">
+        <h1 class="auth-title">AOT Companion</h1>
+        <p class="auth-subtitle">Quartier generale</p>
+
+        <!-- TAB LOGIN / REGISTER -->
+        <div class="auth-tabs">
+            <button id="tab-login" class="auth-tab auth-tab--active" type="button">Accedi</button>
+            <button id="tab-register" class="auth-tab" type="button">Registrati</button>
+        </div>
+
+        <!-- ===== FORM LOGIN ===== -->
+        <form id="form-login" class="auth-form" autocomplete="on">
+            <label class="auth-field">
+                <span>Email</span>
+                <input id="login-email" type="email" placeholder="es. nome@example.com" autocomplete="email" required>
+            </label>
+
+            <label class="auth-field">
+                <span>Password</span>
+                <input id="login-password" type="password" placeholder="●●●●●●●" autocomplete="current-password" required>
+            </label>
+
+            <label class="remember-row">
+                <input id="login-remember" type="checkbox">
+                <span>Ricordami su questo dispositivo</span>
+            </label>
+
+            <button id="btn-login" class="btn-primary" type="submit" disabled>Accedi</button>
+        </form>
+
+        <!-- ===== FORM REGISTRAZIONE ===== -->
+        <form id="form-register" class="auth-form hidden" autocomplete="on">
+            <label class="auth-field">
+                <span>NickName</span>
+                <input id="reg-nickname" type="text" placeholder="es. Capito Levi" required>
+            </label>
+
+            <label class="auth-field">
+                <span>Email</span>
+                <input id="reg-email" type="email" placeholder="es. nome@example.com" autocomplete="email" required>
+            </label>
+
+            <label class="auth-field">
+                <span>Password (min 6 caratteri)</span>
+                <input id="reg-password" type="password" placeholder="●●●●●●●" autocomplete="new-password" required>
+            </label>
+
+            <label class="auth-field">
+                <span>Conferma password</span>
+                <input id="reg-password2" type="password" placeholder="Ripeti password" autocomplete="new-password" required>
+            </label>
+
+            <button id="btn-register" class="btn-secondary" type="submit" disabled>Crea account</button>
+        </form>
+
+
+        <!--  <div class="auth-divider">
+            <span>oppure</span>
+        </div>
+
+
+        <button id="btn-google" class="btn-google" type="button">
+            <span class="g-icon">G</span>
+            <span>Accedi con Google</span>
+        </button>-->
+
+        <!-- MESSAGGIO GLOBALE -->
+        <p id="login-msg" class="msg"></p>
+
+    </div>
+</div>

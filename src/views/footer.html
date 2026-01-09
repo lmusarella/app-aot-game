@@ -1,0 +1,28 @@
+<footer class="app-footer" aria-label="Footer">
+    <!-- Barre compatte nel footer -->
+    <div class="footer-bars" role="group" aria-label="Stato Squadra">
+        <!-- Morale -->
+        <div class="bar-row mini" id="morale-row">
+            <span class="br-label">Morale</span>
+            <button class="bbtn" data-target="morale" data-delta="-1" title="-1%">−</button>
+            <div class="bar morale">
+                <div id="morale-fill" class="fill" style="width:65%"></div>
+            </div>
+            <button class="bbtn" data-target="morale" data-delta="1" title="+1%">+</button>
+
+        </div>
+
+        <!-- Esperienza -->
+        <div class="bar-row mini" id="xp-row">
+            <span class="br-label">
+                Exp <span id="lvl-val" style="margin-left:6px; opacity:.75; font-size:11px;">Lv. 1</span>
+            </span>
+            <button class="bbtn" data-target="xp" data-xp="-1" title="-1 XP">−</button>
+            <div class="bar xp">
+                <div id="xp-fill" class="fill" style="width:40%"></div>
+            </div>
+            <button class="bbtn" data-target="xp" data-xp="1" title="+1 XP">+</button>
+            <!-- non serve più il br-val a destra -->
+        </div>
+    </div>
+</footer>

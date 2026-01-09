@@ -1,0 +1,54 @@
+<div id="screen-lobby" class="screen hidden">
+    <div class="lobby-card">
+        <h1 class="auth-title">Lobby Squadra</h1>
+        <p class="auth-subtitle">
+            Connesso come: <strong id="player-name"></strong>
+        </p>
+
+        <!-- TAB LOBBY -->
+        <div class="lobby-tabs">
+            <button id="lobby-tab-create" class="lobby-tab lobby-tab--active" type="button">
+                Crea partita
+            </button>
+            <button id="lobby-tab-join" class="lobby-tab" type="button">
+                Entra in partita
+            </button>
+        </div>
+
+        <!-- ===== SEZIONE CREA ===== -->
+        <div id="lobby-create-section" class="lobby-section">
+            <h2>Crea una nuova partita</h2>
+
+            <label class="auth-field">
+                <span>Nome partita</span>
+                <input id="room-name" type="text" placeholder="Squadra di Luca">
+            </label>
+
+            <button id="btn-create-room" class="btn-primary">Crea</button>
+            <p id="create-room-msg" class="msg"></p>
+        </div>
+
+        <!-- ===== SEZIONE ENTRA ===== -->
+        <!-- ===== SEZIONE ENTRA ===== -->
+        <div id="lobby-join-section" class="lobby-section hidden">
+            <h2>Partite disponibili</h2>
+
+            <div class="lobby-join-header">
+                <button id="btn-refresh-rooms" class="btn-secondary" type="button">
+                    Aggiorna lista
+                </button>
+                <p id="join-room-msg" class="msg"></p>
+            </div>
+
+            <ul id="room-list" class="room-list"><!-- riempito via JS --></ul>
+        </div>
+
+
+
+        <div class="lobby-footer">
+            <div id="current-room" class="msg"></div>
+            <button id="btn-singleplayer" class="btn-secondary" type="button">Gioca in singolo</button>
+            <button id="btn-logout" class="btn-link">Logout</button>
+        </div>
+    </div>
+</div>

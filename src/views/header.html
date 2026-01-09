@@ -1,0 +1,65 @@
+<header>
+    <div class="topbar">
+        <!-- Logo / Icona -->
+        <div class="logo-box">
+            <img src="assets/img/logo.jpg" alt="Logo" />
+        </div>
+
+        <!-- Brand -->
+        <div class="brand">AOT Companion</div>
+
+        <!-- Centro: Missione + Timer -->
+        <div class="center-box">
+            <button id="btn-tutorial" class="btn-icon" title="Tutorial" aria-label="Tutorial">
+                ❔
+            </button>
+            <!-- Missione -->
+            <div class="mission-ctrl">
+                <div class="mc-box">
+                    <span class="mc-label">Missione</span>
+                    <button id="m-dec" class="mc-btn" type="button" title="Missione precedente">−</button>
+                    <span id="m-num" class="mc-num">1</span>
+                    <button id="m-inc" class="mc-btn" type="button" title="Missione successiva">+</button>
+                </div>
+            </div>
+
+            <button id="btn-start" class="start-hdr-btn" data-mode="start" data-commander-only type="button"
+                title="Avvia missione">INIZIA</button>
+            <!-- Timer missione -->
+            <div class="timer" title="Timer missione">
+                <span class="mc-label">Timer</span>
+                <button id="t-play" class="t-btn" aria-label="Play/Pausa">▶</button>
+                <span id="t-time" class="t-time">00:00</span>
+                <button id="t-reset" class="t-btn" aria-label="Azzera timer">⟲</button>
+            </div>
+
+            <button id="btn-audio" class="btn-icon" title="Impostazioni audio" aria-label="Impostazioni audio">
+                🎧
+            </button>
+        </div>
+
+        <!-- Turn tracker (a destra) -->
+        <div id="turn-tracker" class="turn-tracker">
+            <span class="turn-label">Turno</span>
+            <span id="turn-player" class="turn-player">—</span>
+            <span id="turn-order" class="turn-order"></span>
+            <span id="turn-timer" class="turn-timer">—</span>
+        </div>
+
+        <!-- Reset partita (a destra) -->
+        <button id="btn-reset-game" class="reset-hdr-btn" title="Reset Partita">
+            RESET PARTITA
+        </button>
+        <button id="btn-leave-room" class="reset-hdr-btn" title="Esci dalla partita">
+            ESCI PARTITA
+        </button>
+
+        <!-- QUI -->
+        <div class="header-user">
+            <span id="hdr-user-name" class="header-user-name">—</span>
+            <button id="hdr-logout" class="header-user-logout" type="button">
+                Logout
+            </button>
+        </div>
+    </div>
+</header>
