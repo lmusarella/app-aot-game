@@ -1,11 +1,15 @@
-import { GAME_STATE, resetGame } from './data.js';
+import { GAME_STATE, resetGame, snapshot } from './data.js';
 import { confirmDialog, openDialog } from './ui.js';
 import { clearGrid } from './grid.js';
-import {scheduleSave} from './game/game-sync.js';
 import { completeMission, setMissionByIndex, renderMissionUI } from './missions.js';
 import { fmtClock, clamp } from './utils.js';
 import { playSfx } from './audio.js';
 import showWarningC from './effects/warningOverlayC.js';
+import { APP_STATE } from './core/app-state.js';
+import { supabase } from './supabase/supabaseClient.js';
+import { showScreen } from './core/ui-helpers.js';
+import { stopRoomPresence } from './lobby/room-ui.js';
+import { handleAllyDeath } from './entity/deaths.js';
 
 const missionCardHead = document.getElementById('mission-head');
 const btnReset = document.getElementById('btn-reset-game');
@@ -16,6 +20,7 @@ const elTime = document.getElementById('t-time');
 
 const elDec = document.getElementById('m-dec');
 const elInc = document.getElementById('m-inc');
+const btnLeaveRoom = document.getElementById('btn-leave-room');
 
 export function renderHeader() {
     renderMissionUI();
@@ -84,6 +89,47 @@ export function initHeaderListeners() {
             danger: true
         });
         if (ok) resetGame();
+    });
+
+    btnLeaveRoom?.addEventListener('click', async () => {
+        const ok = await confirmDialog({
+            title: 'Esci dalla partita',
+            message: 'Vuoi uscire dalla partita? Il tuo personaggio verrà eliminato dalla missione.',
+            confirmText: 'Esci',
+            cancelText: 'Annulla',
+            danger: true
+        });
+        if (!ok) return;
+
+        const roomId = APP_STATE.roomId;
+        const userId = APP_STATE.user?.id;
+
+        if (roomId && userId) {
+            const unit = GAME_STATE.alliesRoster.find(u => u.owner_id === userId);
+            if (unit && (unit.currHp ?? unit.hp) > 0) {
+                await handleAllyDeath(unit);
+                await supabase
+                    .from('room_game_state')
+                    .update({
+                        state_json: snapshot(),
+                        updated_at: new Date().toISOString(),
+                        updated_by: userId
+                    })
+                    .eq('room_id', roomId);
+            }
+            await supabase
+                .from('room_players')
+                .delete()
+                .eq('room_id', roomId)
+                .eq('user_id', userId);
+        }
+
+        APP_STATE.roomId = null;
+        APP_STATE.role = null;
+        APP_STATE.roomPlayers = [];
+        APP_STATE.isGameDriver = false;
+        stopRoomPresence();
+        showScreen('lobby');
     });
 
     /* =======================
@@ -177,4 +223,3 @@ export function initHeaderListeners() {
     });
 
 }
-
