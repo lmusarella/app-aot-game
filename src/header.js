@@ -21,10 +21,23 @@ const elTime = document.getElementById('t-time');
 const elDec = document.getElementById('m-dec');
 const elInc = document.getElementById('m-inc');
 const btnLeaveRoom = document.getElementById('btn-leave-room');
+const elGameMode = document.getElementById('hdr-game-mode');
 
 export function renderHeader() {
     renderMissionUI();
     renderTimerUI();
+    renderGameModeBadge();
+}
+
+function renderGameModeBadge() {
+    if (!elGameMode) return;
+    if (APP_STATE.gameMode === 'single') {
+        elGameMode.textContent = 'Singolo';
+    } else if (APP_STATE.gameMode === 'multiplayer') {
+        elGameMode.textContent = 'Multiplayer';
+    } else {
+        elGameMode.textContent = '—';
+    }
 }
 
 // Render UI timer
@@ -128,6 +141,7 @@ export function initHeaderListeners() {
         APP_STATE.role = null;
         APP_STATE.roomPlayers = [];
         APP_STATE.isGameDriver = false;
+        APP_STATE.gameMode = null;
         stopRoomPresence();
         showScreen('lobby');
     });

@@ -652,6 +652,7 @@ export async function onRoomBackToLobby() {
 
   APP_STATE.roomId = null
   APP_STATE.role   = null
+  APP_STATE.gameMode = null
   currentRoom.textContent = ''
   roomIdLabel.textContent = ''
   roomPlayersList.innerHTML = ''

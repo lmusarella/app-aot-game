@@ -10,7 +10,7 @@ import {
   setLoading
 } from '../core/ui-helpers.js'
 import { enterRoomScreen, stopRoomPresence } from '../lobby/room-ui.js'   // lo creiamo dopo
-import { initGameForRoom } from '../game/game-sync.js'
+import { initGameForRoom, initGameForSinglePlayer } from '../game/game-sync.js'
 import { confirmDialog } from '../ui.js'
 
 // DOM auth
@@ -44,6 +44,9 @@ const lobbyJoinSection = document.getElementById('lobby-join-section')
 
 const hdrUserName = document.getElementById('hdr-user-name')
 const hdrLogout = document.getElementById('hdr-logout')
+
+let authRestoreInFlight = false
+let lastAuthUserId = null
 
 function switchAuthTab(target) {
   clearMsg()
@@ -121,9 +124,7 @@ export async function initAuthUI(gameApiFromOutside) {
   // Session esistente
   const { data: { session } } = await supabase.auth.getSession()
   if (session?.user) {
-    APP_STATE.user = session.user
-    onUserLoggedIn(session.user)
-    await restoreLocation(session.user)
+    await handleAuthenticatedSession(session.user)
   } else {
     showScreen('login')
   }
@@ -134,8 +135,7 @@ export async function initAuthUI(gameApiFromOutside) {
   // Listener auth
   supabase.auth.onAuthStateChange(async (_event, session2) => {
     if (session2?.user) {
-      APP_STATE.user = session2.user
-      await restoreLocation(session2.user)
+      await handleAuthenticatedSession(session2.user)
     } else {
       APP_STATE.user = null
       onUserLoggedOut()
@@ -193,7 +193,10 @@ async function onLogin() {
       localStorage.setItem(LS_REMEMBER_FLAG, '0')
     }
     setSuccess('Accesso riuscito!')
-    // onAuthStateChange farà il resto
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await handleAuthenticatedSession(user)
+    }
   }
 }
 // =========================
@@ -208,6 +211,7 @@ async function onLogout() {
 
   APP_STATE.roomId = null
   APP_STATE.role = null
+  APP_STATE.gameMode = null
   currentRoom.textContent = ''
 
   // Torna allo screen login
@@ -277,6 +281,7 @@ function onUserLoggedIn(user) {
 function onUserLoggedOut() {
   APP_STATE.roomId = null
   APP_STATE.role = null
+  APP_STATE.gameMode = null
   currentRoom.textContent = ''
   // stopRoomPresence lo chiameremo dal modulo room-ui se serve
   if (hdrUserName) {
@@ -327,7 +332,9 @@ async function restoreLocation(user) {
       APP_STATE.roomId = null;
       APP_STATE.role = 'commander';
       APP_STATE.isGameDriver = true;
+      APP_STATE.gameMode = 'single';
       showScreen('game');
+      initGameForSinglePlayer();
       return;
     }
     // recupero tutti i giocatori
@@ -353,9 +360,26 @@ async function restoreLocation(user) {
     }
 
     showScreen('game')
+    APP_STATE.gameMode = 'multiplayer'
     initGameForRoom(roomId, meRow, players, room)
   } else {
     // lobby / roles_select / units_selection
+    APP_STATE.gameMode = 'multiplayer'
     enterRoomScreen(roomId)
+  }
+}
+
+async function handleAuthenticatedSession(user) {
+  if (!user) return
+  if (authRestoreInFlight) return
+  if (lastAuthUserId === user.id && APP_STATE.user) return
+
+  authRestoreInFlight = true
+  APP_STATE.user = user
+  try {
+    await restoreLocation(user)
+  } finally {
+    lastAuthUserId = user.id
+    authRestoreInFlight = false
   }
 }

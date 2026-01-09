@@ -204,12 +204,22 @@ export function restore(save) {
     return true;
 }
 
-function saveToLocal() {
+export function saveLocalGameState(state = snapshot()) {
     try {
-        const data = snapshot();
-        localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+        localStorage.setItem(SAVE_KEY, JSON.stringify(state));
     } catch (e) {
         console.error('Salvataggio fallito', e);
+    }
+}
+
+export function loadLocalGameState() {
+    try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch (e) {
+        console.error('Caricamento salvataggio fallito', e);
+        return null;
     }
 }
 

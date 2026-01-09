@@ -145,6 +145,7 @@ function renderSquadStatus() {
         return `
       <li class="msn-squad-item">
         <span class="msn-squad-dot ${statusClass}" title="${statusLabel}"></span>
+        <span class="msn-squad-status">${statusLabel}</span>
         <span class="msn-squad-name">${name}</span>
         <span class="msn-squad-role">${roleLabel}</span>
       </li>`;

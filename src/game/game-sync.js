@@ -1,6 +1,7 @@
 // game/game-sync.js
 import { supabase } from '../supabase/supabaseClient.js'
 import { APP_STATE, GAME_STATE, gameAPI, snapshot } from '../core/app-state.js'
+import { loadLocalGameState, saveLocalGameState } from '../data.js'
 import { getTurnInfo } from '../core/turn-helpers.js';
 import { initTurnTracker, startTurnCountdown, renderTurnTracker } from '../core/turn-tracker.js';
 import { initEventManager, consumeGameEvents } from './event-manager.js';
@@ -15,6 +16,7 @@ export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
 
   APP_STATE.roomId = roomId
   APP_STATE.roomPlayers = Array.isArray(allPlayers) ? allPlayers : [];
+  APP_STATE.gameMode = 'multiplayer'
 
   const isLeader =
     room.leader_id === APP_STATE.user.id ||
@@ -33,6 +35,40 @@ export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
   // Turn tracker
   initTurnTracker();
   startTurnCountdown();
+}
+
+export function initGameForSinglePlayer() {
+  APP_STATE.roomId = null
+  APP_STATE.roomPlayers = []
+  APP_STATE.isGameDriver = true
+  APP_STATE.gameMode = 'single'
+
+  if (APP_STATE.gameChannel) {
+    APP_STATE.gameChannel.unsubscribe()
+    APP_STATE.gameChannel = null
+  }
+  if (APP_STATE.presenceChannel) {
+    APP_STATE.presenceChannel.unsubscribe()
+    APP_STATE.presenceChannel = null
+  }
+  if (APP_STATE.presenceTimerId) {
+    clearInterval(APP_STATE.presenceTimerId)
+    APP_STATE.presenceTimerId = null
+  }
+
+  const saved = loadLocalGameState()
+  if (saved) {
+    gameAPI.resetGameState()
+    gameAPI.applyLoadedState(saved)
+  } else {
+    gameAPI.resetGameState()
+    saveLocalGameState(snapshot())
+  }
+
+  gameAPI.renderGameFromState()
+  initEventManager()
+  initTurnTracker()
+  startTurnCountdown()
 }
 
 async function fetchRoomPlayers(roomId) {
@@ -302,12 +338,22 @@ function debounce(fn, ms = 400) {
 
 // crea UNA SOLA volta la versione debounced
 const debouncedPushGameState = debounce(pushGameState, 500);
+const debouncedSaveLocalState = debounce(saveLocalState, 500);
 
 export const scheduleSave = (arg) => {
   console.log('from scheduleSave', arg);
+  if (APP_STATE.gameMode === 'single') {
+    debouncedSaveLocalState();
+    return;
+  }
   // chiama il debounced
   debouncedPushGameState();
 };
+
+function saveLocalState() {
+  const newState = snapshot();
+  saveLocalGameState(newState);
+}
 
 async function pushGameState() {
   if (!APP_STATE.roomId) return;
