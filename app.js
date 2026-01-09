@@ -1,12 +1,5 @@
 
 
-import { bootDataApplication } from './src/data.js'
-import { initAppListeners, initRenderApp } from './src/services.js';
-import { showTutorialPopupViaDialog } from './src/ui.js';
-import { initAuthUI } from './src/auth/auth.js'
-import { initLobbyUI } from './src/lobby/lobby-ui.js';
-import { showScreen } from './src/core/ui-helpers.js'
-
 const viewPartials = [
     { id: 'view-login', path: 'src/views/screen-login.html' },
     { id: 'view-lobby', path: 'src/views/screen-lobby.html' },
@@ -38,6 +31,22 @@ const loadViews = async () => {
 document.addEventListener('DOMContentLoaded', async () => {
 
     await loadViews();
+
+    const [
+        { bootDataApplication },
+        { initAppListeners, initRenderApp },
+        { showTutorialPopupViaDialog },
+        { initAuthUI },
+        { initLobbyUI },
+        { showScreen },
+    ] = await Promise.all([
+        import('./src/data.js'),
+        import('./src/services.js'),
+        import('./src/ui.js'),
+        import('./src/auth/auth.js'),
+        import('./src/lobby/lobby-ui.js'),
+        import('./src/core/ui-helpers.js'),
+    ]);
 
     showScreen('login');
 
