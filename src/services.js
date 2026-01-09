@@ -1,37 +1,15 @@
-import { initHeaderListeners, renderHeader, startTimer, stopTimer, playCornoGuerra } from "./header.js";
-import { initFooterListeners, refreshMoraleUI, refreshXPUI } from "./footer.js";
-import { initModsListeners, initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "./mods.js";
-import { initPhasesListeners, TurnEngine } from "./phases.js";
-import { initAudioListeners } from './audio.js'
-import { initSidebarsListeners, initTooltipListeners, setupAccordions, setupLeftAccordions, setupRightAccordions, setupLeftCollapse, hideTooltip } from "./ui.js";
-import { renderGrid, renderBenches, grid, clearHighlights } from "./grid.js";
-import { ATTACK_PICK, endAttackPick, seedWallRows } from "./entity.js";
-import { DB, GAME_STATE, UNIT_SELECTED, rebuildUnitIndex } from "./data.js";
-import { closeAllFabs, resetDeckFromPool, updateFabDeckCounters } from './fab.js'
+import { renderHeader, startTimer, stopTimer, playCornoGuerra } from "./header.js";
+import { refreshMoraleUI, refreshXPUI } from "./footer.js";
+import { initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "./mods.js";
+import { TurnEngine } from "./phases.js";
+import { renderGrid, renderBenches, grid } from "./grid.js";
+import { seedWallRows } from "./entity.js";
+import { DB, GAME_STATE, rebuildUnitIndex } from "./data.js";
+import { resetDeckFromPool, updateFabDeckCounters } from './fab.js'
 import { renderLogs } from './log.js';
 import { loadMissions } from "./missions.js";
 import showWarningC from './effects/warningOverlayC.js';
 import { applyCommanderAccess } from './core/permissions.js';
-
-export function initAppListeners() {
-
-    initAudioListeners();
-
-    setupLeftAccordions();
-    setupRightAccordions();
-    setupAccordions();
-    setupLeftCollapse();
-
-    initSidebarsListeners();
-    initTooltipListeners();
-
-    initHeaderListeners();
-    initModsListeners();
-    initPhasesListeners();
-    initFooterListeners();
-
-    initGeneralListeners();
-}
 
 export function initRenderApp(booted) {
 
@@ -101,37 +79,4 @@ export function initRenderApp(booted) {
         GAME_STATE.turnEngine.init()
         applyCommanderAccess();
     }
-}
-
-
-function initGeneralListeners() {
-    document.addEventListener('click', (e) => {
-        // durante la scelta NON auto-chiudere (salvo click davvero fuori da tutto)
-        if (ATTACK_PICK) {
-            const insideTooltip = e.target.closest('#tooltip');
-            const onHex = e.target.closest('.hex-member') || e.target.closest('.hexagon');
-            if (!insideTooltip && !onHex) endAttackPick(); // click “fuori”: annulla
-            return; // non eseguire il reset selezione di default
-        }
-        if (
-            !e.target.closest('.hex-member') &&
-            !e.target.closest('.btn-icon') &&
-            !e.target.closest('.unit-card')    // <— aggiungi panchina
-        ) {
-            UNIT_SELECTED.selectedUnitId = null;
-            hideTooltip();
-            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-            renderBenches();
-            clearHighlights();                  // rimuove highlight in panchina
-        }
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            hideTooltip(); UNIT_SELECTED.selectedUnitId = null;
-            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-            closeAllFabs();
-            clearHighlights();
-        }
-    });
 }

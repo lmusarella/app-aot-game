@@ -1,21 +1,24 @@
 
 
 const viewPartials = [
-    { id: 'view-login', path: 'src/views/screen-login.html' },
-    { id: 'view-lobby', path: 'src/views/screen-lobby.html' },
+    { id: 'view-login', path: 'src/views/screen-login.html', init: './src/views/view-login.js' },
+    { id: 'view-lobby', path: 'src/views/screen-lobby.html', init: './src/views/view-lobby.js' },
     { id: 'view-room', path: 'src/views/screen-room.html' },
-    { id: 'view-header', path: 'src/views/header.html' },
-    { id: 'view-leftbar', path: 'src/views/leftbar.html' },
-    { id: 'view-rightbar', path: 'src/views/rightbar.html' },
-    { id: 'view-footer', path: 'src/views/footer.html' },
+    { id: 'view-header', path: 'src/views/header.html', init: './src/views/view-header.js' },
+    { id: 'view-leftbar', path: 'src/views/leftbar.html', init: './src/views/view-leftbar.js' },
+    { id: 'view-rightbar', path: 'src/views/rightbar.html', init: './src/views/view-rightbar.js' },
+    { id: 'view-footer', path: 'src/views/footer.html', init: './src/views/view-footer.js' },
+    { id: 'view-layout-controls', path: 'src/views/layout-controls.html', init: './src/views/view-layout-controls.js' },
+    { id: 'view-audio', path: 'src/views/audio-modal.html', init: './src/views/view-audio.js' },
+    { id: 'view-overlays', path: 'src/views/overlays.html' },
 ];
 
 const loadViews = async () => {
-    await Promise.all(
-        viewPartials.map(async ({ id, path }) => {
+    const viewInits = await Promise.all(
+        viewPartials.map(async ({ id, path, init }) => {
             const target = document.getElementById(id);
             if (!target) {
-                return;
+                return null;
             }
 
             const response = await fetch(path);
@@ -24,6 +27,18 @@ const loadViews = async () => {
             }
             const html = await response.text();
             target.innerHTML = html;
+
+            return init || null;
+        })
+    );
+
+    const initModules = viewInits.filter(Boolean);
+    await Promise.all(
+        initModules.map(async (initPath) => {
+            const module = await import(initPath);
+            if (typeof module.initView === 'function') {
+                await module.initView();
+            }
         })
     );
 };
@@ -34,38 +49,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const [
         { bootDataApplication },
-        { initAppListeners, initRenderApp },
-        { showTutorialPopupViaDialog },
-        { initAuthUI },
-        { initLobbyUI },
+        { initRenderApp },
+        { initGeneralListeners },
         { showScreen },
     ] = await Promise.all([
         import('./src/data.js'),
         import('./src/services.js'),
-        import('./src/ui.js'),
-        import('./src/auth/auth.js'),
-        import('./src/lobby/lobby-ui.js'),
+        import('./src/app/init-general-listeners.js'),
         import('./src/core/ui-helpers.js'),
     ]);
 
     showScreen('login');
 
-    initAppListeners();
+    initGeneralListeners();
     
     await bootDataApplication();
 
     initRenderApp(false);
-
-    setTimeout(async () => {
-        initAuthUI();
-        initLobbyUI();
-
-    }, 60);
-
-    const btn = document.getElementById('btn-tutorial');
-    btn?.addEventListener('click', async (e) => {
-        e.preventDefault();
-        await showTutorialPopupViaDialog({ startIndex: 0, force: true });
-    });
 
 });
