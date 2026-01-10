@@ -75,15 +75,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         { bootDataApplication },
         { initRenderApp },
         { initGeneralListeners },
-        { showScreen },
     ] = await Promise.all([
         import('./src/data.js'),
         import('./src/services.js'),
         import('./src/app/init-general-listeners.js'),
-        import('./src/core/ui-helpers.js'),
     ]);
-
-    showScreen('login');
 
     initGeneralListeners();
     
