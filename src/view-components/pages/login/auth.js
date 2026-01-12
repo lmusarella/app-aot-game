@@ -10,7 +10,8 @@ import {
   setLoading
 } from '../../../ui-components/ui-helpers.js'
 import { enterRoomScreen, stopRoomPresence } from '../room/room-ui.js'   // lo creiamo dopo
-import { initGameForRoom } from '../../../game-business-logic/game-sync.js'
+import { initGameForRoom, initGameForSinglePlayer } from '../../../game-business-logic/game-sync.js'
+import { loadLocalGameState } from '../../../core/data.js'
 import { confirmDialog } from '../../../ui-components/ui-helpers.js'
 
 // DOM auth
@@ -306,6 +307,13 @@ async function restoreLocation(user) {
     .maybeSingle()
 
   if (error || !rp) {
+    const savedSingle = loadLocalGameState()
+    if (savedSingle) {
+      showScreen('game')
+      APP_STATE.gameMode = 'single'
+      initGameForSinglePlayer({ render: true })
+      return
+    }
     onUserLoggedIn(user)
     return
   }
