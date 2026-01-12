@@ -5,6 +5,7 @@ import { loadLocalGameState, saveLocalGameState } from '../core/data.js'
 import { getTurnInfo, initTurnTracker, startTurnCountdown, renderTurnTracker } from './turn-tracker.js';
 import { initEventManager, consumeGameEvents } from './event-manager.js';
 import { renderMissionUI } from '../view-components/leftbar/missions.js';
+import { seedWallRows } from './entity/entity.js';
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -64,6 +65,7 @@ export function initGameForSinglePlayer({ forceReset = false, render = true } = 
     gameAPI.applyLoadedState(saved)
   } else {
     gameAPI.resetGameState()
+    seedWallRows()
     saveLocalGameState(snapshot())
   }
 
@@ -161,6 +163,7 @@ async function loadOrInitGameState(roomId, isDriver, players = []) {
     // 2) Non esiste ancora, se sono il driver lo creo io
 
     gameAPI.resetGameState()
+    seedWallRows()
     const defaultState = createDefaultGameState(players)
 
     console.log('sto per salvare il default', defaultState);
