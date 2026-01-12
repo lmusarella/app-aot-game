@@ -271,7 +271,7 @@ export function restore(save) {
     GAME_STATE.events = Array.isArray(save.events) ? save.events : [];
     GAME_STATE.turnState = save.turnState ?? GAME_STATE.turnState ?? null;
     GAME_STATE.stateVersion = save.stateVersion ?? 0;
-    GAME_STATE.stateUpdatedAt = save.stateUpdatedAt ?? null;
+    GAME_STATE.stateUpdatedAt = save.stateUpdatedAt ?? save.savedAt ?? null;
     //mano
     GAME_STATE.hand = Array.isArray(save.hand) ? save.hand : [];
 
