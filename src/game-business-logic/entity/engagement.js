@@ -12,7 +12,9 @@ export function getEngagedHuman(gid) {
 
   if (!unitAlive(h) || !sameOrAdjCells(gid, hid)) {
     GIANT_ENGAGEMENT.delete(gid);
-    log(`Il combattimento tra ${g.name} e ${h.name} è finito`, 'warning');
+    const gName = g?.name || 'un gigante';
+    const hName = h?.name || 'un umano';
+    log(`Il combattimento tra ${gName} e ${hName} è finito`, 'warning');
     return null;
   }
   return hid;
@@ -34,7 +36,9 @@ export function getEngagingGiant(humanId) {
     // se uno dei due non è valido / non vivo / non più adiacente → rimuovi binding
     if (!unitAlive(g) || !unitAlive(h) || !sameOrAdjCells(gid, hidStr) || g?.role !== 'enemy') {
       GIANT_ENGAGEMENT.delete(gid);
-      log(`Il combattimento tra ${g.name} e ${h.name} è finito`, 'warning');
+      const gName = g?.name || 'un gigante';
+      const hName = h?.name || 'un umano';
+      log(`Il combattimento tra ${gName} e ${hName} è finito`, 'warning');
       continue;
     }
 

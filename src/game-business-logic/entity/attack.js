@@ -221,7 +221,7 @@ async function resolveWallAttack(ctx) {
     playSfx('./assets/sounds/colpo_mura.mp3', { volume: 0.8 });
   } catch { }
 
-  awaitWait(2000);
+  await awaitWait(2000);
   hideVersusOverlay();
 }
 
@@ -268,7 +268,7 @@ async function resolveHumanVsGiant(ctx) {
 
   if (!engagedHumanId || engagedHumanId === humanId) {
     if (ability) {
-      cdGiantAbi = ability.cd;
+      cdGiantAbi = Number.isFinite(Number(ability.cd)) ? Number(ability.cd) : giantCd;
       const dodgeable = (ability.dodgeable !== false);
       humanDodgesAbility = (d20Total + AGI_TOTAL) >= cdGiantAbi;
       const giantHits = dodgeable ? !humanDodgesAbility : true;

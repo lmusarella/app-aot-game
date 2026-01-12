@@ -1,3 +1,5 @@
+import { log } from '../view-components/leftbar/log.js';
+
 const SAVE_VERSION = 1;
 const SAVE_KEY = 'aot-save-v' + SAVE_VERSION;
 
