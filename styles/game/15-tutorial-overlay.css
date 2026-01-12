@@ -283,3 +283,18 @@
 .turn-tracker.my-turn .turn-player {
   color: #ffcc4d;
 }
+
+.turn-tracker.turn-changed {
+  animation: turnPulse 0.6s ease;
+}
+
+@keyframes turnPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.9);
+    border-color: rgba(56, 189, 248, 0.9);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(56, 189, 248, 0);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+}

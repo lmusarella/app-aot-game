@@ -460,6 +460,11 @@ async function pushGameState() {
   if (!APP_STATE.roomId) return;
 
   // === NUOVA PROTEZIONE ===
+  const turnState = GAME_STATE.turnState;
+  if (!turnState || !Array.isArray(turnState.order) || turnState.order.length === 0 || !turnState.currentPlayerId) {
+    console.warn("Turno non inizializzato: salvataggio multiplayer bloccato.");
+    return;
+  }
   const { isMyTurn } = getTurnInfo();
   if (!isMyTurn) {
     console.warn("Tentativo di salvataggio fuori turno bloccato.");
