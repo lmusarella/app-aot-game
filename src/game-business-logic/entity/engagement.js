@@ -1,5 +1,5 @@
 import { sameOrAdjCells } from '../../view-components/grid/grid.js';
-import { unitAlive } from '../../utils.js';
+import { unitAlive } from '../utils.js';
 import { unitById, GIANT_ENGAGEMENT } from '../../core/data.js';
 import { log } from '../../core/log.js';
 

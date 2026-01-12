@@ -1,6 +1,6 @@
 import { GAME_STATE, DB } from '../../../core/data.js';
 import { log } from '../../../core/log.js';
-import { shuffle } from '../../../utils.js';
+import { shuffle } from '../../../game-business-logic/utils.js';
 import { scheduleSave } from '../../../game-business-logic/game-sync.js';
 
 function reshuffleDiscardsOf(type /* 'event' | 'consumable' */) {

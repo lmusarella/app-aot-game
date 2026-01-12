@@ -1,4 +1,4 @@
-import { availableTemplates, countAlive, totalByRole, displayHpForTemplate } from '../utils.js';
+import { availableTemplates, countAlive, totalByRole, displayHpForTemplate } from '../game-business-logic/utils.js';
 
 function cardChipHTML(kind) {
   const label = kind === 'consumable' ? 'Consumabile' : 'Evento';

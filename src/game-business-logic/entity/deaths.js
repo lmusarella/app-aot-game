@@ -2,7 +2,7 @@ import { clearConeGiantData, renderBenches, renderGrid, removeUnitEverywhere, gr
 import { rebuildUnitIndex, GAME_STATE, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
 import { log } from '../../core/log.js';
-import { missionStatsOnUnitDeath, renderMissionUI } from '../../missions.js';
+import { missionStatsOnUnitDeath, renderMissionUI } from '../../view-components/leftbar/missions.js';
 import { addMorale, addXP } from '../../view-components/footer/footer.js';
 import { playSfx } from '../../view-components/audio/audio.js';
 import { giantFallQuake } from '../effects/screenQuake.js';

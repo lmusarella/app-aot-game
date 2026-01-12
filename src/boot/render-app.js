@@ -1,13 +1,13 @@
 import { renderHeader, startTimer, stopTimer, playCornoGuerra } from "../view-components/header/header.js";
 import { refreshMoraleUI, refreshXPUI } from "../view-components/footer/footer.js";
-import { initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "../mods.js";
-import { TurnEngine } from "../core/phases.js";
+import { initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "../view-components/leftbar/mods.js";
+import { TurnEngine } from "../game-business-logic/phases.js";
 import { renderGrid, renderBenches, grid } from "../view-components/grid/grid.js";
 import { seedWallRows } from "../game-business-logic/entity/entity.js";
 import { DB, GAME_STATE, rebuildUnitIndex } from "../core/data.js";
 import { resetDeckFromPool, updateFabDeckCounters } from '../view-components/fabs/fab.js'
 import { renderLogs } from '../core/log.js';
-import { loadMissions } from "../missions.js";
+import { loadMissions } from "../view-components/leftbar/missions.js";
 import showWarningC from '../game-business-logic/effects/warningOverlayC.js';
 import { applyCommanderAccess } from '../core/permissions.js';
 

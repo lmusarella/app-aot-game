@@ -9,7 +9,7 @@ import {
   shuffle,
   pickOne,
   pickManyUnique
-} from '../../../core/random-helpers.js'
+} from '../../../game-business-logic/random-helpers.js'
 import { initGameForRoom } from '../../../game-business-logic/game-sync.js'
 
 // =========================

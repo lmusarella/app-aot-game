@@ -1,5 +1,5 @@
 import { HEX_CFG, gridSize, findUnitCell, getStack, hasHumanInCell, nextStepTowards, hexDistance, moveOneUnitBetweenStacks, nearestWallCell, setStack, renderGrid, renderBenches, clearHighlights, focusUnitOnField, humanTargetsWithin2, removeUnitEverywhere, grid } from '../../view-components/grid/grid.js';
-import { pickRandom, getStat, getMusicUrlById, d, shuffle, availableTemplates } from '../../utils.js';
+import { pickRandom, getStat, getMusicUrlById, d, shuffle, availableTemplates } from '../utils.js';
 import { playSfx, playBg } from '../../view-components/audio/audio.js';
 import { unitById, rebuildUnitIndex, GAME_STATE, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';

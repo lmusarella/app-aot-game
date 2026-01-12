@@ -1,5 +1,5 @@
 // core/turn-helpers.js
-import { APP_STATE, GAME_STATE } from './app-state.js';
+import { APP_STATE, GAME_STATE } from '../core/app-state.js';
 
 export function getTurnInfo() {
   const ts = GAME_STATE.turnState || {};
