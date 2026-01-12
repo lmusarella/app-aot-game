@@ -1,28 +1,47 @@
 
 
-import { bootDataApplication } from './src/data.js'
-import { initAppListeners, initRenderApp } from './src/services.js';
-import { showTutorialPopupViaDialog } from './src/ui.js';
-import { initAuthUI } from './src/auth/auth.js'
-import { initLobbyUI } from './src/lobby/lobby-ui.js';
-import { showScreen } from './src/core/ui-helpers.js'
-
 const viewPartials = [
-    { id: 'view-login', path: 'src/views/screen-login.html' },
-    { id: 'view-lobby', path: 'src/views/screen-lobby.html' },
+    { id: 'view-login', path: 'src/views/screen-login.html', init: './src/views/view-login.js' },
+    { id: 'view-lobby', path: 'src/views/screen-lobby.html', init: './src/views/view-lobby.js' },
     { id: 'view-room', path: 'src/views/screen-room.html' },
-    { id: 'view-header', path: 'src/views/header.html' },
-    { id: 'view-leftbar', path: 'src/views/leftbar.html' },
-    { id: 'view-rightbar', path: 'src/views/rightbar.html' },
-    { id: 'view-footer', path: 'src/views/footer.html' },
+    { id: 'view-header', path: 'src/views/header.html', init: './src/views/view-header.js' },
+    { id: 'view-leftbar', path: 'src/views/leftbar.html', init: './src/views/view-leftbar.js' },
+    { id: 'view-rightbar', path: 'src/views/rightbar.html', init: './src/views/view-rightbar.js' },
+    { id: 'view-footer', path: 'src/views/footer.html', init: './src/views/view-footer.js' },
+    { id: 'view-layout-controls', path: 'src/views/layout-controls.html', init: './src/views/view-layout-controls.js' },
+    { id: 'view-audio', path: 'src/views/audio-modal.html', init: './src/views/view-audio.js' },
+    { id: 'view-overlays', path: 'src/views/overlays.html' },
+    { id: 'view-fabs', path: 'src/views/fabs.html', init: './src/views/view-fabs.js' },
 ];
 
+const requestPrecache = async () => {
+    if (!('serviceWorker' in navigator)) {
+        return;
+    }
+
+    await navigator.serviceWorker.ready;
+    const controller = navigator.serviceWorker.controller;
+    if (!controller) {
+        return;
+    }
+
+    await new Promise((resolve) => {
+        const channel = new MessageChannel();
+        const timeout = setTimeout(resolve, 8000);
+        channel.port1.onmessage = () => {
+            clearTimeout(timeout);
+            resolve();
+        };
+        controller.postMessage({ type: 'PRECACHE' }, [channel.port2]);
+    });
+};
+
 const loadViews = async () => {
-    await Promise.all(
-        viewPartials.map(async ({ id, path }) => {
+    const viewInits = await Promise.all(
+        viewPartials.map(async ({ id, path, init }) => {
             const target = document.getElementById(id);
             if (!target) {
-                return;
+                return null;
             }
 
             const response = await fetch(path);
@@ -31,32 +50,41 @@ const loadViews = async () => {
             }
             const html = await response.text();
             target.innerHTML = html;
+
+            return init || null;
+        })
+    );
+
+    const initModules = viewInits.filter(Boolean);
+    await Promise.all(
+        initModules.map(async (initPath) => {
+            const module = await import(initPath);
+            if (typeof module.initView === 'function') {
+                await module.initView();
+            }
         })
     );
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+    await requestPrecache();
     await loadViews();
 
-    showScreen('login');
+    const [
+        { bootDataApplication },
+        { initRenderApp },
+        { initGeneralListeners },
+    ] = await Promise.all([
+        import('./src/data.js'),
+        import('./src/services.js'),
+        import('./src/app/init-general-listeners.js'),
+    ]);
 
-    initAppListeners();
+    initGeneralListeners();
     
     await bootDataApplication();
 
     initRenderApp(false);
-
-    setTimeout(async () => {
-        initAuthUI();
-        initLobbyUI();
-
-    }, 60);
-
-    const btn = document.getElementById('btn-tutorial');
-    btn?.addEventListener('click', async (e) => {
-        e.preventDefault();
-        await showTutorialPopupViaDialog({ startIndex: 0, force: true });
-    });
 
 });

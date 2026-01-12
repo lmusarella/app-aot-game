@@ -1,0 +1,39 @@
+<div id="audio-backdrop" class="modal-backdrop"></div>
+<div id="audio-modal" class="modal modal-audio" role="dialog" aria-modal="true" aria-labelledby="audio-title">
+    <div class="modal-header">
+        <span id="audio-title" class="modal-title">Impostazioni Audio</span>
+        <button class="modal-close" data-close aria-label="Chiudi">×</button>
+    </div>
+    <div class="modal-body">
+        <!-- la stessa card di prima -->
+        <div class="vol-card" id="vol-card" role="region" aria-label="Controlli volume">
+            <div class="vol-row">
+                <div class="vol-head">
+                    <span class="vol-ico" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path fill="currentColor" d="M12 3v10.55A4 4 0 1 1 10 17V8h8V3h-6z" />
+                        </svg>
+                    </span>
+                    <span class="vol-title">Musica</span>
+                    <output id="vol-music-val" class="vol-val">22%</output>
+                </div>
+                <input id="vol-music" class="vol-range music" type="range" min="0" max="100" step="1" value="22"
+                    data-prop="music" />
+            </div>
+
+            <div class="vol-row">
+                <div class="vol-head">
+                    <span class="vol-ico" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path fill="currentColor" d="M13 3L4 14h6l-1 7 9-11h-6l1-7z" />
+                        </svg>
+                    </span>
+                    <span class="vol-title">Effetti</span>
+                    <output id="vol-sfx-val" class="vol-val">80%</output>
+                </div>
+                <input id="vol-sfx" class="vol-range sfx" type="range" min="0" max="100" step="1" value="80"
+                    data-prop="sfx" />
+            </div>
+        </div>
+    </div>
+</div>

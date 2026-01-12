@@ -43,7 +43,7 @@ export function enablePointerDrag(el, { makePayload, onDrop }) {
     }
     .drag-ghost .dg-inner img {
       width: 100%; height: 100%;
-      object-fit: contain; display: block;
+      object-fit: cover; display: block;
       -webkit-user-drag: none; user-select: none; pointer-events: none;
       image-rendering: auto;
       transform: translateZ(0);

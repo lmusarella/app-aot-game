@@ -1,12 +1,18 @@
 // sw.js - Service Worker base per PWA
-const CACHE_NAME = 'aot-cache-v2';
-const ASSETS = [
+const CACHE_NAME = 'aot-cache-v3';
+const BASE_ASSETS = [
   './',
   './index.html',
   './styles/game.css',
   './styles/screens.css',
   './app.js',
   './manifest.json',
+  './libs/three.min.js',
+  './libs/cannon.min.js',
+  './libs/teal.js',
+  './src/dice-roller/styles.css',
+  './src/dice-roller/dice.js',
+  './src/dice-roller/main.js',
 
   // === img/cards ===
   './assets/img/cards/fulmine.jpg',
@@ -107,8 +113,6 @@ const ASSETS = [
   "./assets/sounds/reclute/rico_presentazione.mp3",
   "./assets/sounds/reclute/sasha_presentazione.mp3",
   "./assets/sounds/reclute/ymir_presentazione.mp3",
-  "./assets/sounds/carte/carta_consumabile.mp3",
-  "./assets/sounds/carte/carta_evento.mp3",
   "./assets/sounds/comandanti/hange_presentazione.mp3",
   "./assets/sounds/comandanti/levi_presentazione.mp3",
   "./assets/sounds/comandanti/mike_presentazione.mp3",
@@ -116,12 +120,43 @@ const ASSETS = [
   "./assets/sounds/comandanti/urlo_erwin.mp3"
 ];
 
+const VIEW_ASSETS = [
+  './src/views/screen-login.html',
+  './src/views/screen-lobby.html',
+  './src/views/screen-room.html',
+  './src/views/header.html',
+  './src/views/leftbar.html',
+  './src/views/rightbar.html',
+  './src/views/footer.html',
+  './src/views/layout-controls.html',
+  './src/views/audio-modal.html',
+  './src/views/overlays.html',
+  './src/views/fabs.html'
+];
+
+const SCRIPT_ASSETS = [
+  './src/app/init-general-listeners.js',
+  './src/services.js',
+  './src/core/ui-helpers.js',
+  './src/views/view-login.js',
+  './src/views/view-lobby.js',
+  './src/views/view-header.js',
+  './src/views/view-leftbar.js',
+  './src/views/view-rightbar.js',
+  './src/views/view-footer.js',
+  './src/views/view-layout-controls.js',
+  './src/views/view-audio.js',
+  './src/views/view-fabs.js'
+];
+
+const ASSETS = Array.from(new Set([...BASE_ASSETS, ...VIEW_ASSETS, ...SCRIPT_ASSETS]));
+
+const precacheAssets = () => caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS));
+
 
 // Installazione: cache iniziale
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
+  event.waitUntil(precacheAssets());
   self.skipWaiting();
 });
 
@@ -158,4 +193,14 @@ self.addEventListener('fetch', (event) => {
       return caches.match(req) || caches.match('./index.html');
     }
   })());
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'PRECACHE') return;
+  const replyPort = event.ports?.[0];
+  event.waitUntil(
+    precacheAssets().then(() => {
+      replyPort?.postMessage({ type: 'PRECACHE_DONE' });
+    })
+  );
 });

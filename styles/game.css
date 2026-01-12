@@ -29,10 +29,10 @@
    box-sizing: border-box
  }
 
- body {
-   margin: 0;
-   background: #1c2030c7;
-   color: #e6e6e6;
+body {
+  margin: 0;
+  background: #1c2030c7;
+  color: #e6e6e6;
    font: 13px/1.35 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 
    /* layout 3 colonne */
@@ -50,8 +50,22 @@
    /* vecchio Edge */
    user-select: none;
    /* standard */
-   -webkit-touch-callout: none;
- }
+  -webkit-touch-callout: none;
+}
+
+#view-header,
+#view-leftbar,
+#view-rightbar,
+#view-footer,
+#view-overlays,
+#view-audio,
+#view-layout-controls,
+#view-fabs,
+#view-login,
+#view-lobby,
+#view-room {
+  display: contents;
+}
 
  /* === Scrollbar unificata (dark) — cross-browser === */
  :root {

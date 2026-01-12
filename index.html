@@ -53,50 +53,9 @@
     <!-- ===== COLONNA PANCHINE (DESTRA) ===== -->
     <div id="view-rightbar"></div>
 
-    <!-- ===== Tooltip ===== -->
-    <div id="tooltip"></div>
+    <div id="view-overlays"></div>
 
-
-    <!-- Popup Audio -->
-    <div id="audio-backdrop" class="modal-backdrop"></div>
-    <div id="audio-modal" class="modal modal-audio" role="dialog" aria-modal="true" aria-labelledby="audio-title">
-        <div class="modal-header">
-            <span id="audio-title" class="modal-title">Impostazioni Audio</span>
-            <button class="modal-close" data-close aria-label="Chiudi">×</button>
-        </div>
-        <div class="modal-body">
-            <!-- la stessa card di prima -->
-            <div class="vol-card" id="vol-card" role="region" aria-label="Controlli volume">
-                <div class="vol-row">
-                    <div class="vol-head">
-                        <span class="vol-ico" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" width="16" height="16">
-                                <path fill="currentColor" d="M12 3v10.55A4 4 0 1 1 10 17V8h8V3h-6z" />
-                            </svg>
-                        </span>
-                        <span class="vol-title">Musica</span>
-                        <output id="vol-music-val" class="vol-val">22%</output>
-                    </div>
-                    <input id="vol-music" class="vol-range music" type="range" min="0" max="100" step="1" value="22"
-                        data-prop="music" />
-                </div>
-
-                <div class="vol-row">
-                    <div class="vol-head">
-                        <span class="vol-ico" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" width="16" height="16">
-                                <path fill="currentColor" d="M13 3L4 14h6l-1 7 9-11h-6l1-7z" />
-                            </svg>
-                        </span>
-                        <span class="vol-title">Effetti</span>
-                        <output id="vol-sfx-val" class="vol-val">80%</output>
-                    </div>
-                    <input id="vol-sfx" class="vol-range sfx" type="range" min="0" max="100" step="1" value="80"
-                        data-prop="sfx" />
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="view-audio"></div>
 
 
     <!-- ===== CAMPO ===== -->
@@ -109,99 +68,12 @@
     <div id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
 
 
-    <!-- === FAB DOCK === -->
-    <div class="fab-dock" aria-label="Azioni rapide">
-        <!-- SPAWN -->
-        <div id="fab-spawn" class="fab spawn" aria-expanded="false">
-            <button class="fab-main spawn" data-commander-only type="button" title="Spawna un gigante">GIGANTI</button>
-            <div class="fab-options" aria-hidden="true">
-                <button class="fab-option" data-commander-only data-type="Puro" title="Gigante Puro" style="--angle:-70deg">Spawn
-                    Puro</button>
-                <button class="fab-option" data-commander-only data-type="Anomalo" title="Gigante Anomalo" style="--angle:-45deg">Spawn
-                    Anomalo</button>
-                <button class="fab-option" data-commander-only data-type="Mutaforma" title="Gigante Mutaforma" style="--angle:45deg">Spawn
-                    Mutaforma</button>
-                <button class="fab-option" data-commander-only data-type="Casuale" title="Gigante Casuale" style="--angle:70deg">Spawn
-                    Evento
-                </button>
-                <button class="fab-option" data-commander-only data-type="Movimento" title="Movimento" style="--angle:0deg">Movimento
-                </button>
-            </div>
-        </div>
-        <!-- EVENTO -->
-        <div id="fab-event" class="fab event" aria-expanded="false">
-            <button class="fab-main event" data-commander-only type="button" title="Carte">CARTE</button>
-            <div class="fab-options" aria-hidden="true">
-                <button class="fab-option" data-commander-only data-ev="evento" title="Pesca Evento" style="--angle:-65deg">Pesca
-                    Evento <span class="deck-badge" data-deck-badge="event"></span></button>
-                <button class="fab-option" data-commander-only data-ev="reshuffle" title="Rimescola gli scarti di tutti i mazzi"
-                    style="--angle:-35deg">
-                    Rimescola Mazzi
-                </button>
-                <button class="fab-option" data-commander-only data-ev="showhand" title="Carte in mano" style="--angle:35deg">Carte in
-                    mano <span class="deck-badge" data-deck-badge="showhand"></span></button>
-                <button class="fab-option" data-commander-only data-ev="consumabile" title="Pesca Consumabile" style="--angle:65deg">Pesca
-                    Consumabile <span class="deck-badge" data-deck-badge="consumable"></span> </button>
-            </div>
-        </div>
-
-        <!-- ARRUOLA -->
-        <div id="fab-arruola" class="fab arruola" aria-expanded="false">
-            <button class="fab-main arruola" data-commander-only type="button" title="Arruola unità">SQUADRA</button>
-            <div class="fab-options" aria-hidden="true">
-                <button class="fab-option" data-commander-only data-role="recruit" title="Arruola Reclute" style="--angle:-50deg">Arruola
-                    Reclute</button>
-                <button class="fab-option" data-commander-only data-role="random-team" title="Squadra casuale" style="--angle:0deg">
-                    Squadra casuale
-                </button>
-                <button class="fab-option" data-commander-only data-role="commander" title="Arruola Comandanti"
-                    style="--angle:50deg">Arruola Comandanti</button>
-            </div>
-        </div>
-
-
-    </div>
+    <div id="view-fabs"></div>
 
     <!-- ===== FOOTER overlay ===== -->
     <div id="view-footer"></div>
 
-    <div id="vs-overlay" hidden>
-        <div class="vs-wrap" role="dialog" aria-label="Scontro in corso" aria-live="polite">
-            <div class="vs-card vs-left"></div>
-            <div class="vs-badge">VS</div>
-            <div class="vs-card vs-right"></div>
-        </div>
-    </div>
-
-    <div id="atk-overlay" hidden>
-        <div class="vs-backdrop"></div>
-        <div class="vs-wrap atk" role="dialog" aria-label="Esito attacco" aria-live="polite">
-            <div class="vs-card vs-left"></div>
-            <div class="vs-badge" id="atk-badge">—</div>
-            <div class="vs-card vs-right"></div>
-            <div class="atk-details">
-                <ul id="atk-lines"></ul>
-            </div>
-        </div>
-    </div>
-    <!-- Overlay Mano (creato/riempito via JS) -->
-    <!-- Overlay Carte (mano / pesca) -->
-    <div id="hand-overlay" class="hand-overlay" hidden>
-        <div class="hand-backdrop"></div>
-        <div class="hand-stage hand-stage--strip" role="dialog" aria-modal="true" aria-label="Carte">
-            <div class="hand-strip" id="hand-strip" tabindex="0" aria-live="polite"></div>
-            <button class="hand-close" title="Chiudi" aria-label="Chiudi">×</button>
-        </div>
-    </div>
-
-
-    <button id="toggle-left" class="collapse-handle left" aria-expanded="true" title="Comprimi/espandi menu sinistro">
-        <span class="arrow">⟨</span>
-    </button>
-
-    <button id="toggle-right" class="collapse-handle right" aria-expanded="true" title="Comprimi/espandi menu destro">
-        <span class="arrow">⟩</span>
-    </button>
+    <div id="view-layout-controls"></div>
 
     <!-- </div> -->
 
