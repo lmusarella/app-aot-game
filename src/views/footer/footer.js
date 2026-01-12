@@ -1,9 +1,9 @@
-import { GAME_STATE, DB } from "./data.js";
-import {scheduleSave} from './game/game-sync.js';
-import { log } from "./log.js";
-import { levelFromXP, levelProgressPercent, getMalusRow } from './utils.js';
-import { renderBonusMalus } from './mods.js'
-import showDeathScreen from './effects/deathOverlay.js';
+import { GAME_STATE, DB } from "../../data.js";
+import { scheduleSave } from '../../game/game-sync.js';
+import { log } from "../../log.js";
+import { levelFromXP, levelProgressPercent, getMalusRow } from '../../utils.js';
+import { renderBonusMalus } from '../../mods.js';
+import showDeathScreen from '../../effects/deathOverlay.js';
 
 const xpDOM = {
     fill: document.getElementById("xp-fill"),

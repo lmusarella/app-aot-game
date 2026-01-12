@@ -1,4 +1,4 @@
-import { initAudioListeners } from '../audio.js';
+import { initAudioListeners } from '../../audio.js';
 
 export function initView() {
   initAudioListeners();

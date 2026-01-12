@@ -7,7 +7,7 @@ import { playSfx, playBg } from '../audio.js';
 import { unitById, GAME_STATE, GIANT_ENGAGEMENT, DB } from '../data.js';
 import { scheduleSave } from '../game/game-sync.js';
 import { pushGameEvent } from '../game/event-manager.js';
-import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from '../ui.js';
+import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from '../ui/ui.js';
 import { log } from '../log.js';
 import bloodHitClean from '../effects/bloodHitClean.js';
 import { giantFallQuake } from '../effects/screenQuake.js';

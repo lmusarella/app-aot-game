@@ -1,5 +1,5 @@
-import { renderHeader, startTimer, stopTimer, playCornoGuerra } from "./header.js";
-import { refreshMoraleUI, refreshXPUI } from "./footer.js";
+import { renderHeader, startTimer, stopTimer, playCornoGuerra } from "./views/header/header.js";
+import { refreshMoraleUI, refreshXPUI } from "./views/footer/footer.js";
 import { initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "./mods.js";
 import { TurnEngine } from "./phases.js";
 import { renderGrid, renderBenches, grid } from "./grid.js";

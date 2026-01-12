@@ -3,7 +3,7 @@ import { pickRandom, getStat, getMusicUrlById, d, shuffle, availableTemplates } 
 import { playSfx, playBg } from '../audio.js';
 import { unitById, rebuildUnitIndex, GAME_STATE, DB } from '../data.js';
 import { scheduleSave } from '../game/game-sync.js';
-import { openAccordionForRole } from '../ui.js';
+import { openAccordionForRole } from '../ui/ui.js';
 import { log } from '../log.js';
 import { getEngagedHuman } from './engagement.js';
 import showWarningC from '../effects/warningOverlayC.js';

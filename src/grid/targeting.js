@@ -1,4 +1,4 @@
-import { showSnackBar } from '../ui.js';
+import { showSnackBar } from '../ui/ui.js';
 import { startAttackPick, getEngagedHuman, getEngagingGiant } from '../entity.js';
 import { getStat, isHuman } from '../utils.js';
 import { unitById } from '../data.js';

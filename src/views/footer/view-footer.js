@@ -1,4 +1,4 @@
-import { initFooterListeners } from '../footer.js';
+import { initFooterListeners } from './footer.js';
 
 export function initView() {
   initFooterListeners();

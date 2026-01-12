@@ -3,7 +3,7 @@ import { scheduleSave } from '../game/game-sync.js';
 import { log } from '../log.js';
 import { renderBenches } from '../grid.js';
 import { applyHpBar, COLOR_VAR, countAlive, totalByRole } from '../utils.js';
-import { addLongPress, showTooltip, getUnitTooltipHTML, alliesPickerHTML, ensureModal, openAccordionForRole } from '../ui.js';
+import { addLongPress, showTooltip, getUnitTooltipHTML, alliesPickerHTML, ensureModal, openAccordionForRole } from '../ui/ui.js';
 
 export async function openAlliesPicker(role) {
   const baseIds = await pickAlliesDialog(role);

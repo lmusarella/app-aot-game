@@ -1,4 +1,4 @@
-import { initSidebarsListeners, setupLeftCollapse } from '../ui.js';
+import { initSidebarsListeners, setupLeftCollapse } from '../../ui/ui.js';
 
 export function initView() {
   setupLeftCollapse();

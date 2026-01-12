@@ -136,32 +136,32 @@ const BASE_ASSETS = [
 ];
 
 const VIEW_ASSETS = [
-  './src/views/screen-login.html',
-  './src/views/screen-lobby.html',
-  './src/views/screen-room.html',
-  './src/views/header.html',
-  './src/views/leftbar.html',
-  './src/views/rightbar.html',
-  './src/views/footer.html',
-  './src/views/layout-controls.html',
-  './src/views/audio-modal.html',
-  './src/views/overlays.html',
-  './src/views/fabs.html'
+  './src/views/login/screen-login.html',
+  './src/views/lobby/screen-lobby.html',
+  './src/views/room/screen-room.html',
+  './src/views/header/header.html',
+  './src/views/leftbar/leftbar.html',
+  './src/views/rightbar/rightbar.html',
+  './src/views/footer/footer.html',
+  './src/views/layout-controls/layout-controls.html',
+  './src/views/audio/audio-modal.html',
+  './src/views/overlays/overlays.html',
+  './src/views/fabs/fabs.html'
 ];
 
 const SCRIPT_ASSETS = [
   './src/app/init-general-listeners.js',
   './src/services.js',
   './src/core/ui-helpers.js',
-  './src/views/view-login.js',
-  './src/views/view-lobby.js',
-  './src/views/view-header.js',
-  './src/views/view-leftbar.js',
-  './src/views/view-rightbar.js',
-  './src/views/view-footer.js',
-  './src/views/view-layout-controls.js',
-  './src/views/view-audio.js',
-  './src/views/view-fabs.js'
+  './src/views/login/view-login.js',
+  './src/views/lobby/view-lobby.js',
+  './src/views/header/view-header.js',
+  './src/views/leftbar/view-leftbar.js',
+  './src/views/rightbar/view-rightbar.js',
+  './src/views/footer/view-footer.js',
+  './src/views/layout-controls/view-layout-controls.js',
+  './src/views/audio/view-audio.js',
+  './src/views/fabs/view-fabs.js'
 ];
 
 const ASSETS = Array.from(new Set([...BASE_ASSETS, ...VIEW_ASSETS, ...SCRIPT_ASSETS]));

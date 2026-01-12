@@ -11,7 +11,7 @@ import {
 } from '../core/ui-helpers.js'
 import { enterRoomScreen, stopRoomPresence } from '../lobby/room-ui.js'   // lo creiamo dopo
 import { initGameForRoom } from '../game/game-sync.js'
-import { confirmDialog } from '../ui.js'
+import { confirmDialog } from '../ui/ui.js'
 
 // DOM auth
 const tabLogin = document.getElementById('tab-login')

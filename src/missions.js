@@ -2,13 +2,13 @@ import { GAME_STATE, DB } from "./data.js";
 import { APP_STATE } from "./core/app-state.js";
 import {scheduleSave} from './game/game-sync.js';
 import { capitalizeFirstLetter, clamp } from "./utils.js";
-import { addLongPress, showCardDetail, ensureMissionCardSkeleton } from "./ui.js";
+import { addLongPress, showCardDetail, ensureMissionCardSkeleton } from "./ui/ui.js";
 import { log } from "./log.js";
 import { clearGrid } from "./grid.js";
 import { playBg } from "./audio.js";
 import { resetMissionEffectsAllUnits } from "./entity.js";
-import { addMorale, addXP } from "./footer.js";
-import { stopTimer, renderTimerUI, resetTimer } from "./header.js";
+import { addMorale, addXP } from "./views/footer/footer.js";
+import { stopTimer, renderTimerUI, resetTimer } from "./views/header/header.js";
 import showDeathScreen from './effects/deathOverlay.js';
 import showVictoryScreen from './effects/victoryOverlay.js';
 

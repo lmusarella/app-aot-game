@@ -1,7 +1,7 @@
 import { GAME_STATE } from '../data.js';
 import { log } from '../log.js';
 import { missionStatsRecordEvent } from '../missions.js';
-import { cardSheetHTML } from '../ui.js';
+import { cardSheetHTML } from '../ui/ui.js';
 import { updateFabDeckCounters } from './decks.js';
 
 export function showDrawnCard(deckType, card) {
