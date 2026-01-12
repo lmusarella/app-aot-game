@@ -5,7 +5,7 @@ import { TurnEngine } from "./phases.js";
 import { renderGrid, renderBenches, grid } from "./grid.js";
 import { seedWallRows } from "./entity.js";
 import { DB, GAME_STATE, rebuildUnitIndex } from "./data.js";
-import { resetDeckFromPool, updateFabDeckCounters } from './fab.js'
+import { resetDeckFromPool, updateFabDeckCounters } from './views/fabs/fab.js'
 import { renderLogs } from './log.js';
 import { loadMissions } from "./missions.js";
 import showWarningC from './effects/warningOverlayC.js';

@@ -1,4 +1,4 @@
-import { initLobbyUI } from '../../lobby/lobby-ui.js';
+import { initLobbyUI } from './lobby-ui.js';
 
 export function initView() {
   initLobbyUI();

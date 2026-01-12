@@ -8,7 +8,7 @@ import showWarningC from '../../effects/warningOverlayC.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { supabase } from '../../supabase/supabaseClient.js';
 import { showScreen } from '../../core/ui-helpers.js';
-import { stopRoomPresence } from '../../lobby/room-ui.js';
+import { stopRoomPresence } from '../room/room-ui.js';
 import { handleAllyDeath } from '../../entity/deaths.js';
 
 const missionCardHead = document.getElementById('mission-head');

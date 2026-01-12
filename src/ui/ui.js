@@ -9,4 +9,4 @@ export { ensureMissionCardSkeleton } from './mission.js';
 export { showVersusOverlay, hideVersusOverlay } from '../views/overlays/overlays/versus.js';
 export { openDiceOverlay, closeDiceOverlay } from '../views/overlays/overlays/dice.js';
 export { showAttackOverlayUnderDice, hideAttackOverlayUnderDice } from '../views/overlays/overlays/attack.js';
-export { showTutorialPopupViaDialog } from './tutorial.js';
+export { showTutorialPopupViaDialog } from '../views/overlays/tutorial.js';

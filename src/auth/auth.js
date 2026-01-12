@@ -9,7 +9,7 @@ import {
   setSuccess,
   setLoading
 } from '../core/ui-helpers.js'
-import { enterRoomScreen, stopRoomPresence } from '../lobby/room-ui.js'   // lo creiamo dopo
+import { enterRoomScreen, stopRoomPresence } from '../views/room/room-ui.js'   // lo creiamo dopo
 import { initGameForRoom } from '../game/game-sync.js'
 import { confirmDialog } from '../ui/ui.js'
 

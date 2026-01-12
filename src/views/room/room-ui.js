@@ -1,7 +1,7 @@
 // lobby/room-ui.js
-import { supabase } from '../supabase/supabaseClient.js'
-import { APP_STATE } from '../core/app-state.js'
-import { showScreen, setError } from '../core/ui-helpers.js'
+import { supabase } from '../../supabase/supabaseClient.js'
+import { APP_STATE } from '../../core/app-state.js'
+import { showScreen, setError } from '../../core/ui-helpers.js'
 import {
   getCommanderPool,
   getRecruitPool,
@@ -9,8 +9,8 @@ import {
   shuffle,
   pickOne,
   pickManyUnique
-} from '../core/random-helpers.js'
-import { initGameForRoom } from '../game/game-sync.js'
+} from '../../core/random-helpers.js'
+import { initGameForRoom } from '../../game/game-sync.js'
 
 // =========================
 // DOM SPECIFICI ROOM

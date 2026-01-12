@@ -2,7 +2,7 @@ import { advanceAllCooldowns, giantsPhaseMove, spawnGiant, tickUnitModsOnNewRoun
 import { getMusicUrlById, wait } from './utils.js';
 import { openAccordionForRole } from './ui/ui.js';
 import { playBg, playSfx } from './audio.js';
-import { showDrawnCard, closeAllFabs, drawCard } from './fab.js';
+import { showDrawnCard, closeAllFabs, drawCard } from './views/fabs/fab.js';
 import { DB, GAME_STATE } from './data.js';
 
 import { missionStatsBumpAttempt, missionStatsSetRound } from './missions.js';
