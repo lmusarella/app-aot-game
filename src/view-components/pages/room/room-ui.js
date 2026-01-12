@@ -9,7 +9,7 @@ import {
   shuffle,
   pickOne,
   pickManyUnique
-} from '../../../game-business-logic/random-helpers.js'
+} from '../../../game-business-logic/utils.js'
 import { initGameForRoom } from '../../../game-business-logic/game-sync.js'
 
 // =========================
@@ -541,7 +541,7 @@ export async function onAssignRolesAndUnits() {
     return
   }
 
-  const shuffledPlayers = shuffle(players)
+  const shuffledPlayers = shuffle(players.slice())
   const commanderPlayer = shuffledPlayers[0]
   const commanderUserId = commanderPlayer.user_id
 

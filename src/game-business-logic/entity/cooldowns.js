@@ -1,6 +1,6 @@
 import { unitById, GAME_STATE } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
-import { log } from '../../core/log.js';
+import { log } from '../../view-components/leftbar/log.js';
 
 export function resetMissionEffectsAllUnits({ includeRoles = ['recruit', 'commander', 'enemy'], skipWalls = true } = {}) {
   const touched = [];

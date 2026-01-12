@@ -7,7 +7,7 @@ import { DB, GAME_STATE } from '../core/data.js';
 
 import { missionStatsBumpAttempt, missionStatsSetRound } from '../view-components/leftbar/missions.js';
 import { stopTimer, startTimer } from "../view-components/header/header.js";
-import { log } from "../core/log.js";
+import { log } from "../view-components/leftbar/log.js";
 import showPhaseBanner from './effects/phaseBanner.js';
 import showWarningC from './effects/warningOverlayC.js';
 import lightningStrike from './effects/lightningStrike.js';
