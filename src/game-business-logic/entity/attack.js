@@ -1,9 +1,9 @@
 import {
   sameOrAdjCells, focusUnitOnField,
   grid, renderBenches, renderGrid, focusBenchCard
-} from '../../game-components/grid/grid.js';
+} from '../../view-components/grid/grid.js';
 import { unitAlive, isHuman, getStat, keyRC, rollDiceSpec, d, capModSum, wait } from '../../utils.js';
-import { playSfx, playBg } from '../../game-components/audio/audio.js';
+import { playSfx, playBg } from '../../view-components/audio/audio.js';
 import { unitById, GAME_STATE, GIANT_ENGAGEMENT, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
 import { pushGameEvent } from '../event-manager.js';

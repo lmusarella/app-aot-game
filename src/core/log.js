@@ -1,6 +1,6 @@
 import { showSnackBar } from '../ui-components/ui.js'
 import { GAME_STATE } from './data.js'
-import { scheduleSave } from '../game/game-sync.js';
+import { scheduleSave } from '../game-business-logic/game-sync.js';
 
 const logBox = document.getElementById('log-box');
 

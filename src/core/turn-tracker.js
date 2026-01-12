@@ -1,7 +1,7 @@
 // header/turn-tracker.js
 import { APP_STATE } from './app-state.js';
 import { getTurnInfo, advanceTurn } from './turn-helpers.js';
-import { scheduleSave } from '../game/game-sync.js';
+import { scheduleSave } from '../game-business-logic/game-sync.js';
 
 const TURN_DURATION_SEC = 60; // ⏱ durata turno (configurabile)
 

@@ -1,7 +1,7 @@
-import { ATTACK_PICK, endAttackPick } from '../game/entity/entity.js';
+import { ATTACK_PICK, endAttackPick } from '../game-business-logic/entity/entity.js';
 import { DB, GAME_STATE, UNIT_SELECTED } from '../core/data.js';
-import { renderGrid, renderBenches, grid, clearHighlights } from '../game-components/grid/grid.js';
-import { closeAllFabs } from '../game-components/fabs/fab.js';
+import { renderGrid, renderBenches, grid, clearHighlights } from '../view-components/grid/grid.js';
+import { closeAllFabs } from '../view-components/fabs/fab.js';
 import { hideTooltip, initTooltipListeners } from '../ui-components/ui.js';
 
 export function initGeneralListeners() {

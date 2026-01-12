@@ -1,14 +1,14 @@
-import { renderHeader, startTimer, stopTimer, playCornoGuerra } from "../game-components/header/header.js";
-import { refreshMoraleUI, refreshXPUI } from "../game-components/footer/footer.js";
+import { renderHeader, startTimer, stopTimer, playCornoGuerra } from "../view-components/header/header.js";
+import { refreshMoraleUI, refreshXPUI } from "../view-components/footer/footer.js";
 import { initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "../mods.js";
 import { TurnEngine } from "../core/phases.js";
-import { renderGrid, renderBenches, grid } from "../game-components/grid/grid.js";
-import { seedWallRows } from "../game/entity/entity.js";
+import { renderGrid, renderBenches, grid } from "../view-components/grid/grid.js";
+import { seedWallRows } from "../game-business-logic/entity/entity.js";
 import { DB, GAME_STATE, rebuildUnitIndex } from "../core/data.js";
-import { resetDeckFromPool, updateFabDeckCounters } from '../game-components/fabs/fab.js'
+import { resetDeckFromPool, updateFabDeckCounters } from '../view-components/fabs/fab.js'
 import { renderLogs } from '../core/log.js';
 import { loadMissions } from "../missions.js";
-import showWarningC from '../game/effects/warningOverlayC.js';
+import showWarningC from '../game-business-logic/effects/warningOverlayC.js';
 import { applyCommanderAccess } from '../core/permissions.js';
 
 function renderCoreUI() {

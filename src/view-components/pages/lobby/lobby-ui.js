@@ -3,7 +3,7 @@ import { supabase } from '../../../core/supabase/supabaseClient.js'
 import { APP_STATE } from '../../../core/app-state.js'
 import { showScreen } from '../../../ui-components/ui-helpers.js'
 import { enterRoomScreen, stopRoomPresence } from '../room/room-ui.js'
-import { initGameForSinglePlayer, initGameForRoom } from '../../../game/game-sync.js'
+import { initGameForSinglePlayer, initGameForRoom } from '../../../game-business-logic/game-sync.js'
 
 // =========================
 // DOM REFERENCES LOBBY

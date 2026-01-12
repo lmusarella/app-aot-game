@@ -1,7 +1,7 @@
 import { GAME_STATE, DB } from '../../../core/data.js';
 import { log } from '../../../core/log.js';
 import { shuffle } from '../../../utils.js';
-import { scheduleSave } from '../../../game/game-sync.js';
+import { scheduleSave } from '../../../game-business-logic/game-sync.js';
 
 function reshuffleDiscardsOf(type /* 'event' | 'consumable' */) {
   const d = GAME_STATE.decks[type];

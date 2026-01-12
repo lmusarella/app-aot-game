@@ -136,32 +136,32 @@ const BASE_ASSETS = [
 ];
 
 const VIEW_ASSETS = [
-  './src/game-components/pages/login/screen-login.html',
-  './src/game-components/pages/lobby/screen-lobby.html',
-  './src/game-components/pages/room/screen-room.html',
-  './src/game-components/header/header.html',
-  './src/game-components/leftbar/leftbar.html',
-  './src/game-components/rightbar/rightbar.html',
-  './src/game-components/footer/footer.html',
-  './src/game-components/layout-controls/layout-controls.html',
-  './src/game-components/audio/audio-modal.html',
-  './src/game-components/overlays/overlays.html',
-  './src/game-components/fabs/fabs.html'
+  './src/view-components/pages/login/screen-login.html',
+  './src/view-components/pages/lobby/screen-lobby.html',
+  './src/view-components/pages/room/screen-room.html',
+  './src/view-components/header/header.html',
+  './src/view-components/leftbar/leftbar.html',
+  './src/view-components/rightbar/rightbar.html',
+  './src/view-components/footer/footer.html',
+  './src/view-components/layout-controls/layout-controls.html',
+  './src/view-components/audio/audio-modal.html',
+  './src/view-components/overlays/overlays.html',
+  './src/view-components/fabs/fabs.html'
 ];
 
 const SCRIPT_ASSETS = [
   './src/boot/general-listeners.js',
   './src/services.js',
   './src/ui-components/ui-helpers.js',
-  './src/game-components/pages/login/view-login.js',
-  './src/game-components/pages/lobby/view-lobby.js',
-  './src/game-components/header/view-header.js',
-  './src/game-components/leftbar/view-leftbar.js',
-  './src/game-components/rightbar/view-rightbar.js',
-  './src/game-components/footer/view-footer.js',
-  './src/game-components/layout-controls/view-layout-controls.js',
-  './src/game-components/audio/view-audio.js',
-  './src/game-components/fabs/view-fabs.js'
+  './src/view-components/pages/login/view-login.js',
+  './src/view-components/pages/lobby/view-lobby.js',
+  './src/view-components/header/view-header.js',
+  './src/view-components/leftbar/view-leftbar.js',
+  './src/view-components/rightbar/view-rightbar.js',
+  './src/view-components/footer/view-footer.js',
+  './src/view-components/layout-controls/view-layout-controls.js',
+  './src/view-components/audio/view-audio.js',
+  './src/view-components/fabs/view-fabs.js'
 ];
 
 const ASSETS = Array.from(new Set([...BASE_ASSETS, ...VIEW_ASSETS, ...SCRIPT_ASSETS]));
