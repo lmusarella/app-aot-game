@@ -1,5 +1,5 @@
 import { APP_STATE } from './app-state.js';
-import { log } from './log.js';
+import { log } from '../view-components/leftbar/log.js';
 
 const COMMANDER_SELECTOR = '[data-commander-only]';
 
