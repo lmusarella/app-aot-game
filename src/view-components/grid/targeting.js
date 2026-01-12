@@ -1,5 +1,5 @@
 import { showSnackBar } from '../../ui-components/ui.js';
-import { startAttackPick, getEngagedHuman, getEngagingGiant } from '../../game/entity/entity.js';
+import { startAttackPick, getEngagedHuman, getEngagingGiant } from '../../game-business-logic/entity/entity.js';
 import { getStat, isHuman } from '../../utils.js';
 import { unitById } from '../../core/data.js';
 import { hexWithinRadius, hexNeighbors, hexDistance } from './hex.js';

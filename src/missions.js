@@ -1,16 +1,16 @@
 import { GAME_STATE, DB } from "./core/data.js";
 import { APP_STATE } from "./core/app-state.js";
-import {scheduleSave} from './game/game-sync.js';
+import {scheduleSave} from './game-business-logic/game-sync.js';
 import { capitalizeFirstLetter, clamp } from "./utils.js";
 import { addLongPress, showCardDetail, ensureMissionCardSkeleton } from "./ui-components/ui.js";
 import { log } from "./core/log.js";
-import { clearGrid } from "./game-components/grid/grid.js";
-import { playBg } from "./game-components/audio/audio.js";
-import { resetMissionEffectsAllUnits } from "./game/entity/entity.js";
-import { addMorale, addXP } from "./game-components/footer/footer.js";
-import { stopTimer, renderTimerUI, resetTimer } from "./game-components/header/header.js";
-import showDeathScreen from './game/effects/deathOverlay.js';
-import showVictoryScreen from './game/effects/victoryOverlay.js';
+import { clearGrid } from "./view-components/grid/grid.js";
+import { playBg } from "./view-components/audio/audio.js";
+import { resetMissionEffectsAllUnits } from "./game-business-logic/entity/entity.js";
+import { addMorale, addXP } from "./view-components/footer/footer.js";
+import { stopTimer, renderTimerUI, resetTimer } from "./view-components/header/header.js";
+import showDeathScreen from './game-business-logic/effects/deathOverlay.js';
+import showVictoryScreen from './game-business-logic/effects/victoryOverlay.js';
 
 const elMissionNumTop = document.getElementById('m-num');       // header (numero)
 const elMissionNumCard = document.querySelector('#missione-corrente #mc-num'); // card (numero)

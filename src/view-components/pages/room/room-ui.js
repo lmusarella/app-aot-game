@@ -10,7 +10,7 @@ import {
   pickOne,
   pickManyUnique
 } from '../../../core/random-helpers.js'
-import { initGameForRoom } from '../../../game/game-sync.js'
+import { initGameForRoom } from '../../../game-business-logic/game-sync.js'
 
 // =========================
 // DOM SPECIFICI ROOM

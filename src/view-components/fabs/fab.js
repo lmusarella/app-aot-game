@@ -1,8 +1,8 @@
 import { log } from '../../core/log.js';
-import { giantsPhaseMove, pickRandomTeam, spawnGiant } from '../../game/entity/entity.js';
+import { giantsPhaseMove, pickRandomTeam, spawnGiant } from '../../game-business-logic/entity/entity.js';
 import { playSfx } from '../audio/audio.js';
 import { hideTooltip } from '../../ui-components/ui.js';
-import lightningStrike from '../../game/effects/lightningStrike.js';
+import lightningStrike from '../../game-business-logic/effects/lightningStrike.js';
 import { guardCommanderAction } from '../../core/permissions.js';
 import { drawCard, resetDeckFromPool, reshuffleAllDiscards, updateFabDeckCounters } from './fab/decks.js';
 import { openAlliesPicker } from './fab/allies-picker.js';

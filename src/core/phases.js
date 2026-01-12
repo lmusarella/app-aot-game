@@ -1,21 +1,21 @@
-import { advanceAllCooldowns, giantsPhaseMove, spawnGiant, tickUnitModsOnNewRound, pickRandomTeam } from '../game/entity/entity.js';
+import { advanceAllCooldowns, giantsPhaseMove, spawnGiant, tickUnitModsOnNewRound, pickRandomTeam } from '../game-business-logic/entity/entity.js';
 import { getMusicUrlById, wait } from '../utils.js';
 import { openAccordionForRole } from '../ui-components/ui.js';
-import { playBg, playSfx } from '../game-components/audio/audio.js';
-import { showDrawnCard, closeAllFabs, drawCard } from '../game-components/fabs/fab.js';
+import { playBg, playSfx } from '../view-components/audio/audio.js';
+import { showDrawnCard, closeAllFabs, drawCard } from '../view-components/fabs/fab.js';
 import { DB, GAME_STATE } from './data.js';
 
 import { missionStatsBumpAttempt, missionStatsSetRound } from '../missions.js';
-import { stopTimer, startTimer } from "../game-components/header/header.js";
+import { stopTimer, startTimer } from "../view-components/header/header.js";
 import { log } from "./log.js";
-import showPhaseBanner from '../game/effects/phaseBanner.js';
-import showWarningC from '../game/effects/warningOverlayC.js';
-import lightningStrike from '../game/effects/lightningStrike.js';
+import showPhaseBanner from '../game-business-logic/effects/phaseBanner.js';
+import showWarningC from '../game-business-logic/effects/warningOverlayC.js';
+import lightningStrike from '../game-business-logic/effects/lightningStrike.js';
 // in cima
 import { guardCommanderAction } from './permissions.js';
 import { APP_STATE } from './app-state.js';
 import { getTurnInfo, advanceTurn } from './turn-helpers.js';
-import { scheduleSave } from '../game/game-sync.js';
+import { scheduleSave } from '../game-business-logic/game-sync.js';
 
 
 const PHASE_UI = {

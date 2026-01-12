@@ -4,12 +4,12 @@ import { clearGrid } from '../grid/grid.js';
 import { completeMission, setMissionByIndex, renderMissionUI } from '../../missions.js';
 import { fmtClock, clamp } from '../../utils.js';
 import { playSfx } from '../audio/audio.js';
-import showWarningC from '../../game/effects/warningOverlayC.js';
+import showWarningC from '../../game-business-logic/effects/warningOverlayC.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { supabase } from '../../core/supabase/supabaseClient.js';
 import { showScreen } from '../../ui-components/ui-helpers.js';
 import { stopRoomPresence } from '../pages/room/room-ui.js';
-import { handleAllyDeath } from '../../game/entity/deaths.js';
+import { handleAllyDeath } from '../../game-business-logic/entity/deaths.js';
 
 const missionCardHead = document.getElementById('mission-head');
 const btnReset = document.getElementById('btn-reset-game');
