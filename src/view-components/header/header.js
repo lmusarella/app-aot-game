@@ -1,8 +1,8 @@
 import { GAME_STATE, resetGame, snapshot } from '../../core/data.js';
 import { confirmDialog, openDialog } from '../../ui-components/ui.js';
 import { clearGrid } from '../grid/grid.js';
-import { completeMission, setMissionByIndex, renderMissionUI } from '../../missions.js';
-import { fmtClock, clamp } from '../../utils.js';
+import { completeMission, setMissionByIndex, renderMissionUI } from '../leftbar/missions.js';
+import { fmtClock, clamp } from '../../game-business-logic/utils.js';
 import { playSfx } from '../audio/audio.js';
 import showWarningC from '../../game-business-logic/effects/warningOverlayC.js';
 import { APP_STATE } from '../../core/app-state.js';
