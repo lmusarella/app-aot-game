@@ -1,4 +1,4 @@
-import { unitById, GAME_STATE } from '../data.js';
+import { unitById, GAME_STATE } from '../../core/data.js';
 import { scheduleSave } from '../game/game-sync.js';
 import { log } from '../log.js';
 

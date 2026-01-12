@@ -1,14 +1,14 @@
 import {
   sameOrAdjCells, focusUnitOnField,
   grid, renderBenches, renderGrid, focusBenchCard
-} from '../grid.js';
-import { unitAlive, isHuman, getStat, keyRC, rollDiceSpec, d, capModSum, wait } from '../utils.js';
-import { playSfx, playBg } from '../audio.js';
-import { unitById, GAME_STATE, GIANT_ENGAGEMENT, DB } from '../data.js';
-import { scheduleSave } from '../game/game-sync.js';
-import { pushGameEvent } from '../game/event-manager.js';
-import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from '../ui/ui.js';
-import { log } from '../log.js';
+} from '../../views/grid/grid.js';
+import { unitAlive, isHuman, getStat, keyRC, rollDiceSpec, d, capModSum, wait } from '../../utils.js';
+import { playSfx, playBg } from '../../views/audio/audio.js';
+import { unitById, GAME_STATE, GIANT_ENGAGEMENT, DB } from '../../core/data.js';
+import { scheduleSave } from '../game-sync.js';
+import { pushGameEvent } from '../event-manager.js';
+import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from '../../ui/ui.js';
+import { log } from '../../log.js';
 import bloodHitClean from '../effects/bloodHitClean.js';
 import { giantFallQuake } from '../effects/screenQuake.js';
 import swordSlash from '../effects/swordSlash.js';

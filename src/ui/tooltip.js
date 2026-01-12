@@ -1,5 +1,5 @@
 import { fmtSigned, getUnitBonus, signClass, cappedDelta } from '../utils.js';
-import { UNIT_SELECTED, unitById, GIANT_ENGAGEMENT, GAME_STATE } from '../data.js';
+import { UNIT_SELECTED, unitById, GIANT_ENGAGEMENT, GAME_STATE } from '../core/data.js';
 
 export const tooltipEl = document.getElementById('tooltip');
 

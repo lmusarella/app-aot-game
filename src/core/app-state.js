@@ -1,5 +1,5 @@
 // core/app-state.js
-import { GAME_STATE, restore,snapshot } from '../data.js'
+import { GAME_STATE, restore, snapshot } from './data.js'
 import { initRenderApp } from '../services.js'
 
 const APP_STATE = {

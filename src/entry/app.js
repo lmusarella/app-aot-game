@@ -1,6 +1,6 @@
 
 
-import { bootDataApplication } from '../data.js'
+import { bootDataApplication } from '../core/data.js'
 import { initAppListeners, initRenderApp } from '../services.js'
 import { showTutorialPopupViaDialog } from '../ui/ui.js'
 import { initAuthUI } from '../auth/auth.js'

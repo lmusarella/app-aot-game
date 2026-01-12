@@ -1,5 +1,5 @@
-import { initAudio, playBg } from '../../audio.js';
-import { GAME_STATE } from '../../data.js';
+import { initAudio, playBg } from '../audio/audio.js';
+import { GAME_STATE } from '../../core/data.js';
 import { openDialog } from '../../ui/dialog.js';
 
 const TUTORIAL_DONE_KEY = 'AOT_TUTORIAL_DONE_V1';

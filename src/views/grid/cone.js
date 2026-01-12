@@ -1,6 +1,6 @@
 import { HEX_CFG, inBoundsRC, hexWithinRadius, hexDistance, offsetToCube, cubeToOffset } from './hex.js';
-import { getStat, isHuman } from '../utils.js';
-import { unitById, GIANT_ENGAGEMENT } from '../data.js';
+import { getStat, isHuman } from '../../utils.js';
+import { unitById, GIANT_ENGAGEMENT } from '../../core/data.js';
 import { findUnitCell, nearestWallCell, unitsAtCell } from './queries.js';
 import { nextStepTowards } from './pathing.js';
 

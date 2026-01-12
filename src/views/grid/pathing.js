@@ -1,6 +1,6 @@
 import { hexNeighbors, hexDistance } from './hex.js';
-import { DB } from '../data.js';
-import { pickRandom } from '../utils.js';
+import { DB } from '../../core/data.js';
+import { pickRandom } from '../../utils.js';
 import { getStack, hasWallInCell } from './stacks.js';
 
 function defaultWalkableFn(r, c) {

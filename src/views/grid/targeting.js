@@ -1,7 +1,7 @@
-import { showSnackBar } from '../ui/ui.js';
-import { startAttackPick, getEngagedHuman, getEngagingGiant } from '../entity.js';
-import { getStat, isHuman } from '../utils.js';
-import { unitById } from '../data.js';
+import { showSnackBar } from '../../ui/ui.js';
+import { startAttackPick, getEngagedHuman, getEngagingGiant } from '../../game/entity/entity.js';
+import { getStat, isHuman } from '../../utils.js';
+import { unitById } from '../../core/data.js';
 import { hexWithinRadius, hexNeighbors, hexDistance } from './hex.js';
 import { getStack } from './stacks.js';
 import { findUnitCell } from './queries.js';

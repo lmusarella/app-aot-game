@@ -1,4 +1,4 @@
-import { DB, GAME_STATE, UNIT_SELECTED, unitById } from '../data.js';
+import { DB, GAME_STATE, UNIT_SELECTED, unitById } from '../../core/data.js';
 import { scheduleSave } from '../game/game-sync.js';
 
 export function getStack(r, c) {

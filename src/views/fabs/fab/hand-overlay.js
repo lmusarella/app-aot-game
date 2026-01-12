@@ -1,4 +1,4 @@
-import { GAME_STATE } from '../../../data.js';
+import { GAME_STATE } from '../../../core/data.js';
 import { log } from '../../../log.js';
 import { missionStatsRecordEvent } from '../../../missions.js';
 import { cardSheetHTML } from '../../../ui/ui.js';

@@ -1,4 +1,4 @@
-import { GAME_STATE } from '../../data.js';
+import { GAME_STATE } from '../../../core/data.js';
 import { getStat, capModSum } from '../../utils.js';
 
 let VS_TIMER = null;

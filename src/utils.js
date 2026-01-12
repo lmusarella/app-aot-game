@@ -1,4 +1,4 @@
-import { GAME_STATE, DB } from "./data.js";
+import { GAME_STATE, DB } from "./core/data.js";
 
 
 export const COLOR_VAR = {

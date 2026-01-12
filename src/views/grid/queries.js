@@ -1,5 +1,5 @@
 import { HEX_CFG, gridSize, hexDistance } from './hex.js';
-import { unitById, GAME_STATE } from '../data.js';
+import { unitById, GAME_STATE } from '../../core/data.js';
 import { getStack, hasWallInCell } from './stacks.js';
 
 export function findUnitCell(unitId) {

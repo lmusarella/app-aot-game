@@ -1,14 +1,14 @@
 import { APP_STATE } from '../core/app-state.js';
-import { GAME_STATE } from '../data.js';
+import { GAME_STATE } from '../core/data.js';
 import { log } from '../log.js';
-import { playSfx } from '../audio.js';
-import swordSlash from '../effects/swordSlash.js';
-import bloodHitClean from '../effects/bloodHitClean.js';
-import wallCollapse from '../effects/wallCollapse.js';
-import { giantFallQuake } from '../effects/screenQuake.js';
-import { giantDust } from '../effects/giantDust.js';
-import showDeathScreen from '../effects/deathOverlay.js';
-import showVictoryScreen from '../effects/victoryOverlay.js';
+import { playSfx } from '../views/audio/audio.js';
+import swordSlash from './effects/swordSlash.js';
+import bloodHitClean from './effects/bloodHitClean.js';
+import wallCollapse from './effects/wallCollapse.js';
+import { giantFallQuake } from './effects/screenQuake.js';
+import { giantDust } from './effects/giantDust.js';
+import showDeathScreen from './effects/deathOverlay.js';
+import showVictoryScreen from './effects/victoryOverlay.js';
 
 const processedIds = new Set();
 const MAX_EVENTS = 50;

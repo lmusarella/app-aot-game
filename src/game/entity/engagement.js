@@ -1,6 +1,6 @@
-import { sameOrAdjCells } from '../grid.js';
-import { unitAlive } from '../utils.js';
-import { unitById, GIANT_ENGAGEMENT } from '../data.js';
+import { sameOrAdjCells } from '../../views/grid/grid.js';
+import { unitAlive } from '../../utils.js';
+import { unitById, GIANT_ENGAGEMENT } from '../../core/data.js';
 import { log } from '../log.js';
 
 // valida e ritorna l’umano ingaggiato col gigante, se ancora valido

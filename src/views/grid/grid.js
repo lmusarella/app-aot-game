@@ -1,22 +1,22 @@
-import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, addLongPress, confirmDialog } from './ui/ui.js';
-import { playSfx } from './audio.js';
-import { isClone, getStat, applyHpBar, getMusicUrlById, COLOR_VAR, keyRC } from './utils.js';
-import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, GIANT_ENGAGEMENT } from './data.js';
-import {scheduleSave} from './game/game-sync.js';
-import { log } from './log.js';
-import { adjustUnitHp } from './entity.js';
-import { enablePointerDrag } from './grid/drag.js';
-import { getStack, setStack, removeUnitEverywhere, moveOneUnitBetweenStacks, hasWallInCell, bringToFront, setStackVisuals } from './grid/stacks.js';
-import { findUnitCell } from './grid/queries.js';
-import { handleUnitLongPress } from './grid/targeting.js';
-import { clearConeGiantData, clearHighlights, isConeCell, setGiantConeCells, setGiantNemesiTarget, setCone, pickGiantFacing, hexCone } from './grid/cone.js';
+import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, addLongPress, confirmDialog } from '../../ui/ui.js';
+import { playSfx } from '../audio/audio.js';
+import { isClone, getStat, applyHpBar, getMusicUrlById, COLOR_VAR, keyRC } from '../../utils.js';
+import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, GIANT_ENGAGEMENT } from '../../core/data.js';
+import { scheduleSave } from '../../game/game-sync.js';
+import { log } from '../../log.js';
+import { adjustUnitHp } from '../../game/entity/entity.js';
+import { enablePointerDrag } from './drag.js';
+import { getStack, setStack, removeUnitEverywhere, moveOneUnitBetweenStacks, hasWallInCell, bringToFront, setStackVisuals } from './stacks.js';
+import { findUnitCell } from './queries.js';
+import { handleUnitLongPress } from './targeting.js';
+import { clearConeGiantData, clearHighlights, isConeCell, setGiantConeCells, setGiantNemesiTarget, setCone, pickGiantFacing, hexCone } from './cone.js';
 
-export { HEX_CFG, gridSize, inBoundsRC, hexNeighbors, hexWithinRadius, hexDistance } from './grid/hex.js';
-export { clearConeGiantData, clearHighlights } from './grid/cone.js';
-export { getStack, setStack, removeUnitEverywhere, moveOneUnitBetweenStacks } from './grid/stacks.js';
-export { findUnitCell, nearestWallCell } from './grid/queries.js';
-export { nextStepTowards } from './grid/pathing.js';
-export { humanTargetsWithin2, hasHumanInCell, sameOrAdjCells } from './grid/targeting.js';
+export { HEX_CFG, gridSize, inBoundsRC, hexNeighbors, hexWithinRadius, hexDistance } from './hex.js';
+export { clearConeGiantData, clearHighlights } from './cone.js';
+export { getStack, setStack, removeUnitEverywhere, moveOneUnitBetweenStacks } from './stacks.js';
+export { findUnitCell, nearestWallCell } from './queries.js';
+export { nextStepTowards } from './pathing.js';
+export { humanTargetsWithin2, hasHumanInCell, sameOrAdjCells } from './targeting.js';
 
 const baseHpOverride = new Map();
 

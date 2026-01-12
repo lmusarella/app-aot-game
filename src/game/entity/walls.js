@@ -1,4 +1,4 @@
-import { unitById, GAME_STATE, DB } from '../data.js';
+import { unitById, GAME_STATE, DB } from '../../core/data.js';
 
 export function seedWallRows() {
   // 1) togli eventuali vecchie entry in r.10/11/12

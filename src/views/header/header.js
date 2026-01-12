@@ -1,15 +1,15 @@
-import { GAME_STATE, resetGame, snapshot } from '../../data.js';
+import { GAME_STATE, resetGame, snapshot } from '../../core/data.js';
 import { confirmDialog, openDialog } from '../../ui/ui.js';
-import { clearGrid } from '../../grid.js';
+import { clearGrid } from '../grid/grid.js';
 import { completeMission, setMissionByIndex, renderMissionUI } from '../../missions.js';
 import { fmtClock, clamp } from '../../utils.js';
-import { playSfx } from '../../audio.js';
-import showWarningC from '../../effects/warningOverlayC.js';
+import { playSfx } from '../audio/audio.js';
+import showWarningC from '../../game/effects/warningOverlayC.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { supabase } from '../../supabase/supabaseClient.js';
 import { showScreen } from '../../core/ui-helpers.js';
 import { stopRoomPresence } from '../room/room-ui.js';
-import { handleAllyDeath } from '../../entity/deaths.js';
+import { handleAllyDeath } from '../../game/entity/deaths.js';
 
 const missionCardHead = document.getElementById('mission-head');
 const btnReset = document.getElementById('btn-reset-game');

@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         { initRenderApp },
         { initGeneralListeners },
     ] = await Promise.all([
-        import('./src/data.js'),
+        import('./src/core/data.js'),
         import('./src/services.js'),
         import('./src/app/init-general-listeners.js'),
     ]);
