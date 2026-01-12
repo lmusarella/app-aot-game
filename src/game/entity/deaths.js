@@ -3,7 +3,7 @@ import { rebuildUnitIndex, GAME_STATE, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
 import { log } from '../../log.js';
 import { missionStatsOnUnitDeath, renderMissionUI } from '../../missions.js';
-import { addMorale, addXP } from '../views/footer/footer.js';
+import { addMorale, addXP } from '../../views/footer/footer.js';
 import { playSfx } from '../../views/audio/audio.js';
 import { giantFallQuake } from '../effects/screenQuake.js';
 import { giantDust } from '../effects/giantDust.js';
