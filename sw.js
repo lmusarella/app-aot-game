@@ -166,7 +166,23 @@ const SCRIPT_ASSETS = [
 
 const ASSETS = Array.from(new Set([...BASE_ASSETS, ...VIEW_ASSETS, ...SCRIPT_ASSETS]));
 
-const precacheAssets = () => caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS));
+const precacheAssets = async () => {
+  const cache = await caches.open(CACHE_NAME);
+  const requests = ASSETS.map((asset) => new Request(asset, { cache: 'no-cache' }));
+  const results = await Promise.allSettled(
+    requests.map(async (request) => {
+      const response = await fetch(request);
+      if (!response.ok) {
+        throw new Error(`Failed to precache ${request.url}`);
+      }
+      await cache.put(request, response);
+    })
+  );
+  const rejected = results.filter((result) => result.status === 'rejected');
+  if (rejected.length) {
+    console.warn('Precache skipped some assets.', rejected);
+  }
+};
 
 
 // Installazione: cache iniziale
