@@ -1,0 +1,422 @@
+ /* ==== Overlay mano – auto width + tools ==== */
+ .hand-overlay[hidden] {
+   display: none !important;
+ }
+
+ .hand-overlay {
+   --card-w: clamp(280px, 30ch, 340px);
+   /* larghezza carta base */
+   position: fixed;
+   inset: 0;
+   z-index: 100002;
+   display: grid;
+   place-items: center;
+ }
+
+ .hand-backdrop {
+   position: absolute;
+   inset: 0;
+   background: rgba(8, 10, 14, .64);
+   backdrop-filter: blur(6px) saturate(120%);
+ }
+
+ /* lo stage ora shrink-wrappa al contenuto (max 96vw) */
+ .hand-stage {
+   position: relative;
+   display: inline-block;
+   /* <-- fa shrink-wrap */
+   width: fit-content(96vw);
+   /* <-- si adatta alle carte */
+   max-width: 600px;
+   /* cap a viewport */
+   max-height: 88vh;
+   padding: 18px;
+   border-radius: 16px;
+   border: 1px solid #1f2230;
+   background-color: transparent;
+   box-shadow: 0 18px 44px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
+   animation: ttPop .12s ease-out;
+   overflow: hidden;
+ }
+
+ /* toolbar (close + rimescola) */
+ .hand-close,
+ .hand-shuffle {
+   position: absolute;
+   top: 10px;
+   width: 34px;
+   height: 34px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #13151d;
+   color: #ddd;
+   cursor: pointer;
+ }
+
+ .hand-close {
+   right: 10px;
+ }
+
+ .hand-shuffle {
+   right: 52px;
+ }
+
+ /* icona a sinistra della X */
+ .hand-close:hover,
+ .hand-shuffle:hover {
+   filter: brightness(1.08);
+ }
+
+ /* strip carte: grid in colonne => larghezza intrinseca = somma carte */
+ .hand-strip {
+   display: grid;
+   grid-auto-flow: column;
+   grid-auto-columns: var(--card-w);
+   gap: 16px;
+   overflow-x: auto;
+   padding: 6px 10px 12px;
+   scroll-snap-type: x proximity;
+   -webkit-overflow-scrolling: touch;
+ }
+
+ .hand-strip::before,
+ .hand-strip::after {
+   content: "";
+   width: 12px;
+ }
+
+ /* carta */
+ .hand-card {
+   scroll-snap-align: center;
+ }
+
+ .tt-card.card-sheet {
+   height: 100%;
+   display: flex;
+   flex-direction: column;
+   align-items: stretch;
+   padding: 14px;
+   border-radius: 16px;
+   border: 3px solid gray;
+   background: linear-gradient(180deg, #121524, #0d101b);
+   box-shadow: 0 8px 24px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .04);
+   text-align: center;
+   transition: transform .08s ease, filter .12s ease, box-shadow .2s ease, border-color .2s ease;
+   animation: cardPulse 2.8s ease-in-out infinite;
+ }
+
+ @keyframes cardPulse {
+
+   0%,
+   100% {
+
+     box-shadow:
+       0 0 0 0 rgba(0, 170, 255, .45),
+       0 0 12px rgba(0, 140, 255, .35),
+       0 0 22px rgba(0, 110, 255, .25) inset;
+     border-color: #3399ff;
+   }
+
+   50% {
+
+     box-shadow:
+       0 0 0 10px rgba(0, 170, 255, .12),
+       0 0 28px rgba(0, 180, 255, .55),
+       0 0 35px rgba(0, 140, 255, .4) inset;
+     border-color: #66ccff;
+   }
+ }
+
+ .card-sheet .tt-title {
+   display: flex;
+   justify-content: center;
+   gap: 10px;
+   margin: 0 0 6px;
+   font: 700 16px/1.1 system-ui;
+ }
+
+ .card-sheet .tt-avatar {
+   width: 180px;
+   height: 180px;
+   margin: 6px auto 8px;
+   border-radius: 50%;
+   overflow: hidden;
+   border: 3px solid gray;
+   background: #0b0d12;
+   box-shadow: 0 0 12px rgba(0, 0, 0, .4);
+ }
+
+ .card-sheet .tt-ability {
+   margin-top: 6px;
+   padding-top: 8px;
+   border-top: 1px solid #20253a;
+ }
+
+ .card-sheet .tt-ability .tt-label {
+   display: block;
+   font-size: 11px;
+   opacity: .7;
+   letter-spacing: .3px;
+   margin-bottom: 6px;
+ }
+
+ .card-sheet .tt-ability-text {
+   font-size: 13px;
+   line-height: 1.35;
+   white-space: pre-wrap;
+   overflow-wrap: anywhere;
+   max-height: 7.5em;
+   overflow: auto;
+ }
+
+ .card-actions {
+   margin-top: 12px;
+   display: flex;
+   gap: 8px;
+   justify-content: center;
+ }
+
+ .card-btn {
+   padding: 8px 12px;
+   border-radius: 10px;
+   border: 1px solid #2a2f43;
+   background: #14192b;
+   color: #e6e6e6;
+   font-weight: 800;
+   cursor: pointer;
+ }
+
+ .card-btn.primary {
+   background: #193256;
+   border-color: #254066;
+   color: #cfe8ff;
+ }
+
+ .card-btn.danger {
+   background: linear-gradient(180deg, #b83131, #7a1f1f);
+   border-color: #3f1111;
+   color: #fff;
+ }
+
+ .card-btn:hover {
+   filter: brightness(1.08);
+ }
+
+ .card-btn:active {
+   transform: translateY(1px);
+ }
+
+ /* micro-interazione */
+ @media (hover:hover) {
+   .hand-card {
+     transition: transform .18s cubic-bezier(.2, .8, .2, 1), filter .18s;
+   }
+
+   .hand-card:hover {
+     transform: translateY(-8px);
+     filter: brightness(1.06);
+   }
+ }
+
+ /* vista singola (quando peschi): carte più larghe */
+ .hand-stage--single {
+   max-width: 350px !important;
+ }
+
+
+ /* === Attack bubble / picker === */
+ .attack-bubble {
+   position: fixed;
+   z-index: 100000;
+   background: linear-gradient(180deg, #10121a, #0d0f16);
+   border: 1px solid #24263a;
+   border-radius: 12px;
+   padding: 8px 10px;
+   box-shadow: 0 12px 32px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .04);
+   animation: ttPop .12s ease-out;
+ }
+
+ .attack-bubble__btn {
+   border: 1px solid #2a2a2a;
+   background: #13151d;
+   color: #e6e6e6;
+   padding: 8px 12px;
+   border-radius: 10px;
+   font-weight: 800;
+   cursor: pointer;
+ }
+
+ .attack-bubble__btn:hover {
+   background: #181b26;
+ }
+
+ /* evidenzia i bersagli selezionabili */
+ .hex-member.targetable .hex-circle {
+   box-shadow: 0 0 0 3px #22c55e, 0 0 16px rgba(34, 197, 94, .45);
+   border-color: #22c55e !important;
+ }
+
+ /* mini-hint in basso */
+ .target-hint {
+   position: fixed;
+   left: 50%;
+   transform: translateX(-50%);
+   bottom: calc(var(--footer-h) + 10px);
+   background: #0f1118;
+   border: 1px solid #23263a;
+   color: #dfe6ff;
+   padding: 6px 10px;
+   border-radius: 999px;
+   font-size: 12px;
+   z-index: 100000;
+   box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+ }
+
+ /* stile mini per scelte bersaglio nel tooltip */
+ #tooltip .atk-choice {
+   all: unset;
+   cursor: pointer;
+   display: grid;
+   place-items: center;
+   padding: 6px 8px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #11131a;
+ }
+
+ #tooltip .atk-choice:hover {
+   filter: brightness(1.06);
+ }
+
+ /* === Target pick list (tooltip) === */
+ .picklist {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+   gap: 10px;
+   max-height: 48vh;
+   overflow: auto;
+   padding-right: 2px;
+   /* evita che la scrollbar copra */
+   scrollbar-gutter: stable;
+ }
+
+ .tcard {
+   display: grid;
+   grid-template-columns: 48px 1fr;
+   align-items: center;
+   gap: 10px;
+   padding: 8px 10px;
+   border-radius: 10px;
+   border: 1px solid var(--ring, #2a2a2a);
+   background: #13151d;
+   color: #e6e6e6;
+   cursor: pointer;
+   text-align: left;
+   transition: box-shadow .16s ease, filter .16s ease, border-color .16s ease;
+ }
+
+ .tcard:hover {
+   box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+   filter: brightness(1.03);
+ }
+
+ .tcard:focus-visible {
+   outline: 2px solid #66ccff;
+   outline-offset: 2px;
+ }
+
+ .tcard.is-active {
+   border-color: var(--oro);
+   box-shadow: 0 0 0 2px var(--oro), 0 0 12px rgba(207, 148, 57, .35);
+ }
+
+ /* variante mini (stesso markup che hai usato) */
+ .tcard--mini .tcard__avatar {
+   width: 44px;
+   height: 44px;
+ }
+
+ .tcard__avatar {
+   width: 48px;
+   height: 48px;
+   border-radius: 50%;
+   overflow: hidden;
+   border: 2px solid var(--ring, #444);
+   grid-row: 1 / span 3;
+ }
+
+ .tcard__avatar img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+ }
+
+ .tcard__body {
+   display: grid;
+   grid-template-rows: auto auto auto auto;
+   gap: 4px;
+   min-width: 0;
+ }
+
+ .tcard__name {
+   font-weight: 700;
+   font-size: 13px;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+ }
+
+ .tcard__sub {
+   font-size: 12px;
+   opacity: .85;
+ }
+
+ .tcard .hpbar {
+   margin-top: 2px;
+   height: 6px;
+ }
+
+ .tcard .hpbar-fill {
+   height: 100%;
+   background: linear-gradient(180deg, #22c55e, #15803d);
+   transition: width .2s ease;
+ }
+
+ .tcard__meta {
+   font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono";
+   opacity: .9;
+ }
+
+ /* tooltip più largo quando c'è una picklist (auto-adatta la larghezza) */
+ #tooltip .tt-card:has(.picklist) {
+   width: auto;
+   max-width: min(92vw, 680px);
+ }
+
+ .start-hdr-btn {
+   background: linear-gradient(180deg, #16a34a, #0f7a37);
+   /* verde */
+   color: #fff;
+   border: 1px solid #0a5a27;
+   border-radius: 12px;
+   padding: 8px 12px;
+   font-weight: 900;
+   letter-spacing: .3px;
+   cursor: pointer;
+   box-shadow: 0 10px 18px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .08);
+ }
+
+ .start-hdr-btn:hover {
+   filter: brightness(1.06);
+ }
+
+ .start-hdr-btn[hidden] {
+   display: none !important;
+ }
+
+ /* quando è in modalità "Termina setup" (arancio) */
+ .start-hdr-btn[data-mode="end"] {
+   background: linear-gradient(180deg, #f59e0b, #b45309);
+   border-color: #7c3a06;
+ }
+

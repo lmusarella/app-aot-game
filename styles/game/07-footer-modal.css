@@ -1,0 +1,233 @@
+ /* ===== Footer (overlay) ===== */
+ footer.app-footer {
+   position: fixed;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   height: var(--footer-h);
+   z-index: 99998;
+   background: linear-gradient(180deg, #0b0d14, #090b12);
+   border-top: 1px solid #1f2230;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   gap: 12px;
+   padding: 0 12px;
+   backdrop-filter: blur(6px) saturate(120%);
+   pointer-events: auto;
+ }
+
+ .app-footer .foot-text {
+   font-size: 8px;
+   opacity: .85
+ }
+
+
+
+ /* === Trash button === */
+ .btn-icon.btn-trash {
+   border-color: #3a2424;
+ }
+
+ .btn-icon.btn-trash:hover {
+   background: #1f1313;
+   border-color: #5a2a2a;
+   color: #ffb3b3;
+ }
+
+ .unit-card.removing {
+   opacity: .35 !important;
+   filter: saturate(.6);
+   box-shadow: 0 0 0 2px rgba(200, 50, 50, .35), 0 0 18px rgba(200, 50, 50, .25) !important;
+   transition: opacity .15s ease, filter .15s ease, box-shadow .15s ease;
+ }
+
+ /* === Dialog/Modal unificato === */
+ .modal-backdrop {
+   position: fixed;
+   inset: 0;
+   background: rgba(8, 10, 14, .64);
+   backdrop-filter: blur(6px) saturate(120%);
+   z-index: 100000;
+   opacity: 0;
+   pointer-events: none;
+   transition: opacity .18s ease;
+ }
+
+ .modal {
+   position: fixed;
+   left: 50%;
+   top: 50%;
+   transform: translate(-50%, -46%);
+   min-width: 320px;
+   max-width: 520px;
+   background: linear-gradient(180deg, #0f1118, #0b0d14);
+   border: 1px solid #22263b;
+   border-radius: 12px;
+   color: #e6e6e6;
+   box-shadow: 0 18px 44px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
+   z-index: 100001;
+   opacity: 0;
+   pointer-events: none;
+   transition: opacity .18s ease, transform .18s ease;
+ }
+
+ .modal.show,
+ .modal-backdrop.show {
+   opacity: 1;
+   pointer-events: auto;
+ }
+
+ .modal.show {
+   transform: translate(-50%, -50%);
+ }
+
+ .modal-header {
+   font-size: large;
+   padding: 14px 16px 8px;
+   font-weight: 800;
+   letter-spacing: .3px;
+ }
+
+ .modal-body {
+   padding: 16px;
+   opacity: .92;
+ }
+
+ .modal-actions {
+   display: flex;
+   gap: 8px;
+   justify-content: space-between;
+   border-top: 1px solid #1b1f2d;
+   padding-top: 16px;
+ }
+
+ .modal-btn {
+   border: 1px solid #2a2a2a;
+   background: #13151d;
+   color: #e6e6e6;
+   padding: 8px 12px;
+   border-radius: 10px;
+   font-weight: 800;
+   letter-spacing: .2px;
+   cursor: pointer;
+ }
+
+ .modal-btn:hover {
+   background: #181b26;
+ }
+
+ .modal-btn.danger {
+   background: linear-gradient(180deg, #c83232, #8f1f1f);
+   border-color: #4a0f0f;
+   color: #fff;
+ }
+
+ .modal-btn.danger:hover {
+   filter: brightness(1.06);
+ }
+
+ /* === Mini controlli HP (riuso .btn-icon) === */
+ .btn-icon.btn-mini {
+   width: 22px;
+   height: 22px;
+   border-radius: 7px;
+   font-size: 13px;
+   font-weight: 900;
+   line-height: 1;
+   padding: 0;
+ }
+
+ .btn-icon.btn-mini:hover {
+   background: #202020;
+ }
+
+ /* Valore HP compatto in panchina */
+ .hp-inline-val {
+   font: 12px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+   opacity: .9;
+   min-width: 56px;
+   text-align: center;
+ }
+
+
+
+
+ /* Card: posizionamento assoluto elementi */
+ .unit-card {
+   position: relative;
+ }
+
+ /* Cestino in alto a destra */
+ .card-trash {
+   position: absolute;
+   top: 6px;
+   right: 8px;
+   width: 30px;
+   height: 30px;
+   border-radius: 8px;
+   border: 1px solid #3a2424;
+   background: #141414;
+   color: #e6e6e6;
+   display: grid;
+   place-items: center;
+   cursor: pointer;
+ }
+
+ .card-trash:hover {
+   background: #1f1313;
+   border-color: #5a2a2a;
+   color: #ffb3b3;
+ }
+
+ /* Riga HP con - [bar] HP +  (HP a destra della barra) */
+ .hpbar-row {
+   display: grid;
+   grid-template-columns: auto 1fr auto auto;
+   align-items: center;
+   gap: 8px;
+   width: 100%;
+ }
+
+ /* Bottoni - / + laterali alla barra */
+ .hpbar-row .btn-mini {
+   width: 24px;
+   height: 24px;
+   border-radius: 8px;
+   font-weight: 900;
+   line-height: 1;
+   padding: 0;
+   border: 1px solid #2a2a2a;
+   background: #1a1a1a;
+   color: #e6e6e6;
+   cursor: pointer;
+ }
+
+ .hpbar-row .btn-mini:hover {
+   background: #202020;
+ }
+
+ /* Barra HP (assicurati che il fill sia visibile) */
+ .hpbar {
+   position: relative;
+   height: 6px;
+   background: #0c0c0c;
+   border: 1px solid #222;
+   border-radius: 999px;
+   overflow: hidden;
+ }
+
+ .hpbar-fill {
+   display: block;
+   height: 100%;
+   width: 100%;
+ }
+
+ /* HP a destra, font piccolo */
+ .hp-inline-right {
+   font: 12px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono";
+   opacity: .9;
+   min-width: 60px;
+   text-align: right;
+ }
+

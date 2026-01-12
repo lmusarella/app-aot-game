@@ -1,0 +1,285 @@
+ /* === Tutorial Overlay (semplice, sopra a VS e Dadi) === */
+ #tutorial-overlay {
+   position: fixed;
+   inset: 0;
+   z-index: 9900;
+   /* > VS e > Dadi */
+ }
+
+ #tutorial-overlay[hidden] {
+   display: none !important;
+ }
+
+ .tut-backdrop {
+   position: absolute;
+   inset: 0;
+   background: rgba(0, 0, 0, .55);
+   backdrop-filter: blur(2px);
+ }
+
+ .tut-stage {
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   /* centra davvero */
+   width: min(920px, 94vw);
+   max-height: 92vh;
+   overflow: auto;
+   background: #121622;
+   color: #e8eefc;
+   border-radius: 14px;
+   box-shadow: 0 18px 60px rgba(0, 0, 0, .45);
+   border: 1px solid rgba(255, 255, 255, .08);
+ }
+
+ .tut-head {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   padding: 14px 16px;
+   border-bottom: 1px solid rgba(255, 255, 255, .08);
+ }
+
+ .tut-title {
+   font-weight: 800;
+   letter-spacing: .2px;
+ }
+
+ .tut-close {
+   border: 0;
+   background: transparent;
+   color: #fff;
+   font-size: 22px;
+   cursor: pointer;
+ }
+
+ .tut-body {
+   display: grid;
+   grid-template-columns: 1fr 1.2fr;
+   gap: 14px;
+   padding: 14px 16px;
+ }
+
+ .tut-media img {
+   display: block;
+   width: 100%;
+   height: auto;
+   border-radius: 10px;
+ }
+
+ .tut-txt h3 {
+   margin: 0 0 6px;
+ }
+
+ .tut-txt p {
+   margin: 0 0 8px;
+   opacity: .95;
+ }
+
+ .tut-steps {
+   font-size: 12px;
+   opacity: .75;
+ }
+
+ .tut-foot {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   gap: 10px;
+   padding: 12px 16px;
+   border-top: 1px solid rgba(255, 255, 255, .08);
+ }
+
+ .tut-nav {
+   display: flex;
+   gap: 8px;
+ }
+
+ .tut-btn {
+   border: 1px solid rgba(255, 255, 255, .18);
+   background: rgba(255, 255, 255, .06);
+   color: #fff;
+   border-radius: 8px;
+   padding: 8px 12px;
+   cursor: pointer;
+ }
+
+ .tut-btn[disabled] {
+   opacity: .45;
+   cursor: default;
+ }
+
+ @media (max-width: 700px) {
+   .tut-body {
+     grid-template-columns: 1fr;
+   }
+ }
+
+ /* Failsafe: assicurati che gli overlay non spariscano */
+ #tutorial-overlay[hidden] {
+   display: none !important;
+ }
+
+ /* Overlay base */
+ #tutorial-overlay {
+   position: fixed !important;
+   inset: 0 !important;
+   z-index: 9900 !important;
+   /* > vs-overlay (9600) e > dice-overlay (9000) */
+   display: block !important;
+   opacity: 1 !important;
+   visibility: visible !important;
+ }
+
+ /* Backdrop e stage minimi */
+ #tutorial-overlay .tut-backdrop {
+   position: absolute;
+   inset: 0;
+   background: rgba(0, 0, 0, .55);
+   backdrop-filter: blur(2px);
+ }
+
+ #tutorial-overlay .tut-stage {
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   width: min(920px, 94vw);
+   max-height: 92vh;
+   overflow: auto;
+   background: #121622;
+   color: #e8eefc;
+   border-radius: 14px;
+   box-shadow: 0 18px 60px rgba(0, 0, 0, .45);
+   border: 1px solid rgba(255, 255, 255, .08);
+ }
+
+ /* Evita che Android interpreti il drag come scroll/zoom */
+ #hex-grid,
+ .unit-card,
+ .hex-content {
+   touch-action: none;
+   -webkit-user-drag: none;
+   user-select: none;
+ }
+
+.unit-card[draggable="true"],
+.hex-content[draggable="true"] {
+  -webkit-user-drag: element;
+}
+
+ .dragging-ghost {
+   position: fixed;
+   left: 0;
+   top: 0;
+   width: 64px;
+   height: 64px;
+   transform: translate(-50%, -50%);
+   pointer-events: none;
+   z-index: 99999;
+ }
+
+ .dragging-ghost img {
+   width: 100%;
+   height: 100%;
+   object-fit: contain;
+   -webkit-user-drag: none;
+   user-select: none;
+ }
+
+ .hidden {
+   display: none !important;
+ }
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.header-game-mode {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+.header-user-name {
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-user-logout {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: #f5f5f5;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.header-user-logout:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.unit-owner {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.turn-tracker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.turn-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.turn-player {
+  font-weight: 600;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.turn-order {
+  opacity: 0.8;
+}
+
+.turn-timer {
+  font-variant-numeric: tabular-nums;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.turn-tracker.my-turn {
+  border-color: #ffcc4d;
+  box-shadow: 0 0 0 1px rgba(255, 204, 77, 0.4);
+}
+
+.turn-tracker.my-turn .turn-player {
+  color: #ffcc4d;
+}
