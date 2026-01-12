@@ -1,15 +1,15 @@
 const viewPartials = [
-    { id: 'view-login', path: 'src/game-components/pages/login/screen-login.html', init: './src/game-components/pages/login/view-login.js' },
-    { id: 'view-lobby', path: 'src/game-components/pages/lobby/screen-lobby.html', init: './src/game-components/pages/lobby/view-lobby.js' },
+    { id: 'view-login', path: 'src/game-components/pages/login/screen-login.html', init: 'src/game-components/pages/login/view-login.js' },
+    { id: 'view-lobby', path: 'src/game-components/pages/lobby/screen-lobby.html', init: 'src/game-components/pages/lobby/view-lobby.js' },
     { id: 'view-room', path: 'src/game-components/pages/room/screen-room.html' },
-    { id: 'view-header', path: 'src/game-components/header/header.html', init: './src/game-components/header/view-header.js' },
-    { id: 'view-leftbar', path: 'src/game-components/leftbar/leftbar.html', init: './src/game-components/leftbar/view-leftbar.js' },
-    { id: 'view-rightbar', path: 'src/game-components/rightbar/rightbar.html', init: './src/game-components/rightbar/view-rightbar.js' },
-    { id: 'view-footer', path: 'src/game-components/footer/footer.html', init: './src/game-components/footer/view-footer.js' },
-    { id: 'view-layout-controls', path: 'src/game-components/layout-controls/layout-controls.html', init: './src/game-components/layout-controls/view-layout-controls.js' },
-    { id: 'view-audio', path: 'src/game-components/audio/audio-modal.html', init: './src/game-components/audio/view-audio.js' },
+    { id: 'view-header', path: 'src/game-components/header/header.html', init: 'src/game-components/header/view-header.js' },
+    { id: 'view-leftbar', path: 'src/game-components/leftbar/leftbar.html', init: 'src/game-components/leftbar/view-leftbar.js' },
+    { id: 'view-rightbar', path: 'src/game-components/rightbar/rightbar.html', init: 'src/game-components/rightbar/view-rightbar.js' },
+    { id: 'view-footer', path: 'src/game-components/footer/footer.html', init: 'src/game-components/footer/view-footer.js' },
+    { id: 'view-layout-controls', path: 'src/game-components/layout-controls/layout-controls.html', init: 'src/game-components/layout-controls/view-layout-controls.js' },
+    { id: 'view-audio', path: 'src/game-components/audio/audio-modal.html', init: 'src/game-components/audio/view-audio.js' },
     { id: 'view-overlays', path: 'src/game-components/overlays/overlays.html' },
-    { id: 'view-fabs', path: 'src/game-components/fabs/fabs.html', init: './src/game-components/fabs/view-fabs.js' },
+    { id: 'view-fabs', path: 'src/game-components/fabs/fabs.html', init: 'src/game-components/fabs/view-fabs.js' },
 ];
 
 const requestPrecache = async () => {
@@ -56,7 +56,7 @@ const loadViews = async () => {
     const initModules = viewInits.filter(Boolean);
     await Promise.all(
         initModules.map(async (initPath) => {
-            const module = await import(initPath);
+            const module = await import(new URL(initPath, window.location.href));
             if (typeof module.initView === 'function') {
                 await module.initView();
             }
