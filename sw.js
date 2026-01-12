@@ -158,7 +158,7 @@ const SCRIPT_ASSETS = [
   './src/view-components/header/view-header.js',
   './src/view-components/leftbar/view-leftbar.js',
   './src/view-components/rightbar/view-rightbar.js',
-  './src/view-components/footer/view-footer.js',
+  './src/view-components/footer/footer.js',
   './src/view-components/layout-controls/view-layout-controls.js',
   './src/view-components/audio/view-audio.js',
   './src/view-components/fabs/view-fabs.js'

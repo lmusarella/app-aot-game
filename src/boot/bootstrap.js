@@ -5,7 +5,7 @@ const viewPartials = [
     { id: 'view-header', path: 'src/view-components/header/header.html', init: 'src/view-components/header/view-header.js' },
     { id: 'view-leftbar', path: 'src/view-components/leftbar/leftbar.html', init: 'src/view-components/leftbar/view-leftbar.js' },
     { id: 'view-rightbar', path: 'src/view-components/rightbar/rightbar.html', init: 'src/view-components/rightbar/view-rightbar.js' },
-    { id: 'view-footer', path: 'src/view-components/footer/footer.html', init: 'src/view-components/footer/view-footer.js' },
+    { id: 'view-footer', path: 'src/view-components/footer/footer.html', init: 'src/view-components/footer/footer.js' },
     { id: 'view-layout-controls', path: 'src/view-components/layout-controls/layout-controls.html', init: 'src/view-components/layout-controls/view-layout-controls.js' },
     { id: 'view-audio', path: 'src/view-components/audio/audio-modal.html', init: 'src/view-components/audio/view-audio.js' },
     { id: 'view-overlays', path: 'src/view-components/overlays/overlays.html' },

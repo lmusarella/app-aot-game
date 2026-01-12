@@ -134,3 +134,7 @@ export function initFooterListeners() {
     });
 
 }
+
+export function initView() {
+    initFooterListeners();
+}
