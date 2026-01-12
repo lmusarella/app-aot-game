@@ -10,7 +10,7 @@ import {
   pickOne,
   pickManyUnique
 } from '../../../game-business-logic/utils.js'
-import { initGameForRoom } from '../../../game-business-logic/game-sync.js'
+import { initGameForRoom, startPresenceHeartbeat, stopPresenceHeartbeat } from '../../../game-business-logic/game-sync.js'
 
 // =========================
 // DOM SPECIFICI ROOM
@@ -48,7 +48,6 @@ const currentRoom       = document.getElementById('current-room')
 // STATO ROOM LOCALE
 // =========================
 
-let roomHeartbeat = null
 let roomStatePoll = null
 let myRoomRow = null
 
@@ -100,21 +99,17 @@ function startRoomLoops() {
   stopRoomLoops()
   if (!APP_STATE.roomId) return
 
-  roomHeartbeat = setInterval(updateLastSeen, 3000)
   roomStatePoll = setInterval(refreshRoomState, 3000)
 
-  updateLastSeen()
+  startPresenceHeartbeat(APP_STATE.roomId)
 }
 
 function stopRoomLoops() {
-  if (roomHeartbeat) {
-    clearInterval(roomHeartbeat)
-    roomHeartbeat = null
-  }
   if (roomStatePoll) {
     clearInterval(roomStatePoll)
     roomStatePoll = null
   }
+  stopPresenceHeartbeat()
 }
 
 export function stopRoomPresence() {
@@ -147,17 +142,6 @@ export async function enterRoomScreen(roomId) {
 // =========================
 // PRESENCE & STATE
 // =========================
-
-async function updateLastSeen() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || !APP_STATE.roomId) return
-
-  await supabase
-    .from('room_players')
-    .update({ last_seen: new Date().toISOString() })
-    .eq('room_id', APP_STATE.roomId)
-    .eq('user_id', user.id)
-}
 
 async function refreshRoomState() {
   if (!APP_STATE.roomId) return
@@ -204,11 +188,16 @@ async function refreshRoomState() {
   // Stato: lobby
   if (room.status === 'lobby') {
     if (allFieldReady && isLeader && enoughPlayers) {
-      await supabase
+      const { error } = await supabase
         .from('rooms')
         .update({ status: 'roles_select' })
+        .eq('status', 'lobby')
         .eq('id', room.id)
-      room.status = 'roles_select'
+      if (error) {
+        console.error('Errore aggiornando stanza a roles_select:', error)
+      } else {
+        room.status = 'roles_select'
+      }
     }
   }
 
@@ -268,10 +257,15 @@ async function refreshRoomState() {
     }
 
     if (allUnitsReady && isLeader) {
-      await supabase
+      const { error } = await supabase
         .from('rooms')
         .update({ status: 'in_game' })
+        .eq('status', 'units_selection')
         .eq('id', room.id)
+      if (error) {
+        console.error('Errore aggiornando stanza a in_game:', error)
+        refreshRoomState()
+      }
     }
     return
   }
@@ -432,7 +426,8 @@ function renderRoomPlayersList(players, myId, roomStatus) {
       statusSpan.textContent = 'Online'
       statusSpan.classList.add('room-player-status--online')
     } else {
-      statusSpan.textContent = 'Offline'
+      const offlineFor = last ? formatElapsed(now - last) : 'mai'
+      statusSpan.textContent = `Offline (${offlineFor})`
       statusSpan.classList.add('room-player-status--offline')
     }
 
@@ -483,6 +478,15 @@ function renderRoomPlayersList(players, myId, roomStatus) {
   })
 }
 
+function formatElapsed(ms) {
+  const seconds = Math.max(0, Math.floor(ms / 1000))
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  return `${hours}h`
+}
+
 // =========================
 // ACTIONS
 // =========================
@@ -522,6 +526,11 @@ export async function onAssignRolesAndUnits() {
   const isLeader = room.leader_id === user.id || room.created_by === user.id
   if (!isLeader) {
     setError('Solo il creatore stanza può estrarre il comandante.')
+    return
+  }
+  if (room.status !== 'roles_select') {
+    setError('La stanza non è pronta per l’assegnazione dei ruoli.')
+    refreshRoomState()
     return
   }
 
@@ -565,10 +574,18 @@ export async function onAssignRolesAndUnits() {
     return
   }
 
-  await supabase
+  const { error: statusError } = await supabase
     .from('rooms')
     .update({ status: 'units_selection' })
+    .eq('status', 'roles_select')
     .eq('id', APP_STATE.roomId)
+
+  if (statusError) {
+    setError('Impossibile aggiornare lo stato della stanza.')
+    console.error(statusError)
+    refreshRoomState()
+    return
+  }
 
   setPhase('Comandante estratto. Ogni giocatore deve scegliere la propria unità.', true)
   refreshRoomState()
@@ -605,10 +622,14 @@ export async function onReadyUnit() {
     const allReady = players.every(p => p.unit_code && p.ready_unit)
 
     if (allReady) {
-      await supabase
+      const { error: statusError } = await supabase
         .from('rooms')
         .update({ status: 'in_game' })
+        .eq('status', 'units_selection')
         .eq('id', APP_STATE.roomId)
+      if (statusError) {
+        console.error('Errore aggiornando stanza a in_game:', statusError)
+      }
     }
   }
 

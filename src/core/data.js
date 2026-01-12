@@ -50,6 +50,8 @@ export const GAME_STATE = {
     logs: [],
     events: [],
     turnState: null,
+    stateVersion: 0,
+    stateUpdatedAt: null,
     modRolls: {
         atk: 0,
         tec: 0,
@@ -125,6 +127,8 @@ export function snapshot() {
     return {
         ver: SAVE_VERSION,
         savedAt: Date.now(),
+        stateVersion: GAME_STATE.stateVersion ?? 0,
+        stateUpdatedAt: GAME_STATE.stateUpdatedAt ?? null,
         // campo - griglia
         spawns: structuredClone(GAME_STATE.spawns),
         // panchine/pool
@@ -191,6 +195,8 @@ export function restore(save) {
     GAME_STATE.logs = save.logs ?? [];
     GAME_STATE.events = Array.isArray(save.events) ? save.events : [];
     GAME_STATE.turnState = save.turnState ?? GAME_STATE.turnState ?? null;
+    GAME_STATE.stateVersion = save.stateVersion ?? 0;
+    GAME_STATE.stateUpdatedAt = save.stateUpdatedAt ?? null;
     //mano
     GAME_STATE.hand = Array.isArray(save.hand) ? save.hand : [];
 
