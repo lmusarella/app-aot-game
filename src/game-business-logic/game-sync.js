@@ -10,6 +10,12 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+export function stopPresenceHeartbeat() {
+  if (APP_STATE.presenceTimerId) {
+    clearInterval(APP_STATE.presenceTimerId);
+    APP_STATE.presenceTimerId = null;
+  }
+}
 
 export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
 
@@ -50,10 +56,7 @@ export function initGameForSinglePlayer() {
     APP_STATE.presenceChannel.unsubscribe()
     APP_STATE.presenceChannel = null
   }
-  if (APP_STATE.presenceTimerId) {
-    clearInterval(APP_STATE.presenceTimerId)
-    APP_STATE.presenceTimerId = null
-  }
+  stopPresenceHeartbeat()
 
   const saved = loadLocalGameState()
   if (saved) {
@@ -116,10 +119,8 @@ function bindPresenceRealtime(roomId) {
   APP_STATE.presenceChannel = channel;
 }
 
-function startPresenceHeartbeat(roomId) {
-  if (APP_STATE.presenceTimerId) {
-    clearInterval(APP_STATE.presenceTimerId);
-  }
+export function startPresenceHeartbeat(roomId) {
+  stopPresenceHeartbeat()
   APP_STATE.presenceTimerId = setInterval(async () => {
     if (!APP_STATE.user?.id || !roomId) return;
     try {
@@ -215,6 +216,8 @@ async function loadOrInitGameState(roomId, isDriver, players = []) {
 function createDefaultGameState(players = []) {
   // clone profondo del template
   const base = snapshot();
+  base.stateVersion = 1;
+  base.stateUpdatedAt = Date.now();
 
   // prendo tutti i codici unità scelti dai player pronti
   const selectedUnitCodes = players
@@ -285,6 +288,14 @@ function bindGameRealtime(roomId) {
   const handleChange = (payload) => {
     const newState = payload.new?.state_json
     if (!newState) return
+    const incomingVersion = newState.stateVersion ?? 0
+    const localVersion = GAME_STATE.stateVersion ?? 0
+    const incomingUpdatedAt = newState.stateUpdatedAt ?? 0
+    const localUpdatedAt = GAME_STATE.stateUpdatedAt ?? 0
+    if (incomingVersion < localVersion) return
+    if (incomingVersion === localVersion && incomingVersion !== 0 && incomingUpdatedAt <= localUpdatedAt) {
+      return
+    }
 
     gameAPI.resetGameState()
     console.log('handleChange new state', newState);
@@ -323,10 +334,41 @@ function bindGameRealtime(roomId) {
     .subscribe(status => {
       if (status === 'SUBSCRIBED') {
         console.log('Realtime game_state subscribed for room', roomId)
+        resyncGameState(roomId)
       }
     })
 
   APP_STATE.gameChannel = channel
+}
+
+async function resyncGameState(roomId) {
+  if (!roomId) return
+  const { data, error } = await supabase
+    .from('room_game_state')
+    .select('state_json')
+    .eq('room_id', roomId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Errore resync game_state:', error)
+    return
+  }
+
+  const newState = data?.state_json
+  if (!newState) return
+  const incomingVersion = newState.stateVersion ?? 0
+  const localVersion = GAME_STATE.stateVersion ?? 0
+  const incomingUpdatedAt = newState.stateUpdatedAt ?? 0
+  const localUpdatedAt = GAME_STATE.stateUpdatedAt ?? 0
+  if (incomingVersion < localVersion) return
+  if (incomingVersion === localVersion && incomingVersion !== 0 && incomingUpdatedAt <= localUpdatedAt) return
+
+  gameAPI.resetGameState()
+  gameAPI.applyLoadedState(newState)
+  gameAPI.renderGameFromState(GAME_STATE)
+  consumeGameEvents()
+  renderTurnTracker()
+  startTurnCountdown()
 }
 
 function debounce(fn, ms = 400) {
@@ -367,6 +409,9 @@ async function pushGameState() {
     return;
   }
 
+  const nextVersion = (GAME_STATE.stateVersion ?? 0) + 1;
+  GAME_STATE.stateVersion = nextVersion;
+  GAME_STATE.stateUpdatedAt = Date.now();
   const newState = snapshot();
 
   console.log('sto per salvare al pushGameState', newState);
