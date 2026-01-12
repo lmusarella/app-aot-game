@@ -136,32 +136,32 @@ const BASE_ASSETS = [
 ];
 
 const VIEW_ASSETS = [
-  './src/views/login/screen-login.html',
-  './src/views/lobby/screen-lobby.html',
-  './src/views/room/screen-room.html',
-  './src/views/header/header.html',
-  './src/views/leftbar/leftbar.html',
-  './src/views/rightbar/rightbar.html',
-  './src/views/footer/footer.html',
-  './src/views/layout-controls/layout-controls.html',
-  './src/views/audio/audio-modal.html',
-  './src/views/overlays/overlays.html',
-  './src/views/fabs/fabs.html'
+  './src/game-components/pages/login/screen-login.html',
+  './src/game-components/pages/lobby/screen-lobby.html',
+  './src/game-components/pages/room/screen-room.html',
+  './src/game-components/header/header.html',
+  './src/game-components/leftbar/leftbar.html',
+  './src/game-components/rightbar/rightbar.html',
+  './src/game-components/footer/footer.html',
+  './src/game-components/layout-controls/layout-controls.html',
+  './src/game-components/audio/audio-modal.html',
+  './src/game-components/overlays/overlays.html',
+  './src/game-components/fabs/fabs.html'
 ];
 
 const SCRIPT_ASSETS = [
-  './src/app/init-general-listeners.js',
+  './src/boot/general-listeners.js',
   './src/services.js',
-  './src/core/ui-helpers.js',
-  './src/views/login/view-login.js',
-  './src/views/lobby/view-lobby.js',
-  './src/views/header/view-header.js',
-  './src/views/leftbar/view-leftbar.js',
-  './src/views/rightbar/view-rightbar.js',
-  './src/views/footer/view-footer.js',
-  './src/views/layout-controls/view-layout-controls.js',
-  './src/views/audio/view-audio.js',
-  './src/views/fabs/view-fabs.js'
+  './src/ui-components/ui-helpers.js',
+  './src/game-components/pages/login/view-login.js',
+  './src/game-components/pages/lobby/view-lobby.js',
+  './src/game-components/header/view-header.js',
+  './src/game-components/leftbar/view-leftbar.js',
+  './src/game-components/rightbar/view-rightbar.js',
+  './src/game-components/footer/view-footer.js',
+  './src/game-components/layout-controls/view-layout-controls.js',
+  './src/game-components/audio/view-audio.js',
+  './src/game-components/fabs/view-fabs.js'
 ];
 
 const ASSETS = Array.from(new Set([...BASE_ASSETS, ...VIEW_ASSETS, ...SCRIPT_ASSETS]));

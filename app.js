@@ -1,4 +1,4 @@
-import { startApplication } from './src/app/bootstrap.js';
+import { startApplication } from './src/boot/bootstrap.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     startApplication();

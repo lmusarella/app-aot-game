@@ -1,5 +1,5 @@
 // game/game-sync.js
-import { supabase } from '../supabase/supabaseClient.js'
+import { supabase } from '../core/supabase/supabaseClient.js'
 import { APP_STATE, GAME_STATE, gameAPI, snapshot } from '../core/app-state.js'
 import { loadLocalGameState, saveLocalGameState } from '../core/data.js'
 import { getTurnInfo } from '../core/turn-helpers.js';
