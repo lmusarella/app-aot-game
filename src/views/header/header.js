@@ -7,7 +7,7 @@ import { playSfx } from '../audio/audio.js';
 import showWarningC from '../../game/effects/warningOverlayC.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { supabase } from '../../supabase/supabaseClient.js';
-import { showScreen } from '../../core/ui-helpers.js';
+import { showScreen } from '../../ui/ui-helpers.js';
 import { stopRoomPresence } from '../room/room-ui.js';
 import { handleAllyDeath } from '../../game/entity/deaths.js';
 

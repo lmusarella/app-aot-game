@@ -8,7 +8,7 @@ import {
   setError,
   setSuccess,
   setLoading
-} from '../core/ui-helpers.js'
+} from '../ui/ui-helpers.js'
 import { enterRoomScreen, stopRoomPresence } from '../views/room/room-ui.js'   // lo creiamo dopo
 import { initGameForRoom } from '../game/game-sync.js'
 import { confirmDialog } from '../ui/ui.js'

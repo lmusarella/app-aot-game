@@ -3,7 +3,7 @@ import { playSfx } from '../audio/audio.js';
 import { isClone, getStat, applyHpBar, getMusicUrlById, COLOR_VAR, keyRC } from '../../utils.js';
 import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, GIANT_ENGAGEMENT } from '../../core/data.js';
 import { scheduleSave } from '../../game/game-sync.js';
-import { log } from '../../log.js';
+import { log } from '../../core/log.js';
 import { adjustUnitHp } from '../../game/entity/entity.js';
 import { enablePointerDrag } from './drag.js';
 import { getStack, setStack, removeUnitEverywhere, moveOneUnitBetweenStacks, hasWallInCell, bringToFront, setStackVisuals } from './stacks.js';

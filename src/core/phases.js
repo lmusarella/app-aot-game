@@ -1,21 +1,21 @@
-import { advanceAllCooldowns, giantsPhaseMove, spawnGiant, tickUnitModsOnNewRound, pickRandomTeam } from './game/entity/entity.js';
-import { getMusicUrlById, wait } from './utils.js';
-import { openAccordionForRole } from './ui/ui.js';
-import { playBg, playSfx } from './views/audio/audio.js';
-import { showDrawnCard, closeAllFabs, drawCard } from './views/fabs/fab.js';
-import { DB, GAME_STATE } from './core/data.js';
+import { advanceAllCooldowns, giantsPhaseMove, spawnGiant, tickUnitModsOnNewRound, pickRandomTeam } from '../game/entity/entity.js';
+import { getMusicUrlById, wait } from '../utils.js';
+import { openAccordionForRole } from '../ui/ui.js';
+import { playBg, playSfx } from '../views/audio/audio.js';
+import { showDrawnCard, closeAllFabs, drawCard } from '../views/fabs/fab.js';
+import { DB, GAME_STATE } from './data.js';
 
-import { missionStatsBumpAttempt, missionStatsSetRound } from './missions.js';
-import { stopTimer, startTimer } from "./views/header/header.js";
+import { missionStatsBumpAttempt, missionStatsSetRound } from '../missions.js';
+import { stopTimer, startTimer } from "../views/header/header.js";
 import { log } from "./log.js";
-import showPhaseBanner from './game/effects/phaseBanner.js';
-import showWarningC from './game/effects/warningOverlayC.js';
-import lightningStrike from './game/effects/lightningStrike.js';
+import showPhaseBanner from '../game/effects/phaseBanner.js';
+import showWarningC from '../game/effects/warningOverlayC.js';
+import lightningStrike from '../game/effects/lightningStrike.js';
 // in cima
-import { guardCommanderAction } from './core/permissions.js';
-import { APP_STATE } from './core/app-state.js';
-import { getTurnInfo, advanceTurn } from './core/turn-helpers.js';
-import { scheduleSave } from './game/game-sync.js';
+import { guardCommanderAction } from './permissions.js';
+import { APP_STATE } from './app-state.js';
+import { getTurnInfo, advanceTurn } from './turn-helpers.js';
+import { scheduleSave } from '../game/game-sync.js';
 
 
 const PHASE_UI = {

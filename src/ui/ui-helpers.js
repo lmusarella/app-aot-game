@@ -1,4 +1,4 @@
-// core/ui-helpers.js
+// ui/ui-helpers.js
 
 // Screen
 const screenLogin = document.getElementById('screen-login')

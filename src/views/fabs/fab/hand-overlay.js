@@ -1,5 +1,5 @@
 import { GAME_STATE } from '../../../core/data.js';
-import { log } from '../../../log.js';
+import { log } from '../../../core/log.js';
 import { missionStatsRecordEvent } from '../../../missions.js';
 import { cardSheetHTML } from '../../../ui/ui.js';
 import { updateFabDeckCounters } from './decks.js';

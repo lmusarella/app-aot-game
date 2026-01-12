@@ -1,7 +1,7 @@
 import { clearConeGiantData, renderBenches, renderGrid, removeUnitEverywhere, grid } from '../../views/grid/grid.js';
 import { rebuildUnitIndex, GAME_STATE, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
-import { log } from '../../log.js';
+import { log } from '../../core/log.js';
 import { missionStatsOnUnitDeath, renderMissionUI } from '../../missions.js';
 import { addMorale, addXP } from '../../views/footer/footer.js';
 import { playSfx } from '../../views/audio/audio.js';

@@ -1,7 +1,7 @@
 import { GAME_STATE, DB, unitById } from "./core/data.js";
 import { levelFromXP, fmtSigned, signClass } from "./utils.js";
 import {scheduleSave} from './game/game-sync.js';
-import { log } from "./log.js";
+import { log } from "./core/log.js";
 
 const UM_STAT_LABELS = { atk: 'ATK', tec: 'TEC', agi: 'AGI', cd: 'CA', mov: 'MOV', rng: 'RNG' };
 const isEnemy = u => u?.role === 'enemy';
