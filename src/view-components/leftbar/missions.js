@@ -3,7 +3,7 @@ import { APP_STATE } from "../../core/app-state.js";
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
 import { capitalizeFirstLetter, clamp } from "../../game-business-logic/utils.js";
 import { addLongPress, showCardDetail, ensureMissionCardSkeleton } from "../../ui-components/ui.js";
-import { log } from "../../core/log.js";
+import { log } from "./log.js";
 import { clearGrid } from "../grid/grid.js";
 import { playBg } from "../audio/audio.js";
 import { resetMissionEffectsAllUnits } from "../../game-business-logic/entity/entity.js";

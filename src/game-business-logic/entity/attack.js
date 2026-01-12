@@ -8,7 +8,7 @@ import { unitById, GAME_STATE, GIANT_ENGAGEMENT, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
 import { pushGameEvent } from '../event-manager.js';
 import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from '../../ui-components/ui.js';
-import { log } from '../../core/log.js';
+import { log } from '../../view-components/leftbar/log.js';
 import bloodHitClean from '../effects/bloodHitClean.js';
 import { giantFallQuake } from '../effects/screenQuake.js';
 import swordSlash from '../effects/swordSlash.js';

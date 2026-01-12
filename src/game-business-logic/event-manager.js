@@ -1,6 +1,6 @@
 import { APP_STATE } from '../core/app-state.js';
 import { GAME_STATE } from '../core/data.js';
-import { log } from '../core/log.js';
+import { log } from '../view-components/leftbar/log.js';
 import { playSfx } from '../view-components/audio/audio.js';
 import swordSlash from './effects/swordSlash.js';
 import bloodHitClean from './effects/bloodHitClean.js';

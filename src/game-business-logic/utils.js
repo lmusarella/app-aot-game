@@ -17,6 +17,34 @@ export function getUnitBonus(u, key) {
     return effs.reduce((sum, e) => sum + (e?.stat === key ? Number(e.delta || 0) : 0), 0);
 }
 export function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+export function getCommanderPool() {
+    return GAME_STATE.alliesPool
+        .filter(unit => unit.role === 'commander')
+        .map(unit => unit.id);
+}
+export function getRecruitPool() {
+    return GAME_STATE.alliesPool
+        .filter(unit => unit.role === 'recruit')
+        .map(unit => unit.id);
+}
+export function getUnitData() {
+    return GAME_STATE.alliesPool.map(unit => ({
+        id: unit.id,
+        name: unit.name,
+        avatar: unit.img,
+        type: unit.role
+    }));
+}
+export function pickOne(arr) {
+    const a = arr || [];
+    if (!a.length) return null;
+    const idx = Math.floor(Math.random() * a.length);
+    return a[idx];
+}
+export function pickManyUnique(arr, count) {
+    const shuffled = shuffle([...(arr || [])]);
+    return shuffled.slice(0, count);
+}
 export const countAlive = (role) => GAME_STATE.alliesPool.filter(u => u.role === role && !u.dead).length;
 export const totalByRole = (role) => GAME_STATE.alliesPool.filter(u => u.role === role).length;
 export const signClass = n => (n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero');

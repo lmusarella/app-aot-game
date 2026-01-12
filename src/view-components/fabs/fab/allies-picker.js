@@ -1,6 +1,6 @@
 import { GAME_STATE, rebuildUnitIndex } from '../../../core/data.js';
 import { scheduleSave } from '../../../game-business-logic/game-sync.js';
-import { log } from '../../../core/log.js';
+import { log } from '../../leftbar/log.js';
 import { renderBenches } from '../../grid/grid.js';
 import { applyHpBar, COLOR_VAR, countAlive, totalByRole } from '../../../game-business-logic/utils.js';
 import { addLongPress, showTooltip, getUnitTooltipHTML, alliesPickerHTML, ensureModal, openAccordionForRole } from '../../../ui-components/ui.js';

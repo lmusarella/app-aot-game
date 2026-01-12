@@ -4,7 +4,7 @@ import { playSfx, playBg } from '../../view-components/audio/audio.js';
 import { unitById, rebuildUnitIndex, GAME_STATE, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
 import { openAccordionForRole } from '../../ui-components/ui.js';
-import { log } from '../../core/log.js';
+import { log } from '../../view-components/leftbar/log.js';
 import { getEngagedHuman } from './engagement.js';
 import showWarningC from '../effects/warningOverlayC.js';
 

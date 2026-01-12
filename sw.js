@@ -20,7 +20,7 @@ const BASE_ASSETS = [
   './styles/game/14-vs-overlay.css',
   './styles/game/15-tutorial-overlay.css',
   './styles/screens.css',
-  './app.js',
+  './src/app.js',
   './manifest.json',
   './libs/three.min.js',
   './libs/cannon.min.js',

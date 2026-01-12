@@ -1,6 +1,6 @@
 import { GAME_STATE, DB } from "../../core/data.js";
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
-import { log } from "../../core/log.js";
+import { log } from "../leftbar/log.js";
 import { levelFromXP, levelProgressPercent, getMalusRow } from '../../game-business-logic/utils.js';
 import { renderBonusMalus } from '../leftbar/mods.js';
 import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
