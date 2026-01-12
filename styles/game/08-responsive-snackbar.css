@@ -1,0 +1,646 @@
+ /* ==== Sidebar responsive & collapse ==== */
+ :root {
+   --sidebar-w: 350px;
+   /* larghezza piena */
+   --sidebar-c: 64px;
+   /* larghezza collassata (solo “maniglia”) */
+ }
+
+ /* Usa le variabili al posto dei valori fissi in body */
+ body {
+   grid-template-columns: var(--sidebar-w) 1fr var(--sidebar-w);
+   transition: grid-template-columns .18s ease;
+ }
+
+ /* Stati: sinistra/destra collassate */
+ body.collapse-left {
+   grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-w);
+ }
+
+ body.collapse-right {
+   grid-template-columns: var(--sidebar-w) 1fr var(--sidebar-c);
+ }
+
+ body.collapse-both {
+   grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-c);
+ }
+
+ /* Aspetto delle colonne quando collassate */
+ .leftbar.collapsed,
+ aside.collapsed {
+   padding: 8px;
+   overflow: hidden;
+   position: relative;
+ }
+
+ .leftbar.collapsed .left-section,
+ aside.collapsed .bench-section {
+   display: none;
+   /* nasconde i contenuti */
+ }
+
+ /* Etichetta verticale “fantasma” quando collassate (così capisci dove cliccare) */
+ .leftbar.collapsed::after,
+ aside.collapsed::after {
+   content: attr(data-collapsed-label);
+   position: absolute;
+   inset: 0px 0 0px 0;
+   display: grid;
+   place-items: center;
+   writing-mode: vertical-rl;
+   transform: rotate(180deg);
+   color: #9aa0a6;
+   letter-spacing: .2px;
+   font-weight: 800;
+   border: 1px dashed #222;
+   background: linear-gradient(180deg, #0c0d12, #090a0f);
+ }
+
+ /* Maniglie flottanti (chevron) sempre visibili ai lati dello schermo */
+ .collapse-handle {
+   position: fixed;
+   bottom: calc(var(--footer-h) + 10px);
+   z-index: 9999;
+   width: 40px;
+   height: 40px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #13151d;
+   color: #e6e6e6;
+   display: grid;
+   place-items: center;
+   cursor: pointer;
+   box-shadow: 0 10px 24px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .06);
+   user-select: none;
+ }
+
+ .collapse-handle:hover {
+   background: #181b26;
+ }
+
+ .collapse-handle.left {
+   left: 10px;
+ }
+
+ .collapse-handle.right {
+   right: 10px;
+ }
+
+ #snackbar-region {
+   position: fixed;
+   top: 64px;
+   left: 20px;
+   /* alto a sinistra */
+   z-index: 99999;
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+   pointer-events: none;
+ }
+
+ .snackbar {
+   pointer-events: auto;
+   min-width: 240px;
+   max-width: min(92vw, 420px);
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   padding: 12px 16px;
+   border-radius: 14px;
+   font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+   color: #f4f4f4;
+   box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
+   transform: translateX(-20px);
+   opacity: 0;
+   animation: sb-enter-left .25s ease forwards;
+ }
+
+ /* Icona e messaggio */
+ .snackbar__icon {
+   font-size: 18px;
+   opacity: .9
+ }
+
+ .snackbar__msg {
+   flex: 1;
+ }
+
+ /* Bottoni */
+ .snackbar__action {
+   margin-left: auto;
+   border: 0;
+   border-radius: 8px;
+   cursor: pointer;
+   padding: 6px 12px;
+   font-weight: 600;
+   font-size: 13px;
+   transition: filter .15s ease, transform .08s ease;
+ }
+
+ .snackbar__action:hover {
+   filter: brightness(1.08);
+ }
+
+ .snackbar__action:active {
+   transform: scale(.96);
+ }
+
+ .snackbar__close {
+   margin-left: 4px;
+   width: 26px;
+   height: 26px;
+   border: 0;
+   border-radius: 50%;
+   cursor: pointer;
+   font-size: 16px;
+   background: rgba(255, 255, 255, .1);
+   color: #eee;
+   transition: background .12s ease;
+ }
+
+ .snackbar__close:hover {
+   background: rgba(255, 255, 255, .2);
+ }
+
+ /* Varianti pastello scuro */
+ .snackbar--info {
+   background: #1e3a5f;
+   /* blu pastello scuro */
+   border-left: 6px solid #3b82f6;
+ }
+
+ .snackbar--info .snackbar__action {
+   background: #3b82f6;
+   color: #fff;
+ }
+
+ .snackbar--success {
+   background: #1b4d3e;
+   /* verde pastello scuro */
+   border-left: 6px solid #22c55e;
+   border-right: 6px solid #22c55e;
+ }
+
+ .snackbar--success .snackbar__action {
+   background: #22c55e;
+   color: #fff;
+ }
+
+ .snackbar--warning {
+   background: #5a4a1e;
+   /* giallo/marrone pastello scuro */
+   border-left: 6px solid #eab308;
+   border-right: 6px solid #eab308;
+ }
+
+ .snackbar--warning .snackbar__action {
+   background: #eab308;
+   color: #111;
+ }
+
+ .snackbar--error {
+   background: #5a1e1e;
+   /* rosso pastello scuro */
+   border-left: 6px solid #ef4444;
+   border-right: 6px solid #ef4444;
+ }
+
+ .snackbar--error .snackbar__action {
+   background: #ef4444;
+   color: #fff;
+ }
+
+ /* Animazioni */
+ @keyframes sb-enter-left {
+   to {
+     transform: translateX(0);
+     opacity: 1;
+   }
+ }
+
+ @keyframes sb-exit {
+   to {
+     transform: translateX(-10px);
+     opacity: 0;
+   }
+ }
+
+ /* --- dentro il tuo blocco css.textContent --- */
+ .pick-hprow {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   margin-top: 6px;
+ }
+
+ .pick-hprow .hpbar {
+   flex: 1 1 auto;
+   height: 6px;
+   background: #0c0c0c;
+   border: 1px solid #222;
+   border-radius: 999px;
+   overflow: hidden;
+ }
+
+ .pick-hprow .hpbar-fill {
+   height: 100%;
+   width: 100%;
+   transition: width .25s ease, background-color .25s ease, filter .25s ease;
+ }
+
+ .pick-hprow .hp-inline-right {
+   font-size: 12px;
+   opacity: .9;
+   white-space: nowrap;
+ }
+
+ /* badge teschio + stato morto */
+ .pick-card.is-dead {
+   position: relative;
+   filter: grayscale(0.65);
+   opacity: .65;
+   cursor: default;
+   animation: none;
+   box-shadow: none;
+ }
+
+ .pick-card.is-dead:hover {
+   box-shadow: none;
+ }
+
+ .pick-dead-badge {
+   position: absolute;
+   top: 6px;
+   left: 6px;
+   font-size: 18px;
+   line-height: 1;
+   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .5));
+ }
+
+ /* bottone resuscita */
+ .btn-resurrect {
+   padding: 6px 10px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #162218;
+   color: #d9ffd9;
+   cursor: pointer;
+
+   position: relative;
+   z-index: 0;
+   overflow: hidden;
+   box-shadow: 0 0 8px rgba(180, 255, 200, .4);
+   animation: divinePulse 2.4s ease-in-out infinite;
+ }
+
+ .btn-resurrect::after {
+   content: "";
+   position: absolute;
+   inset: -8px;
+   /* leggermente più grande del bottone */
+   border-radius: inherit;
+   background: radial-gradient(circle at center,
+       rgba(212, 255, 170, 0.4) 0%,
+       rgba(170, 255, 212, 0.1) 40%,
+       transparent 80%);
+   z-index: -1;
+   opacity: 0;
+   animation: divineGlow 2.4s ease-in-out infinite;
+ }
+
+ @keyframes divinePulse {
+
+   0%,
+   100% {
+     box-shadow: 0 0 8px rgba(180, 255, 200, .4),
+       0 0 16px rgba(180, 255, 200, .2);
+     transform: scale(1);
+   }
+
+   50% {
+     box-shadow: 0 0 14px rgba(230, 255, 200, .6),
+       0 0 28px rgba(230, 255, 200, .4);
+     transform: scale(1.04);
+   }
+ }
+
+ @keyframes divineGlow {
+
+   0%,
+   100% {
+     opacity: 0;
+     transform: scale(1);
+   }
+
+   50% {
+     opacity: 1;
+     transform: scale(1.15);
+   }
+ }
+
+ .picker__live {
+   font-size: 12px;
+   opacity: .9;
+ }
+
+ .btn-mini.is-disabled,
+ .btn-mini:disabled {
+   opacity: .5;
+   cursor: not-allowed;
+   filter: grayscale(0.5);
+ }
+
+ /* --- Missione più alta / più "importante" --- */
+ #missione-corrente .mission-card {
+   /* aumenta l’altezza percepita */
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   /* centra il contenuto verticalmente */
+   padding: 14px 12px;
+ }
+
+ /* Titolo sezione più compatto */
+ .left-section .left-head h4 {
+   margin: 0 0 8px;
+ }
+
+ /* --- Barre compatte: label, - , barra, + , valore --- */
+ .bar-row {
+   display: grid;
+   grid-template-columns: auto 28px 1fr 28px auto;
+   align-items: center;
+   gap: 8px;
+   margin: 8px 0;
+ }
+
+ /* Label e valore allineati e non ingombranti */
+ .br-label {
+   font-size: 13px;
+   opacity: .9;
+   white-space: nowrap;
+ }
+
+ .br-val {
+   font-size: 12px;
+   opacity: .85;
+   white-space: nowrap;
+   min-width: 42px;
+   text-align: right;
+ }
+
+ /* Bottoni +/- compatti */
+ .bbtn {
+   width: 28px;
+   height: 24px;
+   line-height: 24px;
+   border-radius: 8px;
+   border: 1px solid #2a2a2a;
+   background: linear-gradient(180deg, #10121a, #0c0e15);
+   color: #eaeaea;
+   cursor: pointer;
+   display: grid;
+   place-items: center;
+   padding: 0;
+ }
+
+ /* Barra più sottile per risparmiare spazio (puoi regolare var(--bar-h) se già esiste) */
+ .bar {
+   height: 14px;
+   /* più slim */
+   border-radius: 10px;
+   background: #171923;
+   border: 1px solid #242632;
+   overflow: hidden;
+ }
+
+ .bar .fill {
+   height: 100%;
+   background: linear-gradient(180deg, #2b6cb0, #2a4365);
+ }
+
+ /* Variante per XP (se vuoi un tono diverso) */
+ .bar.xp .fill {
+   background: linear-gradient(180deg, #9b59b6, #6b46c1);
+ }
+
+ /* Micro-responsività: se lo spazio è strettissimo, stringi i gap */
+ @media (max-width: 900px) {
+   .bar-row {
+     gap: 6px;
+     grid-template-columns: auto 24px 1fr 24px auto;
+   }
+
+   .bbtn {
+     width: 24px;
+     height: 22px;
+     line-height: 22px;
+     border-radius: 6px;
+   }
+ }
+
+ .bar.morale .fill {
+   background: linear-gradient(180deg, #8b7307, #ca770a);
+   /* verde */
+ }
+
+ /* Footer overlay compatto */
+ .app-footer {
+   position: fixed;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   background: linear-gradient(180deg, #0b0d14, #090b12);
+   border-top: 1px solid #1f2230;
+   padding: 10px 12px 18px;
+   /* extra padding in basso per la label */
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   z-index: 9999;
+ }
+
+ /* Contenitore delle barre nel footer */
+ .footer-bars {
+   display: flex;
+   flex-direction: row;
+   align-items: center;
+   /* centra verticalmente i contenuti delle righe */
+   justify-content: center;
+   /* centrate orizzontalmente nel footer */
+   gap: 22px;
+   flex-wrap: nowrap;
+   /* tienile su una riga */
+ }
+
+
+ /* Variante "mini" per le righe barra: più strette e compatte */
+ .bar-row.mini {
+   display: grid;
+   grid-template-columns: auto 24px min(36vw, 250px) 24px auto;
+   align-items: center;
+   /* centra verticalmente label, bottoni e barra */
+   gap: 8px;
+ }
+
+ /* Barre più sottili nel footer */
+ .footer-bars .bar {
+   height: 10px;
+   /* <- più stretta */
+   border-radius: 10px;
+   background: #171923;
+   border: 1px solid #242632;
+   overflow: hidden;
+ }
+
+ .footer-bars .bar .fill {
+   height: 100%;
+ }
+
+ /* Bottoni compatti nel footer */
+ .footer-bars .bbtn {
+   width: 24px;
+   height: 24px;
+   line-height: 20px;
+   border-radius: 6px;
+   padding: 0;
+ }
+
+ /* Testi compatti nel footer */
+ .footer-bars .br-label {
+   font-size: 12px;
+   opacity: .9;
+   white-space: nowrap;
+ }
+
+ .footer-bars .br-val {
+   font-size: 11px;
+   opacity: .85;
+   min-width: 40px;
+   text-align: right;
+   white-space: nowrap;
+ }
+
+ /* Colori riempimenti (se vuoi differenziarli) */
+ .bar.morale .fill {
+   background: linear-gradient(180deg, #fb923c, #ef4444);
+ }
+
+ .bar.xp .fill {
+   background: linear-gradient(180deg, #9b59b6, #6b46c1);
+ }
+
+ /* Etichetta footer in basso a destra, piccola */
+ .app-footer .foot-text {
+   position: absolute;
+   right: 10px;
+   bottom: 6px;
+   font-size: 8px;
+   opacity: .65;
+   letter-spacing: .2px;
+ }
+
+ /* Evita che il footer copra i contenuti: aggiungi spazio in fondo alla pagina */
+ body {
+   padding-bottom: 59px;
+ }
+
+ /* regola se serve in base all’altezza del footer */
+
+ /* Piccolo tuning per schermi stretti */
+ @media (max-width: 900px) {
+   .bar-row.mini {
+     grid-template-columns: auto 22px min(70vw, 250px) 22px auto;
+     gap: 6px;
+   }
+
+   .footer-bars .bbtn {
+     width: 22px;
+     height: 20px;
+   }
+ }
+
+ #xp-row .br-label {
+   display: flex;
+   align-items: center;
+   gap: 4px;
+ }
+
+ #xp-row #lvl-val {
+   font-size: 11px;
+   opacity: .75;
+ }
+
+ .topbar {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 12px;
+   padding: 4px 8px;
+ }
+
+ /* Logo box */
+ .logo-box {
+   width: 40px;
+   height: 40px;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+
+ }
+
+ .logo-box img {
+   max-width: 100%;
+   max-height: 100%;
+   object-fit: contain;
+   border-radius: 8px;
+ }
+
+ /* Brand */
+ .brand {
+   font-weight: 600;
+   font-size: 16px;
+   margin-right: 12px;
+ }
+
+ /* Centro missione+timer */
+ .center-box {
+   flex: 1;
+   /* occupa spazio centrale */
+   display: flex;
+   flex-direction: row;
+   justify-content: center;
+   /* centrato orizzontalmente */
+   align-items: center;
+   gap: 28px;
+   /* spazio tra missione e timer */
+ }
+
+ /* Missione e Timer con testo allineato */
+ .mc-box,
+ .timer {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+ }
+
+ .mc-label {
+   font-size: 13px;
+   opacity: .85;
+ }
+
+ .mc-btn,
+ .t-btn {
+   background: #1c1e29;
+   border: 1px solid #2a2d3a;
+   color: #e6e6e6;
+   padding: 2px 6px;
+   border-radius: 6px;
+   cursor: pointer;
+ }
+
+ .mc-btn:hover,
+ .t-btn:hover {
+   filter: brightness(1.2);
+ }
+
