@@ -1,4 +1,4 @@
-import { sameOrAdjCells } from '../../views/grid/grid.js';
+import { sameOrAdjCells } from '../../game-components/grid/grid.js';
 import { unitAlive } from '../../utils.js';
 import { unitById, GIANT_ENGAGEMENT } from '../../core/data.js';
 import { log } from '../../core/log.js';

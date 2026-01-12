@@ -1,5 +1,5 @@
 // auth/auth-ui.js
-import { supabase } from '../supabase/supabaseClient.js'
+import { supabase } from '../core/supabase/supabaseClient.js'
 import { APP_STATE, registerGameAPI } from '../core/app-state.js'
 import {
   showScreen,
@@ -8,10 +8,10 @@ import {
   setError,
   setSuccess,
   setLoading
-} from '../ui/ui-helpers.js'
-import { enterRoomScreen, stopRoomPresence } from '../views/room/room-ui.js'   // lo creiamo dopo
+} from '../ui-components/ui-helpers.js'
+import { enterRoomScreen, stopRoomPresence } from '../game-components/pages/room/room-ui.js'   // lo creiamo dopo
 import { initGameForRoom } from '../game/game-sync.js'
-import { confirmDialog } from '../ui/ui.js'
+import { confirmDialog } from '../ui-components/ui.js'
 
 // DOM auth
 const tabLogin = document.getElementById('tab-login')

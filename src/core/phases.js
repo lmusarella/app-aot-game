@@ -1,12 +1,12 @@
 import { advanceAllCooldowns, giantsPhaseMove, spawnGiant, tickUnitModsOnNewRound, pickRandomTeam } from '../game/entity/entity.js';
 import { getMusicUrlById, wait } from '../utils.js';
-import { openAccordionForRole } from '../ui/ui.js';
-import { playBg, playSfx } from '../views/audio/audio.js';
-import { showDrawnCard, closeAllFabs, drawCard } from '../views/fabs/fab.js';
+import { openAccordionForRole } from '../ui-components/ui.js';
+import { playBg, playSfx } from '../game-components/audio/audio.js';
+import { showDrawnCard, closeAllFabs, drawCard } from '../game-components/fabs/fab.js';
 import { DB, GAME_STATE } from './data.js';
 
 import { missionStatsBumpAttempt, missionStatsSetRound } from '../missions.js';
-import { stopTimer, startTimer } from "../views/header/header.js";
+import { stopTimer, startTimer } from "../game-components/header/header.js";
 import { log } from "./log.js";
 import showPhaseBanner from '../game/effects/phaseBanner.js';
 import showWarningC from '../game/effects/warningOverlayC.js';
