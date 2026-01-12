@@ -1,5 +1,5 @@
 import { GAME_STATE, DB } from '../../../core/data.js';
-import { log } from '../../../log.js';
+import { log } from '../../../core/log.js';
 import { shuffle } from '../../../utils.js';
 import { scheduleSave } from '../../../game/game-sync.js';
 

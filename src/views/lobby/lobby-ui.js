@@ -1,7 +1,7 @@
 // /js/lobby/lobby-ui.js
 import { supabase } from '../../supabase/supabaseClient.js'
 import { APP_STATE } from '../../core/app-state.js'
-import { showScreen } from '../../core/ui-helpers.js'
+import { showScreen } from '../../ui/ui-helpers.js'
 import { enterRoomScreen, stopRoomPresence } from '../room/room-ui.js'
 import { initGameForSinglePlayer, initGameForRoom } from '../../game/game-sync.js'
 

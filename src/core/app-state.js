@@ -1,6 +1,6 @@
 // core/app-state.js
 import { GAME_STATE, restore, snapshot } from './data.js'
-import { initRenderApp } from '../services.js'
+import { initRenderApp } from '../app/render-app.js'
 
 const APP_STATE = {
   user: null,

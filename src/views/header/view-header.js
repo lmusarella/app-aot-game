@@ -1,5 +1,5 @@
 import { initHeaderListeners } from './header.js';
-import { initPhasesListeners } from '../../phases.js';
+import { initPhasesListeners } from '../../core/phases.js';
 import { showTutorialPopupViaDialog } from '../../ui/ui.js';
 
 export function initView() {

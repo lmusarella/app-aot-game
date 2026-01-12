@@ -1,7 +1,7 @@
 import { sameOrAdjCells } from '../../views/grid/grid.js';
 import { unitAlive } from '../../utils.js';
 import { unitById, GIANT_ENGAGEMENT } from '../../core/data.js';
-import { log } from '../../log.js';
+import { log } from '../../core/log.js';
 
 // valida e ritorna l’umano ingaggiato col gigante, se ancora valido
 export function getEngagedHuman(gid) {

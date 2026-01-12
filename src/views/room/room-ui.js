@@ -1,7 +1,7 @@
 // lobby/room-ui.js
 import { supabase } from '../../supabase/supabaseClient.js'
 import { APP_STATE } from '../../core/app-state.js'
-import { showScreen, setError } from '../../core/ui-helpers.js'
+import { showScreen, setError } from '../../ui/ui-helpers.js'
 import {
   getCommanderPool,
   getRecruitPool,

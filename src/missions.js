@@ -3,7 +3,7 @@ import { APP_STATE } from "./core/app-state.js";
 import {scheduleSave} from './game/game-sync.js';
 import { capitalizeFirstLetter, clamp } from "./utils.js";
 import { addLongPress, showCardDetail, ensureMissionCardSkeleton } from "./ui/ui.js";
-import { log } from "./log.js";
+import { log } from "./core/log.js";
 import { clearGrid } from "./views/grid/grid.js";
 import { playBg } from "./views/audio/audio.js";
 import { resetMissionEffectsAllUnits } from "./game/entity/entity.js";

@@ -1,15 +1,15 @@
-import { renderHeader, startTimer, stopTimer, playCornoGuerra } from "./views/header/header.js";
-import { refreshMoraleUI, refreshXPUI } from "./views/footer/footer.js";
-import { initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "./mods.js";
-import { TurnEngine } from "./phases.js";
-import { renderGrid, renderBenches, grid } from "./views/grid/grid.js";
-import { seedWallRows } from "./game/entity/entity.js";
-import { DB, GAME_STATE, rebuildUnitIndex } from "./core/data.js";
-import { resetDeckFromPool, updateFabDeckCounters } from './views/fabs/fab.js'
-import { renderLogs } from './log.js';
-import { loadMissions } from "./missions.js";
-import showWarningC from './game/effects/warningOverlayC.js';
-import { applyCommanderAccess } from './core/permissions.js';
+import { renderHeader, startTimer, stopTimer, playCornoGuerra } from "../views/header/header.js";
+import { refreshMoraleUI, refreshXPUI } from "../views/footer/footer.js";
+import { initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "../mods.js";
+import { TurnEngine } from "../core/phases.js";
+import { renderGrid, renderBenches, grid } from "../views/grid/grid.js";
+import { seedWallRows } from "../game/entity/entity.js";
+import { DB, GAME_STATE, rebuildUnitIndex } from "../core/data.js";
+import { resetDeckFromPool, updateFabDeckCounters } from '../views/fabs/fab.js'
+import { renderLogs } from '../core/log.js';
+import { loadMissions } from "../missions.js";
+import showWarningC from '../game/effects/warningOverlayC.js';
+import { applyCommanderAccess } from '../core/permissions.js';
 
 function renderCoreUI() {
     refreshXPUI();

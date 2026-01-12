@@ -1,4 +1,4 @@
-import { log } from '../../log.js';
+import { log } from '../../core/log.js';
 import { giantsPhaseMove, pickRandomTeam, spawnGiant } from '../../game/entity/entity.js';
 import { playSfx } from '../audio/audio.js';
 import { hideTooltip } from '../../ui/ui.js';
