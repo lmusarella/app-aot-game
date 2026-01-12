@@ -42,7 +42,7 @@ export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
   startTurnCountdown();
 }
 
-export function initGameForSinglePlayer() {
+export function initGameForSinglePlayer({ forceReset = false, render = true } = {}) {
   APP_STATE.roomId = null
   APP_STATE.roomPlayers = []
   APP_STATE.isGameDriver = true
@@ -58,7 +58,7 @@ export function initGameForSinglePlayer() {
   }
   stopPresenceHeartbeat()
 
-  const saved = loadLocalGameState()
+  const saved = forceReset ? null : loadLocalGameState()
   if (saved) {
     gameAPI.resetGameState()
     gameAPI.applyLoadedState(saved)
@@ -67,10 +67,12 @@ export function initGameForSinglePlayer() {
     saveLocalGameState(snapshot())
   }
 
-  gameAPI.renderGameFromState()
-  initEventManager()
-  initTurnTracker()
-  startTurnCountdown()
+  if (render) {
+    gameAPI.renderGameFromState()
+    initEventManager()
+    initTurnTracker()
+    startTurnCountdown()
+  }
 }
 
 async function fetchRoomPlayers(roomId) {

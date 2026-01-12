@@ -207,6 +207,9 @@ async function onLogout() {
   // stop loop presenza stanza
   stopRoomPresence()
 
+  setLoading(btnLogin, false, 'Accedi')
+  updateLoginButtonState()
+
   await supabase.auth.signOut()
 
   APP_STATE.roomId = null
@@ -288,6 +291,8 @@ function onUserLoggedOut() {
     hdrUserName.textContent = '—'
   }
 
+  setLoading(btnLogin, false, 'Accedi')
+  updateLoginButtonState()
   setError('Sei disconnesso.')
   showScreen('login')
 }

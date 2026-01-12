@@ -61,6 +61,84 @@ export const GAME_STATE = {
     turnEngine: {}
 }
 
+export function resetInMemoryGameState() {
+    if (!DB.ALLIES || !DB.GIANTS || !DB.EVENTS || !DB.CONSUMABLE || !DB.SETTINGS) {
+        console.warn('[resetInMemoryGameState] DB non pronto per il reset.');
+        return;
+    }
+
+    unitById.clear();
+    GIANT_ENGAGEMENT.clear();
+    UNIT_SELECTED.selectedUnitId = null;
+
+    Object.assign(GAME_STATE.missionState, {
+        curIndex: 0,
+        timerTotalSec: 1200,
+        remainingSec: 1200,
+        ticking: false,
+        intervalId: null,
+        kills: {
+            Puro: 0,
+            Anomalo: 0,
+            Mutaforma: 0
+        }
+    });
+
+    GAME_STATE.missionStats = {};
+    GAME_STATE.unitMods = {};
+
+    GAME_STATE.spawns.length = 0;
+    GAME_STATE.hand.length = 0;
+
+    GAME_STATE.decks.event.draw = structuredClone(DB.EVENTS);
+    GAME_STATE.decks.event.discard = [];
+    GAME_STATE.decks.event.removed = [];
+    GAME_STATE.decks.consumable.draw = structuredClone(DB.CONSUMABLE);
+    GAME_STATE.decks.consumable.discard = [];
+    GAME_STATE.decks.consumable.removed = [];
+
+    GAME_STATE.xpMoraleState = structuredClone(DB.SETTINGS.xpMoralDefault);
+
+    GAME_STATE.alliesPool.length = 0;
+    GAME_STATE.alliesPool.push(...DB.ALLIES.filter(unit => unit.role !== "wall").map(u => ({
+        ...u,
+        currHp: u.hp,
+        template: true,
+        dead: false
+    })));
+
+    GAME_STATE.alliesRoster.length = 0;
+
+    GAME_STATE.giantsPool.length = 0;
+    GAME_STATE.giantsPool.push(...DB.GIANTS.map(u => ({
+        role: "enemy",
+        ...u,
+        currHp: u.hp,
+        template: true
+    })));
+
+    GAME_STATE.giantsRoster.length = 0;
+
+    GAME_STATE.walls.length = 0;
+    GAME_STATE.walls.push(...DB.ALLIES.filter(unit => unit.role === "wall").map(u => ({
+        ...u,
+        currHp: u.hp
+    })));
+
+    GAME_STATE.logs = [];
+    GAME_STATE.events = [];
+    GAME_STATE.turnState = null;
+    GAME_STATE.stateVersion = 0;
+    GAME_STATE.stateUpdatedAt = null;
+    GAME_STATE.modRolls = {
+        atk: 0,
+        tec: 0,
+        agi: 0,
+        all: 0
+    };
+    GAME_STATE.turnEngine = {};
+}
+
 export function rebuildUnitIndex() {
     unitById.clear();
     [...GAME_STATE.alliesRoster, ...GAME_STATE.giantsRoster, ...GAME_STATE.walls].forEach(u => unitById.set(u.id, u));

@@ -1,5 +1,5 @@
 // core/app-state.js
-import { GAME_STATE, restore, snapshot } from './data.js'
+import { GAME_STATE, resetInMemoryGameState, restore, snapshot } from './data.js'
 import { initRenderApp } from '../boot/render-app.js'
 
 const APP_STATE = {
@@ -15,8 +15,9 @@ const APP_STATE = {
 }
 
 let gameAPI = {
-  resetGameState: () =>
-    console.warn('[gameAPI] resetGameState non fornita'),
+  resetGameState: () => {
+    resetInMemoryGameState();
+  },
   applyLoadedState: (state) => {
     console.info('[gameAPI] applyLoadedState restore: ', state)
     restore(state);
