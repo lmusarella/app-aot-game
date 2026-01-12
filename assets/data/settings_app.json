@@ -199,7 +199,8 @@
         }
     },
     "missionDefaults": {
-        "timerTotalSec": 1200
+        "timerTotalSec": 1200,
+        "turnDurationSec": 60
     },
     "audio": {
         "unitVoices": {

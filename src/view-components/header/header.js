@@ -18,16 +18,19 @@ const btnReset = document.getElementById('btn-reset-game');
 const elPlay = document.getElementById('t-play');
 const elReset = document.getElementById('t-reset');
 const elTime = document.getElementById('t-time');
+const elTimer = document.querySelector('.timer');
 
 const elDec = document.getElementById('m-dec');
 const elInc = document.getElementById('m-inc');
 const btnLeaveRoom = document.getElementById('btn-leave-room');
 const elGameMode = document.getElementById('hdr-game-mode');
+const elPhaseLabel = document.getElementById('phase-label');
 
 export function renderHeader() {
     renderMissionUI();
     renderTimerUI();
     renderGameModeBadge();
+    renderPhaseLabel();
 }
 
 function renderGameModeBadge() {
@@ -41,10 +44,31 @@ function renderGameModeBadge() {
     }
 }
 
+export function renderPhaseLabel() {
+    if (!elPhaseLabel) return;
+    const phase = GAME_STATE.turnEngine?.phase || 'idle';
+    const labelMap = {
+        idle: 'Attesa',
+        setup: 'Setup',
+        event_mission: 'Evento missione',
+        event_card: 'Pesca evento',
+        round_start: 'Inizio round',
+        move_phase: 'Movimento',
+        attack_phase: 'Combattimento',
+        end_round: 'Fine round'
+    };
+    const label = labelMap[phase] ?? phase;
+    elPhaseLabel.textContent = `Fase: ${label}`;
+}
+
 // Render UI timer
 export function renderTimerUI() {
     if (elTime) elTime.textContent = fmtClock(GAME_STATE.missionState.remainingSec);
     if (elPlay) elPlay.textContent = GAME_STATE.missionState.ticking ? '⏸' : '▶';
+    if (elTimer) {
+        const urgentThresholdSec = 60;
+        elTimer.classList.toggle('timer--urgent', GAME_STATE.missionState.remainingSec <= urgentThresholdSec);
+    }
 }
 
 // Timer controls

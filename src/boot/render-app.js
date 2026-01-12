@@ -1,4 +1,5 @@
 import { renderHeader, startTimer, stopTimer, playCornoGuerra } from "../view-components/header/header.js";
+import { clamp } from "../game-business-logic/utils.js";
 import { refreshMoraleUI, refreshXPUI } from "../view-components/footer/footer.js";
 import { initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "../view-components/leftbar/mods.js";
 import { TurnEngine } from "../game-business-logic/phases.js";
@@ -28,7 +29,8 @@ function renderCoreUI() {
 function restoreTimerState() {
     try {
         if (GAME_STATE.missionState.ticking) {
-            const elapsedSec = Math.floor((Date.now() - (save.savedAt || Date.now())) / 1000);
+            const lastSavedAt = GAME_STATE.stateUpdatedAt || Date.now();
+            const elapsedSec = Math.floor((Date.now() - lastSavedAt) / 1000);
             GAME_STATE.missionState.remainingSec = clamp((GAME_STATE.missionState.remainingSec || 0) - elapsedSec, 0, GAME_STATE.missionState.timerTotalSec || 1200);
             if (GAME_STATE.missionState.remainingSec > 0) {
                 startTimer();

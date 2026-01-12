@@ -1,11 +1,14 @@
 // header/turn-tracker.js
 import { APP_STATE, GAME_STATE } from '../core/app-state.js';
+import { DB } from '../core/data.js';
 import { scheduleSave } from './game-sync.js';
 
-const TURN_DURATION_SEC = 60; // ⏱ durata turno (configurabile)
+const DEFAULT_TURN_DURATION_SEC = 60; // ⏱ durata turno (configurabile)
 
 let turnTimerId = null;
-let remainingSec = TURN_DURATION_SEC;
+let remainingSec = DEFAULT_TURN_DURATION_SEC;
+let lastTurnPlayerId = null;
+let turnChangeTimerId = null;
 
 const elContainer = document.getElementById('turn-tracker');
 const elPlayer = document.getElementById('turn-player');
@@ -66,13 +69,29 @@ export function renderTurnTracker() {
   elTimer.textContent = `${remainingSec}s`;
 
   elContainer.classList.toggle('my-turn', isMyTurn);
+
+  if (currentPlayerId && lastTurnPlayerId && currentPlayerId !== lastTurnPlayerId) {
+    elContainer.classList.add('turn-changed');
+    if (turnChangeTimerId) {
+      clearTimeout(turnChangeTimerId);
+    }
+    turnChangeTimerId = setTimeout(() => {
+      elContainer.classList.remove('turn-changed');
+      turnChangeTimerId = null;
+    }, 600);
+  }
+
+  if (currentPlayerId) {
+    lastTurnPlayerId = currentPlayerId;
+  }
 }
 
 /** Avvia il countdown per il turno corrente */
 export function startTurnCountdown() {
   stopTurnCountdown(); // reset
 
-  remainingSec = TURN_DURATION_SEC;
+  const turnDurationSec = DB?.SETTINGS?.missionDefaults?.turnDurationSec ?? DEFAULT_TURN_DURATION_SEC;
+  remainingSec = turnDurationSec;
   renderTurnTracker();
 
   turnTimerId = setInterval(() => {

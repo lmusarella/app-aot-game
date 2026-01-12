@@ -11,6 +11,41 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+let lastRenderSignature = null;
+let lastTurnSignature = null;
+let pendingRenderId = null;
+
+function buildRenderSignature(state) {
+  return JSON.stringify({
+    spawns: state?.spawns?.length ?? 0,
+    allies: state?.alliesRoster?.length ?? 0,
+    giants: state?.giantsRoster?.length ?? 0,
+    walls: state?.walls?.length ?? 0,
+    hand: state?.hand?.length ?? 0,
+    logs: state?.logs?.length ?? 0,
+    mission: state?.missionState?.curIndex ?? 0,
+    eventDeck: state?.decks?.event?.draw?.length ?? 0,
+    consumableDeck: state?.decks?.consumable?.draw?.length ?? 0
+  });
+}
+
+function buildTurnSignature(turnState) {
+  if (!turnState) return 'none';
+  return JSON.stringify({
+    order: Array.isArray(turnState.order) ? turnState.order : [],
+    currentIndex: turnState.currentIndex ?? 0,
+    currentPlayerId: turnState.currentPlayerId ?? null
+  });
+}
+
+function scheduleRenderGameState() {
+  if (pendingRenderId) return;
+  pendingRenderId = requestAnimationFrame(() => {
+    pendingRenderId = null;
+    gameAPI.renderGameFromState(GAME_STATE);
+  });
+}
+
 export function stopPresenceHeartbeat() {
   if (APP_STATE.presenceTimerId) {
     clearInterval(APP_STATE.presenceTimerId);
@@ -305,13 +340,20 @@ function bindGameRealtime(roomId) {
     gameAPI.resetGameState()
     console.log('handleChange new state', newState);
     gameAPI.applyLoadedState(newState)
-    // se la tua render accetta (state, me, players) puoi passare solo state
-    gameAPI.renderGameFromState(GAME_STATE)
     consumeGameEvents();
 
-    // ogni update dal DB → aggiorno il tracker & riavvio countdown
-    renderTurnTracker();
-    startTurnCountdown();
+    const renderSignature = buildRenderSignature(newState);
+    if (renderSignature !== lastRenderSignature) {
+      lastRenderSignature = renderSignature;
+      scheduleRenderGameState();
+    }
+
+    const turnSignature = buildTurnSignature(newState.turnState);
+    if (turnSignature !== lastTurnSignature) {
+      lastTurnSignature = turnSignature;
+      renderTurnTracker();
+      startTurnCountdown();
+    }
   }
 
   const channel = supabase
@@ -370,10 +412,20 @@ async function resyncGameState(roomId) {
 
   gameAPI.resetGameState()
   gameAPI.applyLoadedState(newState)
-  gameAPI.renderGameFromState(GAME_STATE)
   consumeGameEvents()
-  renderTurnTracker()
-  startTurnCountdown()
+
+  const renderSignature = buildRenderSignature(newState);
+  if (renderSignature !== lastRenderSignature) {
+    lastRenderSignature = renderSignature;
+    scheduleRenderGameState();
+  }
+
+  const turnSignature = buildTurnSignature(newState.turnState);
+  if (turnSignature !== lastTurnSignature) {
+    lastTurnSignature = turnSignature;
+    renderTurnTracker();
+    startTurnCountdown();
+  }
 }
 
 function debounce(fn, ms = 400) {
@@ -408,6 +460,11 @@ async function pushGameState() {
   if (!APP_STATE.roomId) return;
 
   // === NUOVA PROTEZIONE ===
+  const turnState = GAME_STATE.turnState;
+  if (!turnState || !Array.isArray(turnState.order) || turnState.order.length === 0 || !turnState.currentPlayerId) {
+    console.warn("Turno non inizializzato: salvataggio multiplayer bloccato.");
+    return;
+  }
   const { isMyTurn } = getTurnInfo();
   if (!isMyTurn) {
     console.warn("Tentativo di salvataggio fuori turno bloccato.");
