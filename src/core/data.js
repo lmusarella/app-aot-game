@@ -20,11 +20,14 @@ export const DB = {
     SETTINGS: null
 };
 
-export const GAME_STATE = {
-    missionState: {
+const DEFAULT_TIMER_SEC = 1200;
+
+function buildDefaultMissionState() {
+    const totalSec = DB?.SETTINGS?.missionDefaults?.timerTotalSec ?? DEFAULT_TIMER_SEC;
+    return {
         curIndex: 0,
-        timerTotalSec: 1200,
-        remainingSec: 1200,
+        timerTotalSec: totalSec,
+        remainingSec: totalSec,
         ticking: false,
         intervalId: null,
         kills: {
@@ -32,7 +35,11 @@ export const GAME_STATE = {
             Anomalo: 0,
             Mutaforma: 0
         }
-    },
+    };
+}
+
+export const GAME_STATE = {
+    missionState: buildDefaultMissionState(),
     missionStats: {},
     unitMods: {},
     spawns: [],
@@ -71,18 +78,7 @@ export function resetInMemoryGameState() {
     GIANT_ENGAGEMENT.clear();
     UNIT_SELECTED.selectedUnitId = null;
 
-    Object.assign(GAME_STATE.missionState, {
-        curIndex: 0,
-        timerTotalSec: 1200,
-        remainingSec: 1200,
-        ticking: false,
-        intervalId: null,
-        kills: {
-            Puro: 0,
-            Anomalo: 0,
-            Mutaforma: 0
-        }
-    });
+    Object.assign(GAME_STATE.missionState, buildDefaultMissionState());
 
     GAME_STATE.missionStats = {};
     GAME_STATE.unitMods = {};
@@ -191,12 +187,13 @@ export async function bootDataApplication() {
 }
 
 function populateGameStateData() {
-    GAME_STATE.xpMoraleState = DB.SETTINGS.xpMoralDefault;
+    Object.assign(GAME_STATE.missionState, buildDefaultMissionState());
+    GAME_STATE.xpMoraleState = structuredClone(DB.SETTINGS.xpMoralDefault);
     GAME_STATE.walls = DB.ALLIES.filter(unit => unit.role === "wall").map(u => ({ ...u, currHp: u.hp }));
     GAME_STATE.alliesPool = DB.ALLIES.filter(unit => unit.role !== "wall").map(u => ({ ...u, currHp: u.hp, template: true, dead: false }));
     GAME_STATE.giantsPool = DB.GIANTS.map(u => ({ role: "enemy", ...u, currHp: u.hp, template: true }));
-    GAME_STATE.decks.event.draw = DB.EVENTS;
-    GAME_STATE.decks.consumable.draw = DB.CONSUMABLE;
+    GAME_STATE.decks.event.draw = structuredClone(DB.EVENTS);
+    GAME_STATE.decks.consumable.draw = structuredClone(DB.CONSUMABLE);
     console.log('init gamestate', GAME_STATE);
 }
 
