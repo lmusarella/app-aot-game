@@ -10,6 +10,7 @@ import { supabase } from '../../core/supabase/supabaseClient.js';
 import { showScreen } from '../../ui-components/ui-helpers.js';
 import { stopRoomPresence } from '../pages/room/room-ui.js';
 import { handleAllyDeath } from '../../game-business-logic/entity/deaths.js';
+import { initGameForSinglePlayer } from '../../game-business-logic/game-sync.js';
 
 const missionCardHead = document.getElementById('mission-head');
 const btnReset = document.getElementById('btn-reset-game');
@@ -101,7 +102,12 @@ export function initHeaderListeners() {
             cancelText: 'Annulla',
             danger: true
         });
-        if (ok) resetGame();
+        if (!ok) return;
+        if (APP_STATE.gameMode === 'single') {
+            initGameForSinglePlayer({ forceReset: true });
+            return;
+        }
+        resetGame();
     });
 
     btnLeaveRoom?.addEventListener('click', async () => {
@@ -113,6 +119,17 @@ export function initHeaderListeners() {
             danger: true
         });
         if (!ok) return;
+
+        if (APP_STATE.gameMode === 'single') {
+            initGameForSinglePlayer({ forceReset: true, render: false });
+            APP_STATE.roomId = null;
+            APP_STATE.role = null;
+            APP_STATE.roomPlayers = [];
+            APP_STATE.isGameDriver = false;
+            APP_STATE.gameMode = null;
+            showScreen('lobby');
+            return;
+        }
 
         const roomId = APP_STATE.roomId;
         const userId = APP_STATE.user?.id;
