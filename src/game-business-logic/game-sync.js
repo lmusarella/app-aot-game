@@ -2,8 +2,7 @@
 import { supabase } from '../core/supabase/supabaseClient.js'
 import { APP_STATE, GAME_STATE, gameAPI, snapshot } from '../core/app-state.js'
 import { loadLocalGameState, saveLocalGameState } from '../core/data.js'
-import { getTurnInfo } from './turn-helpers.js';
-import { initTurnTracker, startTurnCountdown, renderTurnTracker } from './turn-tracker.js';
+import { getTurnInfo, initTurnTracker, startTurnCountdown, renderTurnTracker } from './turn-tracker.js';
 import { initEventManager, consumeGameEvents } from './event-manager.js';
 import { renderMissionUI } from '../view-components/leftbar/missions.js';
 

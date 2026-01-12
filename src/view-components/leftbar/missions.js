@@ -2,7 +2,7 @@ import { GAME_STATE, DB } from "../../core/data.js";
 import { APP_STATE } from "../../core/app-state.js";
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
 import { capitalizeFirstLetter, clamp } from "../../game-business-logic/utils.js";
-import { addLongPress, showCardDetail, ensureMissionCardSkeleton } from "../../ui-components/ui.js";
+import { addLongPress, showCardDetail } from "../../ui-components/ui-helpers.js";
 import { log } from "./log.js";
 import { clearGrid } from "../grid/grid.js";
 import { playBg } from "../audio/audio.js";
@@ -15,6 +15,40 @@ import showVictoryScreen from '../../game-business-logic/effects/victoryOverlay.
 const elMissionNumTop = document.getElementById('m-num');       // header (numero)
 const elMissionNumCard = document.querySelector('#missione-corrente #mc-num'); // card (numero)
 const elMissionCardWrap = document.getElementById('mission-panel');        // container card
+
+function ensureMissionCardSkeleton(card) {
+    if (!card) return;
+    const hasHead = card.querySelector('.mission-head');
+    if (hasHead) return;
+
+    card.innerHTML = `
+
+
+    <div id="mission-head" class="mission-head mission-card">
+      <p class="mission-title">
+        <strong>#<span id="mc-num"></span> — <span id="mc-title"></span></strong>
+      </p>
+      <ul id="mc-brief" class="mission-brief"></ul>
+      <p id="mc-reward" class="mission-reward"></p>
+    </div>
+
+    <div class="mission-stats">
+      <div class="msn-badge"><span class="lbl">Uccisioni</span><span id="msn-kills">0</span></div>
+      <div class="msn-badge"><span class="lbl">Perdite</span><span id="msn-losses">0</span></div>
+      <div class="msn-badge"><span class="lbl">Tentativi</span><span id="msn-attempts">0</span></div>
+      <div class="msn-badge"><span class="lbl">Round</span><span id="msn-round">0</span></div>
+    </div>
+
+    <div class="mission-subtitle">Squadra</div>
+    <ul id="msn-squad" class="msn-squad"></ul>
+
+    <div class="mission-subtitle">Eventi attivati</div>
+    <ul id="msn-evlist" class="msn-list"></ul>
+
+    <div class="mission-subtitle">Effetti attivi</div>
+    <div id="msn-evactive" class="msn-chips"></div>
+  `;
+}
 
 // ===== MissionStats – stato per missione e renderer pannello =====
 function getCurrentMissionId() {

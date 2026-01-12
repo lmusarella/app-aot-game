@@ -1,6 +1,6 @@
 import { initHeaderListeners } from './header.js';
 import { initPhasesListeners } from '../../game-business-logic/phases.js';
-import { showTutorialPopupViaDialog } from '../../ui-components/ui.js';
+import { showTutorialPopupViaDialog } from '../../ui-components/ui-helpers.js';
 
 export function initView() {
   initHeaderListeners();

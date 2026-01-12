@@ -1,4 +1,4 @@
-import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, addLongPress, confirmDialog } from '../../ui-components/ui.js';
+import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, addLongPress, confirmDialog } from '../../ui-components/ui-helpers.js';
 import { playSfx } from '../audio/audio.js';
 import { isClone, getStat, applyHpBar, getMusicUrlById, COLOR_VAR, keyRC } from '../../game-business-logic/utils.js';
 import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, GIANT_ENGAGEMENT } from '../../core/data.js';

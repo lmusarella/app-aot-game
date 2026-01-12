@@ -1,7 +1,7 @@
 import { log } from '../leftbar/log.js';
 import { giantsPhaseMove, pickRandomTeam, spawnGiant } from '../../game-business-logic/entity/entity.js';
 import { playSfx } from '../audio/audio.js';
-import { hideTooltip } from '../../ui-components/ui.js';
+import { hideTooltip } from '../../ui-components/ui-helpers.js';
 import lightningStrike from '../../game-business-logic/effects/lightningStrike.js';
 import { guardCommanderAction } from '../../core/permissions.js';
 import { drawCard, resetDeckFromPool, reshuffleAllDiscards, updateFabDeckCounters } from './fab/decks.js';

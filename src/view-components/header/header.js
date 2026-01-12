@@ -1,5 +1,5 @@
 import { GAME_STATE, resetGame, snapshot } from '../../core/data.js';
-import { confirmDialog, openDialog } from '../../ui-components/ui.js';
+import { confirmDialog, openDialog } from '../../ui-components/ui-helpers.js';
 import { clearGrid } from '../grid/grid.js';
 import { completeMission, setMissionByIndex, renderMissionUI } from '../leftbar/missions.js';
 import { fmtClock, clamp } from '../../game-business-logic/utils.js';
