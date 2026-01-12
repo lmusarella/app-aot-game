@@ -1,6 +1,6 @@
 import { advanceAllCooldowns, giantsPhaseMove, spawnGiant, tickUnitModsOnNewRound, pickRandomTeam } from './entity/entity.js';
 import { getMusicUrlById, wait } from './utils.js';
-import { openAccordionForRole } from '../ui-components/ui.js';
+import { openAccordionForRole } from '../ui-components/ui-helpers.js';
 import { playBg, playSfx } from '../view-components/audio/audio.js';
 import { showDrawnCard, closeAllFabs, drawCard } from '../view-components/fabs/fab.js';
 import { DB, GAME_STATE } from '../core/data.js';
@@ -14,7 +14,7 @@ import lightningStrike from './effects/lightningStrike.js';
 // in cima
 import { guardCommanderAction } from '../core/permissions.js';
 import { APP_STATE } from '../core/app-state.js';
-import { getTurnInfo, advanceTurn } from './turn-helpers.js';
+import { getTurnInfo, advanceTurn } from './turn-tracker.js';
 import { scheduleSave } from './game-sync.js';
 
 

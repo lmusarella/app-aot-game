@@ -59,4 +59,16 @@ export {
   setSuccess,
   setLoading,
   loginMsg, // se ti serve altrove
-}
+};
+
+export { tooltipEl, initTooltipListeners, getUnitTooltipHTML, showTooltip, hideTooltip, renderPickTooltip } from './tooltip.js';
+export { addLongPress } from './gestures.js';
+export { setupLeftAccordions, setupRightAccordions, openAccordionForRole, setupAccordions } from './accordions.js';
+export { setupLeftCollapse, initSidebarsListeners } from './sidebars.js';
+export { showSnackBar } from './snackbar.js';
+export { ensureModal, openDialog, confirmDialog } from './dialog.js';
+export { cardSheetHTML, showCardDetail, alliesPickerHTML } from './cards.js';
+export { showVersusOverlay, hideVersusOverlay } from '../view-components/overlays/overlays/versus.js';
+export { openDiceOverlay, closeDiceOverlay } from '../view-components/overlays/overlays/dice.js';
+export { showAttackOverlayUnderDice, hideAttackOverlayUnderDice } from '../view-components/overlays/overlays/attack.js';
+export { showTutorialPopupViaDialog } from '../view-components/overlays/tutorial.js';

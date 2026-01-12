@@ -1,4 +1,4 @@
-import { showSnackBar } from '../../ui-components/ui.js';
+import { showSnackBar } from '../../ui-components/ui-helpers.js';
 import { startAttackPick, getEngagedHuman, getEngagingGiant } from '../../game-business-logic/entity/entity.js';
 import { getStat, isHuman } from '../../game-business-logic/utils.js';
 import { unitById } from '../../core/data.js';

@@ -1,4 +1,4 @@
-import { showSnackBar } from '../../ui-components/ui.js'
+import { showSnackBar } from '../../ui-components/ui-helpers.js'
 import { GAME_STATE } from '../../core/data.js'
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
 

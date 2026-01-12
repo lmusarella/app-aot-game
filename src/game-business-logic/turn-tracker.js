@@ -1,6 +1,5 @@
 // header/turn-tracker.js
-import { APP_STATE } from '../core/app-state.js';
-import { getTurnInfo, advanceTurn } from './turn-helpers.js';
+import { APP_STATE, GAME_STATE } from '../core/app-state.js';
 import { scheduleSave } from './game-sync.js';
 
 const TURN_DURATION_SEC = 60; // ⏱ durata turno (configurabile)
@@ -12,6 +11,30 @@ const elContainer = document.getElementById('turn-tracker');
 const elPlayer = document.getElementById('turn-player');
 const elOrder = document.getElementById('turn-order');
 const elTimer = document.getElementById('turn-timer');
+
+export function getTurnInfo() {
+  const ts = GAME_STATE.turnState || {};
+  const order = ts.order || [];
+  const idx = ts.currentIndex ?? 0;
+  const currentPlayerId = ts.currentPlayerId || order[idx] || null;
+  const myId = APP_STATE.user?.id || null;
+  const hasTurnInfo = order.length > 0 && currentPlayerId;
+
+  return {
+    order,
+    currentIndex: idx,
+    currentPlayerId,
+    isMyTurn: hasTurnInfo ? (myId && currentPlayerId === myId) : true
+  };
+}
+
+export function advanceTurn() {
+  const ts = GAME_STATE.turnState;
+  if (!ts || !Array.isArray(ts.order) || ts.order.length === 0) return;
+
+  ts.currentIndex = (ts.currentIndex + 1) % ts.order.length;
+  ts.currentPlayerId = ts.order[ts.currentIndex];
+}
 
 export function initTurnTracker() {
   renderTurnTracker();

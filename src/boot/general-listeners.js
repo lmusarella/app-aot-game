@@ -2,7 +2,7 @@ import { ATTACK_PICK, endAttackPick } from '../game-business-logic/entity/entity
 import { DB, GAME_STATE, UNIT_SELECTED } from '../core/data.js';
 import { renderGrid, renderBenches, grid, clearHighlights } from '../view-components/grid/grid.js';
 import { closeAllFabs } from '../view-components/fabs/fab.js';
-import { hideTooltip, initTooltipListeners } from '../ui-components/ui.js';
+import { hideTooltip, initTooltipListeners } from '../ui-components/ui-helpers.js';
 
 export function initGeneralListeners() {
   initTooltipListeners();
