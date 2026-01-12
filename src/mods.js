@@ -1,4 +1,4 @@
-import { GAME_STATE, DB, unitById } from "./data.js";
+import { GAME_STATE, DB, unitById } from "./core/data.js";
 import { levelFromXP, fmtSigned, signClass } from "./utils.js";
 import {scheduleSave} from './game/game-sync.js';
 import { log } from "./log.js";

@@ -1,17 +1,17 @@
 
 
 const viewPartials = [
-    { id: 'view-login', path: 'src/views/screen-login.html', init: './src/views/view-login.js' },
-    { id: 'view-lobby', path: 'src/views/screen-lobby.html', init: './src/views/view-lobby.js' },
-    { id: 'view-room', path: 'src/views/screen-room.html' },
-    { id: 'view-header', path: 'src/views/header.html', init: './src/views/view-header.js' },
-    { id: 'view-leftbar', path: 'src/views/leftbar.html', init: './src/views/view-leftbar.js' },
-    { id: 'view-rightbar', path: 'src/views/rightbar.html', init: './src/views/view-rightbar.js' },
-    { id: 'view-footer', path: 'src/views/footer.html', init: './src/views/view-footer.js' },
-    { id: 'view-layout-controls', path: 'src/views/layout-controls.html', init: './src/views/view-layout-controls.js' },
-    { id: 'view-audio', path: 'src/views/audio-modal.html', init: './src/views/view-audio.js' },
-    { id: 'view-overlays', path: 'src/views/overlays.html' },
-    { id: 'view-fabs', path: 'src/views/fabs.html', init: './src/views/view-fabs.js' },
+    { id: 'view-login', path: 'src/views/login/screen-login.html', init: './src/views/login/view-login.js' },
+    { id: 'view-lobby', path: 'src/views/lobby/screen-lobby.html', init: './src/views/lobby/view-lobby.js' },
+    { id: 'view-room', path: 'src/views/room/screen-room.html' },
+    { id: 'view-header', path: 'src/views/header/header.html', init: './src/views/header/view-header.js' },
+    { id: 'view-leftbar', path: 'src/views/leftbar/leftbar.html', init: './src/views/leftbar/view-leftbar.js' },
+    { id: 'view-rightbar', path: 'src/views/rightbar/rightbar.html', init: './src/views/rightbar/view-rightbar.js' },
+    { id: 'view-footer', path: 'src/views/footer/footer.html', init: './src/views/footer/view-footer.js' },
+    { id: 'view-layout-controls', path: 'src/views/layout-controls/layout-controls.html', init: './src/views/layout-controls/view-layout-controls.js' },
+    { id: 'view-audio', path: 'src/views/audio/audio-modal.html', init: './src/views/audio/view-audio.js' },
+    { id: 'view-overlays', path: 'src/views/overlays/overlays.html' },
+    { id: 'view-fabs', path: 'src/views/fabs/fabs.html', init: './src/views/fabs/view-fabs.js' },
 ];
 
 const requestPrecache = async () => {
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         { initRenderApp },
         { initGeneralListeners },
     ] = await Promise.all([
-        import('./src/data.js'),
+        import('./src/core/data.js'),
         import('./src/services.js'),
         import('./src/app/init-general-listeners.js'),
     ]);
