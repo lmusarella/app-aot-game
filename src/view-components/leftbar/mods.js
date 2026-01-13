@@ -367,7 +367,8 @@ function ensureModsStore(u) {
 function malusFromMorale(moralePctRaw) {
     const moralePct = Math.max(0, Math.min(10, Number(moralePctRaw) || 0));
     // Trova la riga di tabella che copre il range del morale corrente (inclusivo)
-    const row = DB.SETTINGS.malusTable.find(r =>
+    const malusTable = DB?.SETTINGS?.malusTable ?? [];
+    const row = malusTable.find(r =>
         moralePct >= r.range.min && moralePct <= r.range.max
     );
 
@@ -402,7 +403,8 @@ function mergeBonuses(pills) {
 }
 
 function bonusesFromLevel(level) {
-    return DB.SETTINGS.bonusTable
+    const bonusTable = DB?.SETTINGS?.bonusTable ?? [];
+    return bonusTable
         .filter(b => level >= b.lvl)
         .map(b => ({ type: 'bonus', text: b.text, bonus: b.bonus }));
 }

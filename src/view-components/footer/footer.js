@@ -88,7 +88,8 @@ export function addXP(delta) {
         for (let L = prevLevel + 1; L <= nextLevel; L++) {
             log(`Salito al livello ${L}!`, 'success');
             // evidenzia i bonus appena sbloccati (se presenti)
-            const unlocked = DB.SETTINGS.bonusTable.filter(b => b.lvl === L);
+            const bonusTable = DB?.SETTINGS?.bonusTable ?? [];
+            const unlocked = bonusTable.filter(b => b.lvl === L);
             unlocked.forEach(b => log(`Sbloccato: ${b.text}`, 'info'));
         }
     } else if (nextLevel < prevLevel) {

@@ -7,7 +7,7 @@ import { playSfx, playBg } from '../../view-components/audio/audio.js';
 import { unitById, GAME_STATE, GIANT_ENGAGEMENT, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
 import { pushGameEvent } from '../event-manager.js';
-import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, tooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from '../../ui-components/ui-helpers.js';
+import { openAccordionForRole, showTooltip, renderPickTooltip, hideTooltip, getTooltipEl, showVersusOverlay, openDiceOverlay, hideVersusOverlay, showAttackOverlayUnderDice } from '../../ui-components/ui-helpers.js';
 import { log } from '../../view-components/leftbar/log.js';
 import bloodHitClean from '../effects/bloodHitClean.js';
 import { giantFallQuake } from '../effects/screenQuake.js';
@@ -34,17 +34,20 @@ export function startAttackPick(attacker, targets, nemesi) {
   const html = renderPickTooltip(attacker, targets, nemesi);
   showTooltip(html);
 
-  tooltipEl.onclick = async (e) => {
-    const tBtn = e.target.closest('[data-target-id]');
-    if (tBtn) {
-      endAttackPick();
-      await resolveAttack(attacker.id, tBtn.dataset.targetId);
-      return;
-    }
-    if (e.target.closest('[data-cancel]')) {
-      endAttackPick();
-    }
-  };
+  const tooltip = getTooltipEl();
+  if (tooltip) {
+    tooltip.onclick = async (e) => {
+      const tBtn = e.target.closest('[data-target-id]');
+      if (tBtn) {
+        endAttackPick();
+        await resolveAttack(attacker.id, tBtn.dataset.targetId);
+        return;
+      }
+      if (e.target.closest('[data-cancel]')) {
+        endAttackPick();
+      }
+    };
+  }
 
   renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
 }

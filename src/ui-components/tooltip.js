@@ -1,10 +1,23 @@
 import { fmtSigned, getUnitBonus, signClass, cappedDelta } from '../game-business-logic/utils.js';
 import { UNIT_SELECTED, unitById, GIANT_ENGAGEMENT, GAME_STATE } from '../core/data.js';
 
-export const tooltipEl = document.getElementById('tooltip');
+export let tooltipEl = null;
+
+function resolveTooltipEl() {
+  if (!tooltipEl) {
+    tooltipEl = document.getElementById('tooltip');
+  }
+  return tooltipEl;
+}
+
+export function getTooltipEl() {
+  return resolveTooltipEl();
+}
 
 export function initTooltipListeners() {
-  tooltipEl.addEventListener('click', (e) => {
+  const el = resolveTooltipEl();
+  if (!el) return;
+  el.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-hp-delta]');
     if (!btn) return;
     const actions = e.target.closest('.tt-actions');
@@ -105,22 +118,28 @@ export function getUnitTooltipHTML(unit) {
 }
 
 export function showTooltip(html) {
-  tooltipEl.innerHTML = html;
-  tooltipEl.style.display = 'block';
+  const el = resolveTooltipEl();
+  if (!el) return;
+  el.innerHTML = html;
+  el.style.display = 'block';
   positionTooltip(0, 45);
 }
 
 export function hideTooltip() {
-  tooltipEl.style.display = 'none';
+  const el = resolveTooltipEl();
+  if (!el) return;
+  el.style.display = 'none';
 }
 
 function positionTooltip(mouseX, mouseY) {
+  const el = resolveTooltipEl();
+  if (!el) return;
   const offset = 14; const { innerWidth: vw, innerHeight: vh } = window;
-  const rect = tooltipEl.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
   let left = mouseX + offset, top = mouseY + offset;
   if (left + rect.width > vw) left = mouseX - rect.width - offset;
   if (top + rect.height > vh) top = mouseY - rect.height - offset;
-  tooltipEl.style.left = `${left}px`; tooltipEl.style.top = `${top}px`;
+  el.style.left = `${left}px`; el.style.top = `${top}px`;
 }
 
 export function renderPickTooltip(attacker, targets, nemesi) {
