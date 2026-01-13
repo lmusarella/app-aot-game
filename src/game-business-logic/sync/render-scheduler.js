@@ -22,7 +22,9 @@ function buildTurnSignature(turnState) {
   return JSON.stringify({
     order: Array.isArray(turnState.order) ? turnState.order : [],
     currentIndex: turnState.currentIndex ?? 0,
-    currentPlayerId: turnState.currentPlayerId ?? null
+    currentPlayerId: turnState.currentPlayerId ?? null,
+    phaseReady: !!turnState.phaseReady,
+    phase: turnState.phase ?? null
   });
 }
 

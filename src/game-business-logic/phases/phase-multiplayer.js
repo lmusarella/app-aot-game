@@ -1,6 +1,6 @@
 import { APP_STATE } from '../../core/app-state.js';
 import { GAME_STATE } from '../../core/data.js';
-import { advanceTurn } from '../turn-tracker.js';
+import { advanceTurn, renderTurnTracker } from '../turn-tracker.js';
 import { scheduleSave } from '../game-sync.js';
 
 export function isMultiplayer() {
@@ -26,6 +26,7 @@ export async function handleMultiplayerPhaseEnd(phase) {
         } else {
             advanceTurn();
         }
+        renderTurnTracker();
         scheduleSave('phase-turn', { force: true });
         return;
     }
@@ -38,5 +39,6 @@ export async function handleMultiplayerPhaseEnd(phase) {
     } else {
         advanceTurn();
     }
+    renderTurnTracker();
     scheduleSave('phase-turn', { force: true });
 }

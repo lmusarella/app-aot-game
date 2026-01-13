@@ -370,6 +370,7 @@ export const TurnEngine = {
             }
             ts.phaseDoneBy = [];
             ts.phaseReady = false;
+            ts.phase = p;
             GAME_STATE.turnState = ts;
         }
         //scheduleSave();
