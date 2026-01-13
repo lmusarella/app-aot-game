@@ -164,7 +164,7 @@ export function capModSum(...mods) {
 }
 // Cap per le STAT (non per i tiri): default 5 ma leggibile da config
 const getStatCapMax = () => DB?.SETTINGS?.balance?.modCap ?? 5;
-const getStatCapMin = () => DB?.SETTINGS?.balance?.modCap ?? -5; 
+const getStatCapMin = () => -(DB?.SETTINGS?.balance?.modCap ?? 5); 
 // Se vuoi anche un pavimento tipo -5, metti -5 al posto di -Infinity.
 
 /**
