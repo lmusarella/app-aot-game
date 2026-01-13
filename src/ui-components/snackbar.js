@@ -1,5 +1,5 @@
 const queue = [];
-const region = document.getElementById('snackbar-region');
+const getRegion = () => document.getElementById('snackbar-region');
 
 function createSnack({ message, type = 'info', duration = 3000, actionText = null, onAction = null }) {
   const el = document.createElement('div');
@@ -24,6 +24,10 @@ function createSnack({ message, type = 'info', duration = 3000, actionText = nul
   el.append(icon, msg);
 
   let acted = false;
+  let dismissed = false;
+  let autoTimer = null;
+  let remaining = duration;
+  let start = null;
 
   if (actionText) {
     const actionBtn = document.createElement('button');
@@ -40,10 +44,31 @@ function createSnack({ message, type = 'info', duration = 3000, actionText = nul
 
   el.appendChild(close);
 
+  const clearAutoDismiss = () => {
+    if (autoTimer) {
+      clearTimeout(autoTimer);
+      autoTimer = null;
+    }
+  };
+
+  const scheduleAutoDismiss = (delay) => {
+    clearAutoDismiss();
+    start = Date.now();
+    autoTimer = setTimeout(() => {
+      if (!acted) dismiss(el);
+    }, delay);
+  };
+
   function dismiss(target) {
+    if (dismissed) return;
+    dismissed = true;
+    clearAutoDismiss();
     target.style.animation = 'sb-exit .14s ease-in forwards';
     setTimeout(() => {
-      region.removeChild(target);
+      const region = getRegion();
+      if (region && target.parentNode === region) {
+        region.removeChild(target);
+      }
 
       showNext();
     }, 140);
@@ -57,11 +82,16 @@ function createSnack({ message, type = 'info', duration = 3000, actionText = nul
 
   close.addEventListener('click', () => dismiss(el));
 
-  const t = setTimeout(() => { if (!acted) dismiss(el); }, duration);
+  scheduleAutoDismiss(duration);
 
-  let remaining = duration, start;
-  el.addEventListener('mouseenter', () => { clearTimeout(t); remaining -= (Date.now() - start || 0); });
-  el.addEventListener('mouseleave', () => { start = Date.now(); setTimeout(() => { if (!acted) dismiss(el); }, remaining); });
+  el.addEventListener('mouseenter', () => {
+    remaining -= (Date.now() - start || 0);
+    clearAutoDismiss();
+  });
+  el.addEventListener('mouseleave', () => {
+    start = Date.now();
+    scheduleAutoDismiss(remaining);
+  });
 
   window.addEventListener('keydown', onEsc);
 
@@ -72,6 +102,8 @@ function showNext() {
   const item = queue.shift();
   if (!item) return;
   const el = createSnack(item);
+  const region = getRegion();
+  if (!region) return;
   region.appendChild(el);
 }
 

@@ -54,9 +54,10 @@ const PHASE_UI = {
     }
 };
 
-const btnStart = document.getElementById('btn-start');
+let btnStart = null;
 
 export function initPhasesListeners() {
+  btnStart = document.getElementById('btn-start');
   btnStart?.addEventListener('click', async () => {
     const mode = btnStart.dataset.mode;
 
