@@ -12,21 +12,52 @@ import { stopRoomPresence } from '../pages/room/room-ui.js';
 import { handleAllyDeath } from '../../game-business-logic/entity/deaths.js';
 import { initGameForSinglePlayer } from '../../game-business-logic/game-sync.js';
 
-const missionCardHead = document.getElementById('mission-head');
-const btnReset = document.getElementById('btn-reset-game');
+let missionCardHead = null;
+let btnReset = null;
 
-const elPlay = document.getElementById('t-play');
-const elReset = document.getElementById('t-reset');
-const elTime = document.getElementById('t-time');
-const elTimer = document.querySelector('.timer');
+let elPlay = null;
+let elReset = null;
+let elTime = null;
+let elTimer = null;
 
-const elDec = document.getElementById('m-dec');
-const elInc = document.getElementById('m-inc');
-const btnLeaveRoom = document.getElementById('btn-leave-room');
-const elGameMode = document.getElementById('hdr-game-mode');
-const elPhaseLabel = document.getElementById('phase-label');
+let elDec = null;
+let elInc = null;
+let btnLeaveRoom = null;
+let elGameMode = null;
+let elPhaseLabel = null;
+
+function cacheHeaderElements() {
+    missionCardHead = document.getElementById('mission-head');
+    btnReset = document.getElementById('btn-reset-game');
+
+    elPlay = document.getElementById('t-play');
+    elReset = document.getElementById('t-reset');
+    elTime = document.getElementById('t-time');
+    elTimer = document.querySelector('.timer');
+
+    elDec = document.getElementById('m-dec');
+    elInc = document.getElementById('m-inc');
+    btnLeaveRoom = document.getElementById('btn-leave-room');
+    elGameMode = document.getElementById('hdr-game-mode');
+    elPhaseLabel = document.getElementById('phase-label');
+
+    return {
+        missionCardHead,
+        btnReset,
+        elPlay,
+        elReset,
+        elTime,
+        elTimer,
+        elDec,
+        elInc,
+        btnLeaveRoom,
+        elGameMode,
+        elPhaseLabel
+    };
+}
 
 export function renderHeader() {
+    cacheHeaderElements();
     renderMissionUI();
     renderTimerUI();
     renderGameModeBadge();
@@ -63,6 +94,7 @@ export function renderPhaseLabel() {
 
 // Render UI timer
 export function renderTimerUI() {
+    cacheHeaderElements();
     if (elTime) elTime.textContent = fmtClock(GAME_STATE.missionState.remainingSec);
     if (elPlay) elPlay.textContent = GAME_STATE.missionState.ticking ? '⏸' : '▶';
     if (elTimer) {
@@ -117,6 +149,13 @@ export function resetTimer() {
 }
 
 export function initHeaderListeners() {
+    const elements = cacheHeaderElements();
+    if (!elements.btnReset) {
+        throw new Error('Header reset button not found. Verify header.html is loaded before initHeaderListeners.');
+    }
+    if (!elements.missionCardHead) {
+        throw new Error('Mission card header not found. Verify leftbar.html is loaded before initHeaderListeners.');
+    }
     document.addEventListener('resetGame', resetGame);
     btnReset.addEventListener('click', async () => {
         const ok = await confirmDialog({
