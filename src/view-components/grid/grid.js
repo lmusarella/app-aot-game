@@ -23,20 +23,25 @@ const baseHpOverride = new Map();
 
 export const grid = document.getElementById("hex-grid");
 
-const alliesEl = document.getElementById("bench-allies");
-const enemiesEl = document.getElementById("bench-enemies");
-const wallsEl = document.getElementById("bench-walls");
-const countAlliesEl = document.getElementById("count-allies");
-const countEnemiesEl = document.getElementById("count-enemies");
-const countWallsEl = document.getElementById("count-walls");
+function getBenchElements() {
+    return {
+        alliesEl: document.getElementById("bench-allies"),
+        enemiesEl: document.getElementById("bench-enemies"),
+        wallsEl: document.getElementById("bench-walls"),
+        countAlliesEl: document.getElementById("count-allies"),
+        countEnemiesEl: document.getElementById("count-enemies"),
+        countWallsEl: document.getElementById("count-walls")
+    };
+}
 export function renderBenches() {
+    const { alliesEl, enemiesEl, wallsEl, countAlliesEl, countEnemiesEl, countWallsEl } = getBenchElements();
     renderBenchSection(alliesEl, GAME_STATE.alliesRoster);
     renderBenchSection(enemiesEl, GAME_STATE.giantsRoster);
     renderBenchSection(wallsEl, GAME_STATE.walls, true);
 
-    countAlliesEl.textContent = `${GAME_STATE.alliesRoster.length} unità`;
-    countEnemiesEl.textContent = `${GAME_STATE.giantsRoster.length} unità`;
-    countWallsEl.textContent = `${GAME_STATE.walls.length} mura`;
+    if (countAlliesEl) countAlliesEl.textContent = `${GAME_STATE.alliesRoster.length} unità`;
+    if (countEnemiesEl) countEnemiesEl.textContent = `${GAME_STATE.giantsRoster.length} unità`;
+    if (countWallsEl) countWallsEl.textContent = `${GAME_STATE.walls.length} mura`;
 }
 function benchClickFocusAndTop(u) {
     const unitId = u.id;
@@ -88,6 +93,7 @@ function isOnField(unitId) {
     return GAME_STATE.spawns?.some(s => Array.isArray(s.unitIds) ? s.unitIds.includes(unitId) : s.unitId === unitId) || false;
 }
 function renderBenchSection(container, units, readOnly = false) {
+    if (!container) return;
     container.textContent = "";
     units.forEach(u => {
         const card = document.createElement("div");
