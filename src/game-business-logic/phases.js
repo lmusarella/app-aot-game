@@ -70,7 +70,15 @@ export const TurnEngine = {
     init() {
         document.body.dataset.phase = this.phase; // utile anche per CSS mirato
         applyPhaseUI(this.phase);
-        renderStartButton(btnStart, { phase: this.phase, round: this.round });
+        const { isMyTurn } = getTurnInfo();
+        renderStartButton(btnStart, {
+            phase: this.phase,
+            round: this.round,
+            isMultiplayer: isMultiplayer(),
+            isMyTurn,
+            phaseReady: !!GAME_STATE.turnState?.phaseReady,
+            isCommander: !!APP_STATE.roomPlayers?.find(player => player.user_id === APP_STATE.user?.id)?.is_commander
+        });
         renderPhaseLabel();
 
         if (this.phase !== 'idle') {
@@ -88,7 +96,15 @@ export const TurnEngine = {
         this.phase = p;
         document.body.dataset.phase = p; // utile anche per CSS mirato
         applyPhaseUI(p);
-        renderStartButton(btnStart, { phase: p, round: this.round });
+        const { isMyTurn } = getTurnInfo();
+        renderStartButton(btnStart, {
+            phase: p,
+            round: this.round,
+            isMultiplayer: isMultiplayer(),
+            isMyTurn,
+            phaseReady: !!GAME_STATE.turnState?.phaseReady,
+            isCommander: !!APP_STATE.roomPlayers?.find(player => player.user_id === APP_STATE.user?.id)?.is_commander
+        });
         renderPhaseLabel();
         if (isMultiplayer()) {
             const ts = GAME_STATE.turnState || {};
@@ -97,12 +113,27 @@ export const TurnEngine = {
                 ts.currentPlayerId = ts.order[0] || null;
             }
             ts.phaseDoneBy = [];
+            ts.phaseReady = false;
             GAME_STATE.turnState = ts;
         }
         //scheduleSave();
     },
 
     async startPhase(phase) {
+        if (isMultiplayer()) {
+            const ts = GAME_STATE.turnState || {};
+            if (phase === 'setup' && ts.phaseReady) {
+                this.setPhase('move_phase');
+                showPhaseBanner({
+                    text: 'FASE DI MOVIMENTO',
+                    subtext: `Effettua 2 movimenti, poi termina la tua fase.`,
+                    theme: 'blue',
+                    autoDismissMs: 6000
+                });
+                startTimer();
+                return;
+            }
+        }
         // entra in setup (senza limiti di movimento)
 
         if (phase === 'idle') {
@@ -128,13 +159,22 @@ export const TurnEngine = {
             });
 
             setTimeout(() => {
-                // Esempio: fase combattimento
-                showPhaseBanner({
-                    text: 'FASE DI MOVIMENTO',
-                    subtext: `Posiziona la tua squadra in griglia`,
-                    theme: 'blue',
-                    autoDismissMs: 3500
-                });
+                if (isMultiplayer()) {
+                    showPhaseBanner({
+                        text: 'FASE DI SETUP',
+                        subtext: 'Posiziona le truppe e termina il setup.',
+                        theme: 'blue',
+                        autoDismissMs: 3500
+                    });
+                } else {
+                    // Esempio: fase combattimento
+                    showPhaseBanner({
+                        text: 'FASE DI MOVIMENTO',
+                        subtext: `Posiziona la tua squadra in griglia`,
+                        theme: 'blue',
+                        autoDismissMs: 3500
+                    });
+                }
 
                 if (!this.teamCreated) {
                     try {

@@ -16,7 +16,21 @@ export async function handleMultiplayerPhaseEnd(phase) {
     if (!Array.isArray(ts.phaseDoneBy)) ts.phaseDoneBy = [];
     if (!ts.phaseDoneBy.includes(myId)) ts.phaseDoneBy.push(myId);
 
-    if (ts.phaseDoneBy.length >= order.length) {
+    const allDone = ts.phaseDoneBy.length >= order.length;
+
+    if (phase === 'setup' || phase === 'move_phase') {
+        if (allDone) {
+            ts.phaseReady = true;
+            ts.currentIndex = 0;
+            ts.currentPlayerId = order[0] || null;
+        } else {
+            advanceTurn();
+        }
+        scheduleSave('phase-turn', { force: true });
+        return;
+    }
+
+    if (allDone) {
         ts.phaseDoneBy = [];
         ts.currentIndex = 0;
         ts.currentPlayerId = order[0] || null;

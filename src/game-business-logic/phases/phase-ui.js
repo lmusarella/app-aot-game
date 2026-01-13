@@ -57,16 +57,26 @@ export function applyPhaseUI(phase) {
     );
 }
 
-export function renderStartButton(button, { phase, round }) {
+export function renderStartButton(button, { phase, round, isMultiplayer = false, isMyTurn = true, phaseReady = false, isCommander = false }) {
     if (!button) return;
     if (phase === 'idle') {
         button.hidden = false;
         button.dataset.mode = 'start';
         button.textContent = 'INIZIA MISSIONE';
     } else if (phase === 'setup') {
-        button.hidden = false;
-        button.dataset.mode = 'end';
-        button.textContent = 'TERMINA SETUP';
+        if (isMultiplayer && phaseReady) {
+            if (isCommander) {
+                button.hidden = false;
+                button.dataset.mode = 'start';
+                button.textContent = 'INIZIA MOVIMENTO';
+            } else {
+                button.hidden = true;
+            }
+        } else {
+            button.hidden = false;
+            button.dataset.mode = 'end';
+            button.textContent = 'TERMINA SETUP';
+        }
     } else if (phase === 'event_mission') {
         button.hidden = false;
         button.dataset.mode = 'start';
@@ -80,9 +90,19 @@ export function renderStartButton(button, { phase, round }) {
         button.dataset.mode = 'start';
         button.textContent = `INIZIA ${round + 1}° ROUND`;
     } else if (phase === 'move_phase') {
-        button.hidden = false;
-        button.dataset.mode = 'end';
-        button.textContent = 'TERMINA FASE MOVIMENTO';
+        if (isMultiplayer && phaseReady) {
+            if (isCommander) {
+                button.hidden = false;
+                button.dataset.mode = 'end';
+                button.textContent = 'FASE MOVIMENTO COMPLETATA';
+            } else {
+                button.hidden = true;
+            }
+        } else {
+            button.hidden = false;
+            button.dataset.mode = 'end';
+            button.textContent = 'TERMINA FASE MOVIMENTO';
+        }
     } else if (phase === 'attack_phase') {
         button.hidden = false;
         button.dataset.mode = 'end';
@@ -94,5 +114,13 @@ export function renderStartButton(button, { phase, round }) {
     }
     else {
         button.hidden = true; // nelle altre fasi non serve
+    }
+
+    if (isMultiplayer && phase === 'move_phase' && phaseReady) {
+        button.disabled = true;
+    } else if (isMultiplayer && !isMyTurn && !button.hidden) {
+        button.disabled = true;
+    } else {
+        button.disabled = false;
     }
 }
