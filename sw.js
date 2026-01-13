@@ -1,5 +1,5 @@
 // sw.js - Service Worker base per PWA
-const CACHE_NAME = 'aot-cache-v3';
+const CACHE_NAME = 'aot-cache-v4';
 const BASE_ASSETS = [
   './',
   './index.html',
@@ -188,7 +188,6 @@ const precacheAssets = async () => {
 // Installazione: cache iniziale
 self.addEventListener('install', (event) => {
   event.waitUntil(precacheAssets());
-  self.skipWaiting();
 });
 
 // Attivazione: pulizia cache vecchie
@@ -227,7 +226,13 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('message', (event) => {
-  if (event.data?.type !== 'PRECACHE') return;
+  const { type } = event.data || {};
+  if (type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+
+  if (type !== 'PRECACHE') return;
   const replyPort = event.ports?.[0];
   event.waitUntil(
     precacheAssets().then(() => {
