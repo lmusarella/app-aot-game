@@ -1,22 +1,39 @@
 // ui/ui-helpers.js
 
 // Screen
-const screenLogin = document.getElementById('screen-login')
-const screenLobby = document.getElementById('screen-lobby')
-const screenRoom  = document.getElementById('screen-room')
+let screenLogin = null
+let screenLobby = null
+let screenRoom = null
 
 
 // Messaggi login
-const loginMsg = document.getElementById('login-msg')
+let loginMsg = null
+
+function cacheScreens() {
+  screenLogin = document.getElementById('screen-login')
+  screenLobby = document.getElementById('screen-lobby')
+  screenRoom = document.getElementById('screen-room')
+  return { screenLogin, screenLobby, screenRoom }
+}
+
+function getLoginMsg() {
+  loginMsg = document.getElementById('login-msg')
+  return loginMsg
+}
 
 function showScreen(name) {
-  screenLogin.classList.add('hidden')
-  screenLobby.classList.add('hidden')
-  screenRoom.classList.add('hidden')
+  const screens = cacheScreens()
+  if (!screens.screenLogin || !screens.screenLobby || !screens.screenRoom) {
+    throw new Error('Screen containers not found. Verify view HTML is loaded before calling showScreen.')
+  }
 
-  if (name === 'login') screenLogin.classList.remove('hidden')
-  if (name === 'lobby') screenLobby.classList.remove('hidden')
-  if (name === 'room')  screenRoom.classList.remove('hidden')
+  screens.screenLogin.classList.add('hidden')
+  screens.screenLobby.classList.add('hidden')
+  screens.screenRoom.classList.add('hidden')
+
+  if (name === 'login') screens.screenLogin.classList.remove('hidden')
+  if (name === 'lobby') screens.screenLobby.classList.remove('hidden')
+  if (name === 'room') screens.screenRoom.classList.remove('hidden')
 }
 
 function validateEmail(email) {
@@ -24,20 +41,26 @@ function validateEmail(email) {
 }
 
 function clearMsg() {
-  loginMsg.textContent = ''
-  loginMsg.classList.remove('msg--error', 'msg--success')
+  const msg = getLoginMsg()
+  if (!msg) return
+  msg.textContent = ''
+  msg.classList.remove('msg--error', 'msg--success')
 }
 
 function setError(msg) {
-  loginMsg.textContent = msg
-  loginMsg.classList.remove('msg--success')
-  loginMsg.classList.add('msg--error')
+  const msgEl = getLoginMsg()
+  if (!msgEl) return
+  msgEl.textContent = msg
+  msgEl.classList.remove('msg--success')
+  msgEl.classList.add('msg--error')
 }
 
 function setSuccess(msg) {
-  loginMsg.textContent = msg
-  loginMsg.classList.remove('msg--error')
-  loginMsg.classList.add('msg--success')
+  const msgEl = getLoginMsg()
+  if (!msgEl) return
+  msgEl.textContent = msg
+  msgEl.classList.remove('msg--error')
+  msgEl.classList.add('msg--success')
 }
 
 function setLoading(button, isLoading, originalText) {
