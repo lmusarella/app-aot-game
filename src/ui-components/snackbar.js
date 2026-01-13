@@ -1,5 +1,6 @@
 const queue = [];
 const getRegion = () => document.getElementById('snackbar-region');
+let isShowing = false;
 
 function createSnack({ message, type = 'info', duration = 3000, actionText = null, onAction = null }) {
   const el = document.createElement('div');
@@ -70,6 +71,7 @@ function createSnack({ message, type = 'info', duration = 3000, actionText = nul
         region.removeChild(target);
       }
 
+      isShowing = false;
       showNext();
     }, 140);
 
@@ -99,11 +101,13 @@ function createSnack({ message, type = 'info', duration = 3000, actionText = nul
 }
 
 function showNext() {
+  if (isShowing) return;
   const item = queue.shift();
   if (!item) return;
   const el = createSnack(item);
   const region = getRegion();
   if (!region) return;
+  isShowing = true;
   region.appendChild(el);
 }
 

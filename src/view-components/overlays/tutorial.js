@@ -132,7 +132,8 @@ export async function showTutorialPopupViaDialog({ startIndex = 0, force = false
         confirmText,
         cancelText,
         cancellable: true,
-        danger: true
+        danger: true,
+        allowHtml: true
       });
 
       if (res) {
