@@ -67,6 +67,10 @@ export function mountUnitModsUI() {
 
     const rowsBox = root.querySelector('#um-rows');
 
+    if (!btnPicker || !menu || !imgAva || !nameEl || !roleEl || !btnReset || !rowsBox) {
+        return;
+    }
+
     // stato locale
     let units = unitListForPicker();
     let current = units[0] || null;
@@ -163,6 +167,10 @@ export function mountUnitModsUI() {
         const valChip = rowsBox.querySelector('#um-value-chip');
         const editorRow = rowsBox.querySelector('.um-editor-row');
         const addBtn = rowsBox.querySelector('#um-add');
+
+        if (!scopeSel || !roundsInput || !roundsChip || !valInput || !valChip || !addBtn) {
+            return;
+        }
 
         // init chips
         valChip.textContent = fmtSigned(parseInt(valInput.value || 0, 10));
@@ -438,8 +446,7 @@ export const renderRollMods = () => {
 
 export function initModsListeners() {
     const box = getBoxMods();
-    if (!box) return;
-    box.addEventListener('click', (e) => {
+    box?.addEventListener('click', (e) => {
         const btn = e.target.closest('.rm-btn');
 
         if (!btn) return;
