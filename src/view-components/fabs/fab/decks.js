@@ -49,7 +49,8 @@ export function drawCard(type /* 'event' | 'consumable' */) {
     if (d.discard.length === 0) return null;
     d.draw = shuffle(d.discard.splice(0));
   }
-  const pop = d.draw.pop();
+  const idx = Math.floor(Math.random() * d.draw.length);
+  const pop = d.draw.splice(idx, 1)[0] ?? null;
   scheduleSave('fab');
   updateFabDeckCounters();
   return pop;

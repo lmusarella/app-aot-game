@@ -9,6 +9,8 @@ import { giantFallQuake } from './effects/screenQuake.js';
 import { giantDust } from './effects/giantDust.js';
 import showDeathScreen from './effects/deathOverlay.js';
 import showVictoryScreen from './effects/victoryOverlay.js';
+import { showCardDrawEffect, showCardUseEffect } from './effects/cardFxOverlay.js';
+import lightningStrike from './effects/lightningStrike.js';
 
 const processedIds = new Set();
 const MAX_EVENTS = 50;
@@ -67,6 +69,12 @@ function handleEvent(ev) {
       break;
     case 'death':
       handleDeathEvent(ev);
+      break;
+    case 'card_draw':
+      handleCardDrawEvent(ev);
+      break;
+    case 'card_use':
+      handleCardUseEvent(ev);
       break;
     default:
       break;
@@ -147,4 +155,24 @@ function handleDeathEvent(ev) {
     autoDismissMs: 3000,
   });
   log(`${name} è morto/a.`, 'error', 2500, true);
+}
+
+function handleCardDrawEvent(ev) {
+  const deckType = ev.payload?.deckType || 'event';
+  showCardDrawEffect();
+  log(`Un compagno ha pescato una carta ${deckType}.`, 'info', 2500, true);
+}
+
+function handleCardUseEvent(ev) {
+  const effect = ev.payload?.effect || 'use';
+  if (effect === 'spawn') {
+    lightningStrike();
+    setTimeout(() => lightningStrike({ angleDeg: 80 }), 140);
+    setTimeout(() => lightningStrike({ angleDeg: 100 }), 280);
+    log('Un compagno ha attivato una carta spawn.', 'warning', 2500, true);
+    return;
+  }
+  const kind = ev.payload?.kind || 'event';
+  showCardUseEffect(kind);
+  log('Un compagno ha attivato una carta.', 'info', 2500, true);
 }

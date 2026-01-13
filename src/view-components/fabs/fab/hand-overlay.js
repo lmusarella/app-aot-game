@@ -5,6 +5,8 @@ import { cardSheetHTML } from '../../../ui-components/ui-helpers.js';
 import { updateFabDeckCounters } from './decks.js';
 import { showCardDrawEffect } from '../../../game-business-logic/effects/cardFxOverlay.js';
 import { applyCardEffect } from '../../../game-business-logic/cards/card-effects.js';
+import { pushGameEvent } from '../../../game-business-logic/event-manager.js';
+import { scheduleSave } from '../../../game-business-logic/game-sync.js';
 
 export function showDrawnCard(deckType, card) {
   const root = document.getElementById('hand-overlay');
@@ -12,6 +14,8 @@ export function showDrawnCard(deckType, card) {
   const stage = root?.querySelector('.hand-stage');
   if (!root || !strip || !stage) return;
   showCardDrawEffect();
+  pushGameEvent('card_draw', { deckType });
+  scheduleSave('fab');
   stage.classList.add('hand-stage--single');
   strip.classList.remove('hand-strip');
   strip.innerHTML = '';
