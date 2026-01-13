@@ -16,43 +16,74 @@ import { initGameForRoom, startPresenceHeartbeat, stopPresenceHeartbeat } from '
 // DOM SPECIFICI ROOM
 // =========================
 
-const roomIdLabel       = document.getElementById('room-id-label')
-const roomPlayersList   = document.getElementById('room-players-list')
-const roomPlayersMsg    = document.getElementById('room-players-msg')
-const roomPhaseLabel    = document.getElementById('room-phase')
+let roomIdLabel = null
+let roomPlayersList = null
+let roomPlayersMsg = null
+let roomPhaseLabel = null
 
-const roomUnitBox       = document.getElementById('room-unit-box')
-const roomUnitLabel     = document.getElementById('room-unit-label')
-const roomUnitGrid      = document.getElementById('room-unit-grid')
-const roomUnitSelect    = document.getElementById('room-unit-select')
+let roomUnitBox = null
+let roomUnitLabel = null
+let roomUnitGrid = null
+let roomUnitSelect = null
 
-const btnRoomEnterField = document.getElementById('btn-room-enter-field')
-const btnRoomAssign     = document.getElementById('btn-room-assign')
-const btnRoomReadyUnit  = document.getElementById('btn-room-ready-unit')
-const btnRoomToGame     = document.getElementById('btn-room-to-game')
-const btnRoomBackLobby  = document.getElementById('btn-room-back-lobby')
+let btnRoomEnterField = null
+let btnRoomAssign = null
+let btnRoomReadyUnit = null
+let btnRoomToGame = null
+let btnRoomBackLobby = null
 
+let currentRoom = null
+let roomDomReady = false
+let roomButtonsBound = false
 
+function ensureRoomDom() {
+  if (roomDomReady) return true
+  roomIdLabel = document.getElementById('room-id-label')
+  roomPlayersList = document.getElementById('room-players-list')
+  roomPlayersMsg = document.getElementById('room-players-msg')
+  roomPhaseLabel = document.getElementById('room-phase')
+  roomUnitBox = document.getElementById('room-unit-box')
+  roomUnitLabel = document.getElementById('room-unit-label')
+  roomUnitGrid = document.getElementById('room-unit-grid')
+  roomUnitSelect = document.getElementById('room-unit-select')
+  btnRoomEnterField = document.getElementById('btn-room-enter-field')
+  btnRoomAssign = document.getElementById('btn-room-assign')
+  btnRoomReadyUnit = document.getElementById('btn-room-ready-unit')
+  btnRoomToGame = document.getElementById('btn-room-to-game')
+  btnRoomBackLobby = document.getElementById('btn-room-back-lobby')
+  currentRoom = document.getElementById('current-room')
 
-// Room buttons
-if (btnRoomEnterField) {
+  const required = [
+    roomIdLabel,
+    roomPlayersList,
+    roomPlayersMsg,
+    roomPhaseLabel,
+    roomUnitBox,
+    roomUnitLabel,
+    roomUnitGrid,
+    roomUnitSelect,
+    btnRoomEnterField,
+    btnRoomAssign,
+    btnRoomReadyUnit,
+    btnRoomToGame,
+    btnRoomBackLobby
+  ]
+
+  roomDomReady = required.every(Boolean)
+  if (!roomDomReady) return false
+  bindRoomButtons()
+  return true
+}
+
+function bindRoomButtons() {
+  if (roomButtonsBound) return
   btnRoomEnterField.addEventListener('click', onEnterField)
-}
-if (btnRoomAssign) {
   btnRoomAssign.addEventListener('click', onAssignRolesAndUnits)
-}
-if (btnRoomReadyUnit) {
   btnRoomReadyUnit.addEventListener('click', onReadyUnit)
-}
-if (btnRoomBackLobby) {
   btnRoomBackLobby.addEventListener('click', onRoomBackToLobby)
-}
-if (btnRoomToGame) {
   btnRoomToGame.addEventListener('click', onRoomGoToGame)
+  roomButtonsBound = true
 }
-
-// questo è lo stesso elemento usato in lobby
-const currentRoom       = document.getElementById('current-room')
 
 // =========================
 // STATO ROOM LOCALE
@@ -66,6 +97,7 @@ let myRoomRow = null
 // =========================
 
 function setPhase(text, loading = false) {
+  if (!ensureRoomDom()) return
   roomPhaseLabel.textContent = text
   roomPhaseLabel.classList.toggle('phase-loading', loading)
 }
@@ -132,6 +164,10 @@ export function stopRoomPresence() {
 // =========================
 
 export async function enterRoomScreen(roomId) {
+  if (!ensureRoomDom()) {
+    console.warn('[room] DOM non pronto, impossibile entrare nella stanza.')
+    return
+  }
   roomIdLabel.textContent = roomId
   roomPlayersList.innerHTML = ''
   roomPlayersMsg.textContent = 'Carico giocatori...'
@@ -154,6 +190,7 @@ export async function enterRoomScreen(roomId) {
 // =========================
 
 async function refreshRoomState() {
+  if (!ensureRoomDom()) return
   if (!APP_STATE.roomId) return
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
@@ -302,6 +339,7 @@ async function refreshRoomState() {
 // =========================
 
 function renderMyUnitBox(room, me) {
+  if (!ensureRoomDom()) return
   if (!me || room.status !== 'units_selection') {
     roomUnitBox.classList.add('hidden')
     return
@@ -388,6 +426,7 @@ function renderMyUnitBox(room, me) {
 }
 
 function updateUnitCardSelection() {
+  if (!ensureRoomDom()) return
   const selected = roomUnitSelect.value
   roomUnitGrid.querySelectorAll('.unit-card').forEach(card => {
     card.classList.toggle('selected', card.dataset.code === selected)
@@ -395,6 +434,7 @@ function updateUnitCardSelection() {
 }
 
 function renderRoomPlayersList(players, myId, roomStatus) {
+  if (!ensureRoomDom()) return
   const now = Date.now()
   roomPlayersList.innerHTML = ''
 
@@ -502,6 +542,7 @@ function formatElapsed(ms) {
 // =========================
 
 export async function onEnterField() {
+  if (!ensureRoomDom()) return
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !APP_STATE.roomId) return
 
@@ -602,6 +643,7 @@ export async function onAssignRolesAndUnits() {
 }
 
 export async function onReadyUnit() {
+  if (!ensureRoomDom()) return
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !APP_STATE.roomId || !myRoomRow) return
 
@@ -656,6 +698,7 @@ export function onRoomGoToGame() {
 // =========================
 
 export async function onRoomBackToLobby() {
+  ensureRoomDom()
   stopRoomLoops()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -684,11 +727,11 @@ export async function onRoomBackToLobby() {
   APP_STATE.roomId = null
   APP_STATE.role   = null
   APP_STATE.gameMode = null
-  currentRoom.textContent = ''
-  roomIdLabel.textContent = ''
-  roomPlayersList.innerHTML = ''
-  roomPlayersMsg.textContent = ''
-  roomPhaseLabel.textContent = ''
+  if (currentRoom) currentRoom.textContent = ''
+  if (roomIdLabel) roomIdLabel.textContent = ''
+  if (roomPlayersList) roomPlayersList.innerHTML = ''
+  if (roomPlayersMsg) roomPlayersMsg.textContent = ''
+  if (roomPhaseLabel) roomPhaseLabel.textContent = ''
 
   showScreen('lobby')
 }

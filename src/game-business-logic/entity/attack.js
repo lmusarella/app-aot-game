@@ -104,9 +104,15 @@ async function resolveAttack(attackerId, targetId) {
 
   await safePlayBg('./assets/sounds/duel_sound.mp3');
   showVersusOverlay(a, t);
+  pushGameEvent('combat_start', { attackerId: a.id, targetId: t.id });
+  scheduleSave('entity');
 
   const d20roll = t.role === 'wall' ? d(20) : await rollD20OrAbort();
-  if (d20roll == null) return;
+  if (d20roll == null) {
+    hideVersusOverlay();
+    pushGameEvent('combat_cancel', { attackerId: a.id, targetId: t.id });
+    return;
+  }
 
   const ctx = buildContext(a, t, d20roll);
 
@@ -128,6 +134,14 @@ async function resolveAttack(attackerId, targetId) {
   }
 
   showSummaryOverlay(ctx, outcome);
+  pushGameEvent('combat_summary', {
+    attackerId: a.id,
+    targetId: t.id,
+    badgeText: outcome.badgeText,
+    badgeClass: outcome.badgeClass,
+    summaryLines: outcome.summaryLines,
+    roll: { d20: d20roll, total: ctx.roll.d20Total }
+  });
 
   for (let i = 0; i < Math.min(2, outcome.summaryLines.length); i++) {
     log(outcome.summaryLines[i], 'info', 3000, true);
@@ -207,6 +221,14 @@ async function resolveWallAttack(ctx) {
   const tHp = (t.currHp ?? t.hp) - dmg;
   setUnitHp(t.id, tHp);
   pushGameEvent('attack', { attackerId: a.id, targetId: t.id, effect: 'wall' });
+  pushGameEvent('combat_summary', {
+    attackerId: a.id,
+    targetId: t.id,
+    badgeText: 'Colpito',
+    badgeClass: 'atk-win',
+    summaryLines: [`${a.name} infligge ${dmg} danni alle mura.`],
+    roll: { d20: null, total: null }
+  });
 
   openAccordionForRole(t.role);
   focusUnitOnField(t.id);
@@ -281,6 +303,11 @@ async function resolveHumanVsGiant(ctx) {
           text: "ABILITA' ATTIVATA",
           subtext: `${giant.name} usa ${ability.name || 'Abilità'}`,
           theme: 'orange', ringAmp: 1.0, autoDismissMs: 3500
+        });
+        pushGameEvent('giant_ability', {
+          giantId,
+          name: `${giant.name} usa ${ability.name || 'Abilità'}`,
+          sfx: ability.sfx || './assets/sounds/abilita_gigante.mp3'
         });
         try { playSfx(ability.sfx || './assets/sounds/abilita_gigante.mp3', { volume: 0.9 }); } catch { }
         await awaitWait(3500);
