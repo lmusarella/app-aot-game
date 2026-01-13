@@ -205,11 +205,15 @@ async function loadAvailableRooms() {
   if (roomIds.length > 0) {
     const { data: players, error: errPlayers } = await supabase
       .from('room_players')
-      .select('room_id')
+      .select('room_id, last_seen')
       .in('room_id', roomIds)
 
     if (!errPlayers && players) {
+      const now = Date.now()
       players.forEach(p => {
+        const last = p.last_seen ? new Date(p.last_seen).getTime() : 0
+        const online = last && now - last < 20000
+        if (!online) return
         countByRoom[p.room_id] = (countByRoom[p.room_id] || 0) + 1
       })
     }
@@ -257,7 +261,7 @@ function renderRoomList(targetList, rooms, countByRoom, actionBuilder) {
     const metaEl = document.createElement('div')
     metaEl.className = 'room-list-meta'
     const playerCount = countByRoom[room.id] || 0
-    metaEl.textContent = `Giocatori: ${playerCount} • Stato: ${humanRoomStatus(room.status)}`
+    metaEl.textContent = `Giocatori online: ${playerCount} • Stato: ${humanRoomStatus(room.status)}`
 
     info.appendChild(nameEl)
     info.appendChild(metaEl)

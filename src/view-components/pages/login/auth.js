@@ -334,20 +334,6 @@ async function restoreLocation(user) {
   }
 
   if (room.status === 'in_game') {
-    const enterExisting = await confirmDialog({
-      title: 'Partita trovata',
-      message: 'Vuoi rientrare nella partita in corso o restare in lobby?',
-      confirmText: 'Rientra in partita',
-      cancelText: 'Vai in lobby',
-      danger: false
-    })
-    if (!enterExisting) {
-      APP_STATE.roomId = null
-      APP_STATE.role = null
-      APP_STATE.gameMode = null
-      onUserLoggedIn(user)
-      return
-    }
     // recupero tutti i giocatori
     const { data: players, error: errPlayers } = await supabase
       .from('room_players')
@@ -366,6 +352,7 @@ async function restoreLocation(user) {
 
     // se per qualche motivo non ho ancora unità assegnata → torno alla room
     if (!meRow || !meRow.unit_code || !meRow.ready_unit) {
+      APP_STATE.gameMode = 'multiplayer'
       enterRoomScreen(roomId)
       return
     }

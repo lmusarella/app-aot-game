@@ -45,7 +45,11 @@ export function bindPresenceRealtime(roomId) {
       },
       handlePresenceChange
     )
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        handlePresenceChange();
+      }
+    });
 
   APP_STATE.presenceChannel = channel;
 }
