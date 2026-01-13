@@ -26,6 +26,17 @@ function renderCoreUI() {
     mountUnitModsUI();
 }
 
+function ensureWallSpawns() {
+    if (!DB?.SETTINGS?.gridSettings?.wall) return;
+    if (!Array.isArray(GAME_STATE.walls) || GAME_STATE.walls.length === 0) return;
+    const wallRows = Object.keys(DB.SETTINGS.gridSettings.wall || {}).map((r) => Number(r));
+    const hasWallSpawn = GAME_STATE.spawns?.some((spawn) => wallRows.includes(Number(spawn?.row)));
+    if (!hasWallSpawn) {
+        seedWallRows();
+        rebuildUnitIndex();
+    }
+}
+
 function restoreTimerState() {
     try {
         if (GAME_STATE.missionState.ticking) {
@@ -67,6 +78,7 @@ export function initRenderApp(booted) {
     }
 
     rebuildUnitIndex();
+    ensureWallSpawns();
     renderCoreUI();
     initTurnEngine(booted ? (GAME_STATE.turnEngine || {}) : {});
 }

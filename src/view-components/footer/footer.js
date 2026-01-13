@@ -5,16 +5,19 @@ import { levelFromXP, levelProgressPercent, getMalusRow } from '../../game-busin
 import { renderBonusMalus } from '../leftbar/mods.js';
 import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
 
-const xpDOM = {
-    fill: document.getElementById("xp-fill"),
-    pct: document.getElementById("xp-val"),
-    lvl: document.getElementById("lvl-val"),
-};
-
-const moraleDOM = {
-    fill: document.getElementById("morale-fill"),
-    pct: document.getElementById("morale-val"),
-};
+function getFooterElements() {
+    return {
+        xp: {
+            fill: document.getElementById("xp-fill"),
+            pct: document.getElementById("xp-val"),
+            lvl: document.getElementById("lvl-val"),
+        },
+        morale: {
+            fill: document.getElementById("morale-fill"),
+            pct: document.getElementById("morale-val"),
+        }
+    };
+}
 
 export const stack_screen = [];
 
@@ -88,7 +91,8 @@ export function addXP(delta) {
         for (let L = prevLevel + 1; L <= nextLevel; L++) {
             log(`Salito al livello ${L}!`, 'success');
             // evidenzia i bonus appena sbloccati (se presenti)
-            const unlocked = DB.SETTINGS.bonusTable.filter(b => b.lvl === L);
+            const bonusTable = DB?.SETTINGS?.bonusTable ?? [];
+            const unlocked = bonusTable.filter(b => b.lvl === L);
             unlocked.forEach(b => log(`Sbloccato: ${b.text}`, 'info'));
         }
     } else if (nextLevel < prevLevel) {
@@ -102,17 +106,18 @@ export function addXP(delta) {
 export function refreshXPUI() {
     const L = levelFromXP(GAME_STATE.xpMoraleState.xp);
     const pct = levelProgressPercent(GAME_STATE.xpMoraleState.xp, L);
-    if (xpDOM.fill) xpDOM.fill.style.width = pct + "%";
-    if (xpDOM.pct) xpDOM.pct.textContent = Math.round(pct) + "%";
-    if (xpDOM.lvl) xpDOM.lvl.textContent = "Lv. " + L;
+    const { xp } = getFooterElements();
+    if (xp.fill) xp.fill.style.width = pct + "%";
+    if (xp.pct) xp.pct.textContent = Math.round(pct) + "%";
+    if (xp.lvl) xp.lvl.textContent = "Lv. " + L;
     renderBonusMalus();
 }
 
 export function refreshMoraleUI() {
     const pct = Math.max(0, Math.min(100, Number(GAME_STATE.xpMoraleState.moralePct * 10) || 0));
-    
-    if (moraleDOM.fill) moraleDOM.fill.style.width = pct + "%";
-    if (moraleDOM.pct) moraleDOM.pct.textContent = Math.round(pct) + "%";
+    const { morale } = getFooterElements();
+    if (morale.fill) morale.fill.style.width = pct + "%";
+    if (morale.pct) morale.pct.textContent = Math.round(pct) + "%";
     renderBonusMalus();
 }
 

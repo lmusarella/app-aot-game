@@ -84,7 +84,7 @@ export {
   loginMsg, // se ti serve altrove
 };
 
-export { tooltipEl, initTooltipListeners, getUnitTooltipHTML, showTooltip, hideTooltip, renderPickTooltip } from './tooltip.js';
+export { tooltipEl, getTooltipEl, initTooltipListeners, getUnitTooltipHTML, showTooltip, hideTooltip, renderPickTooltip } from './tooltip.js';
 export { addLongPress } from './gestures.js';
 export { setupLeftAccordions, setupRightAccordions, openAccordionForRole, setupAccordions } from './accordions.js';
 export { setupLeftCollapse, initSidebarsListeners } from './sidebars.js';

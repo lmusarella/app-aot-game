@@ -1,7 +1,11 @@
-const leftEl = document.querySelector('.leftbar');
-const rightEl = document.querySelector('aside');
-const btnL = document.getElementById('toggle-left');
-const btnR = document.getElementById('toggle-right');
+function getSidebarElements() {
+  return {
+    leftEl: document.querySelector('.leftbar'),
+    rightEl: document.querySelector('aside'),
+    btnL: document.getElementById('toggle-left'),
+    btnR: document.getElementById('toggle-right')
+  };
+}
 
 export function setupLeftCollapse() {
   const btn = document.getElementById('toggle-left');
@@ -15,6 +19,8 @@ export function setupLeftCollapse() {
 };
 
 function applyClasses() {
+  const { leftEl, rightEl, btnL, btnR } = getSidebarElements();
+  if (!leftEl || !rightEl || !btnL || !btnR) return;
   const L = leftEl.classList.contains('collapsed');
   const R = rightEl.classList.contains('collapsed');
 
@@ -32,19 +38,23 @@ function applyClasses() {
 function toggleSide(side) {
   document.body.classList.add('manual-layout');
 
+  const { leftEl, rightEl } = getSidebarElements();
   const el = (side === 'left') ? leftEl : rightEl;
+  if (!el) return;
   el.classList.toggle('collapsed');
   applyClasses();
 }
 
 export function initSidebarsListeners() {
-  document.getElementById('toggle-left')?.addEventListener('click', () => toggleSide('left'));
-  document.getElementById('toggle-right')?.addEventListener('click', () => toggleSide('right'));
+  const { leftEl, rightEl, btnL, btnR } = getSidebarElements();
 
-  leftEl.addEventListener('click', () => {
+  btnL?.addEventListener('click', () => toggleSide('left'));
+  btnR?.addEventListener('click', () => toggleSide('right'));
+
+  leftEl?.addEventListener('click', () => {
     if (leftEl.classList.contains('collapsed')) toggleSide('left');
   });
-  rightEl.addEventListener('click', () => {
+  rightEl?.addEventListener('click', () => {
     if (rightEl.classList.contains('collapsed')) toggleSide('right');
   });
 }

@@ -1,3 +1,4 @@
 export async function initView() {
-  await import('./fab.js');
+  const { initFabs } = await import('./fab.js');
+  initFabs();
 }
