@@ -2,7 +2,7 @@
 import { supabase } from '../core/supabase/supabaseClient.js'
 import { APP_STATE, GAME_STATE, gameAPI, snapshot } from '../core/app-state.js'
 import { loadLocalGameState, saveLocalGameState } from '../core/data.js'
-import { getTurnInfo, initTurnTracker, startTurnCountdown, renderTurnTracker } from './turn-tracker.js';
+import { getTurnInfo, initTurnTracker, startTurnCountdown, renderTurnTracker, ensureMultiplayerTurnOrder } from './turn-tracker.js';
 import { initEventManager } from './event-manager.js';
 import { seedWallRows } from './entity/entity.js';
 import { bindPresenceRealtime, startPresenceHeartbeat, stopPresenceHeartbeat } from './sync/presence.js';
@@ -75,6 +75,7 @@ async function tryAutoStartMission(room) {
   if (!room || room.status !== 'in_game') return;
   if (GAME_STATE.turnEngine?.phase !== 'idle') return;
   if (GAME_STATE.turnEngine?.autoStarted) return;
+  ensureMultiplayerTurnOrder({ resetToCommander: true });
   const { isMyTurn } = getTurnInfo();
   if (!isMyTurn) return;
 

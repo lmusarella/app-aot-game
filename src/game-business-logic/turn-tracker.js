@@ -31,6 +31,65 @@ export function getTurnInfo() {
   };
 }
 
+function buildTurnOrder(players = []) {
+  return players
+    .filter(p => p.unit_code && p.ready_unit)
+    .sort((a, b) => {
+      if (!!a.is_commander === !!b.is_commander) return 0;
+      return a.is_commander ? -1 : 1;
+    })
+    .map(p => p.user_id);
+}
+
+function getCommanderOwnerId(players = []) {
+  const commanderUnit = GAME_STATE.alliesRoster?.find(u => u.role === 'commander');
+  if (commanderUnit?.owner_id) return commanderUnit.owner_id;
+  const commanderPlayer = players.find(p => p.is_commander);
+  return commanderPlayer?.user_id || null;
+}
+
+function normalizeTurnOrder(order = [], commanderId, resetToCommander) {
+  let next = order.slice();
+  if (commanderId) {
+    const idx = next.indexOf(commanderId);
+    if (idx === -1) {
+      next = [commanderId, ...next];
+    } else if (resetToCommander && idx > 0) {
+      next = next.slice(idx).concat(next.slice(0, idx));
+    }
+  }
+  return next;
+}
+
+export function ensureMultiplayerTurnOrder({ resetToCommander = false } = {}) {
+  if (APP_STATE.gameMode !== 'multiplayer') return false;
+
+  const ts = GAME_STATE.turnState || {};
+  const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
+  let order = Array.isArray(ts.order) ? ts.order.slice() : [];
+  if (order.length === 0) {
+    order = buildTurnOrder(players);
+  }
+  const commanderId = getCommanderOwnerId(players);
+  order = normalizeTurnOrder(order, commanderId, resetToCommander);
+
+  if (order.length === 0) return false;
+
+  const sameOrder = Array.isArray(ts.order) && ts.order.length === order.length && ts.order.every((id, idx) => id === order[idx]);
+  const changed = !sameOrder || (resetToCommander && ts.currentPlayerId !== order[0]);
+
+  if (!sameOrder) {
+    ts.order = order;
+  }
+  if (resetToCommander) {
+    ts.currentIndex = 0;
+    ts.currentPlayerId = order[0] || null;
+  }
+
+  GAME_STATE.turnState = ts;
+  return changed;
+}
+
 export function advanceTurn() {
   const ts = GAME_STATE.turnState;
   if (!ts || !Array.isArray(ts.order) || ts.order.length === 0) return;

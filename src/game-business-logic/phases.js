@@ -14,7 +14,7 @@ import lightningStrike from './effects/lightningStrike.js';
 // in cima
 import { guardCommanderAction } from '../core/permissions.js';
 import { APP_STATE } from '../core/app-state.js';
-import { getTurnInfo } from './turn-tracker.js';
+import { getTurnInfo, ensureMultiplayerTurnOrder } from './turn-tracker.js';
 import { scheduleSave } from './game-sync.js';
 import { applyPhaseUI, renderStartButton } from './phases/phase-ui.js';
 import { handleMultiplayerPhaseEnd, isMultiplayer } from './phases/phase-multiplayer.js';
@@ -106,6 +106,9 @@ export const TurnEngine = {
         // entra in setup (senza limiti di movimento)
 
         if (phase === 'idle') {
+            if (isMultiplayer()) {
+                ensureMultiplayerTurnOrder({ resetToCommander: true });
+            }
             this.setPhase('setup');
             await playBg('./assets/sounds/giganti_puri.mp3');
             startTimer();
