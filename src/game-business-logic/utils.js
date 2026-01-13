@@ -113,13 +113,19 @@ export function availableTemplates(role) {
 export function displayHpForTemplate(base) {
     return base.currHp ?? base.hp;
 }
+const DEFAULT_XP_TABLE = [0];
+const getXpTable = () => {
+    const xpTable = DB?.SETTINGS?.xpTable;
+    return Array.isArray(xpTable) && xpTable.length ? xpTable : DEFAULT_XP_TABLE;
+};
 // Se superi la tabella, continua con una formula (incremento crescente)
 function xpThreshold(level) {
+    const xpTable = getXpTable();
     // XP cumulativo richiesto per INIZIARE quel livello
-    if (level <= DB.SETTINGS.xpTable.length) return DB.SETTINGS.xpTable[level - 1];
+    if (level <= xpTable.length) return xpTable[level - 1] ?? 0;
     // oltre la tabella: aumento progressivo
-    let lastLevel = DB.SETTINGS.xpTable.length;
-    let xp = DB.SETTINGS.xpTable[lastLevel - 1];
+    let lastLevel = xpTable.length;
+    let xp = xpTable[lastLevel - 1] ?? 0;
     for (let L = lastLevel + 1; L <= level; L++) {
         // incremento che cresce con il livello (regolabile)
         const inc = 300 + (L - 1) * 50;
