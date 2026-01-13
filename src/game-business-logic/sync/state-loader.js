@@ -132,11 +132,27 @@ async function repairMultiplayerState(roomId, players = []) {
   const turnState = GAME_STATE.turnState || {};
   const needsTurnInit = !Array.isArray(turnState.order) || turnState.order.length === 0 || !turnState.currentPlayerId;
   const needsRosterInit = Array.isArray(GAME_STATE.alliesRoster) ? GAME_STATE.alliesRoster.length === 0 : true;
+  const shouldResetToCommander = GAME_STATE.turnEngine?.phase === 'idle';
 
   let changed = false;
+  const rebuiltTurn = buildTurnState(players);
   if (needsTurnInit) {
-    GAME_STATE.turnState = { ...turnState, ...buildTurnState(players) };
+    GAME_STATE.turnState = { ...turnState, ...rebuiltTurn };
     changed = true;
+  }
+
+  if (shouldResetToCommander && rebuiltTurn.order?.length) {
+    const currentId = GAME_STATE.turnState?.currentPlayerId;
+    const commanderId = rebuiltTurn.order[0];
+    if (currentId !== commanderId) {
+      GAME_STATE.turnState = {
+        ...(GAME_STATE.turnState || {}),
+        order: rebuiltTurn.order,
+        currentIndex: 0,
+        currentPlayerId: commanderId
+      };
+      changed = true;
+    }
   }
 
   if (needsRosterInit) {
