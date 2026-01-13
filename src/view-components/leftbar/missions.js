@@ -12,9 +12,13 @@ import { stopTimer, renderTimerUI, resetTimer } from "../header/header.js";
 import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
 import showVictoryScreen from '../../game-business-logic/effects/victoryOverlay.js';
 
-const elMissionNumTop = document.getElementById('m-num');       // header (numero)
-const elMissionNumCard = document.querySelector('#missione-corrente #mc-num'); // card (numero)
-const elMissionCardWrap = document.getElementById('mission-panel');        // container card
+function getMissionElements() {
+    return {
+        elMissionNumTop: document.getElementById('m-num'),
+        elMissionNumCard: document.querySelector('#missione-corrente #mc-num'),
+        elMissionCardWrap: document.getElementById('mission-panel')
+    };
+}
 
 function ensureMissionCardSkeleton(card) {
     if (!card) return;
@@ -271,6 +275,7 @@ export function renderMissionUI() {
     const reward = m?.reward ?? { morale: 0, xp: 0 };
     const event = m?.event;
 
+    const { elMissionNumTop, elMissionNumCard, elMissionCardWrap } = getMissionElements();
     if (elMissionNumTop) elMissionNumTop.textContent = String(num);
     if (elMissionNumCard) elMissionNumCard.textContent = String(num);
 
