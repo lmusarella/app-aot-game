@@ -1,6 +1,7 @@
 import { supabase } from '../../core/supabase/supabaseClient.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { renderMissionUI } from '../../view-components/leftbar/missions.js';
+import { renderTurnTracker } from '../turn-tracker.js';
 
 async function fetchRoomPlayers(roomId) {
   if (!roomId) return [];
@@ -29,6 +30,7 @@ export function bindPresenceRealtime(roomId) {
     const players = await fetchRoomPlayers(roomId);
     APP_STATE.roomPlayers = players;
     renderMissionUI();
+    renderTurnTracker();
   };
 
   const channel = supabase
@@ -43,7 +45,11 @@ export function bindPresenceRealtime(roomId) {
       },
       handlePresenceChange
     )
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        handlePresenceChange();
+      }
+    });
 
   APP_STATE.presenceChannel = channel;
 }

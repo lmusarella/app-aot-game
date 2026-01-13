@@ -2,7 +2,7 @@
 import { supabase } from '../core/supabase/supabaseClient.js'
 import { APP_STATE, GAME_STATE, gameAPI, snapshot } from '../core/app-state.js'
 import { loadLocalGameState, saveLocalGameState } from '../core/data.js'
-import { getTurnInfo, initTurnTracker, startTurnCountdown, renderTurnTracker } from './turn-tracker.js';
+import { getTurnInfo, initTurnTracker, startTurnCountdown, renderTurnTracker, ensureMultiplayerTurnOrder } from './turn-tracker.js';
 import { initEventManager } from './event-manager.js';
 import { seedWallRows } from './entity/entity.js';
 import { bindPresenceRealtime, startPresenceHeartbeat, stopPresenceHeartbeat } from './sync/presence.js';
@@ -75,6 +75,7 @@ async function tryAutoStartMission(room) {
   if (!room || room.status !== 'in_game') return;
   if (GAME_STATE.turnEngine?.phase !== 'idle') return;
   if (GAME_STATE.turnEngine?.autoStarted) return;
+  ensureMultiplayerTurnOrder({ resetToCommander: true });
   const { isMyTurn } = getTurnInfo();
   if (!isMyTurn) return;
 
@@ -98,10 +99,17 @@ function debounce(fn, ms = 400) {
 const debouncedPushGameState = debounce(pushGameState, 500);
 const debouncedSaveLocalState = debounce(saveLocalState, 500);
 
-export const scheduleSave = (arg) => {
+const pendingSaveOptions = {
+  force: false
+};
+
+export const scheduleSave = (arg, opts = {}) => {
   if (APP_STATE.gameMode === 'single') {
     debouncedSaveLocalState();
     return;
+  }
+  if (opts.force) {
+    pendingSaveOptions.force = true;
   }
   // chiama il debounced
   debouncedPushGameState();
@@ -115,15 +123,19 @@ function saveLocalState() {
 async function pushGameState() {
   if (APP_STATE.gameMode === 'single') return;
   if (!APP_STATE.roomId) return;
+  const { force } = pendingSaveOptions;
+  pendingSaveOptions.force = false;
 
   // === NUOVA PROTEZIONE ===
   const turnState = GAME_STATE.turnState;
   if (!turnState || !Array.isArray(turnState.order) || turnState.order.length === 0 || !turnState.currentPlayerId) {
-    console.warn("Turno non inizializzato: salvataggio multiplayer bloccato.");
-    return;
+    if (!force) {
+      console.warn("Turno non inizializzato: salvataggio multiplayer bloccato.");
+      return;
+    }
   }
   const { isMyTurn } = getTurnInfo();
-  if (!isMyTurn) {
+  if (!isMyTurn && !force) {
     console.warn("Tentativo di salvataggio fuori turno bloccato.");
     return;
   }

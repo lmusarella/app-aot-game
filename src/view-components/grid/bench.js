@@ -1,13 +1,33 @@
-import { hideTooltip, getUnitTooltipHTML, showTooltip, addLongPress } from '../../ui-components/ui-helpers.js';
+import { hideTooltip, getUnitTooltipHTML, showTooltip, addLongPress, showSnackBar } from '../../ui-components/ui-helpers.js';
 import { applyHpBar, COLOR_VAR } from '../../game-business-logic/utils.js';
 import { DB, GAME_STATE, UNIT_SELECTED } from '../../core/data.js';
+import { APP_STATE } from '../../core/app-state.js';
 import { adjustUnitHp } from '../../game-business-logic/entity/entity.js';
+import { getTurnInfo } from '../../game-business-logic/turn-tracker.js';
 import { enablePointerDrag } from './drag.js';
 import { bringToFront } from './stacks.js';
 import { findUnitCell } from './queries.js';
 import { clearHighlights } from './cone.js';
 
 let benchRetryId = null;
+
+function canActNow() {
+    if (APP_STATE.gameMode !== 'multiplayer') return true;
+    const { isMyTurn, currentPlayerId } = getTurnInfo();
+    return !!currentPlayerId && isMyTurn;
+}
+
+function canControlUnit(unit) {
+    if (APP_STATE.gameMode !== 'multiplayer') return true;
+    if (!unit) return false;
+    if (unit.role === 'enemy' || unit.role === 'wall') return false;
+    const myId = APP_STATE.user?.id;
+    return !!myId && unit.owner_id === myId;
+}
+
+function warnAction(message) {
+    showSnackBar(message, {}, 'warning');
+}
 
 const benchContext = {
     renderGrid: null,
@@ -198,6 +218,14 @@ function renderBenchSection(container, units, readOnly = false) {
            
             e.stopPropagation();
             if (isWall && isDestroyed) return;
+            if (!canActNow()) {
+                warnAction('Non è il tuo turno.');
+                return;
+            }
+            if (!canControlUnit(u)) {
+                warnAction('Puoi modificare solo la tua unità.');
+                return;
+            }
             adjustUnitHp(u.id, e.shiftKey ? -5 : -1);
             hpRight.textContent = `${u.currHp}/${u.hp}`;
             applyHpBar(hpFill, u);
@@ -208,6 +236,14 @@ function renderBenchSection(container, units, readOnly = false) {
            
             e.stopPropagation();
             if (isWall && isDestroyed) return;
+            if (!canActNow()) {
+                warnAction('Non è il tuo turno.');
+                return;
+            }
+            if (!canControlUnit(u)) {
+                warnAction('Puoi modificare solo la tua unità.');
+                return;
+            }
             adjustUnitHp(u.id, e.shiftKey ? +5 : +1);
             hpRight.textContent = `${u.currHp}/${u.hp}`;
             applyHpBar(hpFill, u);
@@ -239,6 +275,14 @@ function renderBenchSection(container, units, readOnly = false) {
             trashTop.addEventListener("click", async (e) => {
                
                 e.preventDefault(); e.stopPropagation();
+                if (!canActNow()) {
+                    warnAction('Non è il tuo turno.');
+                    return;
+                }
+                if (!canControlUnit(u)) {
+                    warnAction('Puoi rimuovere solo la tua unità.');
+                    return;
+                }
                 card.classList.add('removing');
                 const ok = await benchContext.deleteUnit?.(u.id);
                 if (!ok) card.classList.remove('removing');
@@ -266,8 +310,19 @@ function renderBenchSection(container, units, readOnly = false) {
             // disattiva drag H5 per evitare conflitti su touch
             card.draggable = false;
             enablePointerDrag(card, {
-                makePayload: () => ({ type: 'from-bench', unitId: u.id }),
+                makePayload: () => {
+                    if (!canActNow()) {
+                        warnAction('Non è il tuo turno.');
+                        return null;
+                    }
+                    if (!canControlUnit(u)) {
+                        warnAction('Puoi muovere solo la tua unità.');
+                        return null;
+                    }
+                    return { type: 'from-bench', unitId: u.id };
+                },
                 onDrop: (hexEl, payload) => {
+                    if (!payload) return;
                     const row = +hexEl.dataset.row, col = +hexEl.dataset.col;
                     benchContext.handleDrop?.(payload, { row, col });
                     clearHighlights();

@@ -93,6 +93,9 @@ function handleEvent(ev) {
     case 'giant_ability':
       handleGiantAbilityEvent(ev);
       break;
+    case 'mission_start':
+      handleMissionStartEvent(ev);
+      break;
     default:
       break;
   }
@@ -192,6 +195,16 @@ function handleCardUseEvent(ev) {
   const kind = ev.payload?.kind || 'event';
   showCardUseEffect(kind);
   log('Un compagno ha attivato una carta.', 'info', 2500, true);
+}
+
+function handleMissionStartEvent(ev) {
+  showWarningC({
+    text: ev.payload?.text || 'MISSIONE INIZIATA',
+    subtext: ev.payload?.subtext || '',
+    theme: ev.payload?.theme || 'green',
+    ringAmp: 1.0,
+    autoDismissMs: 2500
+  });
 }
 
 function handleCombatStartEvent(ev) {

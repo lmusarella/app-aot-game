@@ -4,6 +4,7 @@ let pendingRenderId = null;
 
 function buildRenderSignature(state) {
   return JSON.stringify({
+    version: state?.stateVersion ?? 0,
     spawns: state?.spawns?.length ?? 0,
     allies: state?.alliesRoster?.length ?? 0,
     giants: state?.giantsRoster?.length ?? 0,

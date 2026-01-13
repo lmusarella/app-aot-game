@@ -85,7 +85,11 @@ export function restore(save) {
     Object.assign(GAME_STATE.xpMoraleState, save.xpMoraleState || {});
     Object.assign(GAME_STATE.modRolls, save.modRolls || {});
     Object.assign(GAME_STATE.missionState, save.missionState || {});
-    Object.assign(GAME_STATE.turnEngine = save.turnEngine || {});
+    if (typeof GAME_STATE.turnEngine?.init === 'function') {
+        Object.assign(GAME_STATE.turnEngine, save.turnEngine || {});
+    } else {
+        GAME_STATE.turnEngine = save.turnEngine || {};
+    }
     Object.assign(GAME_STATE.missionStats, save.missionStats || {});
     GAME_STATE.missionState.intervalId = null; // sempre nullo a cold start
 

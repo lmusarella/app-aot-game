@@ -2,7 +2,9 @@ import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, add
 import { playSfx } from '../audio/audio.js';
 import { isClone, getStat, getMusicUrlById, COLOR_VAR, keyRC } from '../../game-business-logic/utils.js';
 import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, GIANT_ENGAGEMENT } from '../../core/data.js';
+import { APP_STATE } from '../../core/app-state.js';
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
+import { getTurnInfo } from '../../game-business-logic/turn-tracker.js';
 import { log } from '../leftbar/log.js';
 import { enablePointerDrag } from './drag.js';
 import { getStack, setStack, removeUnitEverywhere, moveOneUnitBetweenStacks, hasWallInCell, bringToFront, setStackVisuals } from './stacks.js';
@@ -19,6 +21,24 @@ export { nextStepTowards } from './pathing.js';
 export { humanTargetsWithin2, hasHumanInCell, sameOrAdjCells } from './targeting.js';
 
 const baseHpOverride = new Map();
+
+function canActNow() {
+    if (APP_STATE.gameMode !== 'multiplayer') return true;
+    const { isMyTurn, currentPlayerId } = getTurnInfo();
+    return !!currentPlayerId && isMyTurn;
+}
+
+function canControlUnit(unit) {
+    if (APP_STATE.gameMode !== 'multiplayer') return true;
+    if (!unit) return false;
+    if (unit.role === 'enemy' || unit.role === 'wall') return false;
+    const myId = APP_STATE.user?.id;
+    return !!myId && unit.owner_id === myId;
+}
+
+function denyAction(reason) {
+    log(reason, 'warning', 2500, true);
+}
 
 export { renderBenches };
 export const grid = document.getElementById("hex-grid");
@@ -231,6 +251,15 @@ async function handleDrop(payload, target) {
     // blocca drop se nella cella target c'è una Muraglia
     if (hasWallInCell(target.row, target.col)) return;
     if (payload.type === "from-bench") {
+        const unit = unitById.get(payload.unitId);
+        if (!canActNow()) {
+            denyAction('Non è il tuo turno.');
+            return;
+        }
+        if (!canControlUnit(unit)) {
+            denyAction('Puoi muovere solo la tua unità.');
+            return;
+        }
         // stesso esagono → non spostare né duplicare    
         if (sameId(payload.unitId, target)) {
             renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
@@ -241,6 +270,14 @@ async function handleDrop(payload, target) {
     } else if (payload.type === "from-cell") {
         const u = unitById.get(payload.unitId);
         if (u?.role === 'wall') return;
+        if (!canActNow()) {
+            denyAction('Non è il tuo turno.');
+            return;
+        }
+        if (!canControlUnit(u)) {
+            denyAction('Puoi muovere solo la tua unità.');
+            return;
+        }
         moveOneUnitBetweenStacks(payload.from, target, payload.unitId);
         renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
         renderBenches();

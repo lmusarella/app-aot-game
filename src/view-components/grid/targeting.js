@@ -1,7 +1,9 @@
 import { showSnackBar } from '../../ui-components/ui-helpers.js';
 import { startAttackPick, getEngagedHuman, getEngagingGiant } from '../../game-business-logic/entity/entity.js';
 import { getStat, isHuman } from '../../game-business-logic/utils.js';
+import { APP_STATE } from '../../core/app-state.js';
 import { unitById } from '../../core/data.js';
+import { getTurnInfo } from '../../game-business-logic/turn-tracker.js';
 import { hexWithinRadius, hexNeighbors, hexDistance } from './hex.js';
 import { getStack } from './stacks.js';
 import { findUnitCell } from './queries.js';
@@ -97,6 +99,21 @@ function lowestHpHumanWithin(attacker, fromR, fromC, radius) {
 
 export function handleUnitLongPress({ unit, cell }) {
   if (unit.role === 'wall') return;
+  if (APP_STATE.gameMode === 'multiplayer') {
+    const { isMyTurn, currentPlayerId } = getTurnInfo();
+    if (!currentPlayerId || !isMyTurn) {
+      showSnackBar('Non è il tuo turno.', {}, 'warning');
+      return;
+    }
+    if (unit.role === 'enemy' || unit.role === 'wall') {
+      showSnackBar('Puoi usare solo la tua unità.', {}, 'warning');
+      return;
+    }
+    if (unit.owner_id !== APP_STATE.user?.id) {
+      showSnackBar('Puoi usare solo la tua unità.', {}, 'warning');
+      return;
+    }
+  }
 
   const { targets, nemesi } = findTargetsFor(unit, cell);
 

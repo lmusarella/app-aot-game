@@ -215,8 +215,12 @@ self.addEventListener('fetch', (event) => {
     try {
       const network = await fetch(req);
       if (req.method === 'GET') {
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(req, network.clone());
+        const isPartial = network.status === 206 || network.headers.has('Content-Range');
+        const isRangeRequest = req.headers.has('Range');
+        if (!isPartial && !isRangeRequest) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(req, network.clone());
+        }
       }
       return network;
     } catch {
