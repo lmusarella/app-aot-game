@@ -34,12 +34,22 @@ const btnRoomBackLobby  = document.getElementById('btn-room-back-lobby')
 
 
 
- // Room buttons
+// Room buttons
+if (btnRoomEnterField) {
   btnRoomEnterField.addEventListener('click', onEnterField)
+}
+if (btnRoomAssign) {
   btnRoomAssign.addEventListener('click', onAssignRolesAndUnits)
+}
+if (btnRoomReadyUnit) {
   btnRoomReadyUnit.addEventListener('click', onReadyUnit)
+}
+if (btnRoomBackLobby) {
   btnRoomBackLobby.addEventListener('click', onRoomBackToLobby)
+}
+if (btnRoomToGame) {
   btnRoomToGame.addEventListener('click', onRoomGoToGame)
+}
 
 // questo è lo stesso elemento usato in lobby
 const currentRoom       = document.getElementById('current-room')
