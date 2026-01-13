@@ -5,7 +5,7 @@ import { initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } 
 import { TurnEngine } from "../game-business-logic/phases.js";
 import { renderGrid, renderBenches, grid } from "../view-components/grid/grid.js";
 import { seedWallRows } from "../game-business-logic/entity/entity.js";
-import { DB, GAME_STATE, rebuildUnitIndex, unitById } from "../core/data.js";
+import { DB, GAME_STATE, rebuildUnitIndex } from "../core/data.js";
 import { resetDeckFromPool, updateFabDeckCounters } from '../view-components/fabs/fab.js'
 import { renderLogs } from '../view-components/leftbar/log.js';
 import { loadMissions } from "../view-components/leftbar/missions.js";
@@ -29,13 +29,8 @@ function renderCoreUI() {
 function ensureWallSpawns() {
     if (!DB?.SETTINGS?.gridSettings?.wall) return;
     if (!Array.isArray(GAME_STATE.walls) || GAME_STATE.walls.length === 0) return;
-    const hasWallSpawn = GAME_STATE.spawns?.some((spawn) => {
-        const unitIds = Array.isArray(spawn.unitIds) ? spawn.unitIds : [spawn.unitId];
-        return unitIds?.some((unitId) => {
-            const unit = unitId ? unitById.get(unitId) : null;
-            return unit?.role === 'wall';
-        });
-    });
+    const wallRows = Object.keys(DB.SETTINGS.gridSettings.wall || {}).map((r) => Number(r));
+    const hasWallSpawn = GAME_STATE.spawns?.some((spawn) => wallRows.includes(Number(spawn?.row)));
     if (!hasWallSpawn) {
         seedWallRows();
         rebuildUnitIndex();
