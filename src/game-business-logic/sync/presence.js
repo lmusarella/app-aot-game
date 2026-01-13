@@ -25,6 +25,10 @@ export function bindPresenceRealtime(roomId) {
     APP_STATE.presenceChannel.unsubscribe();
     APP_STATE.presenceChannel = null;
   }
+  if (APP_STATE.presencePollTimerId) {
+    clearInterval(APP_STATE.presencePollTimerId);
+    APP_STATE.presencePollTimerId = null;
+  }
 
   const handlePresenceChange = async () => {
     const players = await fetchRoomPlayers(roomId);
@@ -52,12 +56,17 @@ export function bindPresenceRealtime(roomId) {
     });
 
   APP_STATE.presenceChannel = channel;
+  APP_STATE.presencePollTimerId = setInterval(handlePresenceChange, 5000);
 }
 
 export function stopPresenceHeartbeat() {
   if (APP_STATE.presenceTimerId) {
     clearInterval(APP_STATE.presenceTimerId);
     APP_STATE.presenceTimerId = null;
+  }
+  if (APP_STATE.presencePollTimerId) {
+    clearInterval(APP_STATE.presencePollTimerId);
+    APP_STATE.presencePollTimerId = null;
   }
   if (APP_STATE.presenceVisibilityHandler) {
     document.removeEventListener('visibilitychange', APP_STATE.presenceVisibilityHandler);

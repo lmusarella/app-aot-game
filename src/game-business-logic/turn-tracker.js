@@ -126,7 +126,7 @@ export function renderTurnTracker() {
   const displayName =
     currentPlayer?.nickname ||
     currentPlayer?.user_id?.slice(0, 6) ||
-    '—';
+    (currentPlayerId ? currentPlayerId.slice(0, 6) : '—');
 
   elPlayer.textContent = displayName;
   if (elHeaderTurnPlayer) {
