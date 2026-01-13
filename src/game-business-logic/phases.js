@@ -1,5 +1,5 @@
 import { advanceAllCooldowns, giantsPhaseMove, spawnGiant, tickUnitModsOnNewRound, pickRandomTeam } from './entity/entity.js';
-import { getMusicUrlById, wait } from './utils.js';
+import { wait } from './utils.js';
 import { openAccordionForRole } from '../ui-components/ui-helpers.js';
 import { playBg, playSfx } from '../view-components/audio/audio.js';
 import { showDrawnCard, closeAllFabs, drawCard } from '../view-components/fabs/fab.js';
@@ -14,45 +14,11 @@ import lightningStrike from './effects/lightningStrike.js';
 // in cima
 import { guardCommanderAction } from '../core/permissions.js';
 import { APP_STATE } from '../core/app-state.js';
-import { getTurnInfo, advanceTurn } from './turn-tracker.js';
+import { getTurnInfo } from './turn-tracker.js';
 import { scheduleSave } from './game-sync.js';
-
-
-const PHASE_UI = {
-    // cosa si vede in ciascuna fase (modifica liberamente i selettori!)
-    idle: {
-        show: [],
-        hide: []
-    },
-    setup: {
-        show: [],
-        hide: ['.fab.spawn', '.fab.arruola', '.fab.event']
-    },
-    event_mission: {
-        show: [],
-        hide: ['.fab.spawn', '.fab.arruola', '.fab.event']
-    },
-    event_card: {
-        show: [],
-        hide: ['.fab.spawn', '.fab.arruola', '.fab.event']
-    },
-    round_start: {
-        show: ['.fab.spawn', '.fab.event'],
-        hide: ['.fab.arruola']
-    },
-    move_phase: {
-        show: [],
-        hide: ['.fab.spawn', '.fab.arruola', '.fab.event']
-    },
-    attack_phase: {
-        show: [],
-        hide: ['.fab.spawn', '.fab.arruola', '.fab.event']
-    },
-    end_round: {
-        show: ['.fab.spawn', '.fab.event'],
-        hide: ['.fab.arruola']
-    }
-};
+import { applyPhaseUI, renderStartButton } from './phases/phase-ui.js';
+import { handleMultiplayerPhaseEnd, isMultiplayer } from './phases/phase-multiplayer.js';
+import { playPhaseMusic } from './phases/phase-audio.js';
 
 let btnStart = null;
 
@@ -93,30 +59,6 @@ export function initPhasesListeners() {
   });
 }
 
-function isMultiplayer() {
-  return !!APP_STATE.roomId;
-}
-
-async function handleMultiplayerPhaseEnd(phase) {
-  const ts = GAME_STATE.turnState || {};
-  const order = ts.order || [];
-  const myId = APP_STATE.user?.id || null;
-  if (!myId || order.length === 0) return;
-
-  if (!Array.isArray(ts.phaseDoneBy)) ts.phaseDoneBy = [];
-  if (!ts.phaseDoneBy.includes(myId)) ts.phaseDoneBy.push(myId);
-
-  if (ts.phaseDoneBy.length >= order.length) {
-    ts.phaseDoneBy = [];
-    ts.currentIndex = 0;
-    ts.currentPlayerId = order[0] || null;
-    await GAME_STATE.turnEngine.endPhase(phase);
-  } else {
-    advanceTurn();
-  }
-  scheduleSave('phase-turn');
-}
-
 export const TurnEngine = {
     phase: 'idle',   // 'idle' | 'setup' | 'round_start' | ...
     round: 0,
@@ -127,7 +69,7 @@ export const TurnEngine = {
     init() {
         document.body.dataset.phase = this.phase; // utile anche per CSS mirato
         applyPhaseUI(this.phase);
-        renderStartBtn();
+        renderStartButton(btnStart, { phase: this.phase, round: this.round });
         renderPhaseLabel();
 
         if (this.phase !== 'idle') {
@@ -137,37 +79,15 @@ export const TurnEngine = {
     },
 
     async setPhaseMusic() {
-        if (this.phase === 'setup') {
-            await playBg('./assets/sounds/giganti_puri.mp3');
-        }
-        if (this.phase === 'move_phase') {
-            await playBg('./assets/sounds/commander_march_sound.mp3');
-        }
-        if (this.phase === 'attack_phase') {
-            await playBg('./assets/sounds/start_mission.mp3');
-        }
-        if (this.phase === 'event_card') {
-            const ids = giantsRoster.map(giant => giant.id);
-            const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
-            const spawnEvents = m.event_spawn;
-
-            if (spawnEvents.every(event => event === "Puro")) {
-                await playBg('./assets/sounds/start_app.mp3');
-            }
-            if (spawnEvents.some(event => event === "Anomalo")) {
-                await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/ape_titan_sound.mp3');
-            }
-            if (spawnEvents.some(event => event === "Mutaforma")) {
-                await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/start_app.mp3');
-            }
-        }
+        const mission = DB.MISSIONS[GAME_STATE.missionState.curIndex];
+        await playPhaseMusic(this.phase, { giantsRoster: GAME_STATE.giantsRoster, mission });
     },
 
     setPhase(p) {
         this.phase = p;
         document.body.dataset.phase = p; // utile anche per CSS mirato
         applyPhaseUI(p);
-        renderStartBtn();
+        renderStartButton(btnStart, { phase: p, round: this.round });
         renderPhaseLabel();
         if (isMultiplayer()) {
             const ts = GAME_STATE.turnState || {};
@@ -387,67 +307,3 @@ export const TurnEngine = {
         }
     }
 };
-// Applica visibilità dai mapping sopra
-function applyPhaseUI(phase) {
-    const allSelectors = new Set();
-    for (const p of Object.values(PHASE_UI)) {
-        (p.show || []).forEach(s => allSelectors.add(s));
-        (p.hide || []).forEach(s => allSelectors.add(s));
-    }
-
-    // reset: tutto visibile
-    allSelectors.forEach(sel =>
-        document.querySelectorAll(sel).forEach(el => el.classList.remove('is-hidden'))
-    );
-
-    // applica per la fase corrente
-    const conf = PHASE_UI[phase] || {};
-    (conf.hide || []).forEach(sel =>
-        document.querySelectorAll(sel).forEach(el => el.classList.add('is-hidden'))
-    );
-    (conf.show || []).forEach(sel =>
-        document.querySelectorAll(sel).forEach(el => el.classList.remove('is-hidden'))
-    );
-}
-
-
-function renderStartBtn() {
-    if (!btnStart) return;
-    const p = TurnEngine.phase;
-    if (p === 'idle') {
-        btnStart.hidden = false;
-        btnStart.dataset.mode = 'start';
-        btnStart.textContent = 'INIZIA MISSIONE';
-    } else if (p === 'setup') {
-        btnStart.hidden = false;
-        btnStart.dataset.mode = 'end';
-        btnStart.textContent = 'TERMINA SETUP';
-    } else if (p === 'event_mission') {
-        btnStart.hidden = false;
-        btnStart.dataset.mode = 'start';
-        btnStart.textContent = 'EVENTO MISSIONE';
-    } else if (p === 'event_card') {
-        btnStart.hidden = false;
-        btnStart.dataset.mode = 'start';
-        btnStart.textContent = 'PESCA EVENTO';
-    } else if (p === 'round_start') {
-        btnStart.hidden = false;
-        btnStart.dataset.mode = 'start';
-        btnStart.textContent = `INIZIA ${TurnEngine.round + 1}° ROUND`;
-    } else if (p === 'move_phase') {
-        btnStart.hidden = false;
-        btnStart.dataset.mode = 'end';
-        btnStart.textContent = 'TERMINA FASE MOVIMENTO';
-    } else if (p === 'attack_phase') {
-        btnStart.hidden = false;
-        btnStart.dataset.mode = 'end';
-        btnStart.textContent = 'TERMINA FASE ATTACCO';
-    } else if (p === 'end_round') {
-        btnStart.hidden = false;
-        btnStart.dataset.mode = 'end';
-        btnStart.textContent = 'TERMINA ROUND';
-    }
-    else {
-        btnStart.hidden = true; // nelle altre fasi non serve
-    }
-}
