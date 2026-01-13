@@ -198,15 +198,77 @@
  }
 
  /* overlay riepilogo */
- #atk-overlay {
-   position: fixed;
-   inset: 0;
-   z-index: 12002;
- }
+#atk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12002;
+}
 
- #atk-overlay[hidden] {
-   display: none;
- }
+#atk-overlay[hidden] {
+  display: none;
+}
+
+@keyframes combatPulse {
+  0% { transform: scale(0.96); opacity: 0.6; }
+  50% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(0.96); opacity: 0.6; }
+}
+
+@keyframes combatDots {
+  0% { transform: translateY(0); opacity: 0.4; }
+  50% { transform: translateY(-6px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 0.4; }
+}
+
+.combat-wait-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12001;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at 50% 35%, rgba(0, 0, 0, 0) 0%, rgba(8, 10, 16, 0.55) 55%, rgba(4, 5, 8, 0.85) 85%);
+  animation: combatPulse 2400ms ease-in-out infinite;
+}
+
+.combat-wait-card {
+  background: rgba(12, 16, 28, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 18px 22px;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.combat-wait-title {
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  color: #f8fafc;
+}
+
+.combat-wait-sub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(226, 232, 240, 0.8);
+}
+
+.combat-wait-dots {
+  display: inline-flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.combat-wait-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #facc15;
+  animation: combatDots 1200ms ease-in-out infinite;
+}
+
+.combat-wait-dots span:nth-child(2) { animation-delay: 150ms; }
+.combat-wait-dots span:nth-child(3) { animation-delay: 300ms; }
 
  /* riuso del layout VS, ma in versione compatta */
  .vs-wrap.atk {
@@ -214,9 +276,28 @@
  }
 
  /* Variante senza card */
- .vs-wrap.atk.no-cards .vs-card {
-   display: none;
- }
+.vs-wrap.atk.no-cards .vs-card {
+  display: none;
+}
+
+#atk-overlay .atk-details {
+  grid-column: 1 / -1;
+  background: rgba(10, 12, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #e2e8f0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+#atk-overlay #atk-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
 
  /* Contenitore chip sotto la barra HP */
  .vs-info .vs-chips {
@@ -636,4 +717,3 @@
      text-align: left;
    }
  }
-

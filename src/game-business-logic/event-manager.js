@@ -1,5 +1,5 @@
 import { APP_STATE } from '../core/app-state.js';
-import { GAME_STATE } from '../core/data.js';
+import { GAME_STATE, unitById } from '../core/data.js';
 import { log } from '../view-components/leftbar/log.js';
 import { playSfx } from '../view-components/audio/audio.js';
 import swordSlash from './effects/swordSlash.js';
@@ -11,9 +11,14 @@ import showDeathScreen from './effects/deathOverlay.js';
 import showVictoryScreen from './effects/victoryOverlay.js';
 import { showCardDrawEffect, showCardUseEffect } from './effects/cardFxOverlay.js';
 import lightningStrike from './effects/lightningStrike.js';
+import showCombatWaitOverlay from './effects/combatWaitOverlay.js';
+import { showAttackSummaryOverlay, hideAttackSummaryOverlay } from '../view-components/overlays/overlays/attack-summary.js';
+import { showVersusOverlay, hideVersusOverlay } from '../ui-components/ui-helpers.js';
+import showWarningC from './effects/warningOverlayC.js';
 
 const processedIds = new Set();
 const MAX_EVENTS = 50;
+let combatWaitHandle = null;
 
 function generateEventId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -75,6 +80,18 @@ function handleEvent(ev) {
       break;
     case 'card_use':
       handleCardUseEvent(ev);
+      break;
+    case 'combat_start':
+      handleCombatStartEvent(ev);
+      break;
+    case 'combat_summary':
+      handleCombatSummaryEvent(ev);
+      break;
+    case 'combat_cancel':
+      handleCombatCancelEvent(ev);
+      break;
+    case 'giant_ability':
+      handleGiantAbilityEvent(ev);
       break;
     default:
       break;
@@ -175,4 +192,71 @@ function handleCardUseEvent(ev) {
   const kind = ev.payload?.kind || 'event';
   showCardUseEffect(kind);
   log('Un compagno ha attivato una carta.', 'info', 2500, true);
+}
+
+function handleCombatStartEvent(ev) {
+  const attackerId = ev.payload?.attackerId;
+  const targetId = ev.payload?.targetId;
+  const attacker = unitById.get(attackerId);
+  const defender = unitById.get(targetId);
+  if (!attacker || !defender) return;
+
+  hideAttackSummaryOverlay();
+  showVersusOverlay(attacker, defender, { duration: 0 });
+  combatWaitHandle?.close?.();
+  combatWaitHandle = showCombatWaitOverlay({
+    title: 'Scontro in corso',
+    subtitle: 'Attendi il risultato...'
+  });
+}
+
+function handleCombatSummaryEvent(ev) {
+  const attackerId = ev.payload?.attackerId;
+  const targetId = ev.payload?.targetId;
+  const attacker = unitById.get(attackerId);
+  const defender = unitById.get(targetId);
+  if (!attacker || !defender) return;
+
+  combatWaitHandle?.close?.();
+  combatWaitHandle = null;
+  hideVersusOverlay();
+
+  const badgeText = ev.payload?.badgeText || 'Esito';
+  const lines = Array.isArray(ev.payload?.summaryLines) ? ev.payload.summaryLines : [];
+  const roll = ev.payload?.roll;
+  const rollText = roll?.d20 != null ? `🎲 d20: ${roll.d20} (totale ${roll.total})` : '';
+
+  showAttackSummaryOverlay(attacker, defender, {
+    badgeText,
+    lines,
+    rollText,
+    autoHideMs: 4500
+  });
+
+  if (roll?.d20 != null) {
+    log(`Risultato d20: ${roll.d20} (totale ${roll.total}).`, 'info', 3500, true);
+  }
+}
+
+function handleCombatCancelEvent() {
+  combatWaitHandle?.close?.();
+  combatWaitHandle = null;
+  hideVersusOverlay();
+  hideAttackSummaryOverlay();
+  log('Scontro annullato.', 'warning', 2500, true);
+}
+
+function handleGiantAbilityEvent(ev) {
+  const name = ev.payload?.name || 'Abilità';
+  showWarningC({
+    text: "ABILITA' ATTIVATA",
+    subtext: `${name}`,
+    theme: 'orange',
+    ringAmp: 1.0,
+    autoDismissMs: 3000
+  });
+  const sfx = ev.payload?.sfx;
+  if (sfx) {
+    try { playSfx(sfx, { volume: 0.9 }); } catch { }
+  }
 }
