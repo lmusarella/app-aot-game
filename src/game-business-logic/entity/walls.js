@@ -3,7 +3,7 @@ import { unitById, GAME_STATE, DB } from '../../core/data.js';
 export function seedWallRows() {
   const gridSettings = DB?.SETTINGS?.gridSettings;
   const wallSettings = gridSettings?.wall;
-  if (!wallSettings || !GAME_STATE?.spawns) return;
+  if (!gridSettings || !wallSettings || !GAME_STATE?.spawns || !GAME_STATE?.walls) return;
   const cols = gridSettings?.cols ?? 0;
   if (!cols) return;
   // 1) togli eventuali vecchie entry in r.10/11/12
