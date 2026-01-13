@@ -10,7 +10,9 @@ const APP_STATE = {
   gameMode: null,
   gameChannel: null,
   presenceChannel: null,
-  presenceTimerId: null
+  presenceTimerId: null,
+  presenceVisibilityHandler: null,
+  presencePollTimerId: null
 }
 
 let gameAPI = {

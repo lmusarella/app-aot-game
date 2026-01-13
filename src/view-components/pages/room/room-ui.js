@@ -435,6 +435,7 @@ function updateUnitCardSelection() {
 
 function renderRoomPlayersList(players, myId, roomStatus) {
   if (!ensureRoomDom()) return
+  const ONLINE_THRESHOLD_MS = 90000
   const now = Date.now()
   roomPlayersList.innerHTML = ''
 
@@ -470,7 +471,7 @@ function renderRoomPlayersList(players, myId, roomStatus) {
     const statusSpan = document.createElement('span')
     statusSpan.className = 'room-player-status'
     const last = p.last_seen ? new Date(p.last_seen).getTime() : 0
-    const online = last && now - last < 20000
+    const online = last && now - last < ONLINE_THRESHOLD_MS
 
     if (online) {
       statusSpan.textContent = 'Online'

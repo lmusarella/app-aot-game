@@ -25,6 +25,10 @@ export function bindPresenceRealtime(roomId) {
     APP_STATE.presenceChannel.unsubscribe();
     APP_STATE.presenceChannel = null;
   }
+  if (APP_STATE.presencePollTimerId) {
+    clearInterval(APP_STATE.presencePollTimerId);
+    APP_STATE.presencePollTimerId = null;
+  }
 
   const handlePresenceChange = async () => {
     const players = await fetchRoomPlayers(roomId);
@@ -52,6 +56,7 @@ export function bindPresenceRealtime(roomId) {
     });
 
   APP_STATE.presenceChannel = channel;
+  APP_STATE.presencePollTimerId = setInterval(handlePresenceChange, 5000);
 }
 
 export function stopPresenceHeartbeat() {
@@ -59,11 +64,19 @@ export function stopPresenceHeartbeat() {
     clearInterval(APP_STATE.presenceTimerId);
     APP_STATE.presenceTimerId = null;
   }
+  if (APP_STATE.presencePollTimerId) {
+    clearInterval(APP_STATE.presencePollTimerId);
+    APP_STATE.presencePollTimerId = null;
+  }
+  if (APP_STATE.presenceVisibilityHandler) {
+    document.removeEventListener('visibilitychange', APP_STATE.presenceVisibilityHandler);
+    APP_STATE.presenceVisibilityHandler = null;
+  }
 }
 
 export function startPresenceHeartbeat(roomId) {
   stopPresenceHeartbeat();
-  APP_STATE.presenceTimerId = setInterval(async () => {
+  const pingPresence = async () => {
     if (!APP_STATE.user?.id || !roomId) return;
     try {
       await supabase
@@ -74,5 +87,13 @@ export function startPresenceHeartbeat(roomId) {
     } catch (err) {
       console.warn('Aggiornamento presenza fallito:', err);
     }
-  }, 3000);
+  };
+  APP_STATE.presenceTimerId = setInterval(pingPresence, 3000);
+  APP_STATE.presenceVisibilityHandler = () => {
+    if (!document.hidden) {
+      pingPresence();
+    }
+  };
+  document.addEventListener('visibilitychange', APP_STATE.presenceVisibilityHandler);
+  pingPresence();
 }

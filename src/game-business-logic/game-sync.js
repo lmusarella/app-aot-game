@@ -2,7 +2,7 @@
 import { supabase } from '../core/supabase/supabaseClient.js'
 import { APP_STATE, GAME_STATE, gameAPI, snapshot } from '../core/app-state.js'
 import { loadLocalGameState, saveLocalGameState } from '../core/data.js'
-import { getTurnInfo, initTurnTracker, startTurnCountdown, renderTurnTracker, ensureMultiplayerTurnOrder } from './turn-tracker.js';
+import { getTurnInfo, initTurnTracker, startTurnCountdown, renderTurnTracker } from './turn-tracker.js';
 import { initEventManager } from './event-manager.js';
 import { seedWallRows } from './entity/entity.js';
 import { bindPresenceRealtime, startPresenceHeartbeat, stopPresenceHeartbeat } from './sync/presence.js';
@@ -30,7 +30,6 @@ export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
   startPresenceHeartbeat(roomId)
   gameAPI.renderGameFromState()
   initEventManager();
-  await tryAutoStartMission(room);
 
   // Turn tracker
   initTurnTracker();
@@ -71,21 +70,6 @@ export function initGameForSinglePlayer({ forceReset = false, render = true } = 
   }
 }
 
-async function tryAutoStartMission(room) {
-  if (!room || room.status !== 'in_game') return;
-  if (GAME_STATE.turnEngine?.phase !== 'idle') return;
-  if (GAME_STATE.turnEngine?.autoStarted) return;
-  ensureMultiplayerTurnOrder({ resetToCommander: true });
-  const { isMyTurn } = getTurnInfo();
-  if (!isMyTurn) return;
-
-  GAME_STATE.turnEngine.autoStarted = true;
-  try {
-    await GAME_STATE.turnEngine.startPhase('idle');
-  } finally {
-    scheduleSave('auto-start');
-  }
-}
 
 function debounce(fn, ms = 400) {
   let t;

@@ -128,6 +128,28 @@
   color: #e6e6e6;
 }
 
+.turn-player-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 15, 17, 0.65);
+  color: #cbd5f5;
+}
+
+.turn-status {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px dashed rgba(148, 163, 184, 0.45);
+  background: rgba(15, 15, 17, 0.65);
+  color: #e2e8f0;
+}
+
  /* Header reset button */
  .reset-hdr-btn {
    justify-self: end;

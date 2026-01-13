@@ -166,6 +166,7 @@ function renderSquadStatus() {
     const list = document.getElementById('msn-squad');
     if (!list) return;
 
+    const ONLINE_THRESHOLD_MS = 90000;
     const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
     if (players.length === 0) {
         list.innerHTML = '<li class="msn-squad-item is-empty">— squadra non disponibile —</li>';
@@ -175,7 +176,7 @@ function renderSquadStatus() {
     const now = Date.now();
     list.innerHTML = players.map(p => {
         const last = p.last_seen ? new Date(p.last_seen).getTime() : 0;
-        const online = last && now - last < 20000;
+        const online = last && now - last < ONLINE_THRESHOLD_MS;
         const name = p.nickname || p.user_id?.slice(0, 8) || 'Giocatore';
         const roleLabel = p.is_commander ? 'Comandante' : 'Recluta';
         const statusClass = online ? 'msn-squad-dot--online' : 'msn-squad-dot--offline';
