@@ -5,7 +5,14 @@ import { log } from "./log.js";
 
 const UM_STAT_LABELS = { atk: 'ATK', tec: 'TEC', agi: 'AGI', cd: 'CA', mov: 'MOV', rng: 'RNG' };
 const isEnemy = u => u?.role === 'enemy';
-const boxMods = document.getElementById('mods-section');
+let boxMods = null;
+
+function getBoxMods() {
+    if (!boxMods) {
+        boxMods = document.getElementById('mods-section');
+    }
+    return boxMods;
+}
 
 
 function unitListForPicker() {
@@ -414,6 +421,8 @@ export function renderBonusMalus() {
 
 
 export const renderRollMods = () => {
+    const box = getBoxMods();
+    if (!box) return;
     const m = GAME_STATE.xpMoraleState.effectiveBonus;
     const fmt = (v) => (v >= 0 ? '+' + v : '' + v);
     ['atk', 'tec', 'agi', 'all'].forEach(k => {
@@ -422,13 +431,15 @@ export const renderRollMods = () => {
         if (el) el.textContent = fmt(v);
 
         // 👉 imposta il segno sulla riga per attivare il CSS
-        const row = boxMods.querySelector(`.rm-row[data-kind="${k}"]`);
+        const row = box.querySelector(`.rm-row[data-kind="${k}"]`);
         if (row) row.dataset.sign = (v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero');
     });
 };
 
 export function initModsListeners() {
-    boxMods.addEventListener('click', (e) => {
+    const box = getBoxMods();
+    if (!box) return;
+    box.addEventListener('click', (e) => {
         const btn = e.target.closest('.rm-btn');
 
         if (!btn) return;

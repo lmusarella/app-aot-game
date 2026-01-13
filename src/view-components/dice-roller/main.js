@@ -72,6 +72,9 @@ window.onkeydown = function(e) {
     }
 
     that.setInput = function() {
+        if (!elem.textInput || !box) {
+            return;
+        }
         let inputVal = elem.textInput.value;
         //check for d100 and add tens place die
         if(inputVal.includes('d100')) {
