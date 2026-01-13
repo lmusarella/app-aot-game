@@ -107,7 +107,7 @@ export function startTurnCountdown() {
       if (!isMyTurn) return;
 
       advanceTurn();
-      scheduleSave('turn-timeout'); // salva nuovo turnState
+      scheduleSave('turn-timeout', { force: true }); // salva nuovo turnState
     }
   }, 1000);
 }

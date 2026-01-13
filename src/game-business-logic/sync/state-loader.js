@@ -1,5 +1,6 @@
 import { supabase } from '../../core/supabase/supabaseClient.js';
 import { APP_STATE, gameAPI, snapshot } from '../../core/app-state.js';
+import { GAME_STATE } from '../../core/data.js';
 import { seedWallRows } from '../entity/entity.js';
 
 function delay(ms) {
@@ -22,6 +23,9 @@ export async function loadOrInitGameState(roomId, isDriver, players = []) {
   if (existing && existing.state_json) {
     gameAPI.resetGameState();
     gameAPI.applyLoadedState(existing.state_json);
+    if (isDriver) {
+      await repairMultiplayerState(roomId, players);
+    }
     return;
   } else if (isDriver) {
     // 2) Non esiste ancora, se sono il driver lo creo io
@@ -81,45 +85,84 @@ function createDefaultGameState(players = []) {
   base.stateVersion = 1;
   base.stateUpdatedAt = Date.now();
 
-  // prendo tutti i codici unità scelti dai player pronti
+  base.alliesRoster = buildAlliesRoster(base.alliesPool, players);
+  base.turnState = buildTurnState(players);
+  base.turnEngine = { ...(base.turnEngine || {}), autoStarted: false };
+
+  return base;
+}
+
+function buildAlliesRoster(alliesPool = [], players = []) {
+  if (!Array.isArray(alliesPool)) return [];
   const selectedUnitCodes = players
     .filter(p => p.unit_code && p.ready_unit)
     .map(p => p.unit_code);
 
-  if (Array.isArray(base.alliesPool)) {
-    const chosenAllies = base.alliesPool
-      .filter(u => selectedUnitCodes.includes(u.id))
-      .map(u => {
-        // Trovo il giocatore che usa questa unità
-        const owner = players.find(p => p.unit_code === u.id);
+  return alliesPool
+    .filter(u => selectedUnitCodes.includes(u.id))
+    .map(u => {
+      const owner = players.find(p => p.unit_code === u.id);
+      return {
+        ...u,
+        owner_id: owner?.user_id || null,
+        owner_nickname: owner?.nickname || null
+      };
+    });
+}
 
-        return {
-          ...u,
-          owner_id: owner?.user_id || null,
-          owner_nickname: owner?.nickname || null
-        };
-      });
-
-    base.alliesRoster = chosenAllies;
-  }
-
-  // ====== TURNO GIOCATORI ======
-  // Ordine turni: commander prima, poi reclute (puoi cambiare logica)
+function buildTurnState(players = []) {
   const order = players
     .filter(p => p.unit_code && p.ready_unit)
     .sort((a, b) => {
-      // se hai flag is_commander sul row:
       if (!!a.is_commander === !!b.is_commander) return 0;
       return a.is_commander ? -1 : 1;
     })
     .map(p => p.user_id);
 
-  base.turnState = {
+  return {
     order,
     currentIndex: 0,
     currentPlayerId: order[0] || null
   };
-  base.turnEngine = { ...(base.turnEngine || {}), autoStarted: false };
+}
 
-  return base;
+async function repairMultiplayerState(roomId, players = []) {
+  if (!roomId || players.length === 0) return;
+
+  const turnState = GAME_STATE.turnState || {};
+  const needsTurnInit = !Array.isArray(turnState.order) || turnState.order.length === 0 || !turnState.currentPlayerId;
+  const needsRosterInit = Array.isArray(GAME_STATE.alliesRoster) ? GAME_STATE.alliesRoster.length === 0 : true;
+
+  let changed = false;
+  if (needsTurnInit) {
+    GAME_STATE.turnState = { ...turnState, ...buildTurnState(players) };
+    changed = true;
+  }
+
+  if (needsRosterInit) {
+    const roster = buildAlliesRoster(GAME_STATE.alliesPool || [], players);
+    if (roster.length > 0) {
+      GAME_STATE.alliesRoster = roster;
+      changed = true;
+    }
+  }
+
+  if (!changed) return;
+
+  GAME_STATE.stateVersion = (GAME_STATE.stateVersion ?? 0) + 1;
+  GAME_STATE.stateUpdatedAt = Date.now();
+
+  const newState = snapshot();
+  const { error } = await supabase
+    .from('room_game_state')
+    .update({
+      state_json: newState,
+      updated_at: new Date().toISOString(),
+      updated_by: APP_STATE.user.id
+    })
+    .eq('room_id', roomId);
+
+  if (error) {
+    console.error('Errore aggiornando game_state (repair):', error);
+  }
 }

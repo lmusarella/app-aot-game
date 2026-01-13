@@ -19,6 +19,7 @@ import { scheduleSave } from './game-sync.js';
 import { applyPhaseUI, renderStartButton } from './phases/phase-ui.js';
 import { handleMultiplayerPhaseEnd, isMultiplayer } from './phases/phase-multiplayer.js';
 import { playPhaseMusic } from './phases/phase-audio.js';
+import { pushGameEvent } from './event-manager.js';
 
 let btnStart = null;
 
@@ -116,6 +117,11 @@ export const TurnEngine = {
                 theme: 'green',
                 ringAmp: 1.0,
                 autoDismissMs: 2500
+            });
+            pushGameEvent('mission_start', {
+                text: 'MISSIONE INIZIATA',
+                subtext: '',
+                theme: 'green'
             });
 
             setTimeout(() => {

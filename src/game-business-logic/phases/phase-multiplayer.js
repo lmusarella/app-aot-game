@@ -24,5 +24,5 @@ export async function handleMultiplayerPhaseEnd(phase) {
     } else {
         advanceTurn();
     }
-    scheduleSave('phase-turn');
+    scheduleSave('phase-turn', { force: true });
 }
