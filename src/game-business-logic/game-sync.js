@@ -186,8 +186,6 @@ async function loadOrInitGameState(roomId, isDriver, players = []) {
     console.error('Errore caricando game_state:', error)
   }
 
-  console.log('existing state', existing);
-
   // Se esiste già → lo carico e basta
   if (existing && existing.state_json) {
     gameAPI.resetGameState()
@@ -200,8 +198,6 @@ async function loadOrInitGameState(roomId, isDriver, players = []) {
     gameAPI.resetGameState()
     seedWallRows()
     const defaultState = createDefaultGameState(players)
-
-    console.log('sto per salvare il default', defaultState);
 
     const { error: errInsert } = await supabase
       .from('room_game_state')
@@ -338,7 +334,6 @@ function bindGameRealtime(roomId) {
     }
 
     gameAPI.resetGameState()
-    console.log('handleChange new state', newState);
     gameAPI.applyLoadedState(newState)
     consumeGameEvents();
 
@@ -379,8 +374,7 @@ function bindGameRealtime(roomId) {
       handleChange
     )
     .subscribe(status => {
-      if (status === 'SUBSCRIBED') {
-        console.log('Realtime game_state subscribed for room', roomId)
+      if (status === 'SUBSCRIBED') {   
         resyncGameState(roomId)
       }
     })
@@ -441,7 +435,6 @@ const debouncedPushGameState = debounce(pushGameState, 500);
 const debouncedSaveLocalState = debounce(saveLocalState, 500);
 
 export const scheduleSave = (arg) => {
-  console.log('from scheduleSave', arg);
   if (APP_STATE.gameMode === 'single') {
     debouncedSaveLocalState();
     return;
@@ -475,8 +468,6 @@ async function pushGameState() {
   GAME_STATE.stateVersion = nextVersion;
   GAME_STATE.stateUpdatedAt = Date.now();
   const newState = snapshot();
-
-  console.log('sto per salvare al pushGameState', newState);
   const { error } = await supabase
     .from('room_game_state')
     .update({
