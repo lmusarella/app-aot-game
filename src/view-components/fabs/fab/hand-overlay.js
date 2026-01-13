@@ -3,12 +3,15 @@ import { log } from '../../leftbar/log.js';
 import { missionStatsRecordEvent } from '../../leftbar/missions.js';
 import { cardSheetHTML } from '../../../ui-components/ui-helpers.js';
 import { updateFabDeckCounters } from './decks.js';
+import { showCardDrawEffect } from '../../../game-business-logic/effects/cardFxOverlay.js';
+import { applyCardEffect } from '../../../game-business-logic/cards/card-effects.js';
 
 export function showDrawnCard(deckType, card) {
   const root = document.getElementById('hand-overlay');
   const strip = document.getElementById('hand-strip');
   const stage = root?.querySelector('.hand-stage');
   if (!root || !strip || !stage) return;
+  showCardDrawEffect();
   stage.classList.add('hand-stage--single');
   strip.classList.remove('hand-strip');
   strip.innerHTML = '';
@@ -58,6 +61,7 @@ export function showDrawnCard(deckType, card) {
       GAME_STATE.decks[deckType]?.discard.push(card);
       log(`Carta Evento "${card.name}" è stata attivata!.`, 'warning');
       updateFabDeckCounters();
+      applyCardEffect({ deckType, card });
 
       missionStatsRecordEvent(card, {
         durationRounds: card.duration || Infinity,
@@ -76,6 +80,7 @@ export function showDrawnCard(deckType, card) {
       GAME_STATE.decks[deckType]?.discard.push(card);
       log(`Carta Evento "${card.name}" è stata attivata!.`, 'warning');
       updateFabDeckCounters();
+      applyCardEffect({ deckType, card });
       missionStatsRecordEvent(card, {
         durationRounds: card.duration || Infinity,
         sign: card.sign || 0
@@ -104,7 +109,7 @@ export function openHandOverlay() {
       { key: 'discard-one', label: 'Scarta', kind: 'primary' },
       { key: 'use-one', label: 'Usa', kind: 'danger' }
     ]);
-    wrap.addEventListener('click', (ev) => {
+    wrap.addEventListener('click', async (ev) => {
       const btn = ev.target.closest('.card-btn'); if (!btn) return;
       const act = btn.dataset.act;
 
@@ -120,7 +125,10 @@ export function openHandOverlay() {
         const it = GAME_STATE.hand.splice(i, 1)[0];
         if (it) {
           let handled = false;
-          try { handled = !!window.onUseCard?.(it.deck, it.card); } catch { }
+          try { handled = !!await applyCardEffect({ deckType: it.deck, card: it.card }); } catch { }
+          if (!handled) {
+            try { handled = !!window.onUseCard?.(it.deck, it.card); } catch { }
+          }
           if (!handled) {
             GAME_STATE.decks[it.deck]?.discard.push(it.card);
           }
