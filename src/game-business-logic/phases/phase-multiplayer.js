@@ -24,7 +24,7 @@ export async function handleMultiplayerPhaseEnd(phase) {
             ts.currentIndex = 0;
             ts.currentPlayerId = order[0] || null;
         } else {
-            advanceTurn();
+            advanceTurnSkippingDone(ts);
         }
         renderTurnTracker();
         scheduleSave('phase-turn', { force: true });
@@ -37,8 +37,27 @@ export async function handleMultiplayerPhaseEnd(phase) {
         ts.currentPlayerId = order[0] || null;
         await GAME_STATE.turnEngine.endPhase(phase);
     } else {
-        advanceTurn();
+        advanceTurnSkippingDone(ts);
     }
     renderTurnTracker();
     scheduleSave('phase-turn', { force: true });
+}
+
+function advanceTurnSkippingDone(turnState) {
+    if (!turnState || !Array.isArray(turnState.order) || turnState.order.length === 0) return;
+    const done = new Set(Array.isArray(turnState.phaseDoneBy) ? turnState.phaseDoneBy : []);
+    const total = turnState.order.length;
+    let nextIndex = turnState.currentIndex ?? 0;
+
+    for (let offset = 1; offset <= total; offset += 1) {
+        const idx = (nextIndex + offset) % total;
+        const candidate = turnState.order[idx];
+        if (!done.has(candidate)) {
+            turnState.currentIndex = idx;
+            turnState.currentPlayerId = candidate;
+            return;
+        }
+    }
+
+    advanceTurn();
 }
