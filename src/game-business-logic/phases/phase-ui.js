@@ -60,9 +60,13 @@ export function applyPhaseUI(phase) {
 export function renderStartButton(button, { phase, round, isMultiplayer = false, isMyTurn = true, phaseReady = false, isCommander = false }) {
     if (!button) return;
     if (phase === 'idle') {
-        button.hidden = false;
-        button.dataset.mode = 'start';
-        button.textContent = 'INIZIA MISSIONE';
+        if (isMultiplayer && !isCommander) {
+            button.hidden = true;
+        } else {
+            button.hidden = false;
+            button.dataset.mode = 'start';
+            button.textContent = 'INIZIA MISSIONE';
+        }
     } else if (phase === 'setup') {
         if (isMultiplayer && phaseReady) {
             if (isCommander) {

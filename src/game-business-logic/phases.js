@@ -12,7 +12,7 @@ import showPhaseBanner from './effects/phaseBanner.js';
 import showWarningC from './effects/warningOverlayC.js';
 import lightningStrike from './effects/lightningStrike.js';
 // in cima
-import { guardCommanderAction } from '../core/permissions.js';
+import { guardCommanderAction, isCommander } from '../core/permissions.js';
 import { APP_STATE } from '../core/app-state.js';
 import { getTurnInfo, ensureMultiplayerTurnOrder } from './turn-tracker.js';
 import { scheduleSave } from './game-sync.js';
@@ -22,6 +22,262 @@ import { playPhaseMusic } from './phases/phase-audio.js';
 import { pushGameEvent } from './event-manager.js';
 
 let btnStart = null;
+
+async function handleMultiplayerStartPhase(phase, engine) {
+    const ts = GAME_STATE.turnState || {};
+    if (phase === 'idle') {
+        ensureMultiplayerTurnOrder({ resetToCommander: true });
+        engine.setPhase('setup');
+        await playBg('./assets/sounds/giganti_puri.mp3');
+        startTimer();
+        missionStatsBumpAttempt();
+
+        showWarningC({
+            text: 'MISSIONE INIZIATA',
+            subtext: '',
+            theme: 'green',
+            ringAmp: 1.0,
+            autoDismissMs: 2500
+        });
+        pushGameEvent('mission_start', {
+            text: 'MISSIONE INIZIATA',
+            subtext: '',
+            theme: 'green'
+        });
+
+        setTimeout(() => {
+            showPhaseBanner({
+                text: 'FASE DI SETUP',
+                subtext: 'Posiziona le truppe e termina il setup.',
+                theme: 'blue',
+                autoDismissMs: 3500
+            });
+
+            if (!engine.teamCreated) {
+                try {
+                    const rosterCount = GAME_STATE.alliesRoster?.length || 0;
+                    const playersCount = APP_STATE.roomPlayers?.length || 0;
+                    engine.squadNumber = Math.max(1, rosterCount || playersCount || 0);
+                    engine.teamCreated = true;
+                } catch { }
+            }
+        }, 2500);
+        return;
+    }
+
+    if (phase === 'setup' && ts.phaseReady) {
+        engine.setPhase('move_phase');
+        showPhaseBanner({
+            text: 'FASE DI MOVIMENTO',
+            subtext: 'Effettua 2 movimenti, poi termina la tua fase.',
+            theme: 'blue',
+            autoDismissMs: 6000
+        });
+        startTimer();
+    }
+}
+
+async function handleSingleStartPhase(phase, engine) {
+    if (phase === 'idle') {
+        engine.setPhase('setup');
+        await playBg('./assets/sounds/giganti_puri.mp3');
+        startTimer();
+        missionStatsBumpAttempt();
+
+        showWarningC({
+            text: 'MISSIONE INIZIATA',
+            subtext: '',
+            theme: 'green',
+            ringAmp: 1.0,
+            autoDismissMs: 2500
+        });
+        pushGameEvent('mission_start', {
+            text: 'MISSIONE INIZIATA',
+            subtext: '',
+            theme: 'green'
+        });
+
+        setTimeout(() => {
+            showPhaseBanner({
+                text: 'FASE DI MOVIMENTO',
+                subtext: 'Posiziona la tua squadra in griglia',
+                theme: 'blue',
+                autoDismissMs: 3500
+            });
+
+            if (!engine.teamCreated) {
+                try {
+                    pickRandomTeam({ commanders: 1, recruits: 3 });
+                    openAccordionForRole('commander');
+                    engine.squadNumber = 4;
+                    engine.teamCreated = true;
+                } catch { }
+            } else {
+                log('Setup: Hai 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info', 3000, true);
+            }
+        }, 2500);
+        return;
+    }
+
+    if (phase === 'event_card') {
+        const card = drawCard('event');
+
+        if (!card) {
+            log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
+            closeAllFabs();
+            return;
+        }
+        log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
+        await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
+
+        showDrawnCard('event', card);
+        engine.eventCards++;
+
+        if (engine.eventCards === engine.squadNumber) {
+            engine.setPhase('round_start');
+        } else {
+            log(`Carte evento da pescare rimaste: "${engine.squadNumber - engine.eventCards}".`, 'info', 6000, true);
+        }
+    }
+
+    if (phase === 'round_start') {
+        engine.round++;
+        showWarningC({
+            text: 'INIZIO ROUND',
+            subtext: `Sta per cominciare il ${engine.round} round!`,
+            theme: 'violet',
+            ringAmp: 1.0,
+            autoDismissMs: 3000
+        });
+        await playBg('./assets/sounds/commander_march_sound.mp3');
+
+        setTimeout(async () => {
+            engine.setPhase('move_phase');
+            showPhaseBanner({
+                text: 'FASE DI MOVIMENTO',
+                subtext: `Round ${engine.round}. Effettua una azione di movimento per unità.`,
+                theme: 'blue',
+                autoDismissMs: 6000
+            });
+            startTimer();
+            advanceAllCooldowns(1, { giantsOnly: true });
+            tickUnitModsOnNewRound();
+            missionStatsSetRound(engine.round);
+        }, 3000);
+    }
+}
+
+async function handleSingleEndPhase(phase, engine) {
+    if (phase === 'setup') {
+        const flagAlleatoInGriglia = GAME_STATE.alliesRoster.some(ally => GAME_STATE.spawns.some(s => (s.unitIds ?? []).includes(ally.id)));
+
+        if (flagAlleatoInGriglia) {
+            engine.setPhase('event_card');
+
+            showWarningC({
+                text: 'ATTENZIONE',
+                subtext: 'Sono stati avvistati dei giganti...',
+                theme: 'red',
+                ringAmp: 1.0,
+                autoDismissMs: 3000
+            });
+
+            setTimeout(async () => {
+                const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
+                const spawnEvents = m.event_spawn;
+                const ids = [];
+                if (spawnEvents && spawnEvents.length > 0) {
+
+                    for (const event of spawnEvents) {
+                        const id = await spawnGiant(event, true);
+                        ids.push(id);
+                    }
+
+                    await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
+                    lightningStrike();
+                    setTimeout(() => lightningStrike({ angleDeg: 80 }), 140);
+                    setTimeout(() => lightningStrike({ angleDeg: 100 }), 280);
+
+                    if (spawnEvents.every(event => event === "Puro")) {
+                        await playBg('./assets/sounds/start_app.mp3');
+                    }
+
+                    if (spawnEvents.some(event => event === "Anomalo")) {
+                        await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/ape_titan_sound.mp3');
+                    }
+
+                    if (spawnEvents.some(event => event === "Mutaforma")) {
+                        await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/start_app.mp3');
+                    }
+
+                    openAccordionForRole("enemy");
+                }
+
+                showPhaseBanner({
+                    text: 'PESCA CARTE EVENTO',
+                    subtext: 'Pesca una carta evento per ogni membro della squadra',
+                    theme: 'green',
+                    autoDismissMs: 3500
+                });
+
+            }, 3000);
+
+
+        } else {
+            log(`Setup Missione: Trascina almeno un'unità della tua squadra in campo`, 'info', 6000, true);
+        }
+    }
+
+    if (phase === 'move_phase') {
+        giantsPhaseMove();
+        await wait(2500);
+        engine.setPhase('attack_phase');
+        showPhaseBanner({
+            text: 'FASE DI COMBATTIMENTO',
+            subtext: `Round ${engine.round}. Scegli i bersagli che ingaggeranno battaglia`,
+            theme: 'red',
+            autoDismissMs: 6000
+        });
+        await playBg('./assets/sounds/start_mission.mp3');
+    }
+
+    if (phase === 'attack_phase') {
+        engine.setPhase('round_start');
+        showPhaseBanner({
+            text: 'FASE FINALE',
+            subtext: `${engine.round}° ROUND`,
+            theme: 'neutral',
+            autoDismissMs: 6000
+        });
+
+        const flagTempoNonScaduto = GAME_STATE.missionState.remainingSec;
+        if (engine.round % 2 === 0 || flagTempoNonScaduto === 0) {
+            const card = drawCard('event');
+
+            if (!card) {
+                log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
+                closeAllFabs();
+                return;
+            }
+            log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
+            await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
+
+            showDrawnCard('event', card);
+        }
+
+    }
+
+    if (phase === 'end_round') {
+        engine.setPhase('round_start');
+        showPhaseBanner({
+            text: 'INIZIO ROUND',
+            subtext: `Round "${engine.round}".`,
+            theme: 'green',
+            autoDismissMs: 2000
+        });
+        await playBg('./assets/sounds/start_mission.mp3');
+    }
+}
 
 export function initPhasesListeners() {
   btnStart = document.getElementById('btn-start');
@@ -77,7 +333,7 @@ export const TurnEngine = {
             isMultiplayer: isMultiplayer(),
             isMyTurn,
             phaseReady: !!GAME_STATE.turnState?.phaseReady,
-            isCommander: !!APP_STATE.roomPlayers?.find(player => player.user_id === APP_STATE.user?.id)?.is_commander
+            isCommander: isCommander()
         });
         renderPhaseLabel();
 
@@ -103,7 +359,7 @@ export const TurnEngine = {
             isMultiplayer: isMultiplayer(),
             isMyTurn,
             phaseReady: !!GAME_STATE.turnState?.phaseReady,
-            isCommander: !!APP_STATE.roomPlayers?.find(player => player.user_id === APP_STATE.user?.id)?.is_commander
+            isCommander: isCommander()
         });
         renderPhaseLabel();
         if (isMultiplayer()) {
@@ -121,238 +377,16 @@ export const TurnEngine = {
 
     async startPhase(phase) {
         if (isMultiplayer()) {
-            const ts = GAME_STATE.turnState || {};
-            if (phase === 'setup' && ts.phaseReady) {
-                this.setPhase('move_phase');
-                showPhaseBanner({
-                    text: 'FASE DI MOVIMENTO',
-                    subtext: `Effettua 2 movimenti, poi termina la tua fase.`,
-                    theme: 'blue',
-                    autoDismissMs: 6000
-                });
-                startTimer();
-                return;
-            }
+            await handleMultiplayerStartPhase(phase, this);
+            return;
         }
-        // entra in setup (senza limiti di movimento)
-
-        if (phase === 'idle') {
-            if (isMultiplayer()) {
-                ensureMultiplayerTurnOrder({ resetToCommander: true });
-            }
-            this.setPhase('setup');
-            await playBg('./assets/sounds/giganti_puri.mp3');
-            startTimer();
-            missionStatsBumpAttempt();
-
-            showWarningC({
-                text: 'MISSIONE INIZIATA',
-                subtext: '',
-                theme: 'green',
-                ringAmp: 1.0,
-                autoDismissMs: 2500
-            });
-            pushGameEvent('mission_start', {
-                text: 'MISSIONE INIZIATA',
-                subtext: '',
-                theme: 'green'
-            });
-
-            setTimeout(() => {
-                if (isMultiplayer()) {
-                    showPhaseBanner({
-                        text: 'FASE DI SETUP',
-                        subtext: 'Posiziona le truppe e termina il setup.',
-                        theme: 'blue',
-                        autoDismissMs: 3500
-                    });
-                } else {
-                    // Esempio: fase combattimento
-                    showPhaseBanner({
-                        text: 'FASE DI MOVIMENTO',
-                        subtext: `Posiziona la tua squadra in griglia`,
-                        theme: 'blue',
-                        autoDismissMs: 3500
-                    });
-                }
-
-                if (!this.teamCreated) {
-                    try {
-                        if (isMultiplayer()) {
-                            const rosterCount = GAME_STATE.alliesRoster?.length || 0;
-                            const playersCount = APP_STATE.roomPlayers?.length || 0;
-                            this.squadNumber = Math.max(1, rosterCount || playersCount || 0);
-                            this.teamCreated = true;
-                        } else {
-                            pickRandomTeam({ commanders: 1, recruits: 3 });
-                            openAccordionForRole('commander');
-                            this.squadNumber = 4;
-                            this.teamCreated = true;
-                        }
-                    } catch { }
-                } else if (!isMultiplayer()) {
-                    log('Setup: Hai 3 movimenti disponibili per unità, poi premi "Termina Setup".', 'info', 3000, true);
-                }
-            }, 2500)
-        }
-
-        if (phase === 'event_card') {
-            const card = drawCard('event');
-
-            if (!card) {
-                log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
-                closeAllFabs();
-                return;
-            }
-            log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
-            await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
-
-            showDrawnCard('event', card);
-            this.eventCards++;
-
-            if (this.eventCards === this.squadNumber) {
-                this.setPhase('round_start');
-            } else {
-                log(`Carte evento da pescare rimaste: "${this.squadNumber - this.eventCards}".`, 'info', 6000, true);
-            }
-        }
-
-        if (phase === 'round_start') {
-            this.round++;
-            showWarningC({
-                text: 'INIZIO ROUND',
-                subtext: `Sta per cominciare il ${this.round} round!`,
-                theme: 'violet',
-                ringAmp: 1.0,
-                autoDismissMs: 3000
-            });
-            await playBg('./assets/sounds/commander_march_sound.mp3');
-
-            setTimeout(async () => {
-                this.setPhase('move_phase');
-                showPhaseBanner({
-                    text: 'FASE DI MOVIMENTO',
-                    subtext: `Round ${this.round}. Effettua una azione di movimento per unità.`,
-                    theme: 'blue',
-                    autoDismissMs: 6000
-                });
-                startTimer();
-                advanceAllCooldowns(1, { giantsOnly: true });
-                tickUnitModsOnNewRound();
-                missionStatsSetRound(this.round);
-            }, 3000)
-        }
+        await handleSingleStartPhase(phase, this);
     },
 
     async endPhase(phase) {
-        if (phase === 'setup') {
-            const flagAlleatoInGriglia = GAME_STATE.alliesRoster.some(ally => GAME_STATE.spawns.some(s => (s.unitIds ?? []).includes(ally.id)));
-
-            if (flagAlleatoInGriglia) {
-                this.setPhase('event_card');
-
-                showWarningC({
-                    text: 'ATTENZIONE',
-                    subtext: 'Sono stati avvistati dei giganti...',
-                    theme: 'red',
-                    ringAmp: 1.0,
-                    autoDismissMs: 3000
-                });
-
-                setTimeout(async () => {
-                    const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
-                    const spawnEvents = m.event_spawn;
-                    const ids = [];
-                    if (spawnEvents && spawnEvents.length > 0) {
-
-                        for (const event of spawnEvents) {
-                            const id = await spawnGiant(event, true);
-                            ids.push(id);
-                        }
-
-                        await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
-                        lightningStrike();
-                        setTimeout(() => lightningStrike({ angleDeg: 80 }), 140);
-                        setTimeout(() => lightningStrike({ angleDeg: 100 }), 280);
-
-                        if (spawnEvents.every(event => event === "Puro")) {
-                            await playBg('./assets/sounds/start_app.mp3');
-                        }
-
-                        if (spawnEvents.some(event => event === "Anomalo")) {
-                            await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/ape_titan_sound.mp3');
-                        }
-
-                        if (spawnEvents.some(event => event === "Mutaforma")) {
-                            await playBg(getMusicUrlById(ids.find(id => getMusicUrlById(id))) || './assets/sounds/start_app.mp3');
-                        }
-
-                        openAccordionForRole("enemy");
-                    }
-
-                    showPhaseBanner({
-                        text: 'PESCA CARTE EVENTO',
-                        subtext: `Pesca una carta evento per ogni membro della squadra`,
-                        theme: 'green',
-                        autoDismissMs: 3500
-                    });
-
-                }, 3000)
-
-
-            } else {
-                log(`Setup Missione: Trascina almeno un'unità della tua squadra in campo`, 'info', 6000, true);
-            }
+        if (isMultiplayer()) {
+            return;
         }
-
-        if (phase === 'move_phase') {
-            giantsPhaseMove();
-            await wait(2500);
-            this.setPhase('attack_phase');
-            showPhaseBanner({
-                text: 'FASE DI COMBATTIMENTO',
-                subtext: `Round ${this.round}. Scegli i bersagli che ingaggeranno battaglia`,
-                theme: 'red',
-                autoDismissMs: 6000
-            });
-            await playBg('./assets/sounds/start_mission.mp3');
-        }
-
-        if (phase === 'attack_phase') {
-            this.setPhase('round_start');
-            showPhaseBanner({
-                text: 'FASE FINALE',
-                subtext: `${this.round}° ROUND`,
-                theme: 'neutral',
-                autoDismissMs: 6000
-            });
-
-            const flagTempoNonScaduto = GAME_STATE.missionState.remainingSec;
-            if (this.round % 2 === 0 || flagTempoNonScaduto === 0) {
-                const card = drawCard('event');
-
-                if (!card) {
-                    log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
-                    closeAllFabs();
-                    return;
-                }
-                log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
-                await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
-
-                showDrawnCard('event', card);
-            }
-
-        }
-
-        if (phase === 'end_round') {
-            this.setPhase('round_start');
-            showPhaseBanner({
-                text: 'INIZIO ROUND',
-                subtext: `Round "${this.round}".`,
-                theme: 'green',
-                autoDismissMs: 2000
-            });
-            await playBg('./assets/sounds/start_mission.mp3');
-        }
+        await handleSingleEndPhase(phase, this);
     }
 };

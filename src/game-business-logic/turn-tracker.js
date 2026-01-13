@@ -3,6 +3,7 @@ import { APP_STATE, GAME_STATE } from '../core/app-state.js';
 import { DB } from '../core/data.js';
 import { scheduleSave } from './game-sync.js';
 import { renderStartButton } from './phases/phase-ui.js';
+import { isCommander } from '../core/permissions.js';
 
 const DEFAULT_TURN_DURATION_SEC = 60; // ⏱ durata turno (configurabile)
 
@@ -16,6 +17,7 @@ const elPlayer = document.getElementById('turn-player');
 const elOrder = document.getElementById('turn-order');
 const elTimer = document.getElementById('turn-timer');
 const elStatus = document.getElementById('turn-status');
+const elHeaderTurnPlayer = document.getElementById('header-turn-player');
 
 export function getTurnInfo() {
   const ts = GAME_STATE.turnState || {};
@@ -115,8 +117,7 @@ export function renderTurnTracker() {
   const phase = GAME_STATE.turnEngine?.phase || 'idle';
   const round = GAME_STATE.turnEngine?.round ?? 0;
   const phaseReady = !!GAME_STATE.turnState?.phaseReady;
-  const myPlayer = APP_STATE.roomPlayers?.find(player => player.user_id === APP_STATE.user?.id);
-  const isCommander = !!myPlayer?.is_commander;
+  const commanderActive = isCommander();
 
   // giocatori dalla stanza (salvati in APP_STATE quando entri nel game)
   const players = APP_STATE.roomPlayers || [];
@@ -128,6 +129,9 @@ export function renderTurnTracker() {
     '—';
 
   elPlayer.textContent = displayName;
+  if (elHeaderTurnPlayer) {
+    elHeaderTurnPlayer.textContent = `Turno: ${displayName}`;
+  }
   elOrder.textContent = order.length
     ? `${currentIndex + 1}/${order.length}`
     : '';
@@ -144,7 +148,7 @@ export function renderTurnTracker() {
       isMultiplayer: APP_STATE.gameMode === 'multiplayer',
       isMyTurn,
       phaseReady,
-      isCommander
+      isCommander: commanderActive
     });
   }
 
