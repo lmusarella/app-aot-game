@@ -3,6 +3,13 @@ import { unitAlive } from '../utils.js';
 import { unitById, GIANT_ENGAGEMENT } from '../../core/data.js';
 import { log } from '../../view-components/leftbar/log.js';
 
+function clearEngagement(gid, hid, g, h) {
+  GIANT_ENGAGEMENT.delete(gid);
+  const gName = g?.name || 'un gigante';
+  const hName = h?.name || 'un umano';
+  log(`Il combattimento tra ${gName} e ${hName} è finito`, 'warning');
+}
+
 // valida e ritorna l’umano ingaggiato col gigante, se ancora valido
 export function getEngagedHuman(gid) {
   const hid = GIANT_ENGAGEMENT.get(gid);
@@ -11,10 +18,7 @@ export function getEngagedHuman(gid) {
   const g = unitById.get(gid);
 
   if (!unitAlive(h) || !sameOrAdjCells(gid, hid)) {
-    GIANT_ENGAGEMENT.delete(gid);
-    const gName = g?.name || 'un gigante';
-    const hName = h?.name || 'un umano';
-    log(`Il combattimento tra ${gName} e ${hName} è finito`, 'warning');
+    clearEngagement(gid, hid, g, h);
     return null;
   }
   return hid;
@@ -35,10 +39,7 @@ export function getEngagingGiant(humanId) {
     const h = unitById.get(hidStr);
     // se uno dei due non è valido / non vivo / non più adiacente → rimuovi binding
     if (!unitAlive(g) || !unitAlive(h) || !sameOrAdjCells(gid, hidStr) || g?.role !== 'enemy') {
-      GIANT_ENGAGEMENT.delete(gid);
-      const gName = g?.name || 'un gigante';
-      const hName = h?.name || 'un umano';
-      log(`Il combattimento tra ${gName} e ${hName} è finito`, 'warning');
+      clearEngagement(gid, hidStr, g, h);
       continue;
     }
 

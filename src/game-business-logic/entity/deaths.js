@@ -13,6 +13,19 @@ import wallCollapse from '../effects/wallCollapse.js';
 import { getEngagedHuman, getEngagingGiant } from './engagement.js';
 import { pushGameEvent } from '../event-manager.js';
 
+function renderAfterDeath({ rebuildIndex = false } = {}) {
+  if (rebuildIndex) rebuildUnitIndex();
+  renderBenches();
+  renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+}
+
+function dispatchUnitDeath(unit) {
+  try {
+    const ev = new CustomEvent('unitDeath', { unit });
+    document.dispatchEvent(ev);
+  } catch { }
+}
+
 export async function handleWallDeath(wallUnit) {
   wallCollapse({
     intensity: 28,
@@ -49,8 +62,7 @@ export async function handleWallDeath(wallUnit) {
     autoDismissMs: 3000,
   });
 
-  renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
-  renderBenches();
+  renderAfterDeath();
   log(`${wallUnit.name} è stato distrutto!`, 'error');
   pushGameEvent('death', { unitId: wallUnit.id, role: wallUnit.role, name: wallUnit.name });
   scheduleSave('entity');
@@ -69,9 +81,7 @@ export async function handleGiantDeath(unit) {
 
   clearConeGiantData(unit.id);
 
-  rebuildUnitIndex();
-  renderBenches();
-  renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+  renderAfterDeath({ rebuildIndex: true });
 
   log(`${unit.name} è morto.`, 'success', 3000, true);
 
@@ -108,10 +118,7 @@ export async function handleGiantDeath(unit) {
   renderMissionUI();
   missionStatsOnUnitDeath(unit);
   getEngagedHuman(unit.id);
-  try {
-    const ev = new CustomEvent('unitDeath', { unit });
-    document.dispatchEvent(ev);
-  } catch { }
+  dispatchUnitDeath(unit);
 }
 
 export async function handleAllyDeath(unit) {
@@ -122,9 +129,7 @@ export async function handleAllyDeath(unit) {
   const j = GAME_STATE.alliesPool.findIndex(a => a.id === back.id);
   if (j >= 0) GAME_STATE.alliesPool[j] = back; else GAME_STATE.alliesPool.push(back);
 
-  rebuildUnitIndex();
-  renderBenches();
-  renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+  renderAfterDeath({ rebuildIndex: true });
   log(`${unit.name} è morto/a.`, 'error');
   pushGameEvent('death', { unitId: unit.id, role: unit.role, name: unit.name });
   await playSfx('./assets/sounds/morte_umano.mp3');
@@ -144,10 +149,7 @@ export async function handleAllyDeath(unit) {
 
   missionStatsOnUnitDeath(unit);
   getEngagingGiant(unit.id);
-  try {
-    const ev = new CustomEvent('unitDeath', { unit });
-    document.dispatchEvent(ev);
-  } catch { }
+  dispatchUnitDeath(unit);
 
   scheduleSave('entity');
 }

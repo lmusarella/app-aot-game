@@ -56,11 +56,16 @@ export function openDialog({
   cancelText = 'Annulla',
   danger = false,
   cancellable = true,
+  allowHtml = false,
   detailed = false,
 }) {
   const { backdrop, modal, title: ttl, msg, btnCancel, btnConfirm, btnClose } = ensureModal();
   ttl.textContent = title || '';
-  msg.innerHTML = message || '';
+  if (allowHtml) {
+    msg.innerHTML = message || '';
+  } else {
+    msg.textContent = message || '';
+  }
   setStandardActions({ confirmText, cancelText, danger, cancellable });
 
   return new Promise((resolve) => {
