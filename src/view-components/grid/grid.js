@@ -20,6 +20,7 @@ export { humanTargetsWithin2, hasHumanInCell, sameOrAdjCells } from './targeting
 
 const baseHpOverride = new Map();
 
+let benchRetryId = null;
 
 export const grid = document.getElementById("hex-grid");
 
@@ -35,6 +36,15 @@ function getBenchElements() {
 }
 export function renderBenches() {
     const { alliesEl, enemiesEl, wallsEl, countAlliesEl, countEnemiesEl, countWallsEl } = getBenchElements();
+    if (!alliesEl || !enemiesEl || !wallsEl) {
+        if (!benchRetryId) {
+            benchRetryId = requestAnimationFrame(() => {
+                benchRetryId = null;
+                renderBenches();
+            });
+        }
+        return;
+    }
     renderBenchSection(alliesEl, GAME_STATE.alliesRoster);
     renderBenchSection(enemiesEl, GAME_STATE.giantsRoster);
     renderBenchSection(wallsEl, GAME_STATE.walls, true);
