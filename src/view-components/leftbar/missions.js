@@ -168,19 +168,23 @@ function renderSquadStatus() {
 
     const ONLINE_THRESHOLD_MS = 90000;
     const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
-    if (players.length === 0) {
+    const roster = Array.isArray(GAME_STATE.alliesRoster) ? GAME_STATE.alliesRoster : [];
+    const hasRoster = roster.length > 0;
+    if (players.length === 0 && !hasRoster) {
         list.innerHTML = '<li class="msn-squad-item is-empty">— squadra non disponibile —</li>';
         return;
     }
 
     const now = Date.now();
-    list.innerHTML = players.map(p => {
-        const last = p.last_seen ? new Date(p.last_seen).getTime() : 0;
+    const rows = hasRoster ? roster : players.map(p => ({ owner_id: p.user_id, role: p.is_commander ? 'commander' : 'recruit' }));
+    list.innerHTML = rows.map(entry => {
+        const player = players.find(p => p.user_id === entry.owner_id) || {};
+        const last = player.last_seen ? new Date(player.last_seen).getTime() : 0;
         const online = last && now - last < ONLINE_THRESHOLD_MS;
-        const baseName = p.nickname || p.user_id?.slice(0, 8) || 'Giocatore';
-        const isMe = p.user_id && APP_STATE.user?.id && p.user_id === APP_STATE.user.id;
+        const baseName = player.nickname || entry.owner_nickname || player.user_id?.slice(0, 8) || 'Giocatore';
+        const isMe = entry.owner_id && APP_STATE.user?.id && entry.owner_id === APP_STATE.user.id;
         const name = isMe ? `${baseName} (Tu)` : baseName;
-        const roleLabel = p.is_commander ? 'Comandante' : 'Recluta';
+        const roleLabel = player.is_commander || entry.role === 'commander' ? 'Comandante' : 'Recluta';
         const statusClass = online ? 'msn-squad-dot--online' : 'msn-squad-dot--offline';
         const statusLabel = online ? 'Online' : 'Offline';
         return `
