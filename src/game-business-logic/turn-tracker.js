@@ -13,16 +13,30 @@ let remainingSec = DEFAULT_TURN_DURATION_SEC;
 let lastTurnPlayerId = null;
 let turnChangeTimerId = null;
 
-const elContainer = document.getElementById('turn-tracker');
-const elPlayer = document.getElementById('turn-player');
-const elOrder = document.getElementById('turn-order');
-const elTimer = document.getElementById('turn-timer');
-const elStatus = document.getElementById('turn-status');
-const elHeaderTurnPlayer = document.getElementById('header-turn-player');
-const elSetupProgress = document.getElementById('setup-progress');
-const elSetupProgressLabel = document.getElementById('setup-progress-label');
-const elSetupProgressBar = document.querySelector('#setup-progress .setup-progress-bar');
-const elSetupProgressFill = document.getElementById('setup-progress-fill');
+let elContainer = null;
+let elPlayer = null;
+let elOrder = null;
+let elTimer = null;
+let elStatus = null;
+let elHeaderTurnPlayer = null;
+let elSetupProgress = null;
+let elSetupProgressLabel = null;
+let elSetupProgressBar = null;
+let elSetupProgressFill = null;
+
+function ensureTurnElements() {
+  if (elContainer) return;
+  elContainer = document.getElementById('turn-tracker');
+  elPlayer = document.getElementById('turn-player');
+  elOrder = document.getElementById('turn-order');
+  elTimer = document.getElementById('turn-timer');
+  elStatus = document.getElementById('turn-status');
+  elHeaderTurnPlayer = document.getElementById('header-turn-player');
+  elSetupProgress = document.getElementById('setup-progress');
+  elSetupProgressLabel = document.getElementById('setup-progress-label');
+  elSetupProgressBar = document.querySelector('#setup-progress .setup-progress-bar');
+  elSetupProgressFill = document.getElementById('setup-progress-fill');
+}
 
 export function getTurnInfo() {
   const ts = GAME_STATE.turnState || {};
@@ -116,6 +130,7 @@ export function initTurnTracker() {
  * oppure quando ricevi un nuovo game_state da realtime.
  */
 export function renderTurnTracker() {
+  ensureTurnElements();
   if (!elContainer) return;
   refreshHeaderUI();
 
