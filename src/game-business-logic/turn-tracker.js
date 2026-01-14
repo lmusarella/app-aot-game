@@ -117,6 +117,9 @@ export function renderTurnTracker() {
   const phase = GAME_STATE.turnEngine?.phase || 'idle';
   const round = GAME_STATE.turnEngine?.round ?? 0;
   const phaseReady = !!GAME_STATE.turnState?.phaseReady;
+  const phaseDoneByCount = Array.isArray(GAME_STATE.turnState?.phaseDoneBy)
+    ? GAME_STATE.turnState.phaseDoneBy.length
+    : 0;
   const commanderActive = isCommander();
 
   // giocatori dalla stanza (salvati in APP_STATE quando entri nel game)
@@ -165,6 +168,12 @@ export function renderTurnTracker() {
           ? 'Tutti hanno completato la fase. Puoi proseguire.'
           : 'Fase completata. In attesa del comandante.';
       }
+    } else if (phase === 'setup' && order.length > 0) {
+      const progressText = `Setup completato: ${Math.min(phaseDoneByCount, order.length)}/${order.length}.`;
+      elStatus.hidden = false;
+      elStatus.textContent = isMyTurn
+        ? `${progressText} È il tuo turno.`
+        : `${progressText} In attesa del tuo turno.`;
     } else if (!isMyTurn) {
       elStatus.hidden = false;
       elStatus.textContent = 'In attesa del tuo turno.';
