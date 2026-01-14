@@ -25,6 +25,11 @@ let elInc = null;
 let btnLeaveRoom = null;
 let elGameMode = null;
 let elPhaseLabel = null;
+let elTutorial = null;
+let elAudio = null;
+let elMissionCtrl = null;
+let elTurnTracker = null;
+let elHeaderUser = null;
 
 function cacheHeaderElements() {
     missionCardHead = document.getElementById('mission-head');
@@ -40,6 +45,11 @@ function cacheHeaderElements() {
     btnLeaveRoom = document.getElementById('btn-leave-room');
     elGameMode = document.getElementById('hdr-game-mode');
     elPhaseLabel = document.getElementById('phase-label');
+    elTutorial = document.getElementById('btn-tutorial');
+    elAudio = document.getElementById('btn-audio');
+    elMissionCtrl = document.querySelector('.mission-ctrl');
+    elTurnTracker = document.getElementById('turn-tracker');
+    elHeaderUser = document.querySelector('.header-user');
 
     return {
         missionCardHead,
@@ -52,16 +62,39 @@ function cacheHeaderElements() {
         elInc,
         btnLeaveRoom,
         elGameMode,
-        elPhaseLabel
+        elPhaseLabel,
+        elTutorial,
+        elAudio,
+        elMissionCtrl,
+        elTurnTracker,
+        elHeaderUser
     };
 }
 
 export function renderHeader() {
     cacheHeaderElements();
+    applyHeaderModeVisibility();
     renderMissionUI();
     renderTimerUI();
     renderGameModeBadge();
     renderPhaseLabel();
+}
+
+function applyHeaderModeVisibility() {
+    const isMultiplayer = APP_STATE.gameMode === 'multiplayer';
+    const toggle = (el, visible) => {
+        if (!el) return;
+        el.classList.toggle('is-hidden', !visible);
+    };
+
+    toggle(elTutorial, !isMultiplayer);
+    toggle(elAudio, !isMultiplayer);
+    toggle(elMissionCtrl, !isMultiplayer);
+    toggle(elGameMode, !isMultiplayer);
+    toggle(elPhaseLabel, !isMultiplayer);
+    toggle(btnReset, !isMultiplayer);
+    toggle(elTurnTracker, !isMultiplayer);
+    toggle(elHeaderUser, !isMultiplayer);
 }
 
 function renderGameModeBadge() {

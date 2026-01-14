@@ -193,15 +193,18 @@ export function renderTurnTracker() {
   }
 
   if (elSetupProgress) {
-    const shouldShowSetup = APP_STATE.gameMode === 'multiplayer' && phase === 'setup' && order.length > 0;
+    const shouldShowSetup = APP_STATE.gameMode === 'multiplayer';
     if (!shouldShowSetup) {
       elSetupProgress.hidden = true;
     } else {
-      const totalPlayers = order.length;
+      const totalPlayers = players.length;
       const donePlayers = Math.min(phaseDoneByCount, totalPlayers);
       const pct = totalPlayers > 0 ? Math.round((donePlayers / totalPlayers) * 100) : 0;
       if (elSetupProgressLabel) {
-        elSetupProgressLabel.textContent = `Setup: ${donePlayers}/${totalPlayers} · Turno: ${displayName}`;
+        const turnLabel = isMyTurn
+          ? 'È il tuo turno.'
+          : (displayName && displayName !== '—' ? `È il turno di ${displayName}.` : 'È il turno di un altro giocatore.');
+        elSetupProgressLabel.textContent = `Giocatori: ${totalPlayers} · ${turnLabel}`;
       }
       if (elSetupProgressFill) {
         elSetupProgressFill.style.width = `${pct}%`;
