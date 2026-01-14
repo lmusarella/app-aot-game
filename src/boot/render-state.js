@@ -1,9 +1,8 @@
-import { playCornoGuerra, startTimer, stopTimer } from "../view-components/header/header.js";
+import { notifyTimerExpired, startTimer, stopTimer } from "../view-components/header/header.js";
 import { clamp } from "../game-business-logic/utils.js";
 import { TurnEngine } from "../game-business-logic/phases.js";
 import { seedWallRows } from "../game-business-logic/entity/entity.js";
 import { DB, GAME_STATE, rebuildUnitIndex } from "../core/data.js";
-import showWarningC from '../game-business-logic/effects/warningOverlayC.js';
 import { applyCommanderAccess } from '../core/permissions.js';
 
 export function ensureWallSpawns() {
@@ -27,14 +26,7 @@ export function restoreTimerState() {
                 startTimer();
             } else {
                 stopTimer();
-                showWarningC({
-                    text: `TEMPO SCADUTO`,
-                    subtext: `Ad ogni fine turno verrà pescata una carta evento`,
-                    theme: 'red',
-                    ringAmp: 1.0,
-                    autoDismissMs: 3000
-                });
-                playCornoGuerra();
+                notifyTimerExpired();
             }
         }
     } catch { }

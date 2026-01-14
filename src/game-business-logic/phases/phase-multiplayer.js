@@ -1,6 +1,6 @@
 import { APP_STATE } from '../../core/app-state.js';
 import { GAME_STATE } from '../../core/data.js';
-import { advanceTurn, renderTurnTracker } from '../turn-tracker.js';
+import { advanceTurn, ensureMultiplayerTurnOrder, renderTurnTracker } from '../turn-tracker.js';
 import { scheduleSave } from '../game-sync.js';
 
 export function isMultiplayer() {
@@ -8,10 +8,21 @@ export function isMultiplayer() {
 }
 
 export async function handleMultiplayerPhaseEnd(phase) {
-    const ts = GAME_STATE.turnState || {};
-    const order = ts.order || [];
+    let ts = GAME_STATE.turnState || {};
+    let order = Array.isArray(ts.order) ? ts.order : [];
+    if (order.length === 0) {
+        ensureMultiplayerTurnOrder();
+        if (GAME_STATE.turnState) {
+            ts = GAME_STATE.turnState;
+        }
+        order = Array.isArray(ts.order) ? ts.order : [];
+    }
     const myId = APP_STATE.user?.id || null;
     if (!myId || order.length === 0) return;
+    if (!ts.currentPlayerId) {
+        ts.currentIndex = ts.currentIndex ?? 0;
+        ts.currentPlayerId = order[ts.currentIndex] || order[0] || null;
+    }
 
     if (!Array.isArray(ts.phaseDoneBy)) ts.phaseDoneBy = [];
     if (!ts.phaseDoneBy.includes(myId)) ts.phaseDoneBy.push(myId);

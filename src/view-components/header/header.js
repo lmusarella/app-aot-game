@@ -103,9 +103,25 @@ export function renderTimerUI() {
     }
 }
 
+export async function notifyTimerExpired() {
+    if (GAME_STATE.missionState.timerExpiredNotified) return;
+    GAME_STATE.missionState.timerExpiredNotified = true;
+    showWarningC({
+        text: `TEMPO SCADUTO`,
+        subtext: `Ad ogni fine turno verrà pescata una carta evento`,
+        theme: 'red',
+        ringAmp: 1.0,
+        autoDismissMs: 3000
+    });
+    await playCornoGuerra();
+}
+
 // Timer controls
 export function startTimer() {
     if (GAME_STATE.missionState.ticking) return;
+    if (GAME_STATE.missionState.remainingSec > 0) {
+        GAME_STATE.missionState.timerExpiredNotified = false;
+    }
     GAME_STATE.missionState.ticking = true;
     renderTimerUI();
 
@@ -115,14 +131,7 @@ export function startTimer() {
 
         if (GAME_STATE.missionState.remainingSec <= 0) {
             stopTimer();
-            showWarningC({
-                text: `TEMPO SCADUTO`,
-                subtext: `Ad ogni fine turno verrà pescata una carta evento`,
-                theme: 'red',
-                ringAmp: 1.0,
-                autoDismissMs: 3000
-            });
-            await playCornoGuerra();
+            await notifyTimerExpired();
         }
     }, 1000);
 }
@@ -143,6 +152,7 @@ export function stopTimer() {
 
 export function resetTimer() {
     GAME_STATE.missionState.remainingSec = GAME_STATE.missionState.timerTotalSec || 1200;
+    GAME_STATE.missionState.timerExpiredNotified = false;
     stopTimer();
     renderTimerUI();
     //scheduleSave();
