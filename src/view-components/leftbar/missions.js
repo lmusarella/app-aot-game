@@ -177,6 +177,10 @@ function renderSquadStatus() {
 
     const now = Date.now();
     const rows = hasRoster ? roster : players.map(p => ({ owner_id: p.user_id, role: p.is_commander ? 'commander' : 'recruit' }));
+    const rosterIds = new Set(roster.map(u => u.id));
+    const unitIndex = Array.isArray(DB.ALLIES)
+        ? new Map(DB.ALLIES.map(u => [u.id, u]))
+        : new Map();
     list.innerHTML = rows.map(entry => {
         const player = players.find(p => p.user_id === entry.owner_id) || {};
         const last = player.last_seen ? new Date(player.last_seen).getTime() : 0;
@@ -187,12 +191,30 @@ function renderSquadStatus() {
         const roleLabel = player.is_commander || entry.role === 'commander' ? 'Comandante' : 'Recluta';
         const statusClass = online ? 'msn-squad-dot--online' : 'msn-squad-dot--offline';
         const statusLabel = online ? 'Online' : 'Offline';
+        const allUnits = [
+            player.commander_code,
+            ...(Array.isArray(player.recruit_codes) ? player.recruit_codes : [])
+        ].filter(Boolean);
+        const extraUnits = allUnits.filter(code => !rosterIds.has(code));
+        const extraList = extraUnits
+            .map(code => unitIndex.get(code)?.name || code)
+            .map(label => `<li class="msn-squad-extra-item">${label}</li>`)
+            .join('');
+        const extraBlock = extraUnits.length
+            ? `
+        <details class="msn-squad-extra">
+          <summary>Altre unità (${extraUnits.length})</summary>
+          <ul>${extraList}</ul>
+        </details>
+      `
+            : '';
         return `
       <li class="msn-squad-item">
         <span class="msn-squad-dot ${statusClass}" title="${statusLabel}"></span>
         <span class="msn-squad-status">${statusLabel}</span>
         <span class="msn-squad-name">${name}</span>
         <span class="msn-squad-role">${roleLabel}</span>
+        ${extraBlock}
       </li>`;
     }).join('');
 }

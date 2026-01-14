@@ -718,6 +718,7 @@
   border-radius: 10px;
   background: #10121a;
   font-size: 12px;
+  flex-wrap: wrap;
 }
 
 .msn-squad-item.is-empty {
@@ -754,6 +755,35 @@
   margin-left: auto;
   opacity: .75;
   font-size: 11px;
+}
+
+.msn-squad-extra {
+  width: 100%;
+  margin-left: 22px;
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.msn-squad-extra summary {
+  cursor: pointer;
+  list-style: none;
+  color: #cbd5f5;
+}
+
+.msn-squad-extra summary::-webkit-details-marker {
+  display: none;
+}
+
+.msn-squad-extra ul {
+  margin: 4px 0 0;
+  padding-left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.msn-squad-extra-item {
+  opacity: 0.85;
 }
 
 .msn-list {
@@ -850,4 +880,3 @@
    border-radius: 6px;
    opacity: .9;
  }
-
