@@ -150,6 +150,40 @@
   color: #e2e8f0;
 }
 
+.setup-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 15, 17, 0.65);
+  color: #e2e8f0;
+}
+
+.setup-progress-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+
+.setup-progress-bar {
+  position: relative;
+  width: 96px;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.setup-progress-fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: linear-gradient(90deg, #7dd3fc, #38bdf8);
+  transition: width 180ms ease;
+}
+
  /* Header reset button */
  .reset-hdr-btn {
    justify-self: end;

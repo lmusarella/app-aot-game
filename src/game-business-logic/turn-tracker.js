@@ -18,6 +18,10 @@ const elOrder = document.getElementById('turn-order');
 const elTimer = document.getElementById('turn-timer');
 const elStatus = document.getElementById('turn-status');
 const elHeaderTurnPlayer = document.getElementById('header-turn-player');
+const elSetupProgress = document.getElementById('setup-progress');
+const elSetupProgressLabel = document.getElementById('setup-progress-label');
+const elSetupProgressBar = document.querySelector('#setup-progress .setup-progress-bar');
+const elSetupProgressFill = document.getElementById('setup-progress-fill');
 
 export function getTurnInfo() {
   const ts = GAME_STATE.turnState || {};
@@ -180,6 +184,27 @@ export function renderTurnTracker() {
     } else {
       elStatus.hidden = false;
       elStatus.textContent = 'È il tuo turno.';
+    }
+  }
+
+  if (elSetupProgress) {
+    const shouldShowSetup = APP_STATE.gameMode === 'multiplayer' && phase === 'setup' && order.length > 0;
+    if (!shouldShowSetup) {
+      elSetupProgress.hidden = true;
+    } else {
+      const totalPlayers = order.length;
+      const donePlayers = Math.min(phaseDoneByCount, totalPlayers);
+      const pct = totalPlayers > 0 ? Math.round((donePlayers / totalPlayers) * 100) : 0;
+      if (elSetupProgressLabel) {
+        elSetupProgressLabel.textContent = `Setup: ${donePlayers}/${totalPlayers}`;
+      }
+      if (elSetupProgressFill) {
+        elSetupProgressFill.style.width = `${pct}%`;
+      }
+      if (elSetupProgressBar) {
+        elSetupProgressBar.setAttribute('aria-valuenow', String(pct));
+      }
+      elSetupProgress.hidden = false;
     }
   }
 
