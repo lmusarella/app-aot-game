@@ -155,7 +155,8 @@ export function renderTurnTracker() {
       isMultiplayer: APP_STATE.gameMode === 'multiplayer',
       isMyTurn,
       phaseReady,
-      isCommander: commanderActive
+      isCommander: commanderActive,
+      currentPlayerName: displayName
     });
   }
 
@@ -180,7 +181,11 @@ export function renderTurnTracker() {
         : `${progressText} In attesa del tuo turno.`;
     } else if (!isMyTurn) {
       elStatus.hidden = false;
-      elStatus.textContent = 'In attesa del tuo turno.';
+      if (displayName && displayName !== '—') {
+        elStatus.textContent = `È il turno di ${displayName}.`;
+      } else {
+        elStatus.textContent = 'È il turno di un altro giocatore.';
+      }
     } else {
       elStatus.hidden = false;
       elStatus.textContent = 'È il tuo turno.';
