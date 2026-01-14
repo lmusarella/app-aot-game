@@ -22,6 +22,7 @@ export function guardCommanderAction(actionLabel) {
 export function applyCommanderAccess() {
   const allowed = isCommander();
   document.querySelectorAll(COMMANDER_SELECTOR).forEach(el => {
+    if (el.id === 'btn-start') return;
     el.classList.toggle('is-commander-locked', !allowed);
     el.setAttribute('aria-disabled', String(!allowed));
   });

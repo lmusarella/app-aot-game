@@ -1,4 +1,4 @@
-import { GAME_STATE, resetGame, snapshot } from '../../core/data.js';
+import { DB, GAME_STATE, resetGame, snapshot } from '../../core/data.js';
 import { confirmDialog, openDialog } from '../../ui-components/ui-helpers.js';
 import { clearGrid } from '../grid/grid.js';
 import { completeMission, setMissionByIndex, renderMissionUI } from '../leftbar/missions.js';
@@ -25,6 +25,14 @@ let elInc = null;
 let btnLeaveRoom = null;
 let elGameMode = null;
 let elPhaseLabel = null;
+let elTutorial = null;
+let elAudio = null;
+let elMissionCtrl = null;
+let elTurnTracker = null;
+let elHeaderUser = null;
+let elHeaderUserName = null;
+let elHeaderUserAvatar = null;
+let elHeaderUserAvatarImg = null;
 
 function cacheHeaderElements() {
     missionCardHead = document.getElementById('mission-head');
@@ -40,6 +48,14 @@ function cacheHeaderElements() {
     btnLeaveRoom = document.getElementById('btn-leave-room');
     elGameMode = document.getElementById('hdr-game-mode');
     elPhaseLabel = document.getElementById('phase-label');
+    elTutorial = document.getElementById('btn-tutorial');
+    elAudio = document.getElementById('btn-audio');
+    elMissionCtrl = document.querySelector('.mission-ctrl');
+    elTurnTracker = document.getElementById('turn-tracker');
+    elHeaderUser = document.querySelector('.header-user');
+    elHeaderUserName = document.getElementById('hdr-user-name');
+    elHeaderUserAvatar = document.querySelector('.header-user-avatar');
+    elHeaderUserAvatarImg = document.getElementById('hdr-user-avatar');
 
     return {
         missionCardHead,
@@ -52,16 +68,75 @@ function cacheHeaderElements() {
         elInc,
         btnLeaveRoom,
         elGameMode,
-        elPhaseLabel
+        elPhaseLabel,
+        elTutorial,
+        elAudio,
+        elMissionCtrl,
+        elTurnTracker,
+        elHeaderUser,
+        elHeaderUserName,
+        elHeaderUserAvatar,
+        elHeaderUserAvatarImg
     };
 }
 
 export function renderHeader() {
     cacheHeaderElements();
+    applyHeaderModeVisibility();
+    renderHeaderUserInfo();
     renderMissionUI();
     renderTimerUI();
     renderGameModeBadge();
     renderPhaseLabel();
+}
+
+export function refreshHeaderUI() {
+    cacheHeaderElements();
+    applyHeaderModeVisibility();
+    renderHeaderUserInfo();
+    renderTimerUI();
+    renderPhaseLabel();
+}
+
+function applyHeaderModeVisibility() {
+    const isMultiplayer = APP_STATE.gameMode === 'multiplayer';
+    const toggle = (el, visible) => {
+        if (!el) return;
+        el.classList.toggle('is-hidden', !visible);
+    };
+
+    toggle(elTutorial, !isMultiplayer);
+    toggle(elAudio, !isMultiplayer);
+    toggle(elMissionCtrl, !isMultiplayer);
+    toggle(elGameMode, !isMultiplayer);
+    toggle(elPhaseLabel, !isMultiplayer);
+    toggle(btnReset, !isMultiplayer);
+    toggle(elTurnTracker, !isMultiplayer);
+    toggle(elHeaderUser, true);
+}
+
+function renderHeaderUserInfo() {
+    if (!elHeaderUserName || !elHeaderUserAvatarImg || !elHeaderUserAvatar) return;
+    const userId = APP_STATE.user?.id;
+    let displayName = APP_STATE.user?.user_metadata?.nickname || APP_STATE.user?.email || '—';
+    const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
+    const mePlayer = players.find(p => p.user_id === userId);
+    if (mePlayer?.nickname) {
+        displayName = mePlayer.nickname;
+    }
+    elHeaderUserName.textContent = displayName;
+
+    const rosterUnit = GAME_STATE.alliesRoster?.find(u => u.owner_id === userId);
+    const unitFromDb = !rosterUnit && mePlayer?.unit_code
+        ? DB?.ALLIES?.find(u => u.id === mePlayer.unit_code)
+        : null;
+    const unit = rosterUnit || unitFromDb;
+    const avatarSrc = unit?.img || unit?.avatar || 'assets/units/default.png';
+    const role = mePlayer?.is_commander || unit?.role === 'commander' ? 'commander' : 'recruit';
+
+    elHeaderUserAvatar.dataset.role = role;
+    elHeaderUserAvatarImg.src = avatarSrc;
+    elHeaderUserAvatarImg.alt = displayName ? `Avatar ${displayName}` : 'Avatar giocatore';
 }
 
 function renderGameModeBadge() {
@@ -103,9 +178,25 @@ export function renderTimerUI() {
     }
 }
 
+export async function notifyTimerExpired() {
+    if (GAME_STATE.missionState.timerExpiredNotified) return;
+    GAME_STATE.missionState.timerExpiredNotified = true;
+    showWarningC({
+        text: `TEMPO SCADUTO`,
+        subtext: `Ad ogni fine turno verrà pescata una carta evento`,
+        theme: 'red',
+        ringAmp: 1.0,
+        autoDismissMs: 3000
+    });
+    await playCornoGuerra();
+}
+
 // Timer controls
 export function startTimer() {
     if (GAME_STATE.missionState.ticking) return;
+    if (GAME_STATE.missionState.remainingSec > 0) {
+        GAME_STATE.missionState.timerExpiredNotified = false;
+    }
     GAME_STATE.missionState.ticking = true;
     renderTimerUI();
 
@@ -115,14 +206,7 @@ export function startTimer() {
 
         if (GAME_STATE.missionState.remainingSec <= 0) {
             stopTimer();
-            showWarningC({
-                text: `TEMPO SCADUTO`,
-                subtext: `Ad ogni fine turno verrà pescata una carta evento`,
-                theme: 'red',
-                ringAmp: 1.0,
-                autoDismissMs: 3000
-            });
-            await playCornoGuerra();
+            await notifyTimerExpired();
         }
     }, 1000);
 }
@@ -143,6 +227,7 @@ export function stopTimer() {
 
 export function resetTimer() {
     GAME_STATE.missionState.remainingSec = GAME_STATE.missionState.timerTotalSec || 1200;
+    GAME_STATE.missionState.timerExpiredNotified = false;
     stopTimer();
     renderTimerUI();
     //scheduleSave();

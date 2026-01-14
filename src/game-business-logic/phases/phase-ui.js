@@ -57,7 +57,7 @@ export function applyPhaseUI(phase) {
     );
 }
 
-export function renderStartButton(button, { phase, round, isMultiplayer = false, isMyTurn = true, phaseReady = false, isCommander = false }) {
+export function renderStartButton(button, { phase, round, isMultiplayer = false, isMyTurn = true, phaseReady = false, isCommander = false, currentPlayerName = '' }) {
     if (!button) return;
     if (phase === 'idle') {
         if (isMultiplayer && !isCommander) {
@@ -120,11 +120,21 @@ export function renderStartButton(button, { phase, round, isMultiplayer = false,
         button.hidden = true; // nelle altre fasi non serve
     }
 
-    if (isMultiplayer && phase === 'move_phase' && phaseReady) {
-        button.disabled = true;
-    } else if (isMultiplayer && !isMyTurn && !button.hidden) {
+    if (isMyTurn) {
+        button.disabled = false;
+    } else if (isMultiplayer && !button.hidden) {
         button.disabled = true;
     } else {
         button.disabled = false;
+    }
+
+    if (!button.hidden && isMultiplayer) {
+        if (isMyTurn) {
+            button.title = 'È il tuo turno.';
+        } else if (currentPlayerName) {
+            button.title = `È il turno di ${currentPlayerName}.`;
+        } else {
+            button.title = 'È il turno di un altro giocatore.';
+        }
     }
 }

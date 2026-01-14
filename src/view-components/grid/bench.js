@@ -169,7 +169,20 @@ function renderBenchSection(container, units, readOnly = false) {
         if (u.owner_nickname && (u.role === "recruit" || u.role === "commander")) {
             const owner = document.createElement("div");
             owner.className = "unit-owner";
-            owner.textContent = `Giocatore: ${u.owner_nickname}`;
+            const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
+            const player = players.find(p => p.user_id === u.owner_id) || {};
+            const baseName = player.nickname || u.owner_nickname;
+            const isMe = u.owner_id && APP_STATE.user?.id && u.owner_id === APP_STATE.user.id;
+            const nameLabel = isMe ? `${baseName} (Tu)` : baseName;
+            const last = player.last_seen ? new Date(player.last_seen).getTime() : 0;
+            const online = !!last && (Date.now() - last < 90000);
+            const statusClass = online ? 'msn-squad-dot--online' : 'msn-squad-dot--offline';
+            const statusLabel = online ? 'Online' : 'Offline';
+            owner.innerHTML = `
+                <span class="msn-squad-dot ${statusClass}" title="${statusLabel}"></span>
+                <span>Giocatore: ${nameLabel}</span>
+            `;
+            owner.setAttribute('title', statusLabel);
             info.append(name, sub, owner);
         } else {
             info.append(name, sub);

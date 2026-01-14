@@ -76,8 +76,11 @@ export function stopPresenceHeartbeat() {
 
 export function startPresenceHeartbeat(roomId) {
   stopPresenceHeartbeat();
+  let pingInFlight = false;
   const pingPresence = async () => {
     if (!APP_STATE.user?.id || !roomId) return;
+    if (pingInFlight) return;
+    pingInFlight = true;
     try {
       await supabase
         .from('room_players')
@@ -86,9 +89,11 @@ export function startPresenceHeartbeat(roomId) {
         .eq('user_id', APP_STATE.user.id);
     } catch (err) {
       console.warn('Aggiornamento presenza fallito:', err);
+    } finally {
+      pingInFlight = false;
     }
   };
-  APP_STATE.presenceTimerId = setInterval(pingPresence, 3000);
+  APP_STATE.presenceTimerId = setInterval(pingPresence, 5000);
   APP_STATE.presenceVisibilityHandler = () => {
     if (!document.hidden) {
       pingPresence();

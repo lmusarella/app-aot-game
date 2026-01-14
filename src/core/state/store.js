@@ -25,6 +25,7 @@ export function buildDefaultMissionState() {
         remainingSec: totalSec,
         ticking: false,
         intervalId: null,
+        timerExpiredNotified: false,
         kills: {
             Puro: 0,
             Anomalo: 0,
