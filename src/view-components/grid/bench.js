@@ -3,6 +3,7 @@ import { applyHpBar, COLOR_VAR } from '../../game-business-logic/utils.js';
 import { DB, GAME_STATE, UNIT_SELECTED } from '../../core/data.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { adjustUnitHp } from '../../game-business-logic/entity/entity.js';
+import { isCommander } from '../../core/permissions.js';
 import { getTurnInfo } from '../../game-business-logic/turn-tracker.js';
 import { enablePointerDrag } from './drag.js';
 import { bringToFront } from './stacks.js';
@@ -20,6 +21,7 @@ function canActNow() {
 function canControlUnit(unit) {
     if (APP_STATE.gameMode !== 'multiplayer') return true;
     if (!unit) return false;
+    if (isCommander()) return true;
     if (unit.role === 'enemy' || unit.role === 'wall') return false;
     const myId = APP_STATE.user?.id;
     return !!myId && unit.owner_id === myId;
@@ -231,10 +233,6 @@ function renderBenchSection(container, units, readOnly = false) {
            
             e.stopPropagation();
             if (isWall && isDestroyed) return;
-            if (!canActNow()) {
-                warnAction('Non è il tuo turno.');
-                return;
-            }
             if (!canControlUnit(u)) {
                 warnAction('Puoi modificare solo la tua unità.');
                 return;
@@ -249,10 +247,6 @@ function renderBenchSection(container, units, readOnly = false) {
            
             e.stopPropagation();
             if (isWall && isDestroyed) return;
-            if (!canActNow()) {
-                warnAction('Non è il tuo turno.');
-                return;
-            }
             if (!canControlUnit(u)) {
                 warnAction('Puoi modificare solo la tua unità.');
                 return;
@@ -288,10 +282,6 @@ function renderBenchSection(container, units, readOnly = false) {
             trashTop.addEventListener("click", async (e) => {
                
                 e.preventDefault(); e.stopPropagation();
-                if (!canActNow()) {
-                    warnAction('Non è il tuo turno.');
-                    return;
-                }
                 if (!canControlUnit(u)) {
                     warnAction('Puoi rimuovere solo la tua unità.');
                     return;

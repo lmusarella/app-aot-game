@@ -23,8 +23,6 @@
                 </div>
             </div>
 
-            <button id="btn-start" class="start-hdr-btn" data-mode="start" data-commander-only type="button"
-                title="Avvia missione">INIZIA</button>
             <span id="phase-label" class="phase-label" aria-live="polite">Fase: —</span>
             <span id="turn-status" class="turn-status" aria-live="polite" hidden></span>
             <div id="setup-progress" class="setup-progress" hidden>
@@ -75,13 +73,16 @@
             </button>
             <div id="hdr-user-menu" class="header-user-menu" role="menu" hidden>
                 <button class="header-user-menu-item" type="button" data-action="audio" role="menuitem">
-                    Impostazioni audio
+                    <span class="menu-icon" aria-hidden="true">🎧</span>
+                    <span class="menu-label">Impostazioni audio</span>
                 </button>
                 <button class="header-user-menu-item" type="button" data-action="tutorial" role="menuitem">
-                    Tutorial
+                    <span class="menu-icon" aria-hidden="true">🧭</span>
+                    <span class="menu-label">Tutorial</span>
                 </button>
                 <button class="header-user-menu-item" type="button" data-action="leave" role="menuitem">
-                    Esci partita
+                    <span class="menu-icon" aria-hidden="true">🚪</span>
+                    <span class="menu-label">Esci partita</span>
                 </button>
             </div>
         </div>
