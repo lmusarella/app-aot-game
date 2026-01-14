@@ -196,7 +196,7 @@ export function renderTurnTracker() {
       const donePlayers = Math.min(phaseDoneByCount, totalPlayers);
       const pct = totalPlayers > 0 ? Math.round((donePlayers / totalPlayers) * 100) : 0;
       if (elSetupProgressLabel) {
-        elSetupProgressLabel.textContent = `Setup: ${donePlayers}/${totalPlayers}`;
+        elSetupProgressLabel.textContent = `Setup: ${donePlayers}/${totalPlayers} · Turno: ${displayName}`;
       }
       if (elSetupProgressFill) {
         elSetupProgressFill.style.width = `${pct}%`;

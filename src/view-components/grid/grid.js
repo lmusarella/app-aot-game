@@ -24,6 +24,13 @@ const baseHpOverride = new Map();
 
 function canActNow() {
     if (APP_STATE.gameMode !== 'multiplayer') return true;
+    const phase = GAME_STATE.turnEngine?.phase;
+    if (phase === 'setup') {
+        const ts = GAME_STATE.turnState || {};
+        const done = Array.isArray(ts.phaseDoneBy) ? ts.phaseDoneBy : [];
+        const myId = APP_STATE.user?.id;
+        return !!myId && !done.includes(myId);
+    }
     const { isMyTurn, currentPlayerId } = getTurnInfo();
     return !!currentPlayerId && isMyTurn;
 }
