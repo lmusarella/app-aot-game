@@ -80,6 +80,13 @@ export function renderHeader() {
     renderPhaseLabel();
 }
 
+export function refreshHeaderUI() {
+    cacheHeaderElements();
+    applyHeaderModeVisibility();
+    renderTimerUI();
+    renderPhaseLabel();
+}
+
 function applyHeaderModeVisibility() {
     const isMultiplayer = APP_STATE.gameMode === 'multiplayer';
     const toggle = (el, visible) => {

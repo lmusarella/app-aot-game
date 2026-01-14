@@ -2,6 +2,7 @@
 import { APP_STATE, GAME_STATE } from '../core/app-state.js';
 import { DB } from '../core/data.js';
 import { scheduleSave } from './game-sync.js';
+import { refreshHeaderUI } from '../view-components/header/header.js';
 import { renderStartButton } from './phases/phase-ui.js';
 import { isCommander } from '../core/permissions.js';
 
@@ -116,6 +117,7 @@ export function initTurnTracker() {
  */
 export function renderTurnTracker() {
   if (!elContainer) return;
+  refreshHeaderUI();
 
   const { order, currentIndex, currentPlayerId, isMyTurn } = getTurnInfo();
   const phase = GAME_STATE.turnEngine?.phase || 'idle';
