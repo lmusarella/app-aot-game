@@ -119,7 +119,13 @@ async function pushGameState() {
     }
   }
   const { isMyTurn } = getTurnInfo();
-  if (!isMyTurn && !force) {
+  const phase = GAME_STATE.turnEngine?.phase;
+  const isSetupPhase = phase === 'setup' || phase === 'move_phase';
+  const isMarkedDone = Array.isArray(turnState?.phaseDoneBy)
+    ? turnState.phaseDoneBy.includes(APP_STATE.user?.id)
+    : false;
+  const allowOutOfTurnSave = isSetupPhase && isMarkedDone;
+  if (!isMyTurn && !force && !allowOutOfTurnSave) {
     console.warn("Tentativo di salvataggio fuori turno bloccato.");
     return;
   }

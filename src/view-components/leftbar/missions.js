@@ -177,7 +177,9 @@ function renderSquadStatus() {
     list.innerHTML = players.map(p => {
         const last = p.last_seen ? new Date(p.last_seen).getTime() : 0;
         const online = last && now - last < ONLINE_THRESHOLD_MS;
-        const name = p.nickname || p.user_id?.slice(0, 8) || 'Giocatore';
+        const baseName = p.nickname || p.user_id?.slice(0, 8) || 'Giocatore';
+        const isMe = p.user_id && APP_STATE.user?.id && p.user_id === APP_STATE.user.id;
+        const name = isMe ? `${baseName} (Tu)` : baseName;
         const roleLabel = p.is_commander ? 'Comandante' : 'Recluta';
         const statusClass = online ? 'msn-squad-dot--online' : 'msn-squad-dot--offline';
         const statusLabel = online ? 'Online' : 'Offline';
