@@ -1,4 +1,4 @@
-import { GAME_STATE, resetGame, snapshot } from '../../core/data.js';
+import { DB, GAME_STATE, resetGame, snapshot } from '../../core/data.js';
 import { confirmDialog, openDialog } from '../../ui-components/ui-helpers.js';
 import { clearGrid } from '../grid/grid.js';
 import { completeMission, setMissionByIndex, renderMissionUI } from '../leftbar/missions.js';
@@ -30,6 +30,9 @@ let elAudio = null;
 let elMissionCtrl = null;
 let elTurnTracker = null;
 let elHeaderUser = null;
+let elHeaderUserName = null;
+let elHeaderUserAvatar = null;
+let elHeaderUserAvatarImg = null;
 
 function cacheHeaderElements() {
     missionCardHead = document.getElementById('mission-head');
@@ -50,6 +53,9 @@ function cacheHeaderElements() {
     elMissionCtrl = document.querySelector('.mission-ctrl');
     elTurnTracker = document.getElementById('turn-tracker');
     elHeaderUser = document.querySelector('.header-user');
+    elHeaderUserName = document.getElementById('hdr-user-name');
+    elHeaderUserAvatar = document.querySelector('.header-user-avatar');
+    elHeaderUserAvatarImg = document.getElementById('hdr-user-avatar');
 
     return {
         missionCardHead,
@@ -67,13 +73,17 @@ function cacheHeaderElements() {
         elAudio,
         elMissionCtrl,
         elTurnTracker,
-        elHeaderUser
+        elHeaderUser,
+        elHeaderUserName,
+        elHeaderUserAvatar,
+        elHeaderUserAvatarImg
     };
 }
 
 export function renderHeader() {
     cacheHeaderElements();
     applyHeaderModeVisibility();
+    renderHeaderUserInfo();
     renderMissionUI();
     renderTimerUI();
     renderGameModeBadge();
@@ -83,6 +93,7 @@ export function renderHeader() {
 export function refreshHeaderUI() {
     cacheHeaderElements();
     applyHeaderModeVisibility();
+    renderHeaderUserInfo();
     renderTimerUI();
     renderPhaseLabel();
 }
@@ -101,7 +112,31 @@ function applyHeaderModeVisibility() {
     toggle(elPhaseLabel, !isMultiplayer);
     toggle(btnReset, !isMultiplayer);
     toggle(elTurnTracker, !isMultiplayer);
-    toggle(elHeaderUser, !isMultiplayer);
+    toggle(elHeaderUser, true);
+}
+
+function renderHeaderUserInfo() {
+    if (!elHeaderUserName || !elHeaderUserAvatarImg || !elHeaderUserAvatar) return;
+    const userId = APP_STATE.user?.id;
+    let displayName = APP_STATE.user?.user_metadata?.nickname || APP_STATE.user?.email || '—';
+    const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
+    const mePlayer = players.find(p => p.user_id === userId);
+    if (mePlayer?.nickname) {
+        displayName = mePlayer.nickname;
+    }
+    elHeaderUserName.textContent = displayName;
+
+    const rosterUnit = GAME_STATE.alliesRoster?.find(u => u.owner_id === userId);
+    const unitFromDb = !rosterUnit && mePlayer?.unit_code
+        ? DB?.ALLIES?.find(u => u.id === mePlayer.unit_code)
+        : null;
+    const unit = rosterUnit || unitFromDb;
+    const avatarSrc = unit?.img || unit?.avatar || 'assets/units/default.png';
+    const role = mePlayer?.is_commander || unit?.role === 'commander' ? 'commander' : 'recruit';
+
+    elHeaderUserAvatar.dataset.role = role;
+    elHeaderUserAvatarImg.src = avatarSrc;
+    elHeaderUserAvatarImg.alt = displayName ? `Avatar ${displayName}` : 'Avatar giocatore';
 }
 
 function renderGameModeBadge() {
