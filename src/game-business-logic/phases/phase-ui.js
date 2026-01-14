@@ -120,7 +120,9 @@ export function renderStartButton(button, { phase, round, isMultiplayer = false,
         button.hidden = true; // nelle altre fasi non serve
     }
 
-    if (isMultiplayer && !isMyTurn && !button.hidden) {
+    if (isMyTurn) {
+        button.disabled = false;
+    } else if (isMultiplayer && !button.hidden) {
         button.disabled = true;
     } else {
         button.disabled = false;
