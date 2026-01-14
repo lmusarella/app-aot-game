@@ -199,6 +199,7 @@
   margin-left: 12px;
   font-size: 0.85rem;
   opacity: 0.9;
+  position: relative;
 }
 
 .header-user-avatar {
@@ -245,6 +246,55 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.header-user-menu-toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  color: #f5f5f5;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.header-user-menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.header-user-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 200px;
+  background: rgba(12, 14, 22, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  z-index: 20;
+}
+
+.header-user-menu-item {
+  background: transparent;
+  border: none;
+  color: #f5f5f5;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.header-user-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .header-user-logout {

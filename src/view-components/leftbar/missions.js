@@ -183,6 +183,11 @@ function renderSquadStatus() {
         : new Map();
     list.innerHTML = rows.map(entry => {
         const player = players.find(p => p.user_id === entry.owner_id) || {};
+        const entryUnit = entry?.id ? (unitIndex.get(entry.id) || entry) : null;
+        const playerUnit = player.unit_code ? unitIndex.get(player.unit_code) : null;
+        const unit = entryUnit || playerUnit;
+        const unitLabel = unit?.name || entryUnit?.name || playerUnit?.name || 'Unità sconosciuta';
+        const unitAvatar = unit?.img || unit?.avatar || entryUnit?.img || playerUnit?.img || 'assets/units/default.png';
         const last = player.last_seen ? new Date(player.last_seen).getTime() : 0;
         const online = last && now - last < ONLINE_THRESHOLD_MS;
         const baseName = player.nickname || entry.owner_nickname || player.user_id?.slice(0, 8) || 'Giocatore';
@@ -197,8 +202,16 @@ function renderSquadStatus() {
         ].filter(Boolean);
         const extraUnits = allUnits.filter(code => !rosterIds.has(code));
         const extraList = extraUnits
-            .map(code => unitIndex.get(code)?.name || code)
-            .map(label => `<li class="msn-squad-extra-item">${label}</li>`)
+            .map(code => {
+                const extraUnit = unitIndex.get(code);
+                const extraLabel = extraUnit?.name || code;
+                const extraAvatar = extraUnit?.img || extraUnit?.avatar || 'assets/units/default.png';
+                return `
+          <li class="msn-squad-extra-item">
+            <span class="msn-squad-avatar"><img src="${extraAvatar}" alt=""></span>
+            <span class="msn-squad-extra-name">${extraLabel}</span>
+          </li>`;
+            })
             .join('');
         const extraBlock = extraUnits.length
             ? `
@@ -212,7 +225,13 @@ function renderSquadStatus() {
       <li class="msn-squad-item">
         <span class="msn-squad-dot ${statusClass}" title="${statusLabel}"></span>
         <span class="msn-squad-status">${statusLabel}</span>
-        <span class="msn-squad-name">${name}</span>
+        <span class="msn-squad-player">
+          <span class="msn-squad-name">${name}</span>
+          <span class="msn-squad-unit">
+            <span class="msn-squad-avatar"><img src="${unitAvatar}" alt=""></span>
+            <span class="msn-squad-unit-name">${unitLabel}</span>
+          </span>
+        </span>
         <span class="msn-squad-role">${roleLabel}</span>
         ${extraBlock}
       </li>`;

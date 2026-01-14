@@ -33,6 +33,8 @@ let elHeaderUser = null;
 let elHeaderUserName = null;
 let elHeaderUserAvatar = null;
 let elHeaderUserAvatarImg = null;
+let elHeaderUserMenuToggle = null;
+let elHeaderUserMenu = null;
 
 function cacheHeaderElements() {
     missionCardHead = document.getElementById('mission-head');
@@ -56,6 +58,8 @@ function cacheHeaderElements() {
     elHeaderUserName = document.getElementById('hdr-user-name');
     elHeaderUserAvatar = document.querySelector('.header-user-avatar');
     elHeaderUserAvatarImg = document.getElementById('hdr-user-avatar');
+    elHeaderUserMenuToggle = document.getElementById('hdr-user-menu-toggle');
+    elHeaderUserMenu = document.getElementById('hdr-user-menu');
 
     return {
         missionCardHead,
@@ -76,7 +80,9 @@ function cacheHeaderElements() {
         elHeaderUser,
         elHeaderUserName,
         elHeaderUserAvatar,
-        elHeaderUserAvatarImg
+        elHeaderUserAvatarImg,
+        elHeaderUserMenuToggle,
+        elHeaderUserMenu
     };
 }
 
@@ -112,6 +118,9 @@ function applyHeaderModeVisibility() {
     toggle(elPhaseLabel, !isMultiplayer);
     toggle(btnReset, !isMultiplayer);
     toggle(elTurnTracker, !isMultiplayer);
+    toggle(btnLeaveRoom, !isMultiplayer);
+    toggle(elHeaderUserMenuToggle, isMultiplayer);
+    toggle(elHeaderUserMenu, isMultiplayer);
     toggle(elHeaderUser, true);
 }
 
@@ -401,4 +410,43 @@ export function initHeaderListeners() {
         await clearGrid();
     });
 
+    initHeaderUserMenu();
+}
+
+function initHeaderUserMenu() {
+    if (!elHeaderUserMenu || !elHeaderUserMenuToggle || elHeaderUserMenuToggle.dataset.bound) return;
+    elHeaderUserMenuToggle.dataset.bound = '1';
+
+    const closeMenu = () => {
+        if (elHeaderUserMenu.hidden) return;
+        elHeaderUserMenu.hidden = true;
+        elHeaderUserMenuToggle.setAttribute('aria-expanded', 'false');
+    };
+
+    const toggleMenu = () => {
+        const shouldOpen = elHeaderUserMenu.hidden;
+        elHeaderUserMenu.hidden = !shouldOpen;
+        elHeaderUserMenuToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    };
+
+    elHeaderUserMenuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMenu();
+    });
+
+    elHeaderUserMenu.addEventListener('click', () => {
+        closeMenu();
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!elHeaderUserMenu.hidden && !e.target.closest('.header-user')) {
+            closeMenu();
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeMenu();
+        }
+    });
 }
