@@ -23,10 +23,7 @@
                 </div>
             </div>
 
-            <button id="btn-start" class="start-hdr-btn" data-mode="start" data-commander-only type="button"
-                title="Avvia missione">INIZIA</button>
             <span id="phase-label" class="phase-label" aria-live="polite">Fase: —</span>
-            <span id="header-turn-player" class="turn-player-label" aria-live="polite">Turno: —</span>
             <span id="turn-status" class="turn-status" aria-live="polite" hidden></span>
             <div id="setup-progress" class="setup-progress" hidden>
                 <span id="setup-progress-label" class="setup-progress-label">Setup: 0/0</span>
@@ -70,6 +67,24 @@
                 <img id="hdr-user-avatar" src="assets/units/default.png" alt="Avatar giocatore" />
             </span>
             <span id="hdr-user-name" class="header-user-name">—</span>
+            <button id="hdr-user-menu-toggle" class="header-user-menu-toggle" type="button" aria-label="Apri menu"
+                aria-haspopup="true" aria-expanded="false">
+                ☰
+            </button>
+            <div id="hdr-user-menu" class="header-user-menu" role="menu" hidden>
+                <button class="header-user-menu-item" type="button" data-action="audio" role="menuitem">
+                    <span class="menu-icon" aria-hidden="true">🎧</span>
+                    <span class="menu-label">Impostazioni audio</span>
+                </button>
+                <button class="header-user-menu-item" type="button" data-action="tutorial" role="menuitem">
+                    <span class="menu-icon" aria-hidden="true">🧭</span>
+                    <span class="menu-label">Tutorial</span>
+                </button>
+                <button class="header-user-menu-item" type="button" data-action="leave" role="menuitem">
+                    <span class="menu-icon" aria-hidden="true">🚪</span>
+                    <span class="menu-label">Esci partita</span>
+                </button>
+            </div>
         </div>
     </div>
 </header>

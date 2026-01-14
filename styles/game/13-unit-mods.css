@@ -721,6 +721,48 @@
   flex-wrap: wrap;
 }
 
+.msn-squad-player {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.msn-squad-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 18px;
+}
+
+.msn-squad-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.msn-squad-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.msn-squad-unit-name {
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .msn-squad-item.is-empty {
   opacity: .7;
   justify-content: center;
@@ -784,6 +826,15 @@
 
 .msn-squad-extra-item {
   opacity: 0.85;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.msn-squad-extra-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .msn-list {
