@@ -108,6 +108,10 @@ export function refreshXPUI() {
     const L = levelFromXP(GAME_STATE.xpMoraleState.xp);
     const pct = levelProgressPercent(GAME_STATE.xpMoraleState.xp, L);
     const { xp } = getFooterElements();
+    const xpRow = document.getElementById("xp-row");
+    if (xpRow) {
+        xpRow.classList.toggle("xp-readonly", APP_STATE.gameMode === "multiplayer");
+    }
     if (xp.fill) xp.fill.style.width = pct + "%";
     if (xp.pct) xp.pct.textContent = Math.round(pct) + "%";
     if (xp.lvl) xp.lvl.textContent = "Lv. " + L;
@@ -133,6 +137,7 @@ export function initFooterListeners() {
             const target = btn.dataset.target;
 
             if (target === "xp") {
+                if (APP_STATE.gameMode === "multiplayer") return;
                 // Usa data-xp (valori reali); se assente, fallback a 10 XP
                 const deltaXP = parseInt(btn.dataset.xp || "10", 10);
                 addXP(deltaXP);

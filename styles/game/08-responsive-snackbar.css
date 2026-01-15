@@ -491,6 +491,14 @@
   display: none;
 }
 
+.bar-row.xp-readonly {
+  grid-template-columns: auto min(36vw, 250px) auto;
+}
+
+.bar-row.xp-readonly .bbtn {
+  display: none;
+}
+
  /* Barre più sottili nel footer */
  .footer-bars .bar {
    height: 10px;

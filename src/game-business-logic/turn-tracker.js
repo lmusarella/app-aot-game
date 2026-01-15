@@ -216,13 +216,14 @@ export function renderTurnTracker() {
   elContainer.classList.toggle('my-turn', isMyTurn);
   if (elFabDock) {
     const isMultiplayer = APP_STATE.gameMode === 'multiplayer';
-    const shouldHideFabs = isMultiplayer && !isMyTurn;
+    const shouldHideByTurn = isMultiplayer && !isMyTurn;
     elFabDock.querySelectorAll('.fab').forEach((fab) => {
-      if (fab.classList.contains('fab-static')) return;
-      fab.classList.toggle('is-hidden', shouldHideFabs);
-    });
-    elFabDock.querySelectorAll('.fab-singleplayer').forEach((fab) => {
-      fab.classList.toggle('is-hidden-mp', isMultiplayer);
+      const isSingleplayerOnly = fab.classList.contains('fab-singleplayer');
+      const hideForMode = isMultiplayer && isSingleplayerOnly;
+      const hideForTurn = shouldHideByTurn && !fab.classList.contains('fab-static');
+      const shouldHide = hideForMode || hideForTurn;
+      fab.classList.toggle('is-hidden', shouldHide);
+      fab.classList.toggle('is-hidden-mp', hideForMode);
     });
   }
 
