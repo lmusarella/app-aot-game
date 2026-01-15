@@ -102,6 +102,9 @@ function handleEvent(ev) {
     case 'round_start':
       handleRoundStartEvent(ev);
       break;
+    case 'giants_move':
+      handleGiantsMoveEvent(ev);
+      break;
     default:
       break;
   }
@@ -223,6 +226,20 @@ function handleRoundStartEvent(ev) {
     ringAmp: 1.0,
     autoDismissMs: 3000
   });
+}
+
+function handleGiantsMoveEvent(ev) {
+  showWarningC({
+    text: 'ATTENZIONE',
+    subtext: 'I giganti iniziano a muoversi...',
+    theme: 'red',
+    ringAmp: 1.0,
+    autoDismissMs: 2500
+  });
+  const sfx = ev.payload?.sfx;
+  if (sfx) {
+    try { playSfx(sfx, { volume: 1, loop: false }); } catch { }
+  }
 }
 
 function handleMissionStartEvent(ev) {

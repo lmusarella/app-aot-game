@@ -98,6 +98,9 @@ export function giantsPhaseMove() {
   const giants = [...unitById.values()].filter(u => u.role === 'enemy');
 
   if (giants.length) {
+    if (APP_STATE.gameMode === 'multiplayer') {
+      pushGameEvent('giants_move', { sfx: './assets/sounds/movimento-gigianti-2.mp3' });
+    }
     log('I giganti iniziano a muoversi...', 'warning', 3000, true);
     showWarningC({
       text: 'ATTENZIONE',

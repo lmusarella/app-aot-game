@@ -24,6 +24,7 @@ let elSetupProgress = null;
 let elSetupProgressLabel = null;
 let elSetupProgressBar = null;
 let elSetupProgressFill = null;
+let elFabDock = null;
 
 function showTurnChangeEffect({ isMyTurn, displayName }) {
   if (!displayName || displayName === '—') return;
@@ -58,6 +59,7 @@ function ensureTurnElements() {
   elSetupProgressLabel = document.getElementById('setup-progress-label');
   elSetupProgressBar = document.querySelector('#setup-progress .setup-progress-bar');
   elSetupProgressFill = document.getElementById('setup-progress-fill');
+  elFabDock = document.querySelector('.fab-dock');
 }
 
 export function getTurnInfo() {
@@ -185,6 +187,10 @@ export function renderTurnTracker() {
   elTimer.textContent = `${remainingSec}s`;
 
   elContainer.classList.toggle('my-turn', isMyTurn);
+  if (elFabDock) {
+    const shouldHideFabs = APP_STATE.gameMode === 'multiplayer' && !isMyTurn;
+    elFabDock.classList.toggle('is-hidden', shouldHideFabs);
+  }
 
   const btnStart = document.getElementById('btn-start');
   if (btnStart) {
