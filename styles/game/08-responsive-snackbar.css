@@ -474,34 +474,38 @@
  }
 
 .footer-tracker {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 8px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+  width: min(860px, 92vw);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .footer-tracker__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border-radius: 999px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 12px;
   border: 1px solid rgba(36, 38, 50, 0.9);
-  background: rgba(15, 17, 26, 0.9);
+  background: linear-gradient(180deg, rgba(16, 19, 30, 0.95), rgba(11, 13, 20, 0.95));
   font-size: 11px;
   letter-spacing: 0.2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
 .footer-tracker__label {
-  opacity: 0.75;
+  opacity: 0.7;
   text-transform: uppercase;
   font-weight: 700;
+  font-size: 10px;
 }
 
 .footer-tracker__value {
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 14px;
 }
 
 

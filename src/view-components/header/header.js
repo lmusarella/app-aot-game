@@ -19,7 +19,6 @@ let elPlay = null;
 let elReset = null;
 let elTime = null;
 let elTimer = null;
-let elTimerFill = null;
 
 let elDec = null;
 let elInc = null;
@@ -48,7 +47,6 @@ function cacheHeaderElements() {
     elReset = document.getElementById('t-reset');
     elTime = document.getElementById('t-time');
     elTimer = document.getElementById('mission-timer-sticky');
-    elTimerFill = document.getElementById('t-fuse-fill');
 
     elDec = document.getElementById('m-dec');
     elInc = document.getElementById('m-inc');
@@ -76,7 +74,6 @@ function cacheHeaderElements() {
         elReset,
         elTime,
         elTimer,
-        elTimerFill,
         elDec,
         elInc,
         btnLeaveRoom,
@@ -130,10 +127,10 @@ function applyHeaderModeVisibility() {
     toggle(btnLeaveRoom, !isMultiplayer);
     toggle(elHeaderUserMenuToggle, isMultiplayer);
     toggle(elHeaderUserMenu, isMultiplayer);
-    toggle(elHeaderUser, !isMultiplayer);
-    toggle(elLogoBox, !isMultiplayer);
-    toggle(elBrand, !isMultiplayer);
-    toggle(elCenterBox, !isMultiplayer);
+    toggle(elHeaderUser, true);
+    toggle(elLogoBox, true);
+    toggle(elBrand, true);
+    toggle(elCenterBox, true);
     if (elTopbar) {
         elTopbar.classList.toggle('topbar--multiplayer', isMultiplayer);
     }
@@ -205,13 +202,6 @@ export function renderTimerUI() {
     if (elTimer) {
         const urgentThresholdSec = 60;
         elTimer.classList.toggle('mission-timer--urgent', GAME_STATE.missionState.remainingSec <= urgentThresholdSec);
-        const total = Math.max(1, Number(GAME_STATE.missionState.timerTotalSec) || 1);
-        const pct = Math.max(0, Math.min(100, (GAME_STATE.missionState.remainingSec / total) * 100));
-        if (elTimerFill) {
-            elTimerFill.style.width = `${pct}%`;
-        }
-        const bar = elTimer.querySelector('.mission-timer-bar');
-        if (bar) bar.setAttribute('aria-valuenow', String(Math.round(pct)));
     }
 }
 
