@@ -140,14 +140,29 @@
 }
 
 .turn-status {
+  position: relative;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: .2px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px dashed rgba(148, 163, 184, 0.45);
-  background: rgba(15, 15, 17, 0.65);
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 15, 17, 0.85);
   color: #e2e8f0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.turn-status::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  background: rgba(15, 15, 17, 0.85);
+  border-left: 1px solid rgba(148, 163, 184, 0.35);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  transform: rotate(-45deg);
 }
 
 .setup-progress {

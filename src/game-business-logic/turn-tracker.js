@@ -193,6 +193,9 @@ export function renderTurnTracker() {
   ensureTurnElements();
   if (!elContainer) return;
   refreshHeaderUI();
+  if (APP_STATE.gameMode === 'multiplayer') {
+    elContainer.classList.remove('is-hidden');
+  }
 
   const { order, currentIndex, currentPlayerId, isMyTurn } = getTurnInfo();
   const phase = GAME_STATE.turnEngine?.phase ?? GAME_STATE.turnState?.phase ?? 'idle';
