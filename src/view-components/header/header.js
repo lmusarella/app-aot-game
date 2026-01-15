@@ -111,7 +111,7 @@ function applyHeaderModeVisibility() {
     toggle(elMissionCtrl, !isMultiplayer);
     toggle(elGameMode, !isMultiplayer);
     toggle(btnReset, !isMultiplayer);
-    toggle(elTurnTracker, !isMultiplayer);
+    toggle(elTurnTracker, isMultiplayer);
     toggle(btnLeaveRoom, !isMultiplayer);
     toggle(elHeaderUserMenuToggle, isMultiplayer);
     toggle(elHeaderUserMenu, isMultiplayer);
@@ -139,7 +139,7 @@ function renderHeaderUserInfo() {
         ? DB?.ALLIES?.find(u => u.id === mePlayer.unit_code)
         : null;
     const unit = rosterUnit || unitFromDb;
-    const avatarSrc = unit?.img || unit?.avatar || 'assets/units/default.png';
+    const avatarSrc = unit?.img || unit?.avatar || 'assets/img/logo.jpg';
     const role = mePlayer?.is_commander || unit?.role === 'commander' ? 'commander' : 'recruit';
 
     elHeaderUserAvatar.dataset.role = role;
@@ -159,7 +159,8 @@ function renderGameModeBadge() {
 }
 
 export function renderPhaseLabel() {
-    if (!elPhaseLabel) return;
+    const phaseLabel = document.getElementById('phase-label');
+    if (!phaseLabel) return;
     const phase = GAME_STATE.turnEngine?.phase || 'idle';
     const labelMap = {
         idle: 'Attesa',
@@ -172,7 +173,7 @@ export function renderPhaseLabel() {
         end_round: 'Fine round'
     };
     const label = labelMap[phase] ?? phase;
-    elPhaseLabel.textContent = `Fase: ${label}`;
+    phaseLabel.textContent = `Fase: ${label}`;
 }
 
 // Render UI timer

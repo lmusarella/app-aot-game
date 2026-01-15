@@ -214,7 +214,7 @@ export function renderTurnTracker() {
       ? DB?.ALLIES?.find(u => u.id === currentPlayer.unit_code)
       : null;
     const unit = rosterUnit || unitFromDb;
-    elPlayerAvatar.src = unit?.img || unit?.avatar || 'assets/units/default.png';
+    elPlayerAvatar.src = unit?.img || unit?.avatar || 'assets/img/logo.jpg';
     elPlayerAvatar.alt = displayName ? `Avatar ${displayName}` : 'Avatar giocatore';
   }
   if (elHeaderTurnPlayer) {
