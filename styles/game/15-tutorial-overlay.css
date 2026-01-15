@@ -341,51 +341,67 @@
 .turn-tracker {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px 10px;
+  gap: 8px;
+  padding: 10px 12px;
   margin-right: 8px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.3));
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  font-size: 11px;
-  line-height: 1.1;
-  min-width: 132px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(11, 15, 25, 0.92), rgba(20, 24, 35, 0.6));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 12px;
+  line-height: 1.2;
+  min-width: 220px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
 }
 
-.turn-tracker__meta {
+.turn-tracker__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 12px;
+}
+
+.turn-player-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .turn-label {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
+  letter-spacing: 0.12em;
+  font-weight: 700;
   font-size: 9px;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
-.turn-order {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  opacity: 0.85;
-  font-variant-numeric: tabular-nums;
+.turn-player-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
 }
 
-.turn-tracker__main {
+.turn-player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.turn-player-info {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .turn-player {
-  font-weight: 600;
-  max-width: 110px;
+  font-weight: 700;
+  font-size: 14px;
+  max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -393,9 +409,79 @@
 
 .turn-timer {
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 11px;
   padding: 2px 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
+  width: fit-content;
+}
+
+.turn-phase-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+
+.turn-phase-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  font-size: 9px;
+  opacity: 0.65;
+}
+
+.turn-phase {
+  font-weight: 700;
+  font-size: 13px;
+  color: #7dd3fc;
+}
+
+.turn-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.turn-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.turn-order {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-variant-numeric: tabular-nums;
+}
+
+.turn-progress-percent {
+  font-variant-numeric: tabular-nums;
+  color: #fbbf24;
+}
+
+.turn-progress-bar {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.turn-progress-fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.9), rgba(34, 197, 94, 0.9));
+  border-radius: inherit;
+  transition: width 0.3s ease;
 }
 
 .turn-tracker.my-turn {

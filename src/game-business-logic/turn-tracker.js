@@ -20,6 +20,11 @@ let elOrder = null;
 let elTimer = null;
 let elStatus = null;
 let elHeaderTurnPlayer = null;
+let elPlayerAvatar = null;
+let elPhase = null;
+let elPhasePercent = null;
+let elPhaseBar = null;
+let elPhaseFill = null;
 let elSetupProgress = null;
 let elSetupProgressLabel = null;
 let elSetupProgressBar = null;
@@ -81,6 +86,11 @@ function ensureTurnElements() {
   elTimer = document.getElementById('turn-timer');
   elStatus = document.getElementById('turn-status');
   elHeaderTurnPlayer = document.getElementById('header-turn-player');
+  elPlayerAvatar = document.getElementById('turn-player-avatar');
+  elPhase = document.getElementById('turn-phase');
+  elPhasePercent = document.getElementById('turn-phase-percent');
+  elPhaseBar = document.querySelector('.turn-progress-bar');
+  elPhaseFill = document.getElementById('turn-phase-fill');
   elSetupProgress = document.getElementById('setup-progress');
   elSetupProgressLabel = document.getElementById('setup-progress-label');
   elSetupProgressBar = document.querySelector('#setup-progress .setup-progress-bar');
@@ -203,6 +213,15 @@ export function renderTurnTracker() {
     (currentPlayerId ? currentPlayerId.slice(0, 6) : '—');
 
   elPlayer.textContent = displayName;
+  if (elPlayerAvatar) {
+    const rosterUnit = GAME_STATE.alliesRoster?.find(u => u.owner_id === currentPlayerId);
+    const unitFromDb = !rosterUnit && currentPlayer?.unit_code
+      ? DB?.ALLIES?.find(u => u.id === currentPlayer.unit_code)
+      : null;
+    const unit = rosterUnit || unitFromDb;
+    elPlayerAvatar.src = unit?.img || unit?.avatar || 'assets/units/default.png';
+    elPlayerAvatar.alt = displayName ? `Avatar ${displayName}` : 'Avatar giocatore';
+  }
   if (elHeaderTurnPlayer) {
     elHeaderTurnPlayer.textContent = `Turno: ${displayName}`;
   }
@@ -212,6 +231,28 @@ export function renderTurnTracker() {
 
   remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
   elTimer.textContent = `${remainingSec}s`;
+  if (elPhase) {
+    const phaseLabels = {
+      idle: 'Attesa',
+      setup: 'Setup',
+      event_mission: 'Evento missione',
+      event_card: 'Pesca evento',
+      round_start: 'Inizio round',
+      move_phase: 'Movimento',
+      attack_phase: 'Combattimento',
+      end_round: 'Fine round'
+    };
+    elPhase.textContent = phaseLabels[phase] ?? phase;
+  }
+  if (elPhasePercent && elPhaseBar && elPhaseFill) {
+    const safeTotal = Math.max(0, order.length);
+    const progressPct = safeTotal
+      ? Math.min(100, Math.round((phaseDoneByCount / safeTotal) * 100))
+      : 0;
+    elPhasePercent.textContent = `${progressPct}%`;
+    elPhaseBar.setAttribute('aria-valuenow', String(progressPct));
+    elPhaseFill.style.width = `${progressPct}%`;
+  }
 
   elContainer.classList.toggle('my-turn', isMyTurn);
   if (elFabDock) {
