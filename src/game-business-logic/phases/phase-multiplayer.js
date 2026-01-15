@@ -52,9 +52,6 @@ async function finalizePhaseTurn(phase, ctx) {
         }
         renderTurnTracker();
         scheduleSave('phase-turn', { force: true });
-        if (phase === 'move_phase' && allDone) {
-            await GAME_STATE.turnEngine.startPhase('move_phase');
-        }
         return;
     }
 
