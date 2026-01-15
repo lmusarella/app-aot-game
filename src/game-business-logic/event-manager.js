@@ -20,6 +20,20 @@ const processedIds = new Set();
 const MAX_EVENTS = 50;
 let combatWaitHandle = null;
 
+function getUnitById(unitId) {
+  if (!unitId) return null;
+  const fromMap = unitById.get(unitId);
+  if (fromMap) return fromMap;
+  return (
+    GAME_STATE.alliesRoster?.find(u => u.id === unitId) ||
+    GAME_STATE.giantsRoster?.find(u => u.id === unitId) ||
+    GAME_STATE.walls?.find(u => u.id === unitId) ||
+    GAME_STATE.alliesPool?.find(u => u.id === unitId) ||
+    GAME_STATE.giantsPool?.find(u => u.id === unitId) ||
+    null
+  );
+}
+
 function generateEventId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
@@ -104,6 +118,9 @@ function handleEvent(ev) {
       break;
     case 'giants_move':
       handleGiantsMoveEvent(ev);
+      break;
+    case 'log':
+      handleLogEvent(ev);
       break;
     default:
       break;
@@ -255,8 +272,8 @@ function handleMissionStartEvent(ev) {
 function handleCombatStartEvent(ev) {
   const attackerId = ev.payload?.attackerId;
   const targetId = ev.payload?.targetId;
-  const attacker = unitById.get(attackerId);
-  const defender = unitById.get(targetId);
+  const attacker = getUnitById(attackerId);
+  const defender = getUnitById(targetId);
   if (!attacker || !defender) return;
 
   hideAttackSummaryOverlay();
@@ -271,8 +288,8 @@ function handleCombatStartEvent(ev) {
 function handleCombatSummaryEvent(ev) {
   const attackerId = ev.payload?.attackerId;
   const targetId = ev.payload?.targetId;
-  const attacker = unitById.get(attackerId);
-  const defender = unitById.get(targetId);
+  const attacker = getUnitById(attackerId);
+  const defender = getUnitById(targetId);
   if (!attacker || !defender) return;
 
   combatWaitHandle?.close?.();
@@ -317,4 +334,12 @@ function handleGiantAbilityEvent(ev) {
   if (sfx) {
     try { playSfx(sfx, { volume: 0.9 }); } catch { }
   }
+}
+
+function handleLogEvent(ev) {
+  const msg = ev.payload?.msg;
+  if (!msg) return;
+  const type = ev.payload?.type || 'info';
+  const time = ev.payload?.time ?? 3000;
+  log(msg, type, time, false, false);
 }

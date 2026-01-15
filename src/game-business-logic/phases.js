@@ -137,6 +137,7 @@ async function handleMultiplayerStartPhase(phase, engine) {
     if (phase === 'move_phase' && ts.phaseReady) {
         giantsPhaseMove();
         await wait(2500);
+        ensureMultiplayerTurnOrder({ resetToCommander: true });
         engine.setPhase('attack_phase');
         showPhaseBanner({
             text: 'FASE DI COMBATTIMENTO',
@@ -338,7 +339,10 @@ export function initPhasesListeners() {
         return;
       }
       const { isMyTurn } = getTurnInfo();
-      if (!isMyTurn) {
+      const commanderCanAdvance = isMultiplayer()
+        && GAME_STATE.turnState?.phaseReady
+        && isCommander();
+      if (!isMyTurn && !commanderCanAdvance) {
         log('Non è il tuo turno.', 'warning', 3000, true);
         return;
       }

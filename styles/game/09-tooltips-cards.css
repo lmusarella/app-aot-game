@@ -321,9 +321,13 @@
    background: #5a045a;
  }
 
- .is-hidden {
-   display: none !important;
- }
+.is-hidden {
+  display: none !important;
+}
+
+.is-hidden-mp {
+  display: none !important;
+}
 
  .modal-header {
    display: flex;

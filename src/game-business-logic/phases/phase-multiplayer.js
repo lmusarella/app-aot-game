@@ -32,7 +32,7 @@ function getTurnContext() {
 
 async function finalizePhaseTurn(phase, ctx) {
     if (!ctx) return;
-    const { ts, order, myId } = ctx;
+    let { ts, order, myId } = ctx;
 
     if (!Array.isArray(ts.phaseDoneBy)) ts.phaseDoneBy = [];
     if (!ts.phaseDoneBy.includes(myId)) ts.phaseDoneBy.push(myId);
@@ -41,15 +41,20 @@ async function finalizePhaseTurn(phase, ctx) {
 
     if (phase === 'setup' || phase === 'move_phase' || phase === 'event_card') {
         if (allDone) {
-            ensureMultiplayerTurnOrder({ resetToCommander: true });
-            ts = GAME_STATE.turnState || ts;
-            order = Array.isArray(ts.order) ? ts.order : order;
+            if (phase !== 'move_phase') {
+                ensureMultiplayerTurnOrder({ resetToCommander: true });
+                ts = GAME_STATE.turnState || ts;
+                order = Array.isArray(ts.order) ? ts.order : order;
+            }
             ts.phaseReady = true;
         } else {
             advanceTurnSkippingDone(ts);
         }
         renderTurnTracker();
         scheduleSave('phase-turn', { force: true });
+        if (phase === 'move_phase' && allDone) {
+            await GAME_STATE.turnEngine.startPhase('move_phase');
+        }
         return;
     }
 
