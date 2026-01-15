@@ -92,6 +92,65 @@
             </div>
         </div>
     </div>
+
+    <div class="header-stats" aria-label="Stato missione">
+        <div class="footer-bars" role="group" aria-label="Stato Squadra">
+            <!-- Morale -->
+            <div class="bar-row mini" id="morale-row">
+                <span class="br-label">Morale</span>
+                <button class="bbtn" data-target="morale" data-delta="-1" title="-1%">−</button>
+                <div class="bar morale">
+                    <div id="morale-fill" class="fill" style="width:65%"></div>
+                </div>
+                <button class="bbtn" data-target="morale" data-delta="1" title="+1%">+</button>
+
+            </div>
+
+            <!-- Esperienza -->
+            <div class="bar-row mini" id="xp-row">
+                <span class="br-label">
+                    Exp <span id="lvl-val" style="margin-left:6px; opacity:.75; font-size:11px;">Lv. 1</span>
+                </span>
+                <button class="bbtn" data-target="xp" data-xp="-1" title="-1 XP">−</button>
+                <div class="bar xp">
+                    <div id="xp-fill" class="fill" style="width:40%"></div>
+                </div>
+                <button class="bbtn" data-target="xp" data-xp="1" title="+1 XP">+</button>
+                <!-- non serve più il br-val a destra -->
+            </div>
+        </div>
+
+        <div class="footer-phase" role="status" aria-live="polite">
+            <span id="phase-label" class="footer-phase-label">Fase: —</span>
+        </div>
+
+        <div class="footer-tracker" role="group" aria-label="Statistiche missione">
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Morale</span>
+                <span id="footer-morale" class="footer-tracker__value">0%</span>
+            </div>
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Livello</span>
+                <span id="footer-level" class="footer-tracker__value">Lv. 1</span>
+            </div>
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Puro</span>
+                <span id="footer-kills-puro" class="footer-tracker__value">0</span>
+            </div>
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Anomalo</span>
+                <span id="footer-kills-anomalo" class="footer-tracker__value">0</span>
+            </div>
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Mutaforma</span>
+                <span id="footer-kills-mutaforma" class="footer-tracker__value">0</span>
+            </div>
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Perdite</span>
+                <span id="footer-losses" class="footer-tracker__value">0</span>
+            </div>
+        </div>
+    </div>
 </header>
 
 <div id="mission-timer-sticky" class="mission-timer-sticky" aria-live="polite">

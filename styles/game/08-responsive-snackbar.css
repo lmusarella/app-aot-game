@@ -462,6 +462,10 @@
   z-index: 9999;
 }
 
+.app-footer--empty {
+  display: none;
+}
+
  /* Contenitore delle barre nel footer */
 .footer-bars {
    display: grid;
@@ -469,7 +473,7 @@
    align-items: stretch;
    justify-items: stretch;
    gap: 8px;
-   width: min(520px, 92vw);
+   width: min(520px, 96vw);
  }
 
 .footer-bars .bar-row.mini {
@@ -511,7 +515,7 @@
   grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   gap: 6px;
   margin-top: 2px;
-  width: min(720px, 92vw);
+  width: min(720px, 96vw);
   margin-left: auto;
   margin-right: auto;
 }

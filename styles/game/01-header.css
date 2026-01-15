@@ -10,6 +10,24 @@ header {
    backdrop-filter: blur(6px) saturate(120%);
  }
 
+.header-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0 2px;
+  width: 100%;
+}
+
+.header-stats .footer-bars,
+.header-stats .footer-tracker {
+  margin: 0 auto;
+}
+
+.header-stats .footer-phase {
+  margin: 2px auto 0;
+}
+
  .brand {
    font-weight: 900;
    letter-spacing: .4px;

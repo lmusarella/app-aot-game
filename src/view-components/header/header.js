@@ -178,8 +178,7 @@ function renderGameModeBadge() {
 
 export function renderPhaseLabel() {
     const phaseLabel = document.getElementById('phase-label');
-    const footerPhaseLabel = document.getElementById('footer-phase-label');
-    if (!phaseLabel && !footerPhaseLabel) return;
+    if (!phaseLabel) return;
     const phase = GAME_STATE.turnEngine?.phase || 'idle';
     const labelMap = {
         idle: 'Attesa',
@@ -192,8 +191,7 @@ export function renderPhaseLabel() {
         end_round: 'Fine round'
     };
     const label = labelMap[phase] ?? phase;
-    if (phaseLabel) phaseLabel.textContent = `Fase: ${label}`;
-    if (footerPhaseLabel) footerPhaseLabel.textContent = `Fase: ${label}`;
+    phaseLabel.textContent = `Fase: ${label}`;
 }
 
 // Render UI timer
