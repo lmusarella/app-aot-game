@@ -105,6 +105,9 @@ function handleEvent(ev) {
     case 'giants_move':
       handleGiantsMoveEvent(ev);
       break;
+    case 'log':
+      handleLogEvent(ev);
+      break;
     default:
       break;
   }
@@ -317,4 +320,12 @@ function handleGiantAbilityEvent(ev) {
   if (sfx) {
     try { playSfx(sfx, { volume: 0.9 }); } catch { }
   }
+}
+
+function handleLogEvent(ev) {
+  const msg = ev.payload?.msg;
+  if (!msg) return;
+  const type = ev.payload?.type || 'info';
+  const time = ev.payload?.time ?? 3000;
+  log(msg, type, time, false, false);
 }

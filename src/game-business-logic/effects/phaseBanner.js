@@ -3,6 +3,8 @@
  * phaseBanner.js (v1)
  * Banner rapido per cambio fase.
  */
+import { APP_STATE } from '../../core/app-state.js';
+
 const STYLE_ID = 'phase-banner-styles-v1';
 
 function injectStyles() {
@@ -78,6 +80,7 @@ function injectStyles() {
 }
 
 export default function showPhaseBanner(opts = {}) {
+  if (APP_STATE.gameMode === 'multiplayer') return null;
   injectStyles();
   const { text='NUOVA FASE', subtext='', theme='neutral', autoDismissMs=1500, zIndex=99990 } = opts;
   const root = document.createElement('div');

@@ -41,9 +41,11 @@ async function finalizePhaseTurn(phase, ctx) {
 
     if (phase === 'setup' || phase === 'move_phase' || phase === 'event_card') {
         if (allDone) {
-            ensureMultiplayerTurnOrder({ resetToCommander: true });
-            ts = GAME_STATE.turnState || ts;
-            order = Array.isArray(ts.order) ? ts.order : order;
+            if (phase !== 'move_phase') {
+                ensureMultiplayerTurnOrder({ resetToCommander: true });
+                ts = GAME_STATE.turnState || ts;
+                order = Array.isArray(ts.order) ? ts.order : order;
+            }
             ts.phaseReady = true;
         } else {
             advanceTurnSkippingDone(ts);

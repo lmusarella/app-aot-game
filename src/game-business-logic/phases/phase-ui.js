@@ -59,7 +59,7 @@ export function applyPhaseUI(phase) {
 
 export function renderStartButton(button, { phase, round, isMultiplayer = false, isMyTurn = true, phaseReady = false, isCommander = false, currentPlayerName = '' }) {
     if (!button) return;
-    if (isMultiplayer && !isMyTurn) {
+    if (isMultiplayer && !isMyTurn && !(phaseReady && isCommander)) {
         button.hidden = true;
         return;
     }
@@ -140,6 +140,8 @@ export function renderStartButton(button, { phase, round, isMultiplayer = false,
 
     if (isMyTurn) {
         button.disabled = false;
+    } else if (isMultiplayer && phaseReady && isCommander) {
+        button.disabled = false;
     } else if (isMultiplayer && !button.hidden) {
         button.disabled = true;
     } else {
@@ -149,6 +151,8 @@ export function renderStartButton(button, { phase, round, isMultiplayer = false,
     if (!button.hidden && isMultiplayer) {
         if (isMyTurn) {
             button.title = 'È il tuo turno.';
+        } else if (phaseReady && isCommander) {
+            button.title = 'La fase è pronta. Puoi proseguire.';
         } else if (currentPlayerName) {
             button.title = `È il turno di ${currentPlayerName}.`;
         } else {
