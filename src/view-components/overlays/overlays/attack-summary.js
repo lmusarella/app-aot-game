@@ -109,6 +109,7 @@ export function showAttackSummaryOverlay(attacker, defender, {
   }
 
   root.removeAttribute('hidden');
+  root.classList.add('show');
   clearTimeout(SUMMARY_TIMER);
   if (autoHideMs > 0) {
     SUMMARY_TIMER = setTimeout(() => hideAttackSummaryOverlay(), autoHideMs);
@@ -118,6 +119,7 @@ export function showAttackSummaryOverlay(attacker, defender, {
 export function hideAttackSummaryOverlay() {
   const root = document.getElementById('atk-overlay');
   if (!root) return;
+  root.classList.remove('show');
   root.setAttribute('hidden', '');
   clearTimeout(SUMMARY_TIMER);
 }
