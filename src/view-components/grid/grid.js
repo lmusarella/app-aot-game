@@ -12,6 +12,7 @@ import { findUnitCell } from './queries.js';
 import { handleUnitLongPress } from './targeting.js';
 import { clearConeGiantData, clearHighlights, isConeCell, setGiantConeCells, setGiantNemesiTarget, setCone, pickGiantFacing, hexCone } from './cone.js';
 import { renderBenches, setBenchContext } from './bench.js';
+import { hexDistance } from './hex.js';
 
 export { HEX_CFG, gridSize, inBoundsRC, hexNeighbors, hexWithinRadius, hexDistance } from './hex.js';
 export { clearConeGiantData, clearHighlights } from './cone.js';
@@ -49,6 +50,45 @@ function denyAction(reason) {
 
 export { renderBenches };
 export const grid = document.getElementById("hex-grid");
+
+const SETUP_MOVE_LIMIT = 3;
+
+function getSetupPlayerKey() {
+    return APP_STATE.user?.id || 'local';
+}
+
+function ensureSetupMoveState() {
+    if (!GAME_STATE.setupMoves) GAME_STATE.setupMoves = {};
+    const key = getSetupPlayerKey();
+    if (!GAME_STATE.setupMoves[key]) {
+        GAME_STATE.setupMoves[key] = { remaining: SETUP_MOVE_LIMIT };
+    }
+    return GAME_STATE.setupMoves[key];
+}
+
+function remainingSetupMoves() {
+    const state = ensureSetupMoveState();
+    return Math.max(0, Number(state.remaining ?? SETUP_MOVE_LIMIT));
+}
+
+function consumeSetupMove() {
+    const state = ensureSetupMoveState();
+    state.remaining = Math.max(0, Number(state.remaining ?? SETUP_MOVE_LIMIT) - 1);
+    scheduleSave('setup-moves', { force: true });
+}
+
+function setupAllowedRows() {
+    const wallRows = Object.keys(DB?.SETTINGS?.gridSettings?.wall || {})
+        .map(Number)
+        .filter(Number.isFinite);
+    const minWallRow = wallRows.length ? Math.min(...wallRows) : 3;
+    const rows = [minWallRow - 2, minWallRow - 1].filter(r => r >= 1);
+    return rows.length ? rows : [1, 2];
+}
+
+function isSetupRowAllowed(row) {
+    return setupAllowedRows().includes(row);
+}
 
 export function renderGrid(container, rows, cols, occupancy = []) {
     container.textContent = "";
@@ -257,6 +297,8 @@ const sameId = (unitId, target) => {
 async function handleDrop(payload, target) {
     // blocca drop se nella cella target c'è una Muraglia
     if (hasWallInCell(target.row, target.col)) return;
+    const phase = GAME_STATE.turnEngine?.phase;
+    const isSetupPhase = phase === 'setup';
     if (payload.type === "from-bench") {
         const unit = unitById.get(payload.unitId);
         if (!canActNow()) {
@@ -267,12 +309,25 @@ async function handleDrop(payload, target) {
             denyAction('Puoi muovere solo la tua unità.');
             return;
         }
+        if (isSetupPhase && unit?.role !== 'enemy' && unit?.role !== 'wall') {
+            if (!isSetupRowAllowed(target.row)) {
+                denyAction('Setup: puoi posizionarti solo nelle prime due file davanti alle mura.');
+                return;
+            }
+            if (remainingSetupMoves() <= 0) {
+                denyAction('Setup: hai già usato tutti i 3 movimenti disponibili.');
+                return;
+            }
+        }
         // stesso esagono → non spostare né duplicare    
         if (sameId(payload.unitId, target)) {
             renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
             return;
         }
         await placeFromBench(target, payload.unitId);
+        if (isSetupPhase && unit?.role !== 'enemy' && unit?.role !== 'wall') {
+            consumeSetupMove();
+        }
         renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     } else if (payload.type === "from-cell") {
         const u = unitById.get(payload.unitId);
@@ -285,7 +340,30 @@ async function handleDrop(payload, target) {
             denyAction('Puoi muovere solo la tua unità.');
             return;
         }
+        if (payload.from?.row === target.row && payload.from?.col === target.col) {
+            renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+            return;
+        }
+        if (isSetupPhase && u?.role !== 'enemy') {
+            if (!isSetupRowAllowed(target.row)) {
+                denyAction('Setup: puoi posizionarti solo nelle prime due file davanti alle mura.');
+                return;
+            }
+            const mov = Math.max(1, getStat(u, 'mov'));
+            const dist = hexDistance(payload.from.row, payload.from.col, target.row, target.col);
+            if (dist > mov) {
+                denyAction(`Setup: puoi muoverti di massimo ${mov} esagoni per movimento.`);
+                return;
+            }
+            if (remainingSetupMoves() <= 0) {
+                denyAction('Setup: hai già usato tutti i 3 movimenti disponibili.');
+                return;
+            }
+        }
         moveOneUnitBetweenStacks(payload.from, target, payload.unitId);
+        if (isSetupPhase && u?.role !== 'enemy') {
+            consumeSetupMove();
+        }
         renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
         renderBenches();
     }

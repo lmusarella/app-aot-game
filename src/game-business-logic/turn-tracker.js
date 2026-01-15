@@ -26,6 +26,19 @@ let elSetupProgressBar = null;
 let elSetupProgressFill = null;
 let elFabDock = null;
 
+const SETUP_MOVE_LIMIT = 3;
+
+function getSetupPlayerKey() {
+  return APP_STATE.user?.id || 'local';
+}
+
+function getSetupMovesRemaining() {
+  const key = getSetupPlayerKey();
+  const entry = GAME_STATE.setupMoves?.[key];
+  const remaining = Number(entry?.remaining ?? SETUP_MOVE_LIMIT);
+  return Math.max(0, remaining);
+}
+
 function showTurnChangeEffect({ isMyTurn, displayName }) {
   if (!displayName || displayName === '—') return;
   if (isMyTurn) {
@@ -235,9 +248,12 @@ export function renderTurnTracker() {
     } else if (phase === 'setup' && order.length > 0) {
       const progressText = `Setup completato: ${Math.min(phaseDoneByCount, order.length)}/${order.length}.`;
       elStatus.hidden = false;
-      elStatus.textContent = isMyTurn
-        ? `${progressText} È il tuo turno.`
-        : `${progressText} In attesa del tuo turno.`;
+      if (isMyTurn) {
+        const remaining = getSetupMovesRemaining();
+        elStatus.textContent = `${progressText} È il tuo turno. Trascina la tua unità nelle prime due file davanti alle mura. Movimenti rimasti: ${remaining}/${SETUP_MOVE_LIMIT}.`;
+      } else {
+        elStatus.textContent = `${progressText} In attesa del tuo turno.`;
+      }
     } else if (!isMyTurn) {
       elStatus.hidden = false;
       if (displayName && displayName !== '—') {

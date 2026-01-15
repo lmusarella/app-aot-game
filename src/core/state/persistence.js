@@ -32,6 +32,7 @@ export function snapshot() {
         turnState: structuredClone(GAME_STATE.turnState),
         //turnengine
         turnEngine: GAME_STATE.turnEngine,
+        setupMoves: structuredClone(GAME_STATE.setupMoves ?? {}),
         missionState: (() => {
             const m = structuredClone(GAME_STATE.missionState);
             // leggero “sanitize”: niente intervalId/oggetti runtime
@@ -90,6 +91,7 @@ export function restore(save) {
     } else {
         GAME_STATE.turnEngine = save.turnEngine || {};
     }
+    GAME_STATE.setupMoves = save.setupMoves || {};
     Object.assign(GAME_STATE.missionStats, save.missionStats || {});
     GAME_STATE.missionState.intervalId = null; // sempre nullo a cold start
 
