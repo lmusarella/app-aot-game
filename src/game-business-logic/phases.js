@@ -181,7 +181,7 @@ async function handleSingleStartPhase(phase, engine) {
                 theme: 'blue',
                 autoDismissMs: 3500
             });
-            log('Setup: Puoi trascinare la tua unità nelle prime due file davanti alle mura. Hai 3 movimenti disponibili, ciascuno pari al tuo MOV.', 'info', 4000, true);
+            log('Setup: Puoi trascinare la tua unità nelle prime due file davanti alle mura. Hai 3 movimenti disponibili e puoi muoverti di un esagono adiacente alla volta.', 'info', 4000, true);
 
             if (!engine.teamCreated) {
                 try {

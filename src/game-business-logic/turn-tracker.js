@@ -250,7 +250,7 @@ export function renderTurnTracker() {
       elStatus.hidden = false;
       if (isMyTurn) {
         const remaining = getSetupMovesRemaining();
-        elStatus.textContent = `${progressText} È il tuo turno. Trascina la tua unità nelle prime due file davanti alle mura. Movimenti rimasti: ${remaining}/${SETUP_MOVE_LIMIT}.`;
+        elStatus.textContent = `${progressText} È il tuo turno. Trascina la tua unità nelle prime due file davanti alle mura, poi muoviti di un esagono adiacente alla volta. Movimenti rimasti: ${remaining}/${SETUP_MOVE_LIMIT}.`;
       } else {
         elStatus.textContent = `${progressText} In attesa del tuo turno.`;
       }

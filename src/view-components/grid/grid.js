@@ -1,6 +1,6 @@
 import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, addLongPress, confirmDialog } from '../../ui-components/ui-helpers.js';
 import { playSfx } from '../audio/audio.js';
-import { isClone, getStat, getMusicUrlById, COLOR_VAR, keyRC } from '../../game-business-logic/utils.js';
+import { isClone, getMusicUrlById, COLOR_VAR, keyRC } from '../../game-business-logic/utils.js';
 import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, GIANT_ENGAGEMENT } from '../../core/data.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
@@ -314,10 +314,6 @@ async function handleDrop(payload, target) {
                 denyAction('Setup: puoi posizionarti solo nelle prime due file davanti alle mura.');
                 return;
             }
-            if (remainingSetupMoves() <= 0) {
-                denyAction('Setup: hai già usato tutti i 3 movimenti disponibili.');
-                return;
-            }
         }
         // stesso esagono → non spostare né duplicare    
         if (sameId(payload.unitId, target)) {
@@ -325,9 +321,6 @@ async function handleDrop(payload, target) {
             return;
         }
         await placeFromBench(target, payload.unitId);
-        if (isSetupPhase && unit?.role !== 'enemy' && unit?.role !== 'wall') {
-            consumeSetupMove();
-        }
         renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
     } else if (payload.type === "from-cell") {
         const u = unitById.get(payload.unitId);
@@ -345,14 +338,9 @@ async function handleDrop(payload, target) {
             return;
         }
         if (isSetupPhase && u?.role !== 'enemy') {
-            if (!isSetupRowAllowed(target.row)) {
-                denyAction('Setup: puoi posizionarti solo nelle prime due file davanti alle mura.');
-                return;
-            }
-            const mov = Math.max(1, getStat(u, 'mov'));
             const dist = hexDistance(payload.from.row, payload.from.col, target.row, target.col);
-            if (dist > mov) {
-                denyAction(`Setup: puoi muoverti di massimo ${mov} esagoni per movimento.`);
+            if (dist !== 1) {
+                denyAction('Setup: puoi muoverti di un solo esagono adiacente alla volta.');
                 return;
             }
             if (remainingSetupMoves() <= 0) {
