@@ -101,8 +101,8 @@ export function renderStartButton(button, { phase, round, isMultiplayer = false,
         if (isMultiplayer && phaseReady) {
             if (isCommander) {
                 button.hidden = false;
-                button.dataset.mode = 'end';
-                button.textContent = 'FASE MOVIMENTO COMPLETATA';
+                button.dataset.mode = 'start';
+                button.textContent = 'PESCA CARTE EVENTO';
             } else {
                 button.hidden = true;
             }
