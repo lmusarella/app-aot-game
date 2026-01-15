@@ -107,6 +107,22 @@ async function handleMultiplayerStartPhase(phase, engine) {
             autoDismissMs: 3500
         });
         startTimer();
+        const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
+        const spawnEvents = m?.event_spawn || [];
+        if (spawnEvents.length > 0) {
+            showWarningC({
+                text: 'ATTENZIONE',
+                subtext: 'Sono stati avvistati dei giganti...',
+                theme: 'red',
+                ringAmp: 1.0,
+                autoDismissMs: 3000
+            });
+            await wait(3000);
+            for (const event of spawnEvents) {
+                await spawnGiant(event);
+            }
+            openAccordionForRole("enemy");
+        }
     }
 
     if (phase === 'event_card' && ts.phaseReady) {

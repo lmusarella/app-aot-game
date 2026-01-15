@@ -11,7 +11,7 @@ export function isMultiplayer() {
     return !!APP_STATE.roomId;
 }
 
-export async function handleMultiplayerPhaseEnd(phase) {
+function getTurnContext() {
     let ts = GAME_STATE.turnState || {};
     let order = Array.isArray(ts.order) ? ts.order : [];
     if (order.length === 0) {
@@ -22,36 +22,22 @@ export async function handleMultiplayerPhaseEnd(phase) {
         order = Array.isArray(ts.order) ? ts.order : [];
     }
     const myId = APP_STATE.user?.id || null;
-    if (!myId || order.length === 0) return;
+    if (!myId || order.length === 0) return null;
     if (!ts.currentPlayerId) {
         ts.currentIndex = ts.currentIndex ?? 0;
         ts.currentPlayerId = order[ts.currentIndex] || order[0] || null;
     }
+    return { ts, order, myId };
+}
+
+async function finalizePhaseTurn(phase, ctx) {
+    if (!ctx) return;
+    const { ts, order, myId } = ctx;
 
     if (!Array.isArray(ts.phaseDoneBy)) ts.phaseDoneBy = [];
     if (!ts.phaseDoneBy.includes(myId)) ts.phaseDoneBy.push(myId);
 
     const allDone = ts.phaseDoneBy.length >= order.length;
-
-    if (phase === 'event_card') {
-        const card = drawCard('event');
-
-        if (!card) {
-            log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
-            closeAllFabs();
-            return;
-        }
-        log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
-        await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
-
-        showDrawnCard('event', card);
-        if (typeof GAME_STATE.turnEngine?.eventCards === 'number') {
-            GAME_STATE.turnEngine.eventCards += 1;
-        }
-        if (APP_STATE.gameMode === 'multiplayer') {
-            pushGameEvent('card_draw', { deckType: 'event' });
-        }
-    }
 
     if (phase === 'setup' || phase === 'move_phase' || phase === 'event_card') {
         if (allDone) {
@@ -77,6 +63,36 @@ export async function handleMultiplayerPhaseEnd(phase) {
     }
     renderTurnTracker();
     scheduleSave('phase-turn', { force: true });
+}
+
+export async function handleMultiplayerPhaseEnd(phase) {
+    const ctx = getTurnContext();
+    if (!ctx) return;
+    if (phase === 'event_card') {
+        const card = drawCard('event');
+
+        if (!card) {
+            log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
+            closeAllFabs();
+            return;
+        }
+        log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
+        await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
+
+        showDrawnCard('event', card);
+        if (APP_STATE.gameMode === 'multiplayer') {
+            pushGameEvent('card_draw', { deckType: 'event' });
+        }
+        return;
+    }
+    await finalizePhaseTurn(phase, ctx);
+}
+
+export async function completeMultiplayerPhaseTurn(phase) {
+    if (APP_STATE.gameMode !== 'multiplayer') return;
+    const ctx = getTurnContext();
+    if (!ctx) return;
+    await finalizePhaseTurn(phase, ctx);
 }
 
 function advanceTurnSkippingDone(turnState) {
