@@ -82,10 +82,8 @@ header {
 }
 
 .mission-timer-sticky {
-  position: sticky;
-  top: 56px;
-  z-index: 999;
-  margin: 0 auto 10px;
+  position: static;
+  margin: 8px auto 12px;
   width: fit-content;
   padding: 6px 12px;
   border-radius: 999px;
