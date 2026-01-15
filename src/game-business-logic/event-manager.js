@@ -162,6 +162,10 @@ function handleAttackEvent(ev) {
 }
 
 function handleDeathEvent(ev) {
+  combatWaitHandle?.close?.();
+  combatWaitHandle = null;
+  hideVersusOverlay();
+  hideAttackSummaryOverlay();
   const role = ev.payload?.role;
   const name = ev.payload?.name || 'Unità';
   if (role === 'enemy') {
