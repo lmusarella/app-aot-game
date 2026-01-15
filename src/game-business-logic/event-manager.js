@@ -1,7 +1,7 @@
 import { APP_STATE } from '../core/app-state.js';
 import { GAME_STATE, unitById } from '../core/data.js';
 import { log } from '../view-components/leftbar/log.js';
-import { playSfx } from '../view-components/audio/audio.js';
+import { playSfx, playBg } from '../view-components/audio/audio.js';
 import swordSlash from './effects/swordSlash.js';
 import bloodHitClean from './effects/bloodHitClean.js';
 import wallCollapse from './effects/wallCollapse.js';
@@ -95,6 +95,15 @@ function handleEvent(ev) {
       break;
     case 'mission_start':
       handleMissionStartEvent(ev);
+      break;
+    case 'spawn_giant':
+      handleSpawnGiantEvent(ev);
+      break;
+    case 'round_start':
+      handleRoundStartEvent(ev);
+      break;
+    case 'giants_move':
+      handleGiantsMoveEvent(ev);
       break;
     default:
       break;
@@ -195,6 +204,42 @@ function handleCardUseEvent(ev) {
   const kind = ev.payload?.kind || 'event';
   showCardUseEffect(kind);
   log('Un compagno ha attivato una carta.', 'info', 2500, true);
+}
+
+function handleSpawnGiantEvent(ev) {
+  const sfx = ev.payload?.sfx;
+  const bg = ev.payload?.bg;
+  if (sfx) {
+    try { playSfx(sfx, { volume: 0.3, loop: false }); } catch { }
+  }
+  if (bg) {
+    try { playBg(bg); } catch { }
+  }
+}
+
+function handleRoundStartEvent(ev) {
+  const round = ev.payload?.round;
+  showWarningC({
+    text: 'INIZIO ROUND',
+    subtext: round ? `Sta per cominciare il ${round} round!` : 'Sta per cominciare un nuovo round!',
+    theme: 'violet',
+    ringAmp: 1.0,
+    autoDismissMs: 3000
+  });
+}
+
+function handleGiantsMoveEvent(ev) {
+  showWarningC({
+    text: 'ATTENZIONE',
+    subtext: 'I giganti iniziano a muoversi...',
+    theme: 'red',
+    ringAmp: 1.0,
+    autoDismissMs: 2500
+  });
+  const sfx = ev.payload?.sfx;
+  if (sfx) {
+    try { playSfx(sfx, { volume: 1, loop: false }); } catch { }
+  }
 }
 
 function handleMissionStartEvent(ev) {

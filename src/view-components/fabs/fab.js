@@ -1,7 +1,7 @@
 import { log } from '../leftbar/log.js';
 import { giantsPhaseMove, pickRandomTeam, spawnGiant } from '../../game-business-logic/entity/entity.js';
 import { playSfx } from '../audio/audio.js';
-import { hideTooltip } from '../../ui-components/ui-helpers.js';
+import { hideTooltip, openAccordionForRole } from '../../ui-components/ui-helpers.js';
 import lightningStrike from '../../game-business-logic/effects/lightningStrike.js';
 import { guardCommanderAction } from '../../core/permissions.js';
 import { drawCard, resetDeckFromPool, reshuffleAllDiscards, updateFabDeckCounters } from './fab/decks.js';
@@ -32,6 +32,7 @@ export function initFabs() {
     getFabs().forEach(fab => {
         const mainBtn = fab.querySelector('.fab-main');
         if (!mainBtn) return;
+        if (fab.classList.contains('fab-static')) return;
         mainBtn.addEventListener('click', (e) => {
             hideTooltip();
             e.stopPropagation();
@@ -43,6 +44,16 @@ export function initFabs() {
     });
 
     document.addEventListener('click', (e) => { if (!e.target.closest('.fab')) closeAllFabs(); });
+    document.querySelector('#fab-hand .fab-main')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        hideTooltip();
+        openHandOverlay();
+    });
+    document.querySelector('#fab-squad .fab-main')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        hideTooltip();
+        openAccordionForRole('commander');
+    });
     document.querySelectorAll('#fab-arruola .fab-option').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();

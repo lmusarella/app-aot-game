@@ -102,13 +102,27 @@
  }
 
  /* FAB Missione (giallo) */
- .fab-main.mission {
-   --a: var(--oro);
-   /* usa l'oro già definito in :root */
-   border-color: color-mix(in oklch, var(--a) 60%, black 40%);
-   background: radial-gradient(120% 140% at 25% 20%, color-mix(in oklch, var(--a) 88%, white 12%), color-mix(in oklch, var(--a) 70%, black 30%));
-   box-shadow: var(--shadow-outer), 0 0 0 3px color-mix(in oklch, var(--a) 26%, transparent);
- }
+.fab-main.mission {
+  --a: var(--oro);
+  /* usa l'oro già definito in :root */
+  border-color: color-mix(in oklch, var(--a) 60%, black 40%);
+  background: radial-gradient(120% 140% at 25% 20%, color-mix(in oklch, var(--a) 88%, white 12%), color-mix(in oklch, var(--a) 70%, black 30%));
+  box-shadow: var(--shadow-outer), 0 0 0 3px color-mix(in oklch, var(--a) 26%, transparent);
+}
+
+.fab-main.hand {
+  --a: #6aa5ff;
+  border-color: color-mix(in oklch, var(--a) 55%, black 45%);
+  background: radial-gradient(120% 140% at 25% 20%, color-mix(in oklch, var(--a) 90%, white 10%), color-mix(in oklch, var(--a) 68%, black 32%));
+  box-shadow: var(--shadow-outer), 0 0 0 3px color-mix(in oklch, var(--a) 24%, transparent);
+}
+
+.fab-main.squad {
+  --a: #3ad38c;
+  border-color: color-mix(in oklch, var(--a) 55%, black 45%);
+  background: radial-gradient(120% 140% at 25% 20%, color-mix(in oklch, var(--a) 90%, white 10%), color-mix(in oklch, var(--a) 68%, black 32%));
+  box-shadow: var(--shadow-outer), 0 0 0 3px color-mix(in oklch, var(--a) 24%, transparent);
+}
 
  .fab.open .fab-main {
    transform: translateY(-1px);
@@ -202,4 +216,3 @@
      transition: none;
    }
  }
-

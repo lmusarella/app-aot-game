@@ -1,6 +1,7 @@
 import { supabase } from '../../core/supabase/supabaseClient.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { renderMissionUI } from '../../view-components/leftbar/missions.js';
+import { renderBenches } from '../../view-components/grid/bench.js';
 import { renderTurnTracker } from '../turn-tracker.js';
 
 async function fetchRoomPlayers(roomId) {
@@ -29,11 +30,16 @@ export function bindPresenceRealtime(roomId) {
     clearInterval(APP_STATE.presencePollTimerId);
     APP_STATE.presencePollTimerId = null;
   }
+  if (APP_STATE.presenceUiRefreshId) {
+    clearInterval(APP_STATE.presenceUiRefreshId);
+    APP_STATE.presenceUiRefreshId = null;
+  }
 
   const handlePresenceChange = async () => {
     const players = await fetchRoomPlayers(roomId);
     APP_STATE.roomPlayers = players;
     renderMissionUI();
+    renderBenches();
     renderTurnTracker();
   };
 
@@ -57,6 +63,10 @@ export function bindPresenceRealtime(roomId) {
 
   APP_STATE.presenceChannel = channel;
   APP_STATE.presencePollTimerId = setInterval(handlePresenceChange, 5000);
+  APP_STATE.presenceUiRefreshId = setInterval(() => {
+    renderMissionUI();
+    renderBenches();
+  }, 10000);
 }
 
 export function stopPresenceHeartbeat() {
@@ -67,6 +77,10 @@ export function stopPresenceHeartbeat() {
   if (APP_STATE.presencePollTimerId) {
     clearInterval(APP_STATE.presencePollTimerId);
     APP_STATE.presencePollTimerId = null;
+  }
+  if (APP_STATE.presenceUiRefreshId) {
+    clearInterval(APP_STATE.presenceUiRefreshId);
+    APP_STATE.presenceUiRefreshId = null;
   }
   if (APP_STATE.presenceVisibilityHandler) {
     document.removeEventListener('visibilitychange', APP_STATE.presenceVisibilityHandler);

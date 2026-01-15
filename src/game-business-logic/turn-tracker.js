@@ -5,6 +5,7 @@ import { scheduleSave } from './game-sync.js';
 import { refreshHeaderUI } from '../view-components/header/header.js';
 import { renderStartButton } from './phases/phase-ui.js';
 import { isCommander } from '../core/permissions.js';
+import showWarningC from './effects/warningOverlayC.js';
 
 const DEFAULT_TURN_DURATION_SEC = 60; // ⏱ durata turno (configurabile)
 
@@ -23,6 +24,28 @@ let elSetupProgress = null;
 let elSetupProgressLabel = null;
 let elSetupProgressBar = null;
 let elSetupProgressFill = null;
+let elFabDock = null;
+
+function showTurnChangeEffect({ isMyTurn, displayName }) {
+  if (!displayName || displayName === '—') return;
+  if (isMyTurn) {
+    showWarningC({
+      text: 'È IL TUO TURNO',
+      subtext: 'Puoi agire ora.',
+      theme: 'green',
+      ringAmp: 1.0,
+      autoDismissMs: 2500
+    });
+    return;
+  }
+  showWarningC({
+    text: `TURNO DI ${displayName.toUpperCase()}`,
+    subtext: 'Attendi la tua fase.',
+    theme: 'blue',
+    ringAmp: 1.0,
+    autoDismissMs: 2500
+  });
+}
 
 function ensureTurnElements() {
   if (elContainer) return;
@@ -36,6 +59,7 @@ function ensureTurnElements() {
   elSetupProgressLabel = document.getElementById('setup-progress-label');
   elSetupProgressBar = document.querySelector('#setup-progress .setup-progress-bar');
   elSetupProgressFill = document.getElementById('setup-progress-fill');
+  elFabDock = document.querySelector('.fab-dock');
 }
 
 export function getTurnInfo() {
@@ -135,7 +159,7 @@ export function renderTurnTracker() {
   refreshHeaderUI();
 
   const { order, currentIndex, currentPlayerId, isMyTurn } = getTurnInfo();
-  const phase = GAME_STATE.turnEngine?.phase || 'idle';
+  const phase = GAME_STATE.turnEngine?.phase ?? GAME_STATE.turnState?.phase ?? 'idle';
   const round = GAME_STATE.turnEngine?.round ?? 0;
   const phaseReady = !!GAME_STATE.turnState?.phaseReady;
   const phaseDoneByCount = Array.isArray(GAME_STATE.turnState?.phaseDoneBy)
@@ -163,6 +187,13 @@ export function renderTurnTracker() {
   elTimer.textContent = `${remainingSec}s`;
 
   elContainer.classList.toggle('my-turn', isMyTurn);
+  if (elFabDock) {
+    const shouldHideFabs = APP_STATE.gameMode === 'multiplayer' && !isMyTurn;
+    elFabDock.querySelectorAll('.fab').forEach((fab) => {
+      if (fab.classList.contains('fab-static')) return;
+      fab.classList.toggle('is-hidden', shouldHideFabs);
+    });
+  }
 
   const btnStart = document.getElementById('btn-start');
   if (btnStart) {
@@ -233,7 +264,8 @@ export function renderTurnTracker() {
     }
   }
 
-  if (currentPlayerId && lastTurnPlayerId && currentPlayerId !== lastTurnPlayerId) {
+  const turnChanged = currentPlayerId && currentPlayerId !== lastTurnPlayerId;
+  if (turnChanged) {
     elContainer.classList.add('turn-changed');
     if (turnChangeTimerId) {
       clearTimeout(turnChangeTimerId);
@@ -242,6 +274,9 @@ export function renderTurnTracker() {
       elContainer.classList.remove('turn-changed');
       turnChangeTimerId = null;
     }, 600);
+    if (APP_STATE.gameMode === 'multiplayer') {
+      showTurnChangeEffect({ isMyTurn, displayName });
+    }
   }
 
   if (currentPlayerId) {
@@ -264,13 +299,6 @@ export function startTurnCountdown() {
 
     if (remainingSec <= 0) {
       stopTurnCountdown();
-
-      // solo il giocatore di turno fa avanzare il turno + salva
-      const { isMyTurn } = getTurnInfo();
-      if (!isMyTurn) return;
-
-      advanceTurn();
-      scheduleSave('turn-timeout', { force: true }); // salva nuovo turnState
     }
   }, 1000);
 }

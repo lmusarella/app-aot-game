@@ -3,6 +3,8 @@ import { pickRandom, getStat, getMusicUrlById, d, shuffle, availableTemplates } 
 import { playSfx, playBg } from '../../view-components/audio/audio.js';
 import { unitById, rebuildUnitIndex, GAME_STATE, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
+import { APP_STATE } from '../../core/app-state.js';
+import { pushGameEvent } from '../event-manager.js';
 import { openAccordionForRole } from '../../ui-components/ui-helpers.js';
 import { log } from '../../view-components/leftbar/log.js';
 import { getEngagedHuman } from './engagement.js';
@@ -96,6 +98,9 @@ export function giantsPhaseMove() {
   const giants = [...unitById.values()].filter(u => u.role === 'enemy');
 
   if (giants.length) {
+    if (APP_STATE.gameMode === 'multiplayer') {
+      pushGameEvent('giants_move', { sfx: './assets/sounds/movimento-gigianti-2.mp3' });
+    }
     log('I giganti iniziano a muoversi...', 'warning', 3000, true);
     showWarningC({
       text: 'ATTENZIONE',
@@ -153,6 +158,12 @@ export async function spawnGiant(type = null, flagNoSound = false) {
     if (!flagNoSound) {
       await playSfx('./assets/sounds/flash_effect_sound.mp3', { volume: 0.3, loop: false });
       await playBg(url ? url : (tipo === 'Anomalo' ? './assets/sounds/ape_titan_sound.mp3' : './assets/sounds/start_app.mp3'));
+      if (APP_STATE.gameMode === 'multiplayer') {
+        pushGameEvent('spawn_giant', {
+          sfx: './assets/sounds/flash_effect_sound.mp3',
+          bg: url ? url : (tipo === 'Anomalo' ? './assets/sounds/ape_titan_sound.mp3' : './assets/sounds/start_app.mp3')
+        });
+      }
     }
 
     log(`Gigante ${tipo} appare in ${cell.row}-${cell.col}`, 'warning');

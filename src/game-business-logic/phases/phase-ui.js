@@ -59,6 +59,10 @@ export function applyPhaseUI(phase) {
 
 export function renderStartButton(button, { phase, round, isMultiplayer = false, isMyTurn = true, phaseReady = false, isCommander = false, currentPlayerName = '' }) {
     if (!button) return;
+    if (isMultiplayer && !isMyTurn) {
+        button.hidden = true;
+        return;
+    }
     if (phase === 'idle') {
         if (isMultiplayer && !isCommander) {
             button.hidden = true;
@@ -86,9 +90,23 @@ export function renderStartButton(button, { phase, round, isMultiplayer = false,
         button.dataset.mode = 'start';
         button.textContent = 'EVENTO MISSIONE';
     } else if (phase === 'event_card') {
-        button.hidden = false;
-        button.dataset.mode = 'start';
-        button.textContent = 'PESCA EVENTO';
+        if (!isMultiplayer) {
+            button.hidden = false;
+            button.dataset.mode = 'start';
+            button.textContent = 'PESCA EVENTO';
+        } else if (phaseReady) {
+            if (isCommander) {
+                button.hidden = false;
+                button.dataset.mode = 'start';
+                button.textContent = 'INIZIA ROUND';
+            } else {
+                button.hidden = true;
+            }
+        } else {
+            button.hidden = false;
+            button.dataset.mode = 'end';
+            button.textContent = 'PESCA EVENTO';
+        }
     } else if (phase === 'round_start') {
         button.hidden = false;
         button.dataset.mode = 'start';
@@ -97,8 +115,8 @@ export function renderStartButton(button, { phase, round, isMultiplayer = false,
         if (isMultiplayer && phaseReady) {
             if (isCommander) {
                 button.hidden = false;
-                button.dataset.mode = 'end';
-                button.textContent = 'FASE MOVIMENTO COMPLETATA';
+                button.dataset.mode = 'start';
+                button.textContent = 'INIZIA FASE ATTACCO';
             } else {
                 button.hidden = true;
             }

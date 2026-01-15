@@ -23,6 +23,35 @@ import { pushGameEvent } from './event-manager.js';
 
 let btnStart = null;
 
+async function runRoundStart(engine) {
+    engine.round++;
+    showWarningC({
+        text: 'INIZIO ROUND',
+        subtext: `Sta per cominciare il ${engine.round} round!`,
+        theme: 'violet',
+        ringAmp: 1.0,
+        autoDismissMs: 3000
+    });
+    if (APP_STATE.gameMode === 'multiplayer') {
+        pushGameEvent('round_start', { round: engine.round });
+    }
+    await playBg('./assets/sounds/commander_march_sound.mp3');
+
+    setTimeout(() => {
+        engine.setPhase('move_phase');
+        showPhaseBanner({
+            text: 'FASE DI MOVIMENTO',
+            subtext: `Round ${engine.round}. Effettua una azione di movimento per unità.`,
+            theme: 'blue',
+            autoDismissMs: 6000
+        });
+        startTimer();
+        advanceAllCooldowns(1, { giantsOnly: true });
+        tickUnitModsOnNewRound();
+        missionStatsSetRound(engine.round);
+    }, 3000);
+}
+
 async function handleMultiplayerStartPhase(phase, engine) {
     const ts = GAME_STATE.turnState || {};
     if (phase === 'idle') {
@@ -66,14 +95,56 @@ async function handleMultiplayerStartPhase(phase, engine) {
     }
 
     if (phase === 'setup' && ts.phaseReady) {
-        engine.setPhase('move_phase');
+        const playersCount = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers.length : 0;
+        const turnOrderCount = Array.isArray(ts.order) ? ts.order.length : 0;
+        engine.squadNumber = Math.max(1, turnOrderCount || playersCount || 0);
+        engine.eventCards = 0;
+        engine.setPhase('event_card');
         showPhaseBanner({
-            text: 'FASE DI MOVIMENTO',
-            subtext: 'Effettua 2 movimenti, poi termina la tua fase.',
-            theme: 'blue',
-            autoDismissMs: 6000
+            text: 'PESCA CARTE EVENTO',
+            subtext: 'Pesca una carta evento per ogni giocatore.',
+            theme: 'green',
+            autoDismissMs: 3500
         });
         startTimer();
+        const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
+        const spawnEvents = m?.event_spawn || [];
+        if (spawnEvents.length > 0) {
+            showWarningC({
+                text: 'ATTENZIONE',
+                subtext: 'Sono stati avvistati dei giganti...',
+                theme: 'red',
+                ringAmp: 1.0,
+                autoDismissMs: 3000
+            });
+            await wait(3000);
+            for (const event of spawnEvents) {
+                await spawnGiant(event);
+            }
+            openAccordionForRole("enemy");
+        }
+    }
+
+    if (phase === 'event_card' && ts.phaseReady) {
+        engine.setPhase('round_start');
+        await runRoundStart(engine);
+    }
+
+    if (phase === 'round_start') {
+        await runRoundStart(engine);
+    }
+
+    if (phase === 'move_phase' && ts.phaseReady) {
+        giantsPhaseMove();
+        await wait(2500);
+        engine.setPhase('attack_phase');
+        showPhaseBanner({
+            text: 'FASE DI COMBATTIMENTO',
+            subtext: `Round ${engine.round}. Scegli i bersagli che ingaggeranno battaglia`,
+            theme: 'red',
+            autoDismissMs: 6000
+        });
+        await playBg('./assets/sounds/start_mission.mp3');
     }
 }
 
@@ -141,29 +212,7 @@ async function handleSingleStartPhase(phase, engine) {
     }
 
     if (phase === 'round_start') {
-        engine.round++;
-        showWarningC({
-            text: 'INIZIO ROUND',
-            subtext: `Sta per cominciare il ${engine.round} round!`,
-            theme: 'violet',
-            ringAmp: 1.0,
-            autoDismissMs: 3000
-        });
-        await playBg('./assets/sounds/commander_march_sound.mp3');
-
-        setTimeout(async () => {
-            engine.setPhase('move_phase');
-            showPhaseBanner({
-                text: 'FASE DI MOVIMENTO',
-                subtext: `Round ${engine.round}. Effettua una azione di movimento per unità.`,
-                theme: 'blue',
-                autoDismissMs: 6000
-            });
-            startTimer();
-            advanceAllCooldowns(1, { giantsOnly: true });
-            tickUnitModsOnNewRound();
-            missionStatsSetRound(engine.round);
-        }, 3000);
+        await runRoundStart(engine);
     }
 }
 

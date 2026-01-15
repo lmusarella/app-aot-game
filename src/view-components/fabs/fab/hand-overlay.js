@@ -7,6 +7,7 @@ import { showCardDrawEffect } from '../../../game-business-logic/effects/cardFxO
 import { applyCardEffect } from '../../../game-business-logic/cards/card-effects.js';
 import { pushGameEvent } from '../../../game-business-logic/event-manager.js';
 import { scheduleSave } from '../../../game-business-logic/game-sync.js';
+import { completeMultiplayerPhaseTurn } from '../../../game-business-logic/phases/phase-multiplayer.js';
 
 export function showDrawnCard(deckType, card) {
   const root = document.getElementById('hand-overlay');
@@ -46,6 +47,13 @@ export function showDrawnCard(deckType, card) {
 
   strip.appendChild(wrap);
 
+  let eventActivated = false;
+  const markEventActivated = () => {
+    if (eventActivated) return;
+    eventActivated = true;
+    completeMultiplayerPhaseTurn('event_card');
+  };
+
   function closeOverlay() {
     root.setAttribute('hidden', '');
     root.querySelector('.hand-backdrop').onclick = null;
@@ -66,6 +74,7 @@ export function showDrawnCard(deckType, card) {
       log(`Carta Evento "${card.name}" è stata attivata!.`, 'warning');
       updateFabDeckCounters();
       applyCardEffect({ deckType, card });
+      markEventActivated();
 
       missionStatsRecordEvent(card, {
         durationRounds: card.duration || Infinity,
@@ -85,6 +94,7 @@ export function showDrawnCard(deckType, card) {
       log(`Carta Evento "${card.name}" è stata attivata!.`, 'warning');
       updateFabDeckCounters();
       applyCardEffect({ deckType, card });
+      markEventActivated();
       missionStatsRecordEvent(card, {
         durationRounds: card.duration || Infinity,
         sign: card.sign || 0
