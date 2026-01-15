@@ -76,7 +76,7 @@ export function renderStartButton(button, { phase, round, isMultiplayer = false,
             if (isCommander) {
                 button.hidden = false;
                 button.dataset.mode = 'start';
-                button.textContent = 'INIZIA MOVIMENTO';
+                button.textContent = 'INIZIA EVENTO';
             } else {
                 button.hidden = true;
             }

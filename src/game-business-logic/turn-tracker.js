@@ -216,6 +216,13 @@ export function renderTurnTracker() {
     if (APP_STATE.gameMode !== 'multiplayer') {
       elStatus.textContent = '';
       elStatus.hidden = true;
+    } else if (phase === 'idle') {
+      elStatus.hidden = false;
+      if (commanderActive) {
+        elStatus.textContent = 'Sei il comandante. Avvia la missione quando siete pronti.';
+      } else {
+        elStatus.textContent = 'Attendi che il comandante avvii la missione.';
+      }
     } else if (phaseReady) {
       elStatus.hidden = false;
       if (phase === 'move_phase') {
@@ -278,7 +285,7 @@ export function renderTurnTracker() {
       elContainer.classList.remove('turn-changed');
       turnChangeTimerId = null;
     }, 600);
-    if (APP_STATE.gameMode === 'multiplayer') {
+    if (APP_STATE.gameMode === 'multiplayer' && phase !== 'idle') {
       showTurnChangeEffect({ isMyTurn, displayName });
     }
   }
