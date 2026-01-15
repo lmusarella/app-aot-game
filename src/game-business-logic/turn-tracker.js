@@ -25,10 +25,6 @@ let elPhase = null;
 let elPhasePercent = null;
 let elPhaseBar = null;
 let elPhaseFill = null;
-let elSetupProgress = null;
-let elSetupProgressLabel = null;
-let elSetupProgressBar = null;
-let elSetupProgressFill = null;
 let elFabDock = null;
 
 const SETUP_MOVE_LIMIT = 3;
@@ -91,10 +87,6 @@ function ensureTurnElements() {
   elPhasePercent = document.getElementById('turn-phase-percent');
   elPhaseBar = document.querySelector('.turn-progress-bar');
   elPhaseFill = document.getElementById('turn-phase-fill');
-  elSetupProgress = document.getElementById('setup-progress');
-  elSetupProgressLabel = document.getElementById('setup-progress-label');
-  elSetupProgressBar = document.querySelector('#setup-progress .setup-progress-bar');
-  elSetupProgressFill = document.getElementById('setup-progress-fill');
   elFabDock = document.querySelector('.fab-dock');
 }
 

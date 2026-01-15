@@ -516,3 +516,47 @@
 .start-hdr-btn[data-mode="end"] {
   --start-accent: #f59e0b;
 }
+
+.turn-status-overlay {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10050;
+  max-width: min(520px, 90vw);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 15, 17, 0.92);
+  color: #e2e8f0;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+  animation: turnStatusPulse 1.6s ease-in-out infinite;
+}
+
+.turn-status-overlay::after {
+  content: "";
+  position: absolute;
+  left: 28px;
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  background: rgba(15, 15, 17, 0.92);
+  border-left: 1px solid rgba(148, 163, 184, 0.35);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+  transform: rotate(-45deg);
+}
+
+@keyframes turnStatusPulse {
+  0%,
+  100% {
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+    opacity: 0.9;
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.35), 0 12px 26px rgba(0, 0, 0, 0.55);
+    opacity: 1;
+  }
+}

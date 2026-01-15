@@ -24,7 +24,6 @@ let elDec = null;
 let elInc = null;
 let btnLeaveRoom = null;
 let elGameMode = null;
-let elPhaseLabel = null;
 let elTutorial = null;
 let elAudio = null;
 let elMissionCtrl = null;
@@ -49,7 +48,6 @@ function cacheHeaderElements() {
     elInc = document.getElementById('m-inc');
     btnLeaveRoom = document.getElementById('btn-leave-room');
     elGameMode = document.getElementById('hdr-game-mode');
-    elPhaseLabel = document.getElementById('phase-label');
     elTutorial = document.getElementById('btn-tutorial');
     elAudio = document.getElementById('btn-audio');
     elMissionCtrl = document.querySelector('.mission-ctrl');
@@ -72,7 +70,6 @@ function cacheHeaderElements() {
         elInc,
         btnLeaveRoom,
         elGameMode,
-        elPhaseLabel,
         elTutorial,
         elAudio,
         elMissionCtrl,
@@ -93,7 +90,6 @@ export function renderHeader() {
     renderMissionUI();
     renderTimerUI();
     renderGameModeBadge();
-    renderPhaseLabel();
 }
 
 export function refreshHeaderUI() {
@@ -101,7 +97,6 @@ export function refreshHeaderUI() {
     applyHeaderModeVisibility();
     renderHeaderUserInfo();
     renderTimerUI();
-    renderPhaseLabel();
 }
 
 function applyHeaderModeVisibility() {
@@ -115,13 +110,17 @@ function applyHeaderModeVisibility() {
     toggle(elAudio, !isMultiplayer);
     toggle(elMissionCtrl, !isMultiplayer);
     toggle(elGameMode, !isMultiplayer);
-    toggle(elPhaseLabel, !isMultiplayer);
     toggle(btnReset, !isMultiplayer);
     toggle(elTurnTracker, !isMultiplayer);
     toggle(btnLeaveRoom, !isMultiplayer);
     toggle(elHeaderUserMenuToggle, isMultiplayer);
     toggle(elHeaderUserMenu, isMultiplayer);
     toggle(elHeaderUser, true);
+
+    const modsSection = document.getElementById('mods-section');
+    const unitModsSection = document.getElementById('unit-mods-section');
+    toggle(modsSection, !isMultiplayer);
+    toggle(unitModsSection, !isMultiplayer);
 }
 
 function renderHeaderUserInfo() {
