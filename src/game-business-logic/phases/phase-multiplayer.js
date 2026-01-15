@@ -32,7 +32,7 @@ function getTurnContext() {
 
 async function finalizePhaseTurn(phase, ctx) {
     if (!ctx) return;
-    const { ts, order, myId } = ctx;
+    let { ts, order, myId } = ctx;
 
     if (!Array.isArray(ts.phaseDoneBy)) ts.phaseDoneBy = [];
     if (!ts.phaseDoneBy.includes(myId)) ts.phaseDoneBy.push(myId);
