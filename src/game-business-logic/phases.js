@@ -23,6 +23,35 @@ import { pushGameEvent } from './event-manager.js';
 
 let btnStart = null;
 
+async function runRoundStart(engine) {
+    engine.round++;
+    showWarningC({
+        text: 'INIZIO ROUND',
+        subtext: `Sta per cominciare il ${engine.round} round!`,
+        theme: 'violet',
+        ringAmp: 1.0,
+        autoDismissMs: 3000
+    });
+    if (APP_STATE.gameMode === 'multiplayer') {
+        pushGameEvent('round_start', { round: engine.round });
+    }
+    await playBg('./assets/sounds/commander_march_sound.mp3');
+
+    setTimeout(() => {
+        engine.setPhase('move_phase');
+        showPhaseBanner({
+            text: 'FASE DI MOVIMENTO',
+            subtext: `Round ${engine.round}. Effettua una azione di movimento per unità.`,
+            theme: 'blue',
+            autoDismissMs: 6000
+        });
+        startTimer();
+        advanceAllCooldowns(1, { giantsOnly: true });
+        tickUnitModsOnNewRound();
+        missionStatsSetRound(engine.round);
+    }, 3000);
+}
+
 async function handleMultiplayerStartPhase(phase, engine) {
     const ts = GAME_STATE.turnState || {};
     if (phase === 'idle') {
@@ -66,17 +95,6 @@ async function handleMultiplayerStartPhase(phase, engine) {
     }
 
     if (phase === 'setup' && ts.phaseReady) {
-        engine.setPhase('move_phase');
-        showPhaseBanner({
-            text: 'FASE DI MOVIMENTO',
-            subtext: 'Effettua 2 movimenti, poi termina la tua fase.',
-            theme: 'blue',
-            autoDismissMs: 6000
-        });
-        startTimer();
-    }
-
-    if (phase === 'move_phase' && ts.phaseReady) {
         const playersCount = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers.length : 0;
         const turnOrderCount = Array.isArray(ts.order) ? ts.order.length : 0;
         engine.squadNumber = Math.max(1, turnOrderCount || playersCount || 0);
@@ -91,51 +109,26 @@ async function handleMultiplayerStartPhase(phase, engine) {
         startTimer();
     }
 
-    if (phase === 'event_card') {
-        const card = drawCard('event');
-
-        if (!card) {
-            log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
-            closeAllFabs();
-            return;
-        }
-        log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
-        await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
-
-        showDrawnCard('event', card);
-        engine.eventCards++;
-
-        if (engine.eventCards >= engine.squadNumber) {
-            engine.setPhase('round_start');
-        } else {
-            log(`Carte evento da pescare rimaste: "${engine.squadNumber - engine.eventCards}".`, 'info', 6000, true);
-        }
+    if (phase === 'event_card' && ts.phaseReady) {
+        engine.setPhase('round_start');
+        await runRoundStart(engine);
     }
 
     if (phase === 'round_start') {
-        engine.round++;
-        showWarningC({
-            text: 'INIZIO ROUND',
-            subtext: `Sta per cominciare il ${engine.round} round!`,
-            theme: 'violet',
-            ringAmp: 1.0,
-            autoDismissMs: 3000
-        });
-        await playBg('./assets/sounds/commander_march_sound.mp3');
+        await runRoundStart(engine);
+    }
 
-        setTimeout(() => {
-            engine.setPhase('move_phase');
-            showPhaseBanner({
-                text: 'FASE DI MOVIMENTO',
-                subtext: `Round ${engine.round}. Effettua una azione di movimento per unità.`,
-                theme: 'blue',
-                autoDismissMs: 6000
-            });
-            startTimer();
-            advanceAllCooldowns(1, { giantsOnly: true });
-            tickUnitModsOnNewRound();
-            missionStatsSetRound(engine.round);
-        }, 3000);
+    if (phase === 'move_phase' && ts.phaseReady) {
+        giantsPhaseMove();
+        await wait(2500);
+        engine.setPhase('attack_phase');
+        showPhaseBanner({
+            text: 'FASE DI COMBATTIMENTO',
+            subtext: `Round ${engine.round}. Scegli i bersagli che ingaggeranno battaglia`,
+            theme: 'red',
+            autoDismissMs: 6000
+        });
+        await playBg('./assets/sounds/start_mission.mp3');
     }
 }
 
@@ -203,29 +196,7 @@ async function handleSingleStartPhase(phase, engine) {
     }
 
     if (phase === 'round_start') {
-        engine.round++;
-        showWarningC({
-            text: 'INIZIO ROUND',
-            subtext: `Sta per cominciare il ${engine.round} round!`,
-            theme: 'violet',
-            ringAmp: 1.0,
-            autoDismissMs: 3000
-        });
-        await playBg('./assets/sounds/commander_march_sound.mp3');
-
-        setTimeout(async () => {
-            engine.setPhase('move_phase');
-            showPhaseBanner({
-                text: 'FASE DI MOVIMENTO',
-                subtext: `Round ${engine.round}. Effettua una azione di movimento per unità.`,
-                theme: 'blue',
-                autoDismissMs: 6000
-            });
-            startTimer();
-            advanceAllCooldowns(1, { giantsOnly: true });
-            tickUnitModsOnNewRound();
-            missionStatsSetRound(engine.round);
-        }, 3000);
+        await runRoundStart(engine);
     }
 }
 

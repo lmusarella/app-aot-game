@@ -90,9 +90,23 @@ export function renderStartButton(button, { phase, round, isMultiplayer = false,
         button.dataset.mode = 'start';
         button.textContent = 'EVENTO MISSIONE';
     } else if (phase === 'event_card') {
-        button.hidden = false;
-        button.dataset.mode = 'start';
-        button.textContent = 'PESCA EVENTO';
+        if (!isMultiplayer) {
+            button.hidden = false;
+            button.dataset.mode = 'start';
+            button.textContent = 'PESCA EVENTO';
+        } else if (phaseReady) {
+            if (isCommander) {
+                button.hidden = false;
+                button.dataset.mode = 'start';
+                button.textContent = 'INIZIA ROUND';
+            } else {
+                button.hidden = true;
+            }
+        } else {
+            button.hidden = false;
+            button.dataset.mode = 'end';
+            button.textContent = 'PESCA EVENTO';
+        }
     } else if (phase === 'round_start') {
         button.hidden = false;
         button.dataset.mode = 'start';
@@ -102,7 +116,7 @@ export function renderStartButton(button, { phase, round, isMultiplayer = false,
             if (isCommander) {
                 button.hidden = false;
                 button.dataset.mode = 'start';
-                button.textContent = 'PESCA CARTE EVENTO';
+                button.textContent = 'INIZIA FASE ATTACCO';
             } else {
                 button.hidden = true;
             }

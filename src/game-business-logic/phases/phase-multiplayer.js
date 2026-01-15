@@ -2,6 +2,10 @@ import { APP_STATE } from '../../core/app-state.js';
 import { GAME_STATE } from '../../core/data.js';
 import { advanceTurn, ensureMultiplayerTurnOrder, renderTurnTracker } from '../turn-tracker.js';
 import { scheduleSave } from '../game-sync.js';
+import { drawCard, showDrawnCard, closeAllFabs } from '../../view-components/fabs/fab.js';
+import { playSfx } from '../../view-components/audio/audio.js';
+import { log } from '../../view-components/leftbar/log.js';
+import { pushGameEvent } from '../event-manager.js';
 
 export function isMultiplayer() {
     return !!APP_STATE.roomId;
@@ -29,7 +33,27 @@ export async function handleMultiplayerPhaseEnd(phase) {
 
     const allDone = ts.phaseDoneBy.length >= order.length;
 
-    if (phase === 'setup' || phase === 'move_phase') {
+    if (phase === 'event_card') {
+        const card = drawCard('event');
+
+        if (!card) {
+            log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
+            closeAllFabs();
+            return;
+        }
+        log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
+        await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
+
+        showDrawnCard('event', card);
+        if (typeof GAME_STATE.turnEngine?.eventCards === 'number') {
+            GAME_STATE.turnEngine.eventCards += 1;
+        }
+        if (APP_STATE.gameMode === 'multiplayer') {
+            pushGameEvent('card_draw', { deckType: 'event' });
+        }
+    }
+
+    if (phase === 'setup' || phase === 'move_phase' || phase === 'event_card') {
         if (allDone) {
             ensureMultiplayerTurnOrder({ resetToCommander: true });
             ts = GAME_STATE.turnState || ts;
