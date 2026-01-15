@@ -157,7 +157,7 @@ export function renderTurnTracker() {
   refreshHeaderUI();
 
   const { order, currentIndex, currentPlayerId, isMyTurn } = getTurnInfo();
-  const phase = GAME_STATE.turnEngine?.phase || 'idle';
+  const phase = GAME_STATE.turnEngine?.phase ?? GAME_STATE.turnState?.phase ?? 'idle';
   const round = GAME_STATE.turnEngine?.round ?? 0;
   const phaseReady = !!GAME_STATE.turnState?.phaseReady;
   const phaseDoneByCount = Array.isArray(GAME_STATE.turnState?.phaseDoneBy)
