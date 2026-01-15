@@ -228,7 +228,7 @@
 .combat-wait-overlay {
   position: fixed;
   inset: 0;
-  z-index: 12001;
+  z-index: 999999;
   display: grid;
   place-items: center;
   pointer-events: none;

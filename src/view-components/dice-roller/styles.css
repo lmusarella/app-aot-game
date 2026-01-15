@@ -169,7 +169,7 @@ header {
 #dice-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000002; /* sopra VS/atk overlay */
+  z-index: 999999; /* allo stesso livello di VS/attesa scontro */
 }
 
 .diceov-backdrop {
