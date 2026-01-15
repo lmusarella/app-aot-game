@@ -1,6 +1,6 @@
 import { hideTooltip, openAccordionForRole, getUnitTooltipHTML, showTooltip, addLongPress, confirmDialog } from '../../ui-components/ui-helpers.js';
 import { playSfx } from '../audio/audio.js';
-import { isClone, getMusicUrlById, COLOR_VAR, keyRC } from '../../game-business-logic/utils.js';
+import { isClone, getMusicUrlById, COLOR_VAR, keyRC, getStat } from '../../game-business-logic/utils.js';
 import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, GIANT_ENGAGEMENT } from '../../core/data.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
@@ -88,6 +88,36 @@ function setupAllowedRows() {
 
 function isSetupRowAllowed(row) {
     return setupAllowedRows().includes(row);
+}
+
+function getMovePhaseState(playerId) {
+    const ts = GAME_STATE.turnState || {};
+    const turnStartedAt = ts.turnStartedAt || null;
+    const shouldReset = !ts.moveState
+        || ts.moveState.playerId !== playerId
+        || ts.moveState.turnStartedAt !== turnStartedAt;
+    if (shouldReset) {
+        ts.moveState = { playerId, turnStartedAt, unitMoves: {} };
+        GAME_STATE.turnState = ts;
+    }
+    return ts.moveState;
+}
+
+function remainingMovePhaseMoves(unit, playerId) {
+    const state = getMovePhaseState(playerId);
+    if (!unit?.id) return 0;
+    if (!(unit.id in state.unitMoves)) {
+        state.unitMoves[unit.id] = Math.max(0, getStat(unit, 'mov') || 0);
+    }
+    return Math.max(0, state.unitMoves[unit.id] || 0);
+}
+
+function consumeMovePhaseMove(unit, playerId) {
+    const state = getMovePhaseState(playerId);
+    if (!unit?.id) return;
+    const remaining = Math.max(0, state.unitMoves[unit.id] || 0);
+    state.unitMoves[unit.id] = Math.max(0, remaining - 1);
+    scheduleSave('move-phase', { force: true });
 }
 
 export function renderGrid(container, rows, cols, occupancy = []) {
@@ -337,6 +367,19 @@ async function handleDrop(payload, target) {
             renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
             return;
         }
+        if (phase === 'move_phase' && u?.role !== 'enemy' && u?.role !== 'wall') {
+            const { currentPlayerId } = getTurnInfo();
+            const playerId = currentPlayerId || APP_STATE.user?.id || 'local';
+            const dist = hexDistance(payload.from.row, payload.from.col, target.row, target.col);
+            if (dist !== 1) {
+                denyAction('Movimento: puoi muoverti solo verso un esagono adiacente.');
+                return;
+            }
+            if (remainingMovePhaseMoves(u, playerId) <= 0) {
+                denyAction('Movimento: hai esaurito i movimenti disponibili per questa unità.');
+                return;
+            }
+        }
         if (isSetupPhase && u?.role !== 'enemy') {
             const dist = hexDistance(payload.from.row, payload.from.col, target.row, target.col);
             if (dist !== 1) {
@@ -349,6 +392,11 @@ async function handleDrop(payload, target) {
             }
         }
         moveOneUnitBetweenStacks(payload.from, target, payload.unitId);
+        if (phase === 'move_phase' && u?.role !== 'enemy' && u?.role !== 'wall') {
+            const { currentPlayerId } = getTurnInfo();
+            const playerId = currentPlayerId || APP_STATE.user?.id || 'local';
+            consumeMovePhaseMove(u, playerId);
+        }
         if (isSetupPhase && u?.role !== 'enemy') {
             consumeSetupMove();
         }

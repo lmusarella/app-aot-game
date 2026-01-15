@@ -27,6 +27,7 @@ let elSetupProgressFill = null;
 let elFabDock = null;
 
 const SETUP_MOVE_LIMIT = 3;
+const TURN_SYNC_GRACE_MS = 250;
 
 function getSetupPlayerKey() {
   return APP_STATE.user?.id || 'local';
@@ -37,6 +38,18 @@ function getSetupMovesRemaining() {
   const entry = GAME_STATE.setupMoves?.[key];
   const remaining = Number(entry?.remaining ?? SETUP_MOVE_LIMIT);
   return Math.max(0, remaining);
+}
+
+function getTurnRemainingSec(turnState) {
+  const turnDurationSec = DB?.SETTINGS?.missionDefaults?.turnDurationSec ?? DEFAULT_TURN_DURATION_SEC;
+  if (APP_STATE.gameMode !== 'multiplayer') {
+    return Math.max(0, remainingSec);
+  }
+  const startedAt = turnState?.turnStartedAt;
+  if (!startedAt) return turnDurationSec;
+  const elapsedMs = Math.max(0, Date.now() - startedAt - TURN_SYNC_GRACE_MS);
+  const elapsedSec = Math.floor(elapsedMs / 1000);
+  return Math.max(0, turnDurationSec - elapsedSec);
 }
 
 function showTurnChangeEffect({ isMyTurn, displayName }) {
@@ -197,6 +210,7 @@ export function renderTurnTracker() {
     ? `${currentIndex + 1}/${order.length}`
     : '';
 
+  remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
   elTimer.textContent = `${remainingSec}s`;
 
   elContainer.classList.toggle('my-turn', isMyTurn);
@@ -304,6 +318,12 @@ export function renderTurnTracker() {
     if (APP_STATE.gameMode === 'multiplayer' && phase !== 'idle') {
       showTurnChangeEffect({ isMyTurn, displayName });
     }
+    if (APP_STATE.gameMode === 'multiplayer' && isMyTurn) {
+      const ts = GAME_STATE.turnState || {};
+      ts.turnStartedAt = Date.now();
+      GAME_STATE.turnState = ts;
+      scheduleSave('turn-timer', { force: true });
+    }
   }
 
   if (currentPlayerId) {
@@ -316,11 +336,15 @@ export function startTurnCountdown() {
   stopTurnCountdown(); // reset
 
   const turnDurationSec = DB?.SETTINGS?.missionDefaults?.turnDurationSec ?? DEFAULT_TURN_DURATION_SEC;
-  remainingSec = turnDurationSec;
+  remainingSec = APP_STATE.gameMode === 'multiplayer'
+    ? getTurnRemainingSec(GAME_STATE.turnState)
+    : turnDurationSec;
   renderTurnTracker();
 
   turnTimerId = setInterval(() => {
-    remainingSec--;
+    remainingSec = APP_STATE.gameMode === 'multiplayer'
+      ? getTurnRemainingSec(GAME_STATE.turnState)
+      : remainingSec - 1;
     if (remainingSec < 0) remainingSec = 0;
     renderTurnTracker();
 
