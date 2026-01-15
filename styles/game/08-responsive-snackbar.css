@@ -461,7 +461,7 @@
  }
 
  /* Contenitore delle barre nel footer */
- .footer-bars {
+.footer-bars {
    display: flex;
    flex-direction: row;
    align-items: center;
@@ -472,6 +472,37 @@
    flex-wrap: nowrap;
    /* tienile su una riga */
  }
+
+.footer-tracker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.footer-tracker__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(36, 38, 50, 0.9);
+  background: rgba(15, 17, 26, 0.9);
+  font-size: 11px;
+  letter-spacing: 0.2px;
+}
+
+.footer-tracker__label {
+  opacity: 0.75;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.footer-tracker__value {
+  font-weight: 700;
+}
 
 
  /* Variante "mini" per le righe barra: più strette e compatte */
@@ -587,13 +618,21 @@
    opacity: .75;
  }
 
- .topbar {
-   display: flex;
-   align-items: center;
-   justify-content: space-between;
-   gap: 12px;
-   padding: 4px 8px;
- }
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px;
+}
+
+.topbar.topbar--multiplayer {
+  justify-content: center;
+}
+
+.topbar.topbar--multiplayer .turn-tracker {
+  margin: 0 auto;
+}
 
  /* Logo box */
  .logo-box {

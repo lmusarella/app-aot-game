@@ -1,5 +1,5 @@
  /* ===== Header minimal (solo Missione + Timer + Reset) ===== */
- header {
+header {
    grid-column: 1 / -1;
    position: sticky;
    top: 0;
@@ -79,6 +79,86 @@
   border-radius: 12px;
   padding: 6px 10px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), inset 0 -2px 0 rgba(0, 0, 0, .35);
+}
+
+.mission-timer-sticky {
+  position: sticky;
+  top: 56px;
+  z-index: 999;
+  margin: 0 auto 10px;
+  width: min(520px, 92vw);
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(16, 20, 30, 0.95), rgba(12, 14, 20, 0.92));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.mission-timer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.8);
+}
+
+.mission-timer-time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-weight: 800;
+  font-size: 14px;
+  color: #f8fafc;
+}
+
+.mission-timer-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mission-timer-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(42, 46, 60, 0.9);
+  background: rgba(18, 22, 32, 0.9);
+  color: #e2e8f0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+}
+
+.mission-timer-btn:hover {
+  filter: brightness(1.12);
+}
+
+.mission-timer-bar {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.mission-timer-fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+  transition: width 0.35s ease;
+}
+
+.mission-timer--urgent .mission-timer-time {
+  color: #f472b6;
 }
 
 .timer--urgent {

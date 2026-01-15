@@ -529,24 +529,11 @@
   letter-spacing: .2px;
   padding: 10px 14px;
   border-radius: 14px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(15, 15, 17, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(135deg, rgba(18, 22, 34, 0.94), rgba(12, 14, 20, 0.92));
   color: #e2e8f0;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(251, 191, 36, 0.08);
   animation: turnStatusPulse 1.6s ease-in-out infinite;
-}
-
-.turn-status-overlay::after {
-  content: "";
-  position: absolute;
-  left: 28px;
-  bottom: -8px;
-  width: 14px;
-  height: 14px;
-  background: rgba(15, 15, 17, 0.92);
-  border-left: 1px solid rgba(148, 163, 184, 0.35);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
-  transform: rotate(-45deg);
 }
 
 @keyframes turnStatusPulse {

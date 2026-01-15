@@ -203,14 +203,14 @@
 }
 
 .header-user-avatar {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid rgba(255, 255, 255, 0.25);
   background: rgba(0, 0, 0, 0.35);
-  flex: 0 0 24px;
-  min-width: 24px;
+  flex: 0 0 36px;
+  min-width: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -375,8 +375,8 @@
 }
 
 .turn-player-avatar {
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid rgba(255, 255, 255, 0.2);

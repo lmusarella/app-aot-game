@@ -19,6 +19,7 @@ let elPlay = null;
 let elReset = null;
 let elTime = null;
 let elTimer = null;
+let elTimerFill = null;
 
 let elDec = null;
 let elInc = null;
@@ -28,6 +29,10 @@ let elTutorial = null;
 let elAudio = null;
 let elMissionCtrl = null;
 let elTurnTracker = null;
+let elTopbar = null;
+let elLogoBox = null;
+let elBrand = null;
+let elCenterBox = null;
 let elHeaderUser = null;
 let elHeaderUserName = null;
 let elHeaderUserAvatar = null;
@@ -42,7 +47,8 @@ function cacheHeaderElements() {
     elPlay = document.getElementById('t-play');
     elReset = document.getElementById('t-reset');
     elTime = document.getElementById('t-time');
-    elTimer = document.querySelector('.timer');
+    elTimer = document.getElementById('mission-timer-sticky');
+    elTimerFill = document.getElementById('t-fuse-fill');
 
     elDec = document.getElementById('m-dec');
     elInc = document.getElementById('m-inc');
@@ -52,6 +58,10 @@ function cacheHeaderElements() {
     elAudio = document.getElementById('btn-audio');
     elMissionCtrl = document.querySelector('.mission-ctrl');
     elTurnTracker = document.getElementById('turn-tracker');
+    elTopbar = document.querySelector('.topbar');
+    elLogoBox = document.querySelector('.logo-box');
+    elBrand = document.querySelector('.brand');
+    elCenterBox = document.querySelector('.center-box');
     elHeaderUser = document.querySelector('.header-user');
     elHeaderUserName = document.getElementById('hdr-user-name');
     elHeaderUserAvatar = document.querySelector('.header-user-avatar');
@@ -66,6 +76,7 @@ function cacheHeaderElements() {
         elReset,
         elTime,
         elTimer,
+        elTimerFill,
         elDec,
         elInc,
         btnLeaveRoom,
@@ -74,6 +85,10 @@ function cacheHeaderElements() {
         elAudio,
         elMissionCtrl,
         elTurnTracker,
+        elTopbar,
+        elLogoBox,
+        elBrand,
+        elCenterBox,
         elHeaderUser,
         elHeaderUserName,
         elHeaderUserAvatar,
@@ -115,7 +130,13 @@ function applyHeaderModeVisibility() {
     toggle(btnLeaveRoom, !isMultiplayer);
     toggle(elHeaderUserMenuToggle, isMultiplayer);
     toggle(elHeaderUserMenu, isMultiplayer);
-    toggle(elHeaderUser, true);
+    toggle(elHeaderUser, !isMultiplayer);
+    toggle(elLogoBox, !isMultiplayer);
+    toggle(elBrand, !isMultiplayer);
+    toggle(elCenterBox, !isMultiplayer);
+    if (elTopbar) {
+        elTopbar.classList.toggle('topbar--multiplayer', isMultiplayer);
+    }
 
     const modsSection = document.getElementById('mods-section');
     const unitModsSection = document.getElementById('unit-mods-section');
@@ -183,7 +204,14 @@ export function renderTimerUI() {
     if (elPlay) elPlay.textContent = GAME_STATE.missionState.ticking ? '⏸' : '▶';
     if (elTimer) {
         const urgentThresholdSec = 60;
-        elTimer.classList.toggle('timer--urgent', GAME_STATE.missionState.remainingSec <= urgentThresholdSec);
+        elTimer.classList.toggle('mission-timer--urgent', GAME_STATE.missionState.remainingSec <= urgentThresholdSec);
+        const total = Math.max(1, Number(GAME_STATE.missionState.timerTotalSec) || 1);
+        const pct = Math.max(0, Math.min(100, (GAME_STATE.missionState.remainingSec / total) * 100));
+        if (elTimerFill) {
+            elTimerFill.style.width = `${pct}%`;
+        }
+        const bar = elTimer.querySelector('.mission-timer-bar');
+        if (bar) bar.setAttribute('aria-valuenow', String(Math.round(pct)));
     }
 }
 

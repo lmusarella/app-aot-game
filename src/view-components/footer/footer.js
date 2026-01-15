@@ -116,6 +116,7 @@ export function refreshXPUI() {
     if (xp.pct) xp.pct.textContent = Math.round(pct) + "%";
     if (xp.lvl) xp.lvl.textContent = "Lv. " + L;
     renderBonusMalus();
+    refreshFooterTracker();
 }
 
 export function refreshMoraleUI() {
@@ -128,6 +129,29 @@ export function refreshMoraleUI() {
     if (morale.fill) morale.fill.style.width = pct + "%";
     if (morale.pct) morale.pct.textContent = Math.round(pct) + "%";
     renderBonusMalus();
+    refreshFooterTracker();
+}
+
+export function refreshFooterTracker() {
+    const moraleEl = document.getElementById("footer-morale");
+    const levelEl = document.getElementById("footer-level");
+    const killsPuroEl = document.getElementById("footer-kills-puro");
+    const killsAnomaloEl = document.getElementById("footer-kills-anomalo");
+    const killsMutaformaEl = document.getElementById("footer-kills-mutaforma");
+    const lossesEl = document.getElementById("footer-losses");
+
+    const moralePct = Math.max(0, Math.min(100, Number(GAME_STATE.xpMoraleState.moralePct * 10) || 0));
+    const level = levelFromXP(GAME_STATE.xpMoraleState.xp);
+    const kills = GAME_STATE.missionState?.kills || {};
+    const missionId = (GAME_STATE.missionState?.curIndex ?? 0) + 1;
+    const missionStats = GAME_STATE.missionStats?.[missionId] || {};
+
+    if (moraleEl) moraleEl.textContent = `${Math.round(moralePct)}%`;
+    if (levelEl) levelEl.textContent = `Lv. ${level}`;
+    if (killsPuroEl) killsPuroEl.textContent = String(kills.Puro ?? 0);
+    if (killsAnomaloEl) killsAnomaloEl.textContent = String(kills.Anomalo ?? 0);
+    if (killsMutaformaEl) killsMutaformaEl.textContent = String(kills.Mutaforma ?? 0);
+    if (lossesEl) lossesEl.textContent = String(missionStats.losses ?? 0);
 }
 
 export function initFooterListeners() {
