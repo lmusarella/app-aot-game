@@ -290,13 +290,6 @@ export function startTurnCountdown() {
 
     if (remainingSec <= 0) {
       stopTurnCountdown();
-
-      // solo il giocatore di turno fa avanzare il turno + salva
-      const { isMyTurn } = getTurnInfo();
-      if (!isMyTurn) return;
-
-      advanceTurn();
-      scheduleSave('turn-timeout', { force: true }); // salva nuovo turnState
     }
   }, 1000);
 }
