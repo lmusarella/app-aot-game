@@ -5,6 +5,7 @@ import { scheduleSave } from './game-sync.js';
 import { refreshHeaderUI } from '../view-components/header/header.js';
 import { renderStartButton } from './phases/phase-ui.js';
 import { isCommander } from '../core/permissions.js';
+import showWarningC from './effects/warningOverlayC.js';
 
 const DEFAULT_TURN_DURATION_SEC = 60; // ⏱ durata turno (configurabile)
 
@@ -23,6 +24,27 @@ let elSetupProgress = null;
 let elSetupProgressLabel = null;
 let elSetupProgressBar = null;
 let elSetupProgressFill = null;
+
+function showTurnChangeEffect({ isMyTurn, displayName }) {
+  if (!displayName || displayName === '—') return;
+  if (isMyTurn) {
+    showWarningC({
+      text: 'È IL TUO TURNO',
+      subtext: 'Puoi agire ora.',
+      theme: 'green',
+      ringAmp: 1.0,
+      autoDismissMs: 2500
+    });
+    return;
+  }
+  showWarningC({
+    text: `TURNO DI ${displayName.toUpperCase()}`,
+    subtext: 'Attendi la tua fase.',
+    theme: 'blue',
+    ringAmp: 1.0,
+    autoDismissMs: 2500
+  });
+}
 
 function ensureTurnElements() {
   if (elContainer) return;
@@ -233,7 +255,8 @@ export function renderTurnTracker() {
     }
   }
 
-  if (currentPlayerId && lastTurnPlayerId && currentPlayerId !== lastTurnPlayerId) {
+  const turnChanged = currentPlayerId && currentPlayerId !== lastTurnPlayerId;
+  if (turnChanged) {
     elContainer.classList.add('turn-changed');
     if (turnChangeTimerId) {
       clearTimeout(turnChangeTimerId);
@@ -242,6 +265,9 @@ export function renderTurnTracker() {
       elContainer.classList.remove('turn-changed');
       turnChangeTimerId = null;
     }, 600);
+    if (APP_STATE.gameMode === 'multiplayer') {
+      showTurnChangeEffect({ isMyTurn, displayName });
+    }
   }
 
   if (currentPlayerId) {

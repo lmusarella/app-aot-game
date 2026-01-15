@@ -75,6 +75,68 @@ async function handleMultiplayerStartPhase(phase, engine) {
         });
         startTimer();
     }
+
+    if (phase === 'move_phase' && ts.phaseReady) {
+        const playersCount = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers.length : 0;
+        const turnOrderCount = Array.isArray(ts.order) ? ts.order.length : 0;
+        engine.squadNumber = Math.max(1, turnOrderCount || playersCount || 0);
+        engine.eventCards = 0;
+        engine.setPhase('event_card');
+        showPhaseBanner({
+            text: 'PESCA CARTE EVENTO',
+            subtext: 'Pesca una carta evento per ogni giocatore.',
+            theme: 'green',
+            autoDismissMs: 3500
+        });
+        startTimer();
+    }
+
+    if (phase === 'event_card') {
+        const card = drawCard('event');
+
+        if (!card) {
+            log('Il mazzo è vuoto. Rimescola gli scarti o ricarica le carte.', 'warning', 3000, true);
+            closeAllFabs();
+            return;
+        }
+        log(`Pescata carta evento: "${card.name}".`, 'info', 3000, true);
+        await playSfx('assets/sounds/carte/carta_evento.mp3', { volume: 0.3, loop: false });
+
+        showDrawnCard('event', card);
+        engine.eventCards++;
+
+        if (engine.eventCards >= engine.squadNumber) {
+            engine.setPhase('round_start');
+        } else {
+            log(`Carte evento da pescare rimaste: "${engine.squadNumber - engine.eventCards}".`, 'info', 6000, true);
+        }
+    }
+
+    if (phase === 'round_start') {
+        engine.round++;
+        showWarningC({
+            text: 'INIZIO ROUND',
+            subtext: `Sta per cominciare il ${engine.round} round!`,
+            theme: 'violet',
+            ringAmp: 1.0,
+            autoDismissMs: 3000
+        });
+        await playBg('./assets/sounds/commander_march_sound.mp3');
+
+        setTimeout(() => {
+            engine.setPhase('move_phase');
+            showPhaseBanner({
+                text: 'FASE DI MOVIMENTO',
+                subtext: `Round ${engine.round}. Effettua una azione di movimento per unità.`,
+                theme: 'blue',
+                autoDismissMs: 6000
+            });
+            startTimer();
+            advanceAllCooldowns(1, { giantsOnly: true });
+            tickUnitModsOnNewRound();
+            missionStatsSetRound(engine.round);
+        }, 3000);
+    }
 }
 
 async function handleSingleStartPhase(phase, engine) {

@@ -59,6 +59,10 @@ export function applyPhaseUI(phase) {
 
 export function renderStartButton(button, { phase, round, isMultiplayer = false, isMyTurn = true, phaseReady = false, isCommander = false, currentPlayerName = '' }) {
     if (!button) return;
+    if (isMultiplayer && !isMyTurn) {
+        button.hidden = true;
+        return;
+    }
     if (phase === 'idle') {
         if (isMultiplayer && !isCommander) {
             button.hidden = true;
