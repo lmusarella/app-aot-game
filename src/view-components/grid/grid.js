@@ -331,6 +331,10 @@ async function handleDrop(payload, target) {
     const isSetupPhase = phase === 'setup';
     if (payload.type === "from-bench") {
         const unit = unitById.get(payload.unitId);
+        if (phase !== 'setup' && phase !== 'move_phase') {
+            denyAction('Non puoi muovere unità in questa fase.');
+            return;
+        }
         if (!canActNow()) {
             denyAction('Non è il tuo turno.');
             return;
@@ -355,6 +359,10 @@ async function handleDrop(payload, target) {
     } else if (payload.type === "from-cell") {
         const u = unitById.get(payload.unitId);
         if (u?.role === 'wall') return;
+        if (phase !== 'setup' && phase !== 'move_phase') {
+            denyAction('Non puoi muovere unità in questa fase.');
+            return;
+        }
         if (!canActNow()) {
             denyAction('Non è il tuo turno.');
             return;
