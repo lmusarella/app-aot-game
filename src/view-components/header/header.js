@@ -417,6 +417,9 @@ function initHeaderUserMenu() {
     if (!elHeaderUserMenu || !elHeaderUserMenuToggle || elHeaderUserMenuToggle.dataset.bound) return;
     elHeaderUserMenuToggle.dataset.bound = '1';
 
+    elHeaderUserMenu.hidden = true;
+    elHeaderUserMenuToggle.setAttribute('aria-expanded', 'false');
+
     const closeMenu = () => {
         if (elHeaderUserMenu.hidden) return;
         elHeaderUserMenu.hidden = true;

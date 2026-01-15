@@ -31,9 +31,10 @@ export async function handleMultiplayerPhaseEnd(phase) {
 
     if (phase === 'setup' || phase === 'move_phase') {
         if (allDone) {
+            ensureMultiplayerTurnOrder({ resetToCommander: true });
+            ts = GAME_STATE.turnState || ts;
+            order = Array.isArray(ts.order) ? ts.order : order;
             ts.phaseReady = true;
-            ts.currentIndex = 0;
-            ts.currentPlayerId = order[0] || null;
         } else {
             advanceTurnSkippingDone(ts);
         }

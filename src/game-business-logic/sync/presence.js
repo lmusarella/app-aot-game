@@ -1,6 +1,7 @@
 import { supabase } from '../../core/supabase/supabaseClient.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { renderMissionUI } from '../../view-components/leftbar/missions.js';
+import { renderBenches } from '../../view-components/grid/bench.js';
 import { renderTurnTracker } from '../turn-tracker.js';
 
 async function fetchRoomPlayers(roomId) {
@@ -34,6 +35,7 @@ export function bindPresenceRealtime(roomId) {
     const players = await fetchRoomPlayers(roomId);
     APP_STATE.roomPlayers = players;
     renderMissionUI();
+    renderBenches();
     renderTurnTracker();
   };
 
