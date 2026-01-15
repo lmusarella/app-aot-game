@@ -1,4 +1,5 @@
 import { GAME_STATE, DB } from "../../core/data.js";
+import { APP_STATE } from "../../core/app-state.js";
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
 import { log } from "../leftbar/log.js";
 import { levelFromXP, levelProgressPercent, getMalusRow } from '../../game-business-logic/utils.js';
@@ -116,6 +117,10 @@ export function refreshXPUI() {
 export function refreshMoraleUI() {
     const pct = Math.max(0, Math.min(100, Number(GAME_STATE.xpMoraleState.moralePct * 10) || 0));
     const { morale } = getFooterElements();
+    const moraleRow = document.getElementById("morale-row");
+    if (moraleRow) {
+        moraleRow.classList.toggle("morale-readonly", APP_STATE.gameMode === "multiplayer");
+    }
     if (morale.fill) morale.fill.style.width = pct + "%";
     if (morale.pct) morale.pct.textContent = Math.round(pct) + "%";
     renderBonusMalus();
@@ -132,6 +137,7 @@ export function initFooterListeners() {
                 const deltaXP = parseInt(btn.dataset.xp || "10", 10);
                 addXP(deltaXP);
             } else if (target === "morale") {
+                if (APP_STATE.gameMode === "multiplayer") return;
                 const deltaPct = parseInt(btn.dataset.delta || "0", 10);
                 addMorale(deltaPct);
             }

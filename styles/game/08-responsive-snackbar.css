@@ -475,13 +475,21 @@
 
 
  /* Variante "mini" per le righe barra: più strette e compatte */
- .bar-row.mini {
-   display: grid;
-   grid-template-columns: auto 24px min(36vw, 250px) 24px auto;
-   align-items: center;
-   /* centra verticalmente label, bottoni e barra */
-   gap: 8px;
- }
+.bar-row.mini {
+  display: grid;
+  grid-template-columns: auto 24px min(36vw, 250px) 24px auto;
+  align-items: center;
+  /* centra verticalmente label, bottoni e barra */
+  gap: 8px;
+}
+
+.bar-row.morale-readonly {
+  grid-template-columns: auto min(36vw, 250px) auto;
+}
+
+.bar-row.morale-readonly .bbtn {
+  display: none;
+}
 
  /* Barre più sottili nel footer */
  .footer-bars .bar {
@@ -643,4 +651,3 @@
  .t-btn:hover {
    filter: brightness(1.2);
  }
-

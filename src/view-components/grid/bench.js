@@ -268,7 +268,8 @@ function renderBenchSection(container, units, readOnly = false) {
 
         // ===== Bottone Cestino =====
         // Cestino in alto a destra
-        if (!readOnly) {
+        const canShowTrash = !readOnly && APP_STATE.gameMode !== 'multiplayer';
+        if (canShowTrash) {
             const trashTop = document.createElement("button");
             trashTop.className = "card-trash";
             trashTop.type = "button";
