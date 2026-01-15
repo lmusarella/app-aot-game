@@ -14,14 +14,26 @@ header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 6px 0 2px;
+  gap: 4px;
+  padding: 4px 0 2px;
   width: 100%;
 }
 
 .header-stats .footer-bars,
 .header-stats .footer-tracker {
   margin: 0 auto;
+}
+
+.header-stats .footer-bars {
+  width: min(480px, 92vw);
+}
+
+.header-stats .footer-tracker {
+  width: min(620px, 92vw);
+}
+
+.header-stats .footer-tracker__item {
+  padding: 4px 6px;
 }
 
 .header-stats .footer-phase {
@@ -101,29 +113,29 @@ header {
 
 .mission-timer-sticky {
   position: static;
-  margin: 8px auto 12px;
+  margin: 0 6px;
   width: fit-content;
-  padding: 6px 12px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: rgba(16, 20, 30, 0.92);
   border: 1px solid rgba(148, 163, 184, 0.25);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .mission-timer-label {
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: .2em;
+  letter-spacing: .18em;
   opacity: 0.7;
 }
 
 .mission-timer-time {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 12px;
   color: #f8fafc;
 }
 
