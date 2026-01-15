@@ -61,7 +61,8 @@ export const GAME_STATE = {
         agi: 0,
         all: 0
     },
-    turnEngine: {}
+    turnEngine: {},
+    setupMoves: {}
 };
 
 export function resetInMemoryGameState() {
@@ -129,6 +130,7 @@ export function resetInMemoryGameState() {
         all: 0
     };
     GAME_STATE.turnEngine = {};
+    GAME_STATE.setupMoves = {};
 }
 
 export function rebuildUnitIndex() {

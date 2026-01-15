@@ -117,6 +117,11 @@ async function handleMultiplayerStartPhase(phase, engine) {
                 ringAmp: 1.0,
                 autoDismissMs: 3000
             });
+            pushGameEvent('warning', {
+                text: 'ATTENZIONE',
+                subtext: 'Sono stati avvistati dei giganti...',
+                theme: 'red'
+            });
             await wait(3000);
             for (const event of spawnEvents) {
                 await spawnGiant(event);
@@ -136,8 +141,8 @@ async function handleMultiplayerStartPhase(phase, engine) {
 
     if (phase === 'move_phase' && ts.phaseReady) {
         giantsPhaseMove();
-        await wait(2500);
         ensureMultiplayerTurnOrder({ resetToCommander: true });
+        await wait(2500);
         engine.setPhase('attack_phase');
         showPhaseBanner({
             text: 'FASE DI COMBATTIMENTO',
@@ -176,6 +181,7 @@ async function handleSingleStartPhase(phase, engine) {
                 theme: 'blue',
                 autoDismissMs: 3500
             });
+            log('Setup: Puoi trascinare la tua unità nelle prime due file davanti alle mura. Hai 3 movimenti disponibili e puoi muoverti di un esagono adiacente alla volta.', 'info', 4000, true);
 
             if (!engine.teamCreated) {
                 try {
@@ -405,6 +411,9 @@ export const TurnEngine = {
         this.phase = p;
         document.body.dataset.phase = p; // utile anche per CSS mirato
         applyPhaseUI(p);
+        if (p === 'setup') {
+            GAME_STATE.setupMoves = {};
+        }
         const { isMyTurn } = getTurnInfo();
         renderStartButton(btnStart, {
             phase: p,

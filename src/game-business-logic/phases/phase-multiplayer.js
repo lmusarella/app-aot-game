@@ -41,7 +41,11 @@ async function finalizePhaseTurn(phase, ctx) {
 
     if (phase === 'setup' || phase === 'move_phase' || phase === 'event_card') {
         if (allDone) {
-            if (phase !== 'move_phase') {
+            if (phase === 'move_phase') {
+                ensureMultiplayerTurnOrder({ resetToCommander: true });
+                ts = GAME_STATE.turnState || ts;
+                order = Array.isArray(ts.order) ? ts.order : order;
+            } else {
                 ensureMultiplayerTurnOrder({ resetToCommander: true });
                 ts = GAME_STATE.turnState || ts;
                 order = Array.isArray(ts.order) ? ts.order : order;
@@ -52,9 +56,6 @@ async function finalizePhaseTurn(phase, ctx) {
         }
         renderTurnTracker();
         scheduleSave('phase-turn', { force: true });
-        if (phase === 'move_phase' && allDone) {
-            await GAME_STATE.turnEngine.startPhase('move_phase');
-        }
         return;
     }
 

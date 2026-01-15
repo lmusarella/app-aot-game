@@ -169,7 +169,7 @@ header {
 #dice-overlay {
   position: fixed;
   inset: 0;
-  z-index: 99999; /* sotto al tuo VS se vuoi (o sopra se preferisci) */
+  z-index: 999999; /* allo stesso livello di VS/attesa scontro */
 }
 
 .diceov-backdrop {
@@ -282,4 +282,3 @@ header {
 
 /* (opzionale) se hai messo z-index altissimi altrove */
 #dice-overlay .diceov-backdrop { z-index: 0; }
-

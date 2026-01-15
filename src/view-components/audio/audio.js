@@ -288,13 +288,17 @@ async function play(url, opts = {}) {
 
 // --- MUSICA di fondo (registrata nel mixer)
 export async function playBg(url, { volume = 0.18, loop = true } = {}) {
+    try {
+        if (GAME_SOUND_TRACK.background) {
+            GAME_SOUND_TRACK.background.pause();
+            GAME_SOUND_TRACK.background.currentTime = 0;
+        }
+    } catch { }
     // se non sbloccato, metti in coda e basta
     if (!AUDIO_UNLOCKED) {
         PENDING_BG = { url, opts: { volume, loop } };
         return null;
     }
-
-    try { if (loop) GAME_SOUND_TRACK.background?.pause(); } catch { }
 
     const music = await play(url, { loop, volume });
 

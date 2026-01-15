@@ -119,6 +119,9 @@ function handleEvent(ev) {
     case 'giants_move':
       handleGiantsMoveEvent(ev);
       break;
+    case 'warning':
+      handleWarningEvent(ev);
+      break;
     case 'log':
       handleLogEvent(ev);
       break;
@@ -159,6 +162,10 @@ function handleAttackEvent(ev) {
 }
 
 function handleDeathEvent(ev) {
+  combatWaitHandle?.close?.();
+  combatWaitHandle = null;
+  hideVersusOverlay();
+  hideAttackSummaryOverlay();
   const role = ev.payload?.role;
   const name = ev.payload?.name || 'Unità';
   if (role === 'enemy') {
@@ -257,6 +264,16 @@ function handleGiantsMoveEvent(ev) {
   if (sfx) {
     try { playSfx(sfx, { volume: 1, loop: false }); } catch { }
   }
+}
+
+function handleWarningEvent(ev) {
+  showWarningC({
+    text: ev.payload?.text || 'ATTENZIONE',
+    subtext: ev.payload?.subtext || '',
+    theme: ev.payload?.theme || 'red',
+    ringAmp: 1.0,
+    autoDismissMs: 3000
+  });
 }
 
 function handleMissionStartEvent(ev) {

@@ -26,6 +26,32 @@ let elSetupProgressBar = null;
 let elSetupProgressFill = null;
 let elFabDock = null;
 
+const SETUP_MOVE_LIMIT = 3;
+const TURN_SYNC_GRACE_MS = 250;
+
+function getSetupPlayerKey() {
+  return APP_STATE.user?.id || 'local';
+}
+
+function getSetupMovesRemaining() {
+  const key = getSetupPlayerKey();
+  const entry = GAME_STATE.setupMoves?.[key];
+  const remaining = Number(entry?.remaining ?? SETUP_MOVE_LIMIT);
+  return Math.max(0, remaining);
+}
+
+function getTurnRemainingSec(turnState) {
+  const turnDurationSec = DB?.SETTINGS?.missionDefaults?.turnDurationSec ?? DEFAULT_TURN_DURATION_SEC;
+  if (APP_STATE.gameMode !== 'multiplayer') {
+    return Math.max(0, remainingSec);
+  }
+  const startedAt = turnState?.turnStartedAt;
+  if (!startedAt) return turnDurationSec;
+  const elapsedMs = Math.max(0, Date.now() - startedAt - TURN_SYNC_GRACE_MS);
+  const elapsedSec = Math.floor(elapsedMs / 1000);
+  return Math.max(0, turnDurationSec - elapsedSec);
+}
+
 function showTurnChangeEffect({ isMyTurn, displayName }) {
   if (!displayName || displayName === '—') return;
   if (isMyTurn) {
@@ -184,6 +210,7 @@ export function renderTurnTracker() {
     ? `${currentIndex + 1}/${order.length}`
     : '';
 
+  remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
   elTimer.textContent = `${remainingSec}s`;
 
   elContainer.classList.toggle('my-turn', isMyTurn);
@@ -235,9 +262,12 @@ export function renderTurnTracker() {
     } else if (phase === 'setup' && order.length > 0) {
       const progressText = `Setup completato: ${Math.min(phaseDoneByCount, order.length)}/${order.length}.`;
       elStatus.hidden = false;
-      elStatus.textContent = isMyTurn
-        ? `${progressText} È il tuo turno.`
-        : `${progressText} In attesa del tuo turno.`;
+      if (isMyTurn) {
+        const remaining = getSetupMovesRemaining();
+        elStatus.textContent = `${progressText} È il tuo turno. Trascina la tua unità nelle prime due file davanti alle mura, poi muoviti di un esagono adiacente alla volta. Movimenti rimasti: ${remaining}/${SETUP_MOVE_LIMIT}.`;
+      } else {
+        elStatus.textContent = `${progressText} In attesa del tuo turno.`;
+      }
     } else if (!isMyTurn) {
       elStatus.hidden = false;
       if (displayName && displayName !== '—') {
@@ -288,6 +318,12 @@ export function renderTurnTracker() {
     if (APP_STATE.gameMode === 'multiplayer' && phase !== 'idle') {
       showTurnChangeEffect({ isMyTurn, displayName });
     }
+    if (APP_STATE.gameMode === 'multiplayer' && isMyTurn) {
+      const ts = GAME_STATE.turnState || {};
+      ts.turnStartedAt = Date.now();
+      GAME_STATE.turnState = ts;
+      scheduleSave('turn-timer', { force: true });
+    }
   }
 
   if (currentPlayerId) {
@@ -300,11 +336,15 @@ export function startTurnCountdown() {
   stopTurnCountdown(); // reset
 
   const turnDurationSec = DB?.SETTINGS?.missionDefaults?.turnDurationSec ?? DEFAULT_TURN_DURATION_SEC;
-  remainingSec = turnDurationSec;
+  remainingSec = APP_STATE.gameMode === 'multiplayer'
+    ? getTurnRemainingSec(GAME_STATE.turnState)
+    : turnDurationSec;
   renderTurnTracker();
 
   turnTimerId = setInterval(() => {
-    remainingSec--;
+    remainingSec = APP_STATE.gameMode === 'multiplayer'
+      ? getTurnRemainingSec(GAME_STATE.turnState)
+      : remainingSec - 1;
     if (remainingSec < 0) remainingSec = 0;
     renderTurnTracker();
 

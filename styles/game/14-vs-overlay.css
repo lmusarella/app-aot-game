@@ -12,7 +12,8 @@
    opacity: 1;
  }
 
- #vs-overlay .vs-backdrop {
+#vs-overlay .vs-backdrop,
+#atk-overlay .vs-backdrop {
    position: absolute;
    inset: 0;
    background: rgba(9, 12, 20, .5);
@@ -21,11 +22,13 @@
    transition: opacity .2s ease-out;
  }
 
- #vs-overlay.show .vs-backdrop {
+#vs-overlay.show .vs-backdrop,
+#atk-overlay.show .vs-backdrop {
    opacity: 1;
  }
 
- #vs-overlay .vs-wrap {
+#vs-overlay .vs-wrap,
+#atk-overlay .vs-wrap {
    position: absolute;
    left: 50%;
    top: 20%;
@@ -111,13 +114,15 @@
    animation: vsInRight .35s ease-out forwards;
  }
 
- #vs-overlay.show .vs-left {
-   animation-delay: .05s;
- }
+#vs-overlay.show .vs-left,
+#atk-overlay.show .vs-left {
+  animation-delay: .05s;
+}
 
- #vs-overlay.show .vs-right {
-   animation-delay: .05s;
- }
+#vs-overlay.show .vs-right,
+#atk-overlay.show .vs-right {
+  animation-delay: .05s;
+}
 
  .vs-badge {
    width: 84px;
@@ -223,7 +228,7 @@
 .combat-wait-overlay {
   position: fixed;
   inset: 0;
-  z-index: 12001;
+  z-index: 999999;
   display: grid;
   place-items: center;
   pointer-events: none;
