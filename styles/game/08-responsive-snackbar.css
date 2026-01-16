@@ -469,7 +469,9 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
-  width: min(1200px, 96vw);
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 6px;
 }
 
 .app-footer__credits {
@@ -479,6 +481,7 @@
   opacity: 0.55;
   text-align: right;
   white-space: nowrap;
+  padding-right: 2px;
 }
 
  /* Contenitore delle barre nel footer */
