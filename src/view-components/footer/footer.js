@@ -5,6 +5,8 @@ import { log } from "../leftbar/log.js";
 import { levelFromXP, levelProgressPercent, getMalusRow } from '../../game-business-logic/utils.js';
 import { renderBonusMalus } from '../leftbar/mods.js';
 import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
+import { focusUnitOnField } from '../grid/grid.js';
+import { hideTooltip, showTooltipAt } from '../../ui-components/ui-helpers.js';
 
 function getFooterElements() {
     return {
@@ -21,6 +23,114 @@ function getFooterElements() {
 }
 
 export const stack_screen = [];
+
+function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex) {
+    if (!player) return { units: [], playerName: 'Giocatore' };
+    const allUnits = [
+        player.commander_code,
+        ...(Array.isArray(player.recruit_codes) ? player.recruit_codes : [])
+    ].filter(Boolean);
+
+    const extraUnits = allUnits
+        .filter(code => !rosterIds.has(code))
+        .map(code => unitIndex.get(code) || { id: code, name: code, img: 'assets/units/default.png' });
+
+    const playerName = player.nickname || player.user_id?.slice(0, 8) || 'Giocatore';
+    return { units: extraUnits, playerName };
+}
+
+function buildFooterAvatarTooltip(player, rosterIds, unitIndex) {
+    const { units, playerName } = getNonMissionUnitsForPlayer(player, rosterIds, unitIndex);
+    if (!units.length) {
+        return `
+            <div class="tt-card footer-squad-tooltip">
+                <div class="tt-title">${playerName}</div>
+                <div class="tt-badge">Unità fuori missione</div>
+                <p class="footer-squad-empty">Nessuna unità fuori missione.</p>
+            </div>
+        `;
+    }
+    const listItems = units.map(unit => {
+        const unitName = unit?.name || unit?.id || 'Unità sconosciuta';
+        const unitAvatar = unit?.img || unit?.avatar || 'assets/units/default.png';
+        return `
+            <li class="msn-squad-item">
+                <span class="msn-squad-unit">
+                    <span class="msn-squad-avatar"><img src="${unitAvatar}" alt=""></span>
+                    <span class="msn-squad-unit-name">${unitName}</span>
+                </span>
+            </li>
+        `;
+    }).join('');
+    return `
+        <div class="tt-card footer-squad-tooltip">
+            <div class="tt-title">${playerName}</div>
+            <div class="tt-badge">Unità fuori missione</div>
+            <ul class="msn-squad">${listItems}</ul>
+        </div>
+    `;
+}
+
+export function renderFooterAvatars() {
+    const container = document.querySelector('.footer-avatars');
+    if (!container) return;
+    const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
+    const myId = APP_STATE.user?.id || null;
+    if (!players.length || !myId) {
+        container.classList.add('is-hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    const roster = Array.isArray(GAME_STATE.alliesRoster) ? GAME_STATE.alliesRoster : [];
+    const rosterIds = new Set(roster.map(u => u.id));
+    const unitIndex = Array.isArray(DB.ALLIES)
+        ? new Map(DB.ALLIES.map(u => [u.id, u]))
+        : new Map();
+
+    const playersById = new Map(players.map(player => [player.user_id, player]));
+    const avatars = players
+        .filter(p => p.user_id && p.user_id !== myId)
+        .map(player => {
+            const rosterUnit = roster.find(u => u.owner_id === player.user_id);
+            const unitFromDb = !rosterUnit && player.unit_code
+                ? unitIndex.get(player.unit_code)
+                : null;
+            const unit = rosterUnit || unitFromDb;
+            const avatarSrc = unit?.img || unit?.avatar || 'assets/units/default.png';
+            const displayName = player.nickname || player.user_id?.slice(0, 8) || 'Giocatore';
+            return `
+                <button class="footer-avatar-btn" type="button" data-player-id="${player.user_id}"
+                    data-unit-id="${unit?.id || ''}"
+                    aria-label="Apri squadra fuori missione di ${displayName}" title="${displayName}">
+                    <img src="${avatarSrc}" alt="Avatar ${displayName}">
+                </button>
+            `;
+        })
+        .join('');
+
+    if (!avatars) {
+        container.classList.add('is-hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    container.classList.remove('is-hidden');
+    container.innerHTML = avatars;
+    container.querySelectorAll('.footer-avatar-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const playerId = btn.dataset.playerId;
+            const player = playersById.get(playerId);
+            const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex);
+            showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
+            const unitId = btn.dataset.unitId;
+            if (unitId) {
+                focusUnitOnField(unitId);
+            }
+        });
+    });
+}
 
 // Mutatore con logging dettagliato
 export function addMorale(deltaPct) {
@@ -152,6 +262,7 @@ export function refreshFooterTracker() {
     if (killsAnomaloEl) killsAnomaloEl.textContent = String(kills.Anomalo ?? 0);
     if (killsMutaformaEl) killsMutaformaEl.textContent = String(kills.Mutaforma ?? 0);
     if (lossesEl) lossesEl.textContent = String(missionStats.losses ?? 0);
+    renderFooterAvatars();
 }
 
 export function initFooterListeners() {
@@ -172,5 +283,6 @@ export function initFooterListeners() {
             }
         });
     });
+    renderFooterAvatars();
 
 }

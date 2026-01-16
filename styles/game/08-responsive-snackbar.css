@@ -466,12 +466,53 @@
 
 .app-footer__row {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 12px;
   width: 100%;
   max-width: 1200px;
   padding: 0 6px;
+}
+
+.footer-avatars {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 17, 24, 0.6);
+  min-height: 36px;
+}
+
+.footer-avatars.is-hidden {
+  display: none;
+}
+
+.footer-avatar-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.footer-avatar-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.footer-avatar-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.35);
 }
 
 .app-footer__credits {
@@ -486,49 +527,51 @@
 
  /* Contenitore delle barre nel footer */
 .footer-bars {
-   display: grid;
-   grid-template-columns: minmax(220px, 1fr);
-   align-items: stretch;
-   justify-items: stretch;
-   gap: 8px;
-   width: min(520px, 96vw);
- }
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr);
+  align-items: stretch;
+  justify-items: stretch;
+  gap: 10px;
+  width: min(560px, 96vw);
+}
 
 .footer-bars--single {
-  grid-column: 2;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
-  width: min(760px, 80vw);
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  width: min(760px, 86vw);
 }
 
 .footer-bars .bar-row.mini {
-  grid-template-columns: auto 24px 1fr 24px auto;
-  grid-template-rows: auto auto;
-  row-gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: linear-gradient(180deg, rgba(20, 24, 36, 0.96), rgba(12, 15, 23, 0.96));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.footer-bars .bar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.footer-bars .bar-track {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  align-items: center;
+  gap: 8px;
 }
 
 .footer-bars--single .bar-row.mini {
-  grid-template-rows: auto;
-  row-gap: 0;
+  min-height: 64px;
 }
 
-.footer-bars--single .bar-row.mini .bar {
-  grid-column: 3;
-  grid-row: 1;
-}
-
-.footer-bars--single .bar-row.mini .br-label,
-.footer-bars--single .bar-row.mini .bbtn {
-  grid-row: 1;
-}
-
-.footer-bars .bar-row.mini .bar {
-  grid-column: 1 / -1;
-  grid-row: 2;
-}
-
-.footer-bars .bar-row.mini .br-label,
-.footer-bars .bar-row.mini .bbtn {
-  grid-row: 1;
+.footer-bars--single .bar-row.mini .bar-track {
+  grid-template-columns: 28px 1fr 28px;
 }
 
 .footer-phase {
@@ -587,15 +630,11 @@
 
  /* Variante "mini" per le righe barra: più strette e compatte */
 .bar-row.mini {
-  display: grid;
-  grid-template-columns: auto 24px min(36vw, 250px) 24px auto;
-  align-items: center;
-  /* centra verticalmente label, bottoni e barra */
-  gap: 8px;
+  display: flex;
 }
 
 .bar-row.morale-readonly {
-  grid-template-columns: auto min(36vw, 250px) auto;
+  opacity: 0.75;
 }
 
 .bar-row.morale-readonly .bbtn {
@@ -603,7 +642,7 @@
 }
 
 .bar-row.xp-readonly {
-  grid-template-columns: auto min(36vw, 250px) auto;
+  opacity: 0.75;
 }
 
 .bar-row.xp-readonly .bbtn {
@@ -612,41 +651,61 @@
 
  /* Barre più sottili nel footer */
  .footer-bars .bar {
-   height: 10px;
-   /* <- più stretta */
-   border-radius: 10px;
-   background: #171923;
-   border: 1px solid #242632;
-   overflow: hidden;
- }
+  height: 10px;
+  border-radius: 999px;
+  background: #151a26;
+  border: 1px solid #23293a;
+  overflow: hidden;
+  position: relative;
+}
 
- .footer-bars .bar .fill {
-   height: 100%;
- }
+.footer-bars .bar .fill {
+  height: 100%;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+}
 
  /* Bottoni compatti nel footer */
  .footer-bars .bbtn {
-   width: 24px;
-   height: 24px;
-   line-height: 20px;
-   border-radius: 6px;
-   padding: 0;
- }
+  width: 28px;
+  height: 28px;
+  line-height: 24px;
+  border-radius: 9px;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 17, 24, 0.9);
+  color: #e2e8f0;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.footer-bars .bbtn:hover {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(148, 163, 184, 0.6);
+}
 
  /* Testi compatti nel footer */
  .footer-bars .br-label {
-   font-size: 12px;
-   opacity: .9;
-   white-space: nowrap;
- }
+  font-size: 12px;
+  opacity: .9;
+  white-space: nowrap;
+  font-weight: 700;
+}
 
- .footer-bars .br-val {
-   font-size: 11px;
-   opacity: .85;
-   min-width: 40px;
-   text-align: right;
-   white-space: nowrap;
- }
+.footer-bars .br-sub {
+  margin-left: 6px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.footer-bars .br-val {
+  font-size: 11px;
+  opacity: .85;
+  min-width: 40px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 
  /* Colori riempimenti (se vuoi differenziarli) */
  .bar.morale .fill {
@@ -656,6 +715,19 @@
  .bar.xp .fill {
    background: linear-gradient(180deg, #9b59b6, #6b46c1);
  }
+
+.footer-squad-tooltip .tt-badge {
+  margin-bottom: 8px;
+}
+
+.footer-squad-tooltip .msn-squad {
+  margin-bottom: 0;
+}
+
+.footer-squad-empty {
+  font-size: 12px;
+  opacity: 0.75;
+}
 
  /* Etichetta footer in basso a destra, piccola */
  .app-footer .foot-text {
@@ -694,40 +766,20 @@
      width: min(520px, 96vw);
    }
 
-   .footer-bars--single .bar-row.mini {
-     grid-template-rows: auto auto;
+   .footer-avatars {
+     grid-column: 1;
+     width: min(220px, 90vw);
+     justify-content: center;
    }
 
-   .footer-bars--single .bar-row.mini .bar {
-     grid-column: 1 / -1;
-     grid-row: 2;
-   }
-
-   .footer-bars--single .bar-row.mini .br-label,
-   .footer-bars--single .bar-row.mini .bbtn {
-     grid-row: 1;
-   }
-
-   .bar-row.mini {
-     grid-template-columns: auto 22px min(70vw, 250px) 22px auto;
-     gap: 6px;
+   .footer-bars .bar-track {
+     grid-template-columns: 24px 1fr 24px;
    }
 
    .footer-bars .bbtn {
-     width: 22px;
-     height: 20px;
+     width: 24px;
+     height: 24px;
    }
- }
-
- #xp-row .br-label {
-   display: flex;
-   align-items: center;
-   gap: 4px;
- }
-
- #xp-row #lvl-val {
-   font-size: 11px;
-   opacity: .75;
  }
 
 .topbar {

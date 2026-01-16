@@ -125,6 +125,14 @@ export function showTooltip(html) {
   positionTooltip(0, 45);
 }
 
+export function showTooltipAt(html, { x = 0, y = 0 } = {}) {
+  const el = resolveTooltipEl();
+  if (!el) return;
+  el.innerHTML = html;
+  el.style.display = 'block';
+  positionTooltip(x, y);
+}
+
 export function hideTooltip() {
   const el = resolveTooltipEl();
   if (!el) return;
