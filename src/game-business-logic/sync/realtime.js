@@ -41,6 +41,12 @@ export function bindGameRealtime(roomId) {
       return;
     }
 
+    const shouldRenderState = shouldRenderGameState(newState);
+    const shouldRenderTurnState = shouldRenderTurn(newState.turnState);
+    if (!shouldRenderState && !shouldRenderTurnState) {
+      return;
+    }
+
     const localEvents = Array.isArray(GAME_STATE.events) ? GAME_STATE.events.slice() : [];
     gameAPI.resetGameState();
     gameAPI.applyLoadedState(newState);
@@ -49,11 +55,11 @@ export function bindGameRealtime(roomId) {
     }
     consumeGameEvents();
 
-    if (shouldRenderGameState(newState)) {
+    if (shouldRenderState) {
       scheduleRenderGameState(() => gameAPI.renderGameFromState(GAME_STATE));
     }
 
-    if (shouldRenderTurn(newState.turnState)) {
+    if (shouldRenderTurnState) {
       renderTurnTracker();
       startTurnCountdown();
     }
@@ -112,6 +118,12 @@ export async function resyncGameState(roomId) {
   if (incomingVersion < localVersion) return;
   if (incomingVersion === localVersion && incomingVersion !== 0 && incomingUpdatedAt <= localUpdatedAt) return;
 
+  const shouldRenderState = shouldRenderGameState(newState);
+  const shouldRenderTurnState = shouldRenderTurn(newState.turnState);
+  if (!shouldRenderState && !shouldRenderTurnState) {
+    return;
+  }
+
   const localEvents = Array.isArray(GAME_STATE.events) ? GAME_STATE.events.slice() : [];
   gameAPI.resetGameState();
   gameAPI.applyLoadedState(newState);
@@ -120,11 +132,11 @@ export async function resyncGameState(roomId) {
   }
   consumeGameEvents();
 
-  if (shouldRenderGameState(newState)) {
+  if (shouldRenderState) {
     scheduleRenderGameState(() => gameAPI.renderGameFromState(GAME_STATE));
   }
 
-  if (shouldRenderTurn(newState.turnState)) {
+  if (shouldRenderTurnState) {
     renderTurnTracker();
     startTurnCountdown();
   }
