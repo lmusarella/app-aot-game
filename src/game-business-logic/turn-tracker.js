@@ -18,7 +18,6 @@ let elContainer = null;
 let elPlayer = null;
 let elOrder = null;
 let elTimer = null;
-let elStatus = null;
 let elHeaderTurnPlayer = null;
 let elPlayerAvatar = null;
 let elPhase = null;
@@ -80,7 +79,6 @@ function ensureTurnElements() {
   elPlayer = document.getElementById('turn-player');
   elOrder = document.getElementById('turn-order');
   elTimer = document.getElementById('turn-timer');
-  elStatus = document.getElementById('turn-status');
   elHeaderTurnPlayer = document.getElementById('header-turn-player');
   elPlayerAvatar = document.getElementById('turn-player-avatar');
   elPhase = document.getElementById('turn-phase');
@@ -88,6 +86,39 @@ function ensureTurnElements() {
   elPhaseBar = document.querySelector('.turn-progress-bar');
   elPhaseFill = document.getElementById('turn-phase-fill');
   elFabDock = document.querySelector('.fab-dock');
+}
+
+function buildTurnStatusText({ phase, phaseReady, commanderActive, isMyTurn, displayName, order, phaseDoneByCount }) {
+  if (APP_STATE.gameMode !== 'multiplayer') return '';
+  if (phase === 'idle') {
+    if (commanderActive) {
+      return 'Sei il comandante. Avvia la missione quando siete pronti.';
+    }
+    return 'Attendi che il comandante avvii la missione.';
+  }
+  if (phaseReady) {
+    if (phase === 'move_phase') {
+      return 'Fase movimento completata. In attesa della prossima fase.';
+    }
+    return isMyTurn
+      ? 'Tutti hanno completato la fase. Puoi proseguire.'
+      : 'Fase completata. In attesa del comandante.';
+  }
+  if (phase === 'setup' && order.length > 0) {
+    const progressText = `Setup completato: ${Math.min(phaseDoneByCount, order.length)}/${order.length}.`;
+    if (isMyTurn) {
+      const remaining = getSetupMovesRemaining();
+      return `${progressText} È il tuo turno. Trascina la tua unità nelle prime due file davanti alle mura, poi muoviti di un esagono adiacente alla volta. Movimenti rimasti: ${remaining}/${SETUP_MOVE_LIMIT}.`;
+    }
+    return `${progressText} In attesa del tuo turno.`;
+  }
+  if (!isMyTurn) {
+    if (displayName && displayName !== '—') {
+      return `È il turno di ${displayName}.`;
+    }
+    return 'È il turno di un altro giocatore.';
+  }
+  return 'È il tuo turno.';
 }
 
 export function getTurnInfo() {
@@ -183,9 +214,8 @@ export function initTurnTracker() {
  */
 export function renderTurnTracker() {
   ensureTurnElements();
-  if (!elContainer) return;
   refreshHeaderUI();
-  if (APP_STATE.gameMode === 'multiplayer') {
+  if (APP_STATE.gameMode === 'multiplayer' && elContainer) {
     elContainer.classList.remove('is-hidden');
   }
 
@@ -207,7 +237,9 @@ export function renderTurnTracker() {
     currentPlayer?.user_id?.slice(0, 6) ||
     (currentPlayerId ? currentPlayerId.slice(0, 6) : '—');
 
-  elPlayer.textContent = displayName;
+  if (elPlayer) {
+    elPlayer.textContent = displayName;
+  }
   if (elPlayerAvatar) {
     const rosterUnit = GAME_STATE.alliesRoster?.find(u => u.owner_id === currentPlayerId);
     const unitFromDb = !rosterUnit && currentPlayer?.unit_code
@@ -220,12 +252,16 @@ export function renderTurnTracker() {
   if (elHeaderTurnPlayer) {
     elHeaderTurnPlayer.textContent = `Turno: ${displayName}`;
   }
-  elOrder.textContent = order.length
-    ? `${currentIndex + 1}/${order.length}`
-    : '';
+  if (elOrder) {
+    elOrder.textContent = order.length
+      ? `${currentIndex + 1}/${order.length}`
+      : '';
+  }
 
   remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
-  elTimer.textContent = `${remainingSec}s`;
+  if (elTimer) {
+    elTimer.textContent = `${remainingSec}s`;
+  }
   if (elPhase) {
     const phaseLabels = {
       idle: 'Attesa',
@@ -249,7 +285,9 @@ export function renderTurnTracker() {
     elPhaseFill.style.width = `${progressPct}%`;
   }
 
-  elContainer.classList.toggle('my-turn', isMyTurn);
+  if (elContainer) {
+    elContainer.classList.toggle('my-turn', isMyTurn);
+  }
   if (elFabDock) {
     const isMultiplayer = APP_STATE.gameMode === 'multiplayer';
     const shouldHideByTurn = isMultiplayer && !isMyTurn;
@@ -276,58 +314,33 @@ export function renderTurnTracker() {
     });
   }
 
-  if (elStatus) {
-    if (APP_STATE.gameMode !== 'multiplayer') {
-      elStatus.textContent = '';
-      elStatus.hidden = true;
-    } else if (phase === 'idle') {
-      elStatus.hidden = false;
-      if (commanderActive) {
-        elStatus.textContent = 'Sei il comandante. Avvia la missione quando siete pronti.';
-      } else {
-        elStatus.textContent = 'Attendi che il comandante avvii la missione.';
-      }
-    } else if (phaseReady) {
-      elStatus.hidden = false;
-      if (phase === 'move_phase') {
-        elStatus.textContent = 'Fase movimento completata. In attesa della prossima fase.';
-      } else {
-        elStatus.textContent = isMyTurn
-          ? 'Tutti hanno completato la fase. Puoi proseguire.'
-          : 'Fase completata. In attesa del comandante.';
-      }
-    } else if (phase === 'setup' && order.length > 0) {
-      const progressText = `Setup completato: ${Math.min(phaseDoneByCount, order.length)}/${order.length}.`;
-      elStatus.hidden = false;
-      if (isMyTurn) {
-        const remaining = getSetupMovesRemaining();
-        elStatus.textContent = `${progressText} È il tuo turno. Trascina la tua unità nelle prime due file davanti alle mura, poi muoviti di un esagono adiacente alla volta. Movimenti rimasti: ${remaining}/${SETUP_MOVE_LIMIT}.`;
-      } else {
-        elStatus.textContent = `${progressText} In attesa del tuo turno.`;
-      }
-    } else if (!isMyTurn) {
-      elStatus.hidden = false;
-      if (displayName && displayName !== '—') {
-        elStatus.textContent = `È il turno di ${displayName}.`;
-      } else {
-        elStatus.textContent = 'È il turno di un altro giocatore.';
-      }
-    } else {
-      elStatus.hidden = false;
-      elStatus.textContent = 'È il tuo turno.';
-    }
+  const phaseLabel = document.getElementById('phase-label');
+  if (phaseLabel && APP_STATE.gameMode === 'multiplayer') {
+    phaseLabel.textContent = buildTurnStatusText({
+      phase,
+      phaseReady,
+      commanderActive,
+      isMyTurn,
+      displayName,
+      order,
+      phaseDoneByCount
+    });
   }
 
   // setup progress UI removed; phase progress is shown in the turn tracker bar
 
   const turnChanged = currentPlayerId && currentPlayerId !== lastTurnPlayerId;
   if (turnChanged) {
-    elContainer.classList.add('turn-changed');
+    if (elContainer) {
+      elContainer.classList.add('turn-changed');
+    }
     if (turnChangeTimerId) {
       clearTimeout(turnChangeTimerId);
     }
     turnChangeTimerId = setTimeout(() => {
-      elContainer.classList.remove('turn-changed');
+      if (elContainer) {
+        elContainer.classList.remove('turn-changed');
+      }
       turnChangeTimerId = null;
     }, 600);
     if (APP_STATE.gameMode === 'multiplayer' && phase !== 'idle') {

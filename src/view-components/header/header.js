@@ -123,7 +123,6 @@ function applyHeaderModeVisibility() {
     toggle(elMissionCtrl, !isMultiplayer);
     toggle(elGameMode, !isMultiplayer);
     toggle(btnReset, !isMultiplayer);
-    toggle(elTurnTracker, isMultiplayer);
     toggle(btnLeaveRoom, !isMultiplayer);
     toggle(elHeaderUserMenuToggle, isMultiplayer);
     toggle(elHeaderUserMenu, isMultiplayer);
