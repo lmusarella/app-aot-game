@@ -372,7 +372,7 @@ export function renderTurnTracker() {
     if (APP_STATE.gameMode === 'multiplayer' && phase !== 'idle') {
       showTurnChangeEffect({ isMyTurn, displayName });
     }
-    if (APP_STATE.gameMode === 'multiplayer' && isMyTurn) {
+    if (APP_STATE.gameMode === 'multiplayer' && isMyTurn && APP_STATE.isGameDriver) {
       const ts = GAME_STATE.turnState || {};
       if (!ts.turnStartedAt) {
         ts.turnStartedAt = Date.now();
