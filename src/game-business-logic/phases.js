@@ -8,7 +8,6 @@ import { DB, GAME_STATE } from '../core/data.js';
 import { missionStatsBumpAttempt, missionStatsSetRound } from '../view-components/leftbar/missions.js';
 import { stopTimer, startTimer, renderPhaseLabel } from "../view-components/header/header.js";
 import { log } from "../view-components/leftbar/log.js";
-import showPhaseBanner from './effects/phaseBanner.js';
 import showWarningC from './effects/warningOverlayC.js';
 import lightningStrike from './effects/lightningStrike.js';
 // in cima
@@ -39,12 +38,6 @@ async function runRoundStart(engine) {
 
     setTimeout(() => {
         engine.setPhase('move_phase');
-        showPhaseBanner({
-            text: 'FASE DI MOVIMENTO',
-            subtext: `Round ${engine.round}. Effettua una azione di movimento per unità.`,
-            theme: 'blue',
-            autoDismissMs: 6000
-        });
         startTimer();
         advanceAllCooldowns(1, { giantsOnly: true });
         tickUnitModsOnNewRound();
@@ -75,13 +68,6 @@ async function handleMultiplayerStartPhase(phase, engine) {
         });
 
         setTimeout(() => {
-            showPhaseBanner({
-                text: 'FASE DI SETUP',
-                subtext: 'Posiziona le truppe e termina il setup.',
-                theme: 'blue',
-                autoDismissMs: 3500
-            });
-
             if (!engine.teamCreated) {
                 try {
                     const rosterCount = GAME_STATE.alliesRoster?.length || 0;
@@ -100,12 +86,6 @@ async function handleMultiplayerStartPhase(phase, engine) {
         engine.squadNumber = Math.max(1, turnOrderCount || playersCount || 0);
         engine.eventCards = 0;
         engine.setPhase('event_card');
-        showPhaseBanner({
-            text: 'PESCA CARTE EVENTO',
-            subtext: 'Pesca una carta evento per ogni giocatore.',
-            theme: 'green',
-            autoDismissMs: 3500
-        });
         startTimer();
         const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
         const spawnEvents = m?.event_spawn || [];
@@ -144,12 +124,6 @@ async function handleMultiplayerStartPhase(phase, engine) {
         ensureMultiplayerTurnOrder({ resetToCommander: true });
         await wait(2500);
         engine.setPhase('attack_phase');
-        showPhaseBanner({
-            text: 'FASE DI COMBATTIMENTO',
-            subtext: `Round ${engine.round}. Scegli i bersagli che ingaggeranno battaglia`,
-            theme: 'red',
-            autoDismissMs: 6000
-        });
         await playBg('./assets/sounds/start_mission.mp3');
     }
 }
@@ -175,12 +149,6 @@ async function handleSingleStartPhase(phase, engine) {
         });
 
         setTimeout(() => {
-            showPhaseBanner({
-                text: 'FASE DI MOVIMENTO',
-                subtext: 'Posiziona la tua squadra in griglia',
-                theme: 'blue',
-                autoDismissMs: 3500
-            });
             log('Setup: Puoi trascinare la tua unità nelle prime due file davanti alle mura. Hai 3 movimenti disponibili e puoi muoverti di un esagono adiacente alla volta.', 'info', 4000, true);
 
             if (!engine.teamCreated) {
@@ -269,13 +237,6 @@ async function handleSingleEndPhase(phase, engine) {
                     openAccordionForRole("enemy");
                 }
 
-                showPhaseBanner({
-                    text: 'PESCA CARTE EVENTO',
-                    subtext: 'Pesca una carta evento per ogni membro della squadra',
-                    theme: 'green',
-                    autoDismissMs: 3500
-                });
-
             }, 3000);
 
 
@@ -288,23 +249,11 @@ async function handleSingleEndPhase(phase, engine) {
         giantsPhaseMove();
         await wait(2500);
         engine.setPhase('attack_phase');
-        showPhaseBanner({
-            text: 'FASE DI COMBATTIMENTO',
-            subtext: `Round ${engine.round}. Scegli i bersagli che ingaggeranno battaglia`,
-            theme: 'red',
-            autoDismissMs: 6000
-        });
         await playBg('./assets/sounds/start_mission.mp3');
     }
 
     if (phase === 'attack_phase') {
         engine.setPhase('round_start');
-        showPhaseBanner({
-            text: 'FASE FINALE',
-            subtext: `${engine.round}° ROUND`,
-            theme: 'neutral',
-            autoDismissMs: 6000
-        });
 
         const flagTempoNonScaduto = GAME_STATE.missionState.remainingSec;
         if (engine.round % 2 === 0 || flagTempoNonScaduto === 0) {
@@ -325,12 +274,6 @@ async function handleSingleEndPhase(phase, engine) {
 
     if (phase === 'end_round') {
         engine.setPhase('round_start');
-        showPhaseBanner({
-            text: 'INIZIO ROUND',
-            subtext: `Round "${engine.round}".`,
-            theme: 'green',
-            autoDismissMs: 2000
-        });
         await playBg('./assets/sounds/start_mission.mp3');
     }
 }

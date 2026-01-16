@@ -5,6 +5,15 @@
             <img src="assets/img/logo.jpg" alt="Logo" />
         </div>
 
+        <div class="header-briefing" aria-live="polite">
+            <span class="header-briefing-avatar">
+                <img src="assets/img/comandanti/erwin.png" alt="Erwin Smith" />
+            </span>
+            <div class="header-briefing-bubble" role="status">
+                <span id="phase-label" class="header-briefing-text">Attesa: in attesa del prossimo ordine.</span>
+            </div>
+        </div>
+
         <!-- Brand -->
         <div class="brand">AOT Companion</div>
 
@@ -63,34 +72,6 @@
             </div>
         </div>
 
-        <div class="header-stats" aria-label="Stato missione">
-            <div class="footer-bars" role="group" aria-label="Stato Squadra">
-                <!-- Morale -->
-                <div class="bar-row mini" id="morale-row">
-                    <span class="br-label">Morale</span>
-                    <button class="bbtn" data-target="morale" data-delta="-1" title="-1%">−</button>
-                    <div class="bar morale">
-                        <div id="morale-fill" class="fill" style="width:65%"></div>
-                    </div>
-                    <button class="bbtn" data-target="morale" data-delta="1" title="+1%">+</button>
-
-                </div>
-
-                <!-- Esperienza -->
-                <div class="bar-row mini" id="xp-row">
-                    <span class="br-label">
-                        Exp <span id="lvl-val" style="margin-left:6px; opacity:.75; font-size:11px;">Lv. 1</span>
-                    </span>
-                    <button class="bbtn" data-target="xp" data-xp="-1" title="-1 XP">−</button>
-                    <div class="bar xp">
-                        <div id="xp-fill" class="fill" style="width:40%"></div>
-                    </div>
-                    <button class="bbtn" data-target="xp" data-xp="1" title="+1 XP">+</button>
-                    <!-- non serve più il br-val a destra -->
-                </div>
-            </div>
-        </div>
-
         <!-- Reset partita (a destra) -->
         <button id="btn-reset-game" class="reset-hdr-btn" title="Reset Partita">
             RESET PARTITA
@@ -98,15 +79,6 @@
         <button id="btn-leave-room" class="reset-hdr-btn" title="Esci dalla partita">
             ESCI PARTITA
         </button>
-
-        <div class="header-briefing" aria-live="polite">
-            <span class="header-briefing-avatar">
-                <img src="assets/img/comandanti/erwin.png" alt="Erwin Smith" />
-            </span>
-            <div class="header-briefing-bubble" role="status">
-                <span id="phase-label" class="header-briefing-text">Attesa: in attesa del prossimo ordine.</span>
-            </div>
-        </div>
 
         <!-- QUI -->
         <div class="header-user">

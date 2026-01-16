@@ -452,18 +452,32 @@
   bottom: 0;
   background: linear-gradient(180deg, #0b0d14, #090b12);
   border-top: 1px solid #1f2230;
-  padding: 10px 12px 14px;
-  /* extra padding in basso per la label */
+  min-height: var(--footer-h);
+  padding: 10px 16px;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 8px;
   z-index: 9999;
 }
 
 .app-footer--empty {
   display: none;
+}
+
+.app-footer__row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: min(1200px, 96vw);
+  justify-content: space-between;
+}
+
+.app-footer__credits {
+  margin-left: auto;
+  font-size: 11px;
+  opacity: 0.7;
+  text-align: right;
+  white-space: nowrap;
 }
 
  /* Contenitore delle barre nel footer */
@@ -476,10 +490,30 @@
    width: min(520px, 96vw);
  }
 
+.footer-bars--single {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  width: min(760px, 80vw);
+}
+
 .footer-bars .bar-row.mini {
   grid-template-columns: auto 24px 1fr 24px auto;
   grid-template-rows: auto auto;
   row-gap: 6px;
+}
+
+.footer-bars--single .bar-row.mini {
+  grid-template-rows: auto;
+  row-gap: 0;
+}
+
+.footer-bars--single .bar-row.mini .bar {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.footer-bars--single .bar-row.mini .br-label,
+.footer-bars--single .bar-row.mini .bbtn {
+  grid-row: 1;
 }
 
 .footer-bars .bar-row.mini .bar {
@@ -630,13 +664,42 @@
 
  /* Evita che il footer copra i contenuti: aggiungi spazio in fondo alla pagina */
  body {
-   padding-bottom: 59px;
+   padding-bottom: var(--footer-h);
  }
 
  /* regola se serve in base all’altezza del footer */
 
  /* Piccolo tuning per schermi stretti */
  @media (max-width: 900px) {
+   .app-footer__row {
+     flex-direction: column;
+     align-items: center;
+   }
+
+   .app-footer__credits {
+     white-space: normal;
+     text-align: center;
+   }
+
+   .footer-bars--single {
+     grid-template-columns: 1fr;
+     width: min(520px, 96vw);
+   }
+
+   .footer-bars--single .bar-row.mini {
+     grid-template-rows: auto auto;
+   }
+
+   .footer-bars--single .bar-row.mini .bar {
+     grid-column: 1 / -1;
+     grid-row: 2;
+   }
+
+   .footer-bars--single .bar-row.mini .br-label,
+   .footer-bars--single .bar-row.mini .bbtn {
+     grid-row: 1;
+   }
+
    .bar-row.mini {
      grid-template-columns: auto 22px min(70vw, 250px) 22px auto;
      gap: 6px;
