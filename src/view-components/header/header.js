@@ -179,6 +179,9 @@ function renderGameModeBadge() {
 export function renderPhaseLabel() {
     const phaseLabel = document.getElementById('phase-label');
     if (!phaseLabel) return;
+    if (APP_STATE.gameMode === 'multiplayer') {
+        return;
+    }
     const phase = GAME_STATE.turnEngine?.phase || 'idle';
     const labelMap = {
         idle: 'Attesa',
