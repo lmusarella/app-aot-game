@@ -374,10 +374,8 @@ export function renderTurnTracker() {
     }
     if (APP_STATE.gameMode === 'multiplayer' && isMyTurn) {
       const ts = GAME_STATE.turnState || {};
-      const now = Date.now();
-      const shouldUpdate = !ts.turnStartedAt || Math.abs(now - ts.turnStartedAt) > 1000;
-      if (shouldUpdate) {
-        ts.turnStartedAt = now;
+      if (!ts.turnStartedAt) {
+        ts.turnStartedAt = Date.now();
         GAME_STATE.turnState = ts;
         scheduleSave('turn-timer');
       }
