@@ -63,6 +63,14 @@ function getTurnRemainingSec(turnState) {
   return Math.max(0, turnDurationSec - elapsedSec);
 }
 
+function renderTurnTimer() {
+  ensureTurnElements();
+  remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
+  if (elTimer) {
+    elTimer.textContent = `${remainingSec}s`;
+  }
+}
+
 function showTurnChangeEffect({ isMyTurn, displayName }) {
   if (!displayName || displayName === '—') return;
   if (isMyTurn) {
@@ -389,14 +397,14 @@ export function startTurnCountdown() {
   remainingSec = APP_STATE.gameMode === 'multiplayer'
     ? getTurnRemainingSec(GAME_STATE.turnState)
     : turnDurationSec;
-  renderTurnTracker();
+  renderTurnTimer();
 
   turnTimerId = setInterval(() => {
     remainingSec = APP_STATE.gameMode === 'multiplayer'
       ? getTurnRemainingSec(GAME_STATE.turnState)
       : remainingSec - 1;
     if (remainingSec < 0) remainingSec = 0;
-    renderTurnTracker();
+    renderTurnTimer();
 
     if (remainingSec <= 0) {
       stopTurnCountdown();
