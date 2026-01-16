@@ -32,6 +32,10 @@ export function bindGameRealtime(roomId) {
   const handleChange = (payload) => {
     const newState = payload.new?.state_json;
     if (!newState) return;
+    const updatedBy = payload.new?.updated_by;
+    if (updatedBy && APP_STATE.user?.id && updatedBy === APP_STATE.user.id) {
+      return;
+    }
     const incomingVersion = newState.stateVersion ?? 0;
     const localVersion = GAME_STATE.stateVersion ?? 0;
     const incomingUpdatedAt = newState.stateUpdatedAt ?? 0;
