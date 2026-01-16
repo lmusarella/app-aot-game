@@ -4,7 +4,7 @@ import { isClone, getMusicUrlById, COLOR_VAR, keyRC, getStat } from '../../game-
 import { unitById, rebuildUnitIndex, DB, GAME_STATE, UNIT_SELECTED, GIANT_ENGAGEMENT } from '../../core/data.js';
 import { APP_STATE } from '../../core/app-state.js';
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
-import { getTurnInfo } from '../../game-business-logic/turn-tracker.js';
+import { getTurnInfo, renderTurnTracker } from '../../game-business-logic/turn-tracker.js';
 import { log } from '../leftbar/log.js';
 import { enablePointerDrag } from './drag.js';
 import { getStack, setStack, removeUnitEverywhere, moveOneUnitBetweenStacks, hasWallInCell, bringToFront, setStackVisuals } from './stacks.js';
@@ -75,6 +75,7 @@ function consumeSetupMove() {
     const state = ensureSetupMoveState();
     state.remaining = Math.max(0, Number(state.remaining ?? SETUP_MOVE_LIMIT) - 1);
     scheduleSave('setup-moves', { force: true });
+    renderTurnTracker();
 }
 
 function setupAllowedRows() {

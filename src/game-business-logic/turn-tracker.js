@@ -8,6 +8,7 @@ import { isCommander } from '../core/permissions.js';
 import showWarningC from './effects/warningOverlayC.js';
 
 const DEFAULT_TURN_DURATION_SEC = 60; // ⏱ durata turno (configurabile)
+const DISABLE_TURN_TIMER_MP = true;
 
 let turnTimerId = null;
 let remainingSec = DEFAULT_TURN_DURATION_SEC;
@@ -65,6 +66,12 @@ function getTurnRemainingSec(turnState) {
 
 function renderTurnTimer() {
   ensureTurnElements();
+  if (APP_STATE.gameMode === 'multiplayer' && DISABLE_TURN_TIMER_MP) {
+    if (elTimer) {
+      elTimer.textContent = '—';
+    }
+    return;
+  }
   remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
   if (elTimer) {
     elTimer.textContent = `${remainingSec}s`;
@@ -284,10 +291,7 @@ export function renderTurnTracker() {
     }
   }
 
-  remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
-  if (elTimer) {
-    elTimer.textContent = `${remainingSec}s`;
-  }
+  renderTurnTimer();
   if (elPhase) {
     const phaseLabels = {
       idle: 'Attesa',
@@ -391,6 +395,10 @@ export function renderTurnTracker() {
 export function startTurnCountdown() {
   stopTurnCountdown(); // reset
 
+  if (APP_STATE.gameMode === 'multiplayer' && DISABLE_TURN_TIMER_MP) {
+    renderTurnTimer();
+    return;
+  }
   const turnDurationSec = DB?.SETTINGS?.missionDefaults?.turnDurationSec ?? DEFAULT_TURN_DURATION_SEC;
   remainingSec = APP_STATE.gameMode === 'multiplayer'
     ? getTurnRemainingSec(GAME_STATE.turnState)
