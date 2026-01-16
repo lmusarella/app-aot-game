@@ -9,6 +9,7 @@ import showWarningC from './effects/warningOverlayC.js';
 
 const DEFAULT_TURN_DURATION_SEC = 60; // ⏱ durata turno (configurabile)
 const DISABLE_TURN_TIMER_MP = true;
+const DISABLE_TURN_TIMER_SP = true;
 
 let turnTimerId = null;
 let remainingSec = DEFAULT_TURN_DURATION_SEC;
@@ -67,6 +68,12 @@ function getTurnRemainingSec(turnState) {
 function renderTurnTimer() {
   ensureTurnElements();
   if (APP_STATE.gameMode === 'multiplayer' && DISABLE_TURN_TIMER_MP) {
+    if (elTimer) {
+      elTimer.textContent = '—';
+    }
+    return;
+  }
+  if (APP_STATE.gameMode !== 'multiplayer' && DISABLE_TURN_TIMER_SP) {
     if (elTimer) {
       elTimer.textContent = '—';
     }
@@ -396,6 +403,10 @@ export function startTurnCountdown() {
   stopTurnCountdown(); // reset
 
   if (APP_STATE.gameMode === 'multiplayer' && DISABLE_TURN_TIMER_MP) {
+    renderTurnTimer();
+    return;
+  }
+  if (APP_STATE.gameMode !== 'multiplayer' && DISABLE_TURN_TIMER_SP) {
     renderTurnTimer();
     return;
   }

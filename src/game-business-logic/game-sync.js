@@ -98,6 +98,12 @@ export const scheduleSave = (arg, opts = {}) => {
     debouncedSaveLocalState();
     return;
   }
+  console.info('[game-sync] scheduleSave', {
+    source: arg,
+    force: !!opts.force,
+    phase: GAME_STATE.turnEngine?.phase ?? null,
+    isMyTurn: getTurnInfo().isMyTurn
+  });
   if (opts.force) {
     pendingSaveOptions.force = true;
   }
@@ -115,12 +121,18 @@ async function pushGameState() {
   if (!APP_STATE.roomId) return;
   const { force } = pendingSaveOptions;
   pendingSaveOptions.force = false;
+  console.info('[game-sync] pushGameState start', {
+    roomId: APP_STATE.roomId,
+    force,
+    phase: GAME_STATE.turnEngine?.phase ?? null
+  });
 
   // === NUOVA PROTEZIONE ===
   const turnState = GAME_STATE.turnState;
   if (!turnState || !Array.isArray(turnState.order) || turnState.order.length === 0 || !turnState.currentPlayerId) {
     if (!force) {
       console.warn("Turno non inizializzato: salvataggio multiplayer bloccato.");
+      console.info('[game-sync] pushGameState skipped', { reason: 'turn-not-initialized' });
       return;
     }
   }
@@ -133,6 +145,7 @@ async function pushGameState() {
   const allowOutOfTurnSave = isSetupPhase && isMarkedDone;
   if (!isMyTurn && !force && !allowOutOfTurnSave) {
     console.warn("Tentativo di salvataggio fuori turno bloccato.");
+    console.info('[game-sync] pushGameState skipped', { reason: 'out-of-turn' });
     return;
   }
 
