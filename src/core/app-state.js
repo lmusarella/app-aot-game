@@ -20,7 +20,10 @@ let gameAPI = {
     resetInMemoryGameState();
   },
   applyLoadedState: (state) => {
-    console.info('[gameAPI] applyLoadedState restore: ', state)
+    console.info('[gameAPI] applyLoadedState', {
+      stateVersion: state?.stateVersion ?? 0,
+      stateUpdatedAt: state?.stateUpdatedAt ?? null
+    });
     restore(state);
   },
   renderGameFromState: () => {}

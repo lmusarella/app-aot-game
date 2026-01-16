@@ -8,6 +8,8 @@ import { isCommander } from '../core/permissions.js';
 import showWarningC from './effects/warningOverlayC.js';
 
 const DEFAULT_TURN_DURATION_SEC = 60; // ⏱ durata turno (configurabile)
+const DISABLE_TURN_TIMER_MP = true;
+const DISABLE_TURN_TIMER_SP = true;
 
 let turnTimerId = null;
 let remainingSec = DEFAULT_TURN_DURATION_SEC;
@@ -40,6 +42,17 @@ function getSetupMovesRemaining() {
   return Math.max(0, remaining);
 }
 
+function countPhaseDone(order = [], phaseDoneBy = []) {
+  if (!Array.isArray(order) || order.length === 0) return 0;
+  const validOrder = new Set(order);
+  const done = new Set();
+  (Array.isArray(phaseDoneBy) ? phaseDoneBy : []).forEach((id) => {
+    if (!validOrder.has(id)) return;
+    done.add(id);
+  });
+  return done.size;
+}
+
 function getTurnRemainingSec(turnState) {
   const turnDurationSec = DB?.SETTINGS?.missionDefaults?.turnDurationSec ?? DEFAULT_TURN_DURATION_SEC;
   if (APP_STATE.gameMode !== 'multiplayer') {
@@ -50,6 +63,26 @@ function getTurnRemainingSec(turnState) {
   const elapsedMs = Math.max(0, Date.now() - startedAt - TURN_SYNC_GRACE_MS);
   const elapsedSec = Math.floor(elapsedMs / 1000);
   return Math.max(0, turnDurationSec - elapsedSec);
+}
+
+function renderTurnTimer() {
+  ensureTurnElements();
+  if (APP_STATE.gameMode === 'multiplayer' && DISABLE_TURN_TIMER_MP) {
+    if (elTimer) {
+      elTimer.textContent = '—';
+    }
+    return;
+  }
+  if (APP_STATE.gameMode !== 'multiplayer' && DISABLE_TURN_TIMER_SP) {
+    if (elTimer) {
+      elTimer.textContent = '—';
+    }
+    return;
+  }
+  remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
+  if (elTimer) {
+    elTimer.textContent = `${remainingSec}s`;
+  }
 }
 
 function showTurnChangeEffect({ isMyTurn, displayName }) {
@@ -100,25 +133,28 @@ function buildTurnStatusText({ phase, phaseReady, commanderActive, isMyTurn, dis
     if (phase === 'move_phase') {
       return 'Fase movimento completata. In attesa della prossima fase.';
     }
-    return isMyTurn
-      ? 'Tutti hanno completato la fase. Puoi proseguire.'
-      : 'Fase completata. In attesa del comandante.';
+    return 'Fase completata. In attesa del comandante.';
   }
   if (phase === 'setup' && order.length > 0) {
     const progressText = `Setup completato: ${Math.min(phaseDoneByCount, order.length)}/${order.length}.`;
     if (isMyTurn) {
       const remaining = getSetupMovesRemaining();
-      return `${progressText} È il tuo turno. Trascina la tua unità nelle prime due file davanti alle mura, poi muoviti di un esagono adiacente alla volta. Movimenti rimasti: ${remaining}/${SETUP_MOVE_LIMIT}.`;
+      return `${progressText} Trascina la tua unità nelle prime due file davanti alle mura, poi muoviti di un esagono adiacente alla volta. Movimenti rimasti: ${remaining}/${SETUP_MOVE_LIMIT}.`;
     }
-    return `${progressText} In attesa del tuo turno.`;
+    return `${progressText} Prepara la tua unità per il posizionamento iniziale.`;
   }
-  if (!isMyTurn) {
-    if (displayName && displayName !== '—') {
-      return `È il turno di ${displayName}.`;
-    }
-    return 'È il turno di un altro giocatore.';
+  if (phase === 'event_card') {
+    return isMyTurn
+      ? 'Pesca e risolvi la carta evento.'
+      : 'Carta evento in corso. Prepara la prossima azione.';
   }
-  return 'È il tuo turno.';
+  if (phase === 'move_phase') {
+    return 'Muovi le unità consentite e termina la fase.';
+  }
+  if (phase === 'attack_phase') {
+    return 'Seleziona i bersagli e termina la fase di combattimento.';
+  }
+  return 'Completa le azioni della fase corrente e termina.';
 }
 
 export function getTurnInfo() {
@@ -223,9 +259,7 @@ export function renderTurnTracker() {
   const phase = GAME_STATE.turnEngine?.phase ?? GAME_STATE.turnState?.phase ?? 'idle';
   const round = GAME_STATE.turnEngine?.round ?? 0;
   const phaseReady = !!GAME_STATE.turnState?.phaseReady;
-  const phaseDoneByCount = Array.isArray(GAME_STATE.turnState?.phaseDoneBy)
-    ? GAME_STATE.turnState.phaseDoneBy.length
-    : 0;
+  const phaseDoneByCount = countPhaseDone(order, GAME_STATE.turnState?.phaseDoneBy);
   const commanderActive = isCommander();
 
   // giocatori dalla stanza (salvati in APP_STATE quando entri nel game)
@@ -253,15 +287,18 @@ export function renderTurnTracker() {
     elHeaderTurnPlayer.textContent = `Turno: ${displayName}`;
   }
   if (elOrder) {
-    elOrder.textContent = order.length
-      ? `${currentIndex + 1}/${order.length}`
-      : '';
+    const maxOrder = order.length;
+    if (!maxOrder) {
+      elOrder.textContent = '';
+    } else if (APP_STATE.gameMode === 'multiplayer') {
+      const doneCount = Math.min(phaseDoneByCount, maxOrder);
+      elOrder.textContent = `${doneCount}/${maxOrder}`;
+    } else {
+      elOrder.textContent = `${currentIndex + 1}/${maxOrder}`;
+    }
   }
 
-  remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
-  if (elTimer) {
-    elTimer.textContent = `${remainingSec}s`;
-  }
+  renderTurnTimer();
   if (elPhase) {
     const phaseLabels = {
       idle: 'Attesa',
@@ -346,11 +383,13 @@ export function renderTurnTracker() {
     if (APP_STATE.gameMode === 'multiplayer' && phase !== 'idle') {
       showTurnChangeEffect({ isMyTurn, displayName });
     }
-    if (APP_STATE.gameMode === 'multiplayer' && isMyTurn) {
+    if (APP_STATE.gameMode === 'multiplayer' && isMyTurn && APP_STATE.isGameDriver) {
       const ts = GAME_STATE.turnState || {};
-      ts.turnStartedAt = Date.now();
-      GAME_STATE.turnState = ts;
-      scheduleSave('turn-timer', { force: true });
+      if (!ts.turnStartedAt) {
+        ts.turnStartedAt = Date.now();
+        GAME_STATE.turnState = ts;
+        scheduleSave('turn-timer');
+      }
     }
   }
 
@@ -363,18 +402,26 @@ export function renderTurnTracker() {
 export function startTurnCountdown() {
   stopTurnCountdown(); // reset
 
+  if (APP_STATE.gameMode === 'multiplayer' && DISABLE_TURN_TIMER_MP) {
+    renderTurnTimer();
+    return;
+  }
+  if (APP_STATE.gameMode !== 'multiplayer' && DISABLE_TURN_TIMER_SP) {
+    renderTurnTimer();
+    return;
+  }
   const turnDurationSec = DB?.SETTINGS?.missionDefaults?.turnDurationSec ?? DEFAULT_TURN_DURATION_SEC;
   remainingSec = APP_STATE.gameMode === 'multiplayer'
     ? getTurnRemainingSec(GAME_STATE.turnState)
     : turnDurationSec;
-  renderTurnTracker();
+  renderTurnTimer();
 
   turnTimerId = setInterval(() => {
     remainingSec = APP_STATE.gameMode === 'multiplayer'
       ? getTurnRemainingSec(GAME_STATE.turnState)
       : remainingSec - 1;
     if (remainingSec < 0) remainingSec = 0;
-    renderTurnTracker();
+    renderTurnTimer();
 
     if (remainingSec <= 0) {
       stopTurnCountdown();

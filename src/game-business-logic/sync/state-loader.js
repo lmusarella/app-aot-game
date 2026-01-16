@@ -22,6 +22,10 @@ export async function loadOrInitGameState(roomId, isDriver, players = []) {
   // Se esiste già → lo carico e basta
   if (existing && existing.state_json) {
     gameAPI.resetGameState();
+    console.info('[state-loader] applyLoadedState from existing room state', {
+      roomId,
+      stateVersion: existing?.state_json?.stateVersion ?? 0
+    });
     gameAPI.applyLoadedState(existing.state_json);
     if (isDriver) {
       await repairMultiplayerState(roomId, players);
@@ -44,6 +48,10 @@ export async function loadOrInitGameState(roomId, isDriver, players = []) {
     if (errInsert) {
       console.error('Errore creando game_state:', errInsert);
     } else {
+      console.info('[state-loader] applyLoadedState from default state', {
+        roomId,
+        stateVersion: defaultState?.stateVersion ?? 0
+      });
       gameAPI.applyLoadedState(defaultState);
     }
     return;
@@ -70,6 +78,10 @@ export async function loadOrInitGameState(roomId, isDriver, players = []) {
 
     if (again && again.state_json) {
       gameAPI.resetGameState();
+      console.info('[state-loader] applyLoadedState from retry', {
+        roomId,
+        stateVersion: again?.state_json?.stateVersion ?? 0
+      });
       gameAPI.applyLoadedState(again.state_json);
       return;
     }

@@ -30,14 +30,37 @@ function getTurnContext() {
     return { ts, order, myId };
 }
 
+function normalizePhaseDoneBy(turnState, order) {
+    if (!turnState) return { done: new Set(), changed: false };
+    const validOrder = new Set(order);
+    const nextDone = [];
+    const done = new Set();
+    const entries = Array.isArray(turnState.phaseDoneBy) ? turnState.phaseDoneBy : [];
+    for (const id of entries) {
+        if (!validOrder.has(id) || done.has(id)) continue;
+        done.add(id);
+        nextDone.push(id);
+    }
+    const changed = entries.length !== nextDone.length;
+    if (changed || !Array.isArray(turnState.phaseDoneBy)) {
+        turnState.phaseDoneBy = nextDone;
+    }
+    return { done, changed };
+}
+
 async function finalizePhaseTurn(phase, ctx) {
     if (!ctx) return;
     let { ts, order, myId } = ctx;
 
     if (!Array.isArray(ts.phaseDoneBy)) ts.phaseDoneBy = [];
     if (!ts.phaseDoneBy.includes(myId)) ts.phaseDoneBy.push(myId);
+    const { done } = normalizePhaseDoneBy(ts, order);
+    if (order.includes(myId)) {
+        done.add(myId);
+    }
+    ts.phaseDoneBy = Array.from(done);
 
-    const allDone = ts.phaseDoneBy.length >= order.length;
+    const allDone = done.size >= order.length;
 
     if (phase === 'setup' || phase === 'move_phase' || phase === 'event_card') {
         if (allDone) {
