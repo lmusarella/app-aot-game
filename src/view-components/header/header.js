@@ -210,6 +210,9 @@ export function renderPhaseLabel() {
 // Render UI timer
 export function renderTimerUI() {
     cacheHeaderElements();
+    if (GAME_STATE.missionState.ticking) {
+        syncMissionTimerFromAnchor();
+    }
     if (elTime) elTime.textContent = fmtClock(GAME_STATE.missionState.remainingSec);
     if (elPlay) elPlay.textContent = GAME_STATE.missionState.ticking ? '⏸' : '▶';
     if (elTimer) {
@@ -252,6 +255,8 @@ export async function notifyTimerExpired() {
 
 // Timer controls
 export function startTimer({ skipSave = false } = {}) {
+    const isMultiplayer = APP_STATE.gameMode === 'multiplayer';
+    const canPersist = !isMultiplayer || APP_STATE.isGameDriver;
     const hasInterval = !!GAME_STATE.missionState.intervalId;
     if (GAME_STATE.missionState.ticking && hasInterval) return;
     if (GAME_STATE.missionState.remainingSec > 0) {
@@ -266,17 +271,19 @@ export function startTimer({ skipSave = false } = {}) {
     }
     renderTimerUI();
 
-    GAME_STATE.missionState.intervalId = setInterval(async () => {
-        const remainingSec = syncMissionTimerFromAnchor();
-        renderTimerUI();
+    if (!isMultiplayer) {
+        GAME_STATE.missionState.intervalId = setInterval(async () => {
+            const remainingSec = syncMissionTimerFromAnchor();
+            renderTimerUI();
 
-        if (remainingSec <= 0) {
-            stopTimer();
-            await notifyTimerExpired();
-        }
-    }, 1000);
+            if (remainingSec <= 0) {
+                stopTimer();
+                await notifyTimerExpired();
+            }
+        }, 1000);
+    }
 
-    if (!skipSave) {
+    if (!skipSave && canPersist) {
         scheduleSave('mission-timer', { force: true });
     }
 }
@@ -286,6 +293,8 @@ export async function playCornoGuerra() {
 }
 
 export function stopTimer({ skipSave = false } = {}) {
+    const isMultiplayer = APP_STATE.gameMode === 'multiplayer';
+    const canPersist = !isMultiplayer || APP_STATE.isGameDriver;
     if (GAME_STATE.missionState.ticking && Number.isFinite(GAME_STATE.missionState.timerAnchorAt)) {
         GAME_STATE.missionState.remainingSec = computeTimerRemainingSec();
     }
@@ -297,19 +306,21 @@ export function stopTimer({ skipSave = false } = {}) {
         GAME_STATE.missionState.intervalId = null;
     }
     renderTimerUI();
-    if (!skipSave) {
+    if (!skipSave && canPersist) {
         scheduleSave('mission-timer', { force: true });
     }
 }
 
 export function resetTimer({ skipSave = false } = {}) {
+    const isMultiplayer = APP_STATE.gameMode === 'multiplayer';
+    const canPersist = !isMultiplayer || APP_STATE.isGameDriver;
     GAME_STATE.missionState.remainingSec = GAME_STATE.missionState.timerTotalSec || 1200;
     GAME_STATE.missionState.timerExpiredNotified = false;
     GAME_STATE.missionState.timerAnchorAt = null;
     GAME_STATE.missionState.timerAnchorSec = GAME_STATE.missionState.remainingSec;
     stopTimer({ skipSave: true });
     renderTimerUI();
-    if (!skipSave) {
+    if (!skipSave && canPersist) {
         scheduleSave('mission-timer', { force: true });
     }
 }
