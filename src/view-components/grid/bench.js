@@ -195,6 +195,9 @@ function renderBenchSection(container, units, readOnly = false) {
         /* === Riga HP: - [bar] HP + === */
         const hpRow = document.createElement("div");
         hpRow.className = "hpbar-row";
+        if (APP_STATE.gameMode === 'multiplayer') {
+            hpRow.classList.add('hp-readonly');
+        }
 
         /* minus */
         const hpMinus = document.createElement("button");
@@ -232,6 +235,7 @@ function renderBenchSection(container, units, readOnly = false) {
         hpMinus.addEventListener("click", (e) => {
            
             e.stopPropagation();
+            if (APP_STATE.gameMode === 'multiplayer') return;
             if (isWall && isDestroyed) return;
             if (!canControlUnit(u)) {
                 warnAction('Puoi modificare solo la tua unità.');
@@ -246,6 +250,7 @@ function renderBenchSection(container, units, readOnly = false) {
         hpPlus.addEventListener("click", (e) => {
            
             e.stopPropagation();
+            if (APP_STATE.gameMode === 'multiplayer') return;
             if (isWall && isDestroyed) return;
             if (!canControlUnit(u)) {
                 warnAction('Puoi modificare solo la tua unità.');
@@ -268,7 +273,8 @@ function renderBenchSection(container, units, readOnly = false) {
 
         // ===== Bottone Cestino =====
         // Cestino in alto a destra
-        if (!readOnly) {
+        const canShowTrash = !readOnly && APP_STATE.gameMode !== 'multiplayer';
+        if (canShowTrash) {
             const trashTop = document.createElement("button");
             trashTop.className = "card-trash";
             trashTop.type = "button";

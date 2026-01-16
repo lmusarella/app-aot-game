@@ -181,13 +181,21 @@
  }
 
  /* Riga HP con - [bar] HP +  (HP a destra della barra) */
- .hpbar-row {
-   display: grid;
-   grid-template-columns: auto 1fr auto auto;
-   align-items: center;
-   gap: 8px;
-   width: 100%;
- }
+.hpbar-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.hpbar-row.hp-readonly {
+  grid-template-columns: 1fr auto;
+}
+
+.hpbar-row.hp-readonly .btn-mini {
+  display: none;
+}
 
  /* Bottoni - / + laterali alla barra */
  .hpbar-row .btn-mini {
@@ -230,4 +238,3 @@
    min-width: 60px;
    text-align: right;
  }
-

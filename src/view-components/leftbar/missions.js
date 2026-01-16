@@ -7,7 +7,7 @@ import { log } from "./log.js";
 import { clearGrid } from "../grid/grid.js";
 import { playBg } from "../audio/audio.js";
 import { resetMissionEffectsAllUnits } from "../../game-business-logic/entity/entity.js";
-import { addMorale, addXP } from "../footer/footer.js";
+import { addMorale, addXP, refreshFooterTracker } from "../footer/footer.js";
 import { stopTimer, renderTimerUI, resetTimer } from "../header/header.js";
 import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
 import showVictoryScreen from '../../game-business-logic/effects/victoryOverlay.js';
@@ -139,6 +139,7 @@ function renderMissionPanel() {
     if (lEl) lEl.textContent = String(ms.losses || 0);
     if (aEl) aEl.textContent = String(ms.attempts || 0);
     if (rEl) rEl.textContent = String(ms.round || 0);
+    refreshFooterTracker();
 
     renderSquadStatus();
 

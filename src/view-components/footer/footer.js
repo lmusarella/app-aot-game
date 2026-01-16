@@ -1,4 +1,5 @@
 import { GAME_STATE, DB } from "../../core/data.js";
+import { APP_STATE } from "../../core/app-state.js";
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
 import { log } from "../leftbar/log.js";
 import { levelFromXP, levelProgressPercent, getMalusRow } from '../../game-business-logic/utils.js';
@@ -107,18 +108,50 @@ export function refreshXPUI() {
     const L = levelFromXP(GAME_STATE.xpMoraleState.xp);
     const pct = levelProgressPercent(GAME_STATE.xpMoraleState.xp, L);
     const { xp } = getFooterElements();
+    const xpRow = document.getElementById("xp-row");
+    if (xpRow) {
+        xpRow.classList.toggle("xp-readonly", APP_STATE.gameMode === "multiplayer");
+    }
     if (xp.fill) xp.fill.style.width = pct + "%";
     if (xp.pct) xp.pct.textContent = Math.round(pct) + "%";
     if (xp.lvl) xp.lvl.textContent = "Lv. " + L;
     renderBonusMalus();
+    refreshFooterTracker();
 }
 
 export function refreshMoraleUI() {
     const pct = Math.max(0, Math.min(100, Number(GAME_STATE.xpMoraleState.moralePct * 10) || 0));
     const { morale } = getFooterElements();
+    const moraleRow = document.getElementById("morale-row");
+    if (moraleRow) {
+        moraleRow.classList.toggle("morale-readonly", APP_STATE.gameMode === "multiplayer");
+    }
     if (morale.fill) morale.fill.style.width = pct + "%";
     if (morale.pct) morale.pct.textContent = Math.round(pct) + "%";
     renderBonusMalus();
+    refreshFooterTracker();
+}
+
+export function refreshFooterTracker() {
+    const moraleEl = document.getElementById("footer-morale");
+    const levelEl = document.getElementById("footer-level");
+    const killsPuroEl = document.getElementById("footer-kills-puro");
+    const killsAnomaloEl = document.getElementById("footer-kills-anomalo");
+    const killsMutaformaEl = document.getElementById("footer-kills-mutaforma");
+    const lossesEl = document.getElementById("footer-losses");
+
+    const moralePct = Math.max(0, Math.min(100, Number(GAME_STATE.xpMoraleState.moralePct * 10) || 0));
+    const level = levelFromXP(GAME_STATE.xpMoraleState.xp);
+    const kills = GAME_STATE.missionState?.kills || {};
+    const missionId = (GAME_STATE.missionState?.curIndex ?? 0) + 1;
+    const missionStats = GAME_STATE.missionStats?.[missionId] || {};
+
+    if (moraleEl) moraleEl.textContent = `${Math.round(moralePct)}%`;
+    if (levelEl) levelEl.textContent = `Lv. ${level}`;
+    if (killsPuroEl) killsPuroEl.textContent = String(kills.Puro ?? 0);
+    if (killsAnomaloEl) killsAnomaloEl.textContent = String(kills.Anomalo ?? 0);
+    if (killsMutaformaEl) killsMutaformaEl.textContent = String(kills.Mutaforma ?? 0);
+    if (lossesEl) lossesEl.textContent = String(missionStats.losses ?? 0);
 }
 
 export function initFooterListeners() {
@@ -128,10 +161,12 @@ export function initFooterListeners() {
             const target = btn.dataset.target;
 
             if (target === "xp") {
+                if (APP_STATE.gameMode === "multiplayer") return;
                 // Usa data-xp (valori reali); se assente, fallback a 10 XP
                 const deltaXP = parseInt(btn.dataset.xp || "10", 10);
                 addXP(deltaXP);
             } else if (target === "morale") {
+                if (APP_STATE.gameMode === "multiplayer") return;
                 const deltaPct = parseInt(btn.dataset.delta || "0", 10);
                 addMorale(deltaPct);
             }

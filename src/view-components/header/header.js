@@ -24,11 +24,14 @@ let elDec = null;
 let elInc = null;
 let btnLeaveRoom = null;
 let elGameMode = null;
-let elPhaseLabel = null;
 let elTutorial = null;
 let elAudio = null;
 let elMissionCtrl = null;
 let elTurnTracker = null;
+let elTopbar = null;
+let elLogoBox = null;
+let elBrand = null;
+let elCenterBox = null;
 let elHeaderUser = null;
 let elHeaderUserName = null;
 let elHeaderUserAvatar = null;
@@ -43,17 +46,20 @@ function cacheHeaderElements() {
     elPlay = document.getElementById('t-play');
     elReset = document.getElementById('t-reset');
     elTime = document.getElementById('t-time');
-    elTimer = document.querySelector('.timer');
+    elTimer = document.getElementById('mission-timer-sticky');
 
     elDec = document.getElementById('m-dec');
     elInc = document.getElementById('m-inc');
     btnLeaveRoom = document.getElementById('btn-leave-room');
     elGameMode = document.getElementById('hdr-game-mode');
-    elPhaseLabel = document.getElementById('phase-label');
     elTutorial = document.getElementById('btn-tutorial');
     elAudio = document.getElementById('btn-audio');
     elMissionCtrl = document.querySelector('.mission-ctrl');
     elTurnTracker = document.getElementById('turn-tracker');
+    elTopbar = document.querySelector('.topbar');
+    elLogoBox = document.querySelector('.logo-box');
+    elBrand = document.querySelector('.brand');
+    elCenterBox = document.querySelector('.center-box');
     elHeaderUser = document.querySelector('.header-user');
     elHeaderUserName = document.getElementById('hdr-user-name');
     elHeaderUserAvatar = document.querySelector('.header-user-avatar');
@@ -72,11 +78,14 @@ function cacheHeaderElements() {
         elInc,
         btnLeaveRoom,
         elGameMode,
-        elPhaseLabel,
         elTutorial,
         elAudio,
         elMissionCtrl,
         elTurnTracker,
+        elTopbar,
+        elLogoBox,
+        elBrand,
+        elCenterBox,
         elHeaderUser,
         elHeaderUserName,
         elHeaderUserAvatar,
@@ -93,7 +102,6 @@ export function renderHeader() {
     renderMissionUI();
     renderTimerUI();
     renderGameModeBadge();
-    renderPhaseLabel();
 }
 
 export function refreshHeaderUI() {
@@ -101,7 +109,6 @@ export function refreshHeaderUI() {
     applyHeaderModeVisibility();
     renderHeaderUserInfo();
     renderTimerUI();
-    renderPhaseLabel();
 }
 
 function applyHeaderModeVisibility() {
@@ -115,13 +122,23 @@ function applyHeaderModeVisibility() {
     toggle(elAudio, !isMultiplayer);
     toggle(elMissionCtrl, !isMultiplayer);
     toggle(elGameMode, !isMultiplayer);
-    toggle(elPhaseLabel, !isMultiplayer);
     toggle(btnReset, !isMultiplayer);
-    toggle(elTurnTracker, !isMultiplayer);
+    toggle(elTurnTracker, isMultiplayer);
     toggle(btnLeaveRoom, !isMultiplayer);
     toggle(elHeaderUserMenuToggle, isMultiplayer);
     toggle(elHeaderUserMenu, isMultiplayer);
     toggle(elHeaderUser, true);
+    toggle(elLogoBox, true);
+    toggle(elBrand, true);
+    toggle(elCenterBox, true);
+    if (elTopbar) {
+        elTopbar.classList.toggle('topbar--multiplayer', isMultiplayer);
+    }
+
+    const modsSection = document.getElementById('mods-section');
+    const unitModsSection = document.getElementById('unit-mods-section');
+    toggle(modsSection, !isMultiplayer);
+    toggle(unitModsSection, !isMultiplayer);
 }
 
 function renderHeaderUserInfo() {
@@ -140,7 +157,7 @@ function renderHeaderUserInfo() {
         ? DB?.ALLIES?.find(u => u.id === mePlayer.unit_code)
         : null;
     const unit = rosterUnit || unitFromDb;
-    const avatarSrc = unit?.img || unit?.avatar || 'assets/units/default.png';
+    const avatarSrc = unit?.img || unit?.avatar || 'assets/img/logo.jpg';
     const role = mePlayer?.is_commander || unit?.role === 'commander' ? 'commander' : 'recruit';
 
     elHeaderUserAvatar.dataset.role = role;
@@ -160,7 +177,8 @@ function renderGameModeBadge() {
 }
 
 export function renderPhaseLabel() {
-    if (!elPhaseLabel) return;
+    const phaseLabel = document.getElementById('phase-label');
+    if (!phaseLabel) return;
     const phase = GAME_STATE.turnEngine?.phase || 'idle';
     const labelMap = {
         idle: 'Attesa',
@@ -173,7 +191,7 @@ export function renderPhaseLabel() {
         end_round: 'Fine round'
     };
     const label = labelMap[phase] ?? phase;
-    elPhaseLabel.textContent = `Fase: ${label}`;
+    phaseLabel.textContent = `Fase: ${label}`;
 }
 
 // Render UI timer
@@ -183,7 +201,7 @@ export function renderTimerUI() {
     if (elPlay) elPlay.textContent = GAME_STATE.missionState.ticking ? '⏸' : '▶';
     if (elTimer) {
         const urgentThresholdSec = 60;
-        elTimer.classList.toggle('timer--urgent', GAME_STATE.missionState.remainingSec <= urgentThresholdSec);
+        elTimer.classList.toggle('mission-timer--urgent', GAME_STATE.missionState.remainingSec <= urgentThresholdSec);
     }
 }
 

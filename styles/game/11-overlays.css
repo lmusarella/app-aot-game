@@ -516,3 +516,34 @@
 .start-hdr-btn[data-mode="end"] {
   --start-accent: #f59e0b;
 }
+
+.turn-status-overlay {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10050;
+  max-width: min(520px, 90vw);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(135deg, rgba(18, 22, 34, 0.94), rgba(12, 14, 20, 0.92));
+  color: #e2e8f0;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(251, 191, 36, 0.08);
+  animation: turnStatusPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes turnStatusPulse {
+  0%,
+  100% {
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+    opacity: 0.9;
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.35), 0 12px 26px rgba(0, 0, 0, 0.55);
+    opacity: 1;
+  }
+}

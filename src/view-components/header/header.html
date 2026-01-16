@@ -23,34 +23,44 @@
                 </div>
             </div>
 
-            <span id="phase-label" class="phase-label" aria-live="polite">Fase: —</span>
-            <span id="turn-status" class="turn-status" aria-live="polite" hidden></span>
-            <div id="setup-progress" class="setup-progress" hidden>
-                <span id="setup-progress-label" class="setup-progress-label">Setup: 0/0</span>
-                <div class="setup-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
-                    aria-valuenow="0">
-                    <span id="setup-progress-fill" class="setup-progress-fill"></span>
-                </div>
-            </div>
-            <!-- Timer missione -->
-            <div class="timer" title="Timer missione">
-                <span class="mc-label">Timer</span>
-                <button id="t-play" class="t-btn" aria-label="Play/Pausa">▶</button>
-                <span id="t-time" class="t-time">00:00</span>
-                <button id="t-reset" class="t-btn" aria-label="Azzera timer">⟲</button>
-            </div>
-
             <button id="btn-audio" class="btn-icon" title="Impostazioni audio" aria-label="Impostazioni audio">
                 🎧
             </button>
         </div>
 
+        <div id="mission-timer-sticky" class="mission-timer-sticky" aria-live="polite">
+            <span class="mission-timer-label">Timer</span>
+            <span id="t-time" class="mission-timer-time">00:00</span>
+        </div>
+
         <!-- Turn tracker (a destra) -->
         <div id="turn-tracker" class="turn-tracker">
-            <span class="turn-label">Turno</span>
-            <span id="turn-player" class="turn-player">—</span>
-            <span id="turn-order" class="turn-order"></span>
-            <span id="turn-timer" class="turn-timer">—</span>
+            <div class="turn-tracker__row">
+                <div class="turn-player-wrap">
+                    <span class="turn-label">Turno</span>
+                    <span class="turn-player-avatar">
+                        <img id="turn-player-avatar" src="assets/img/logo.jpg" alt="" aria-hidden="true" />
+                    </span>
+                    <div class="turn-player-info">
+                        <span id="turn-player" class="turn-player">—</span>
+                        <span id="turn-timer" class="turn-timer">—</span>
+                    </div>
+                </div>
+                <div class="turn-phase-wrap">
+                    <span class="turn-phase-label">Fase</span>
+                    <span id="turn-phase" class="turn-phase">—</span>
+                </div>
+            </div>
+            <div class="turn-progress">
+                <div class="turn-progress-meta">
+                    <span class="turn-order">Turno <span id="turn-order">—</span></span>
+                    <span id="turn-phase-percent" class="turn-progress-percent">0%</span>
+                </div>
+                <div class="turn-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                    aria-valuenow="0">
+                    <span id="turn-phase-fill" class="turn-progress-fill"></span>
+                </div>
+            </div>
         </div>
 
         <!-- Reset partita (a destra) -->
@@ -64,7 +74,7 @@
         <!-- QUI -->
         <div class="header-user">
             <span class="header-user-avatar" data-role="recruit">
-                <img id="hdr-user-avatar" src="assets/units/default.png" alt="Avatar giocatore" />
+                <img id="hdr-user-avatar" src="assets/img/logo.jpg" alt="Avatar giocatore" />
             </span>
             <span id="hdr-user-name" class="header-user-name">—</span>
             <button id="hdr-user-menu-toggle" class="header-user-menu-toggle" type="button" aria-label="Apri menu"
@@ -84,6 +94,65 @@
                     <span class="menu-icon" aria-hidden="true">🚪</span>
                     <span class="menu-label">Esci partita</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-stats" aria-label="Stato missione">
+        <div class="footer-bars" role="group" aria-label="Stato Squadra">
+            <!-- Morale -->
+            <div class="bar-row mini" id="morale-row">
+                <span class="br-label">Morale</span>
+                <button class="bbtn" data-target="morale" data-delta="-1" title="-1%">−</button>
+                <div class="bar morale">
+                    <div id="morale-fill" class="fill" style="width:65%"></div>
+                </div>
+                <button class="bbtn" data-target="morale" data-delta="1" title="+1%">+</button>
+
+            </div>
+
+            <!-- Esperienza -->
+            <div class="bar-row mini" id="xp-row">
+                <span class="br-label">
+                    Exp <span id="lvl-val" style="margin-left:6px; opacity:.75; font-size:11px;">Lv. 1</span>
+                </span>
+                <button class="bbtn" data-target="xp" data-xp="-1" title="-1 XP">−</button>
+                <div class="bar xp">
+                    <div id="xp-fill" class="fill" style="width:40%"></div>
+                </div>
+                <button class="bbtn" data-target="xp" data-xp="1" title="+1 XP">+</button>
+                <!-- non serve più il br-val a destra -->
+            </div>
+        </div>
+
+        <div class="footer-phase" role="status" aria-live="polite">
+            <span id="phase-label" class="footer-phase-label">Fase: —</span>
+        </div>
+
+        <div class="footer-tracker" role="group" aria-label="Statistiche missione">
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Morale</span>
+                <span id="footer-morale" class="footer-tracker__value">0%</span>
+            </div>
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Livello</span>
+                <span id="footer-level" class="footer-tracker__value">Lv. 1</span>
+            </div>
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Puro</span>
+                <span id="footer-kills-puro" class="footer-tracker__value">0</span>
+            </div>
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Anomalo</span>
+                <span id="footer-kills-anomalo" class="footer-tracker__value">0</span>
+            </div>
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Mutaforma</span>
+                <span id="footer-kills-mutaforma" class="footer-tracker__value">0</span>
+            </div>
+            <div class="footer-tracker__item">
+                <span class="footer-tracker__label">Perdite</span>
+                <span id="footer-losses" class="footer-tracker__value">0</span>
             </div>
         </div>
     </div>

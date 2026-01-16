@@ -20,10 +20,11 @@ let elOrder = null;
 let elTimer = null;
 let elStatus = null;
 let elHeaderTurnPlayer = null;
-let elSetupProgress = null;
-let elSetupProgressLabel = null;
-let elSetupProgressBar = null;
-let elSetupProgressFill = null;
+let elPlayerAvatar = null;
+let elPhase = null;
+let elPhasePercent = null;
+let elPhaseBar = null;
+let elPhaseFill = null;
 let elFabDock = null;
 
 const SETUP_MOVE_LIMIT = 3;
@@ -81,10 +82,11 @@ function ensureTurnElements() {
   elTimer = document.getElementById('turn-timer');
   elStatus = document.getElementById('turn-status');
   elHeaderTurnPlayer = document.getElementById('header-turn-player');
-  elSetupProgress = document.getElementById('setup-progress');
-  elSetupProgressLabel = document.getElementById('setup-progress-label');
-  elSetupProgressBar = document.querySelector('#setup-progress .setup-progress-bar');
-  elSetupProgressFill = document.getElementById('setup-progress-fill');
+  elPlayerAvatar = document.getElementById('turn-player-avatar');
+  elPhase = document.getElementById('turn-phase');
+  elPhasePercent = document.getElementById('turn-phase-percent');
+  elPhaseBar = document.querySelector('.turn-progress-bar');
+  elPhaseFill = document.getElementById('turn-phase-fill');
   elFabDock = document.querySelector('.fab-dock');
 }
 
@@ -183,6 +185,9 @@ export function renderTurnTracker() {
   ensureTurnElements();
   if (!elContainer) return;
   refreshHeaderUI();
+  if (APP_STATE.gameMode === 'multiplayer') {
+    elContainer.classList.remove('is-hidden');
+  }
 
   const { order, currentIndex, currentPlayerId, isMyTurn } = getTurnInfo();
   const phase = GAME_STATE.turnEngine?.phase ?? GAME_STATE.turnState?.phase ?? 'idle';
@@ -203,6 +208,15 @@ export function renderTurnTracker() {
     (currentPlayerId ? currentPlayerId.slice(0, 6) : '—');
 
   elPlayer.textContent = displayName;
+  if (elPlayerAvatar) {
+    const rosterUnit = GAME_STATE.alliesRoster?.find(u => u.owner_id === currentPlayerId);
+    const unitFromDb = !rosterUnit && currentPlayer?.unit_code
+      ? DB?.ALLIES?.find(u => u.id === currentPlayer.unit_code)
+      : null;
+    const unit = rosterUnit || unitFromDb;
+    elPlayerAvatar.src = unit?.img || unit?.avatar || 'assets/img/logo.jpg';
+    elPlayerAvatar.alt = displayName ? `Avatar ${displayName}` : 'Avatar giocatore';
+  }
   if (elHeaderTurnPlayer) {
     elHeaderTurnPlayer.textContent = `Turno: ${displayName}`;
   }
@@ -212,17 +226,40 @@ export function renderTurnTracker() {
 
   remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
   elTimer.textContent = `${remainingSec}s`;
+  if (elPhase) {
+    const phaseLabels = {
+      idle: 'Attesa',
+      setup: 'Setup',
+      event_mission: 'Evento missione',
+      event_card: 'Pesca evento',
+      round_start: 'Inizio round',
+      move_phase: 'Movimento',
+      attack_phase: 'Combattimento',
+      end_round: 'Fine round'
+    };
+    elPhase.textContent = phaseLabels[phase] ?? phase;
+  }
+  if (elPhasePercent && elPhaseBar && elPhaseFill) {
+    const safeTotal = Math.max(0, order.length);
+    const progressPct = safeTotal
+      ? Math.min(100, Math.round((phaseDoneByCount / safeTotal) * 100))
+      : 0;
+    elPhasePercent.textContent = `${progressPct}%`;
+    elPhaseBar.setAttribute('aria-valuenow', String(progressPct));
+    elPhaseFill.style.width = `${progressPct}%`;
+  }
 
   elContainer.classList.toggle('my-turn', isMyTurn);
   if (elFabDock) {
     const isMultiplayer = APP_STATE.gameMode === 'multiplayer';
-    const shouldHideFabs = isMultiplayer && !isMyTurn;
+    const shouldHideByTurn = isMultiplayer && !isMyTurn;
     elFabDock.querySelectorAll('.fab').forEach((fab) => {
-      if (fab.classList.contains('fab-static')) return;
-      fab.classList.toggle('is-hidden', shouldHideFabs);
-    });
-    elFabDock.querySelectorAll('.fab-singleplayer').forEach((fab) => {
-      fab.classList.toggle('is-hidden-mp', isMultiplayer);
+      const isSingleplayerOnly = fab.classList.contains('fab-singleplayer');
+      const hideForMode = isMultiplayer && isSingleplayerOnly;
+      const hideForTurn = shouldHideByTurn && !fab.classList.contains('fab-static');
+      const shouldHide = hideForMode || hideForTurn;
+      fab.classList.toggle('is-hidden', shouldHide);
+      fab.classList.toggle('is-hidden-mp', hideForMode);
     });
   }
 
@@ -281,29 +318,7 @@ export function renderTurnTracker() {
     }
   }
 
-  if (elSetupProgress) {
-    const shouldShowSetup = APP_STATE.gameMode === 'multiplayer';
-    if (!shouldShowSetup) {
-      elSetupProgress.hidden = true;
-    } else {
-      const totalPlayers = players.length;
-      const donePlayers = Math.min(phaseDoneByCount, totalPlayers);
-      const pct = totalPlayers > 0 ? Math.round((donePlayers / totalPlayers) * 100) : 0;
-      if (elSetupProgressLabel) {
-        const turnLabel = isMyTurn
-          ? 'È il tuo turno.'
-          : (displayName && displayName !== '—' ? `È il turno di ${displayName}.` : 'È il turno di un altro giocatore.');
-        elSetupProgressLabel.textContent = `Giocatori: ${totalPlayers} · ${turnLabel}`;
-      }
-      if (elSetupProgressFill) {
-        elSetupProgressFill.style.width = `${pct}%`;
-      }
-      if (elSetupProgressBar) {
-        elSetupProgressBar.setAttribute('aria-valuenow', String(pct));
-      }
-      elSetupProgress.hidden = false;
-    }
-  }
+  // setup progress UI removed; phase progress is shown in the turn tracker bar
 
   const turnChanged = currentPlayerId && currentPlayerId !== lastTurnPlayerId;
   if (turnChanged) {

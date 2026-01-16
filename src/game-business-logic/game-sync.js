@@ -24,6 +24,9 @@ export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
 
   APP_STATE.isGameDriver = isLeader
 
+  gameAPI.resetGameState();
+  gameAPI.renderGameFromState();
+
   await loadOrInitGameState(roomId, isLeader, allPlayers)
   bindGameRealtime(roomId)
   bindPresenceRealtime(roomId)
