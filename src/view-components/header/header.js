@@ -10,7 +10,7 @@ import { supabase } from '../../core/supabase/supabaseClient.js';
 import { showScreen } from '../../ui-components/ui-helpers.js';
 import { stopRoomPresence } from '../pages/room/room-ui.js';
 import { handleAllyDeath } from '../../game-business-logic/entity/deaths.js';
-import { initGameForSinglePlayer } from '../../game-business-logic/game-sync.js';
+import { initGameForSinglePlayer, scheduleSave } from '../../game-business-logic/game-sync.js';
 
 let missionCardHead = null;
 let btnReset = null;
@@ -205,6 +205,25 @@ export function renderTimerUI() {
     }
 }
 
+function computeTimerRemainingSec(now = Date.now()) {
+    const totalSec = GAME_STATE.missionState.timerTotalSec || 1200;
+    const anchorSec = Number.isFinite(GAME_STATE.missionState.timerAnchorSec)
+        ? GAME_STATE.missionState.timerAnchorSec
+        : GAME_STATE.missionState.remainingSec;
+    const anchorAt = Number.isFinite(GAME_STATE.missionState.timerAnchorAt)
+        ? GAME_STATE.missionState.timerAnchorAt
+        : (GAME_STATE.stateUpdatedAt || now);
+    const elapsedSec = Math.max(0, Math.floor((now - anchorAt) / 1000));
+    return clamp(anchorSec - elapsedSec, 0, totalSec);
+}
+
+export function syncMissionTimerFromAnchor() {
+    if (!GAME_STATE.missionState.ticking) return GAME_STATE.missionState.remainingSec;
+    const remainingSec = computeTimerRemainingSec();
+    GAME_STATE.missionState.remainingSec = remainingSec;
+    return remainingSec;
+}
+
 export async function notifyTimerExpired() {
     if (GAME_STATE.missionState.timerExpiredNotified) return;
     GAME_STATE.missionState.timerExpiredNotified = true;
@@ -219,45 +238,67 @@ export async function notifyTimerExpired() {
 }
 
 // Timer controls
-export function startTimer() {
-    if (GAME_STATE.missionState.ticking) return;
+export function startTimer({ skipSave = false } = {}) {
+    const hasInterval = !!GAME_STATE.missionState.intervalId;
+    if (GAME_STATE.missionState.ticking && hasInterval) return;
     if (GAME_STATE.missionState.remainingSec > 0) {
         GAME_STATE.missionState.timerExpiredNotified = false;
     }
     GAME_STATE.missionState.ticking = true;
+    if (!Number.isFinite(GAME_STATE.missionState.timerAnchorAt)) {
+        GAME_STATE.missionState.timerAnchorAt = Date.now();
+    }
+    if (!Number.isFinite(GAME_STATE.missionState.timerAnchorSec)) {
+        GAME_STATE.missionState.timerAnchorSec = GAME_STATE.missionState.remainingSec;
+    }
     renderTimerUI();
 
     GAME_STATE.missionState.intervalId = setInterval(async () => {
-        GAME_STATE.missionState.remainingSec = clamp(GAME_STATE.missionState.remainingSec - 1, 0, GAME_STATE.missionState.timerTotalSec);
+        const remainingSec = syncMissionTimerFromAnchor();
         renderTimerUI();
 
-        if (GAME_STATE.missionState.remainingSec <= 0) {
+        if (remainingSec <= 0) {
             stopTimer();
             await notifyTimerExpired();
         }
     }, 1000);
+
+    if (!skipSave) {
+        scheduleSave('mission-timer', { force: true });
+    }
 }
 
 export async function playCornoGuerra() {
     await playSfx('./assets/sounds/corno_guerra.mp3');
 }
 
-export function stopTimer() {
+export function stopTimer({ skipSave = false } = {}) {
+    if (GAME_STATE.missionState.ticking && Number.isFinite(GAME_STATE.missionState.timerAnchorAt)) {
+        GAME_STATE.missionState.remainingSec = computeTimerRemainingSec();
+    }
     GAME_STATE.missionState.ticking = false;
+    GAME_STATE.missionState.timerAnchorAt = null;
+    GAME_STATE.missionState.timerAnchorSec = GAME_STATE.missionState.remainingSec;
     if (GAME_STATE.missionState.intervalId) {
         clearInterval(GAME_STATE.missionState.intervalId);
         GAME_STATE.missionState.intervalId = null;
     }
     renderTimerUI();
-    //scheduleSave();
+    if (!skipSave) {
+        scheduleSave('mission-timer', { force: true });
+    }
 }
 
-export function resetTimer() {
+export function resetTimer({ skipSave = false } = {}) {
     GAME_STATE.missionState.remainingSec = GAME_STATE.missionState.timerTotalSec || 1200;
     GAME_STATE.missionState.timerExpiredNotified = false;
-    stopTimer();
+    GAME_STATE.missionState.timerAnchorAt = null;
+    GAME_STATE.missionState.timerAnchorSec = GAME_STATE.missionState.remainingSec;
+    stopTimer({ skipSave: true });
     renderTimerUI();
-    //scheduleSave();
+    if (!skipSave) {
+        scheduleSave('mission-timer', { force: true });
+    }
 }
 
 export function initHeaderListeners() {
