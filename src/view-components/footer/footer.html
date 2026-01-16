@@ -1,1 +1,29 @@
-<footer class="app-footer app-footer--empty" aria-label="Footer"></footer>
+<footer class="app-footer" aria-label="Footer">
+    <div class="app-footer__row">
+        <div class="footer-bars footer-bars--single" role="group" aria-label="Stato Squadra">
+            <div class="bar-row mini" id="morale-row">
+                <span class="br-label">Morale</span>
+                <button class="bbtn" data-target="morale" data-delta="-1" title="-1%">−</button>
+                <div class="bar morale">
+                    <div id="morale-fill" class="fill" style="width:65%"></div>
+                </div>
+                <button class="bbtn" data-target="morale" data-delta="1" title="+1%">+</button>
+            </div>
+
+            <div class="bar-row mini" id="xp-row">
+                <span class="br-label">
+                    Exp <span id="lvl-val" style="margin-left:6px; opacity:.75; font-size:11px;">Lv. 1</span>
+                </span>
+                <button class="bbtn" data-target="xp" data-xp="-1" title="-1 XP">−</button>
+                <div class="bar xp">
+                    <div id="xp-fill" class="fill" style="width:40%"></div>
+                </div>
+                <button class="bbtn" data-target="xp" data-xp="1" title="+1 XP">+</button>
+            </div>
+        </div>
+
+        <div class="app-footer__credits">
+            Ideato da Marco Del Monaco, Sviluppato da Luca Musarella
+        </div>
+    </div>
+</footer>

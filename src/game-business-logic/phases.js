@@ -81,7 +81,6 @@ async function handleMultiplayerStartPhase(phase, engine) {
                 theme: 'blue',
                 autoDismissMs: 3500
             });
-
             if (!engine.teamCreated) {
                 try {
                     const rosterCount = GAME_STATE.alliesRoster?.length || 0;
@@ -276,7 +275,7 @@ async function handleSingleEndPhase(phase, engine) {
                     autoDismissMs: 3500
                 });
 
-            }, 3000);
+        }, 3000);
 
 
         } else {

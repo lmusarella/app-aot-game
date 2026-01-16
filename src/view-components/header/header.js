@@ -191,7 +191,17 @@ export function renderPhaseLabel() {
         end_round: 'Fine round'
     };
     const label = labelMap[phase] ?? phase;
-    phaseLabel.textContent = `Fase: ${label}`;
+    const messageMap = {
+        idle: 'Attesa: in attesa del prossimo ordine.',
+        setup: 'Setup: scegli comandanti e reclute.',
+        event_mission: 'Evento missione: leggi l\'evento.',
+        event_card: 'Pesca evento: risolvi la carta.',
+        round_start: 'Inizio round: preparati all\'azione.',
+        move_phase: 'Movimento: muovi le unità.',
+        attack_phase: 'Combattimento: risolvi gli attacchi.',
+        end_round: 'Fine round: chiudi il turno.'
+    };
+    phaseLabel.textContent = messageMap[phase] ?? `Fase: ${label}`;
 }
 
 // Render UI timer
