@@ -24,7 +24,8 @@ function buildTurnSignature(turnState) {
     currentIndex: turnState.currentIndex ?? 0,
     currentPlayerId: turnState.currentPlayerId ?? null,
     phaseReady: !!turnState.phaseReady,
-    phase: turnState.phase ?? null
+    phase: turnState.phase ?? null,
+    phaseDoneByCount: Array.isArray(turnState.phaseDoneBy) ? turnState.phaseDoneBy.length : 0
   });
 }
 

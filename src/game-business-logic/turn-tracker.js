@@ -40,6 +40,17 @@ function getSetupMovesRemaining() {
   return Math.max(0, remaining);
 }
 
+function countPhaseDone(order = [], phaseDoneBy = []) {
+  if (!Array.isArray(order) || order.length === 0) return 0;
+  const validOrder = new Set(order);
+  const done = new Set();
+  (Array.isArray(phaseDoneBy) ? phaseDoneBy : []).forEach((id) => {
+    if (!validOrder.has(id)) return;
+    done.add(id);
+  });
+  return done.size;
+}
+
 function getTurnRemainingSec(turnState) {
   const turnDurationSec = DB?.SETTINGS?.missionDefaults?.turnDurationSec ?? DEFAULT_TURN_DURATION_SEC;
   if (APP_STATE.gameMode !== 'multiplayer') {
@@ -223,9 +234,7 @@ export function renderTurnTracker() {
   const phase = GAME_STATE.turnEngine?.phase ?? GAME_STATE.turnState?.phase ?? 'idle';
   const round = GAME_STATE.turnEngine?.round ?? 0;
   const phaseReady = !!GAME_STATE.turnState?.phaseReady;
-  const phaseDoneByCount = Array.isArray(GAME_STATE.turnState?.phaseDoneBy)
-    ? GAME_STATE.turnState.phaseDoneBy.length
-    : 0;
+  const phaseDoneByCount = countPhaseDone(order, GAME_STATE.turnState?.phaseDoneBy);
   const commanderActive = isCommander();
 
   // giocatori dalla stanza (salvati in APP_STATE quando entri nel game)
