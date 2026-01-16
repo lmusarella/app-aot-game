@@ -26,6 +26,7 @@ header {
 
 .header-stats .footer-bars {
   width: min(480px, 92vw);
+  gap: 2px;
 }
 
 .header-stats .footer-tracker {
@@ -38,6 +39,22 @@ header {
 
 .header-stats .footer-phase {
   margin: 2px auto 0;
+}
+
+.header-stats .footer-bars .bar-row.mini {
+  grid-template-columns: auto 24px 1fr 24px;
+  grid-template-rows: auto;
+  row-gap: 0;
+}
+
+.header-stats .footer-bars .bar-row.mini .bar {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.header-stats .footer-bars .bar-row.mini .br-label,
+.header-stats .footer-bars .bar-row.mini .bbtn {
+  grid-row: 1;
 }
 
  .brand {
