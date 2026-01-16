@@ -57,6 +57,9 @@ export function initGameForSinglePlayer({ forceReset = false, render = true } = 
 
   const saved = forceReset ? null : loadLocalGameState()
   if (saved) {
+    console.info('[game-sync] applyLoadedState from local save', {
+      stateVersion: saved?.stateVersion ?? 0
+    });
     gameAPI.resetGameState()
     gameAPI.applyLoadedState(saved)
   } else {

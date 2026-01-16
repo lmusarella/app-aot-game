@@ -52,6 +52,11 @@ export function bindGameRealtime(roomId) {
     }
 
     const localEvents = Array.isArray(GAME_STATE.events) ? GAME_STATE.events.slice() : [];
+    console.info('[realtime] applyLoadedState from change', {
+      roomId,
+      updatedBy,
+      stateVersion: newState?.stateVersion ?? 0
+    });
     gameAPI.resetGameState();
     gameAPI.applyLoadedState(newState);
     if (APP_STATE.gameMode === 'multiplayer' && localEvents.length) {
@@ -129,6 +134,10 @@ export async function resyncGameState(roomId) {
   }
 
   const localEvents = Array.isArray(GAME_STATE.events) ? GAME_STATE.events.slice() : [];
+  console.info('[realtime] applyLoadedState from resync', {
+    roomId,
+    stateVersion: newState?.stateVersion ?? 0
+  });
   gameAPI.resetGameState();
   gameAPI.applyLoadedState(newState);
   if (APP_STATE.gameMode === 'multiplayer' && localEvents.length) {
