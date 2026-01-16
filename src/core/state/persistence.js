@@ -58,6 +58,10 @@ export function restore(save) {
     // ver check
     if (!save || save.ver !== SAVE_VERSION) return false;
 
+    if (GAME_STATE.missionState?.intervalId) {
+        clearInterval(GAME_STATE.missionState.intervalId);
+    }
+
     GAME_STATE.spawns.length = 0; GAME_STATE.spawns.push(...save.spawns);
     // 1) ripristina array principali (mantenendo i riferimenti)
 

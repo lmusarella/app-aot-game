@@ -1,5 +1,4 @@
-import { notifyTimerExpired, startTimer, stopTimer } from "../view-components/header/header.js";
-import { clamp } from "../game-business-logic/utils.js";
+import { notifyTimerExpired, startTimer, stopTimer, syncMissionTimerFromAnchor } from "../view-components/header/header.js";
 import { TurnEngine } from "../game-business-logic/phases.js";
 import { seedWallRows } from "../game-business-logic/entity/entity.js";
 import { DB, GAME_STATE, rebuildUnitIndex } from "../core/data.js";
@@ -19,13 +18,11 @@ export function ensureWallSpawns() {
 export function restoreTimerState() {
     try {
         if (GAME_STATE.missionState.ticking) {
-            const lastSavedAt = GAME_STATE.stateUpdatedAt || Date.now();
-            const elapsedSec = Math.floor((Date.now() - lastSavedAt) / 1000);
-            GAME_STATE.missionState.remainingSec = clamp((GAME_STATE.missionState.remainingSec || 0) - elapsedSec, 0, GAME_STATE.missionState.timerTotalSec || 1200);
-            if (GAME_STATE.missionState.remainingSec > 0) {
-                startTimer();
+            const remainingSec = syncMissionTimerFromAnchor();
+            if (remainingSec > 0) {
+                startTimer({ skipSave: true });
             } else {
-                stopTimer();
+                stopTimer({ skipSave: true });
                 notifyTimerExpired();
             }
         }

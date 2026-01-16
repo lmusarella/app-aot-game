@@ -379,7 +379,10 @@ export function setMissionByIndex(idx) {
     const total = Number(m?.timerSec) > 0 ? Math.floor(m.timerSec) : 1200;
     GAME_STATE.missionState.timerTotalSec = total;
     GAME_STATE.missionState.remainingSec = total;
-    stopTimer();
+    GAME_STATE.missionState.timerAnchorAt = null;
+    GAME_STATE.missionState.timerAnchorSec = total;
+    GAME_STATE.missionState.ticking = false;
+    stopTimer({ skipSave: true });
     renderMissionUI();
     renderTimerUI();
     scheduleSave('mission');
