@@ -4,6 +4,24 @@ import { consumeGameEvents } from '../event-manager.js';
 import { renderTurnTracker, startTurnCountdown } from '../turn-tracker.js';
 import { scheduleRenderGameState, shouldRenderGameState, shouldRenderTurn } from './render-scheduler.js';
 
+const MAX_EVENTS = 50;
+
+function mergeEvents(incoming = [], local = []) {
+  const byId = new Map();
+  const addEvent = (ev) => {
+    if (!ev) return;
+    const key = ev.id ?? `${ev.type ?? 'event'}-${ev.ts ?? 0}-${Math.random()}`;
+    if (!byId.has(key)) {
+      byId.set(key, ev);
+    }
+  };
+  incoming.forEach(addEvent);
+  local.forEach(addEvent);
+  return Array.from(byId.values())
+    .sort((a, b) => (a?.ts ?? 0) - (b?.ts ?? 0))
+    .slice(-MAX_EVENTS);
+}
+
 export function bindGameRealtime(roomId) {
   if (APP_STATE.gameMode === 'single') return;
   if (APP_STATE.gameChannel) {
@@ -23,8 +41,12 @@ export function bindGameRealtime(roomId) {
       return;
     }
 
+    const localEvents = Array.isArray(GAME_STATE.events) ? GAME_STATE.events.slice() : [];
     gameAPI.resetGameState();
     gameAPI.applyLoadedState(newState);
+    if (APP_STATE.gameMode === 'multiplayer' && localEvents.length) {
+      GAME_STATE.events = mergeEvents(GAME_STATE.events, localEvents);
+    }
     consumeGameEvents();
 
     if (shouldRenderGameState(newState)) {
@@ -90,8 +112,12 @@ export async function resyncGameState(roomId) {
   if (incomingVersion < localVersion) return;
   if (incomingVersion === localVersion && incomingVersion !== 0 && incomingUpdatedAt <= localUpdatedAt) return;
 
+  const localEvents = Array.isArray(GAME_STATE.events) ? GAME_STATE.events.slice() : [];
   gameAPI.resetGameState();
   gameAPI.applyLoadedState(newState);
+  if (APP_STATE.gameMode === 'multiplayer' && localEvents.length) {
+    GAME_STATE.events = mergeEvents(GAME_STATE.events, localEvents);
+  }
   consumeGameEvents();
 
   if (shouldRenderGameState(newState)) {
