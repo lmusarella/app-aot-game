@@ -6,7 +6,8 @@ import { levelFromXP, levelProgressPercent, getMalusRow } from '../../game-busin
 import { renderBonusMalus } from '../leftbar/mods.js';
 import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
 import { focusUnitOnField } from '../grid/grid.js';
-import { hideTooltip, showTooltipAt } from '../../ui-components/ui-helpers.js';
+import { showTooltipAt } from '../../ui-components/ui-helpers.js';
+import { openHandOverlay } from '../fabs/fab/hand-overlay.js';
 
 function getFooterElements() {
     return {
@@ -24,6 +25,14 @@ function getFooterElements() {
 
 export const stack_screen = [];
 
+function getRoleLabel(role) {
+    if (role === 'commander') return 'Comandante';
+    if (role === 'recruit') return 'Recluta';
+    if (role === 'enemy') return 'Gigante';
+    if (role === 'wall') return 'Muro';
+    return role ? role.toString() : 'Unità';
+}
+
 function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex) {
     if (!player) return { units: [], playerName: 'Giocatore' };
     const allUnits = [
@@ -39,12 +48,15 @@ function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex) {
     return { units: extraUnits, playerName };
 }
 
-function buildFooterAvatarTooltip(player, rosterIds, unitIndex) {
+function buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit) {
     const { units, playerName } = getNonMissionUnitsForPlayer(player, rosterIds, unitIndex);
+    const missionName = missionUnit?.name || missionUnit?.id || '—';
+    const missionRole = getRoleLabel(missionUnit?.role);
     if (!units.length) {
         return `
             <div class="tt-card footer-squad-tooltip">
-                <div class="tt-title">${playerName}</div>
+                <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
+                <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}</div>
                 <div class="tt-badge">Unità fuori missione</div>
                 <p class="footer-squad-empty">Nessuna unità fuori missione.</p>
             </div>
@@ -53,18 +65,21 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex) {
     const listItems = units.map(unit => {
         const unitName = unit?.name || unit?.id || 'Unità sconosciuta';
         const unitAvatar = unit?.img || unit?.avatar || 'assets/units/default.png';
+        const unitRole = getRoleLabel(unit?.role);
         return `
             <li class="msn-squad-item">
                 <span class="msn-squad-unit">
                     <span class="msn-squad-avatar"><img src="${unitAvatar}" alt=""></span>
                     <span class="msn-squad-unit-name">${unitName}</span>
+                    <span class="msn-squad-unit-role">${unitRole}</span>
                 </span>
             </li>
         `;
     }).join('');
     return `
         <div class="tt-card footer-squad-tooltip">
-            <div class="tt-title">${playerName}</div>
+            <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
+            <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}</div>
             <div class="tt-badge">Unità fuori missione</div>
             <ul class="msn-squad">${listItems}</ul>
         </div>
@@ -73,12 +88,24 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex) {
 
 export function renderFooterAvatars() {
     const container = document.querySelector('.footer-avatars');
+    const selfBtn = document.querySelector('.footer-self-btn');
+    const handBtn = document.querySelector('.footer-hand-btn');
     if (!container) return;
     const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
     const myId = APP_STATE.user?.id || null;
     if (!players.length || !myId) {
         container.classList.add('is-hidden');
         container.innerHTML = '';
+        if (selfBtn) {
+            selfBtn.classList.add('is-hidden');
+        }
+        if (handBtn && !handBtn.dataset.bound) {
+            handBtn.dataset.bound = '1';
+            handBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openHandOverlay();
+            });
+        }
         return;
     }
 
@@ -103,7 +130,10 @@ export function renderFooterAvatars() {
                 <button class="footer-avatar-btn" type="button" data-player-id="${player.user_id}"
                     data-unit-id="${unit?.id || ''}"
                     aria-label="Apri squadra fuori missione di ${displayName}" title="${displayName}">
-                    <img src="${avatarSrc}" alt="Avatar ${displayName}">
+                    <span class="footer-avatar-circle">
+                        <img src="${avatarSrc}" alt="Avatar ${displayName}">
+                    </span>
+                    <span class="footer-avatar-name">${displayName}</span>
                 </button>
             `;
         })
@@ -122,7 +152,12 @@ export function renderFooterAvatars() {
             e.stopPropagation();
             const playerId = btn.dataset.playerId;
             const player = playersById.get(playerId);
-            const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex);
+            const rosterUnit = roster.find(u => u.owner_id === playerId);
+            const unitFromDb = !rosterUnit && player?.unit_code
+                ? unitIndex.get(player.unit_code)
+                : null;
+            const missionUnit = rosterUnit || unitFromDb;
+            const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit);
             showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
             const unitId = btn.dataset.unitId;
             if (unitId) {
@@ -130,6 +165,35 @@ export function renderFooterAvatars() {
             }
         });
     });
+
+    if (selfBtn) {
+        const mePlayer = playersById.get(myId);
+        const rosterUnit = roster.find(u => u.owner_id === myId);
+        const unitFromDb = !rosterUnit && mePlayer?.unit_code
+            ? unitIndex.get(mePlayer.unit_code)
+            : null;
+        const missionUnit = rosterUnit || unitFromDb;
+        const avatarSrc = missionUnit?.img || missionUnit?.avatar || 'assets/units/default.png';
+        const displayName = mePlayer?.nickname || mePlayer?.user_id?.slice(0, 8) || 'Giocatore';
+        selfBtn.classList.remove('is-hidden');
+        selfBtn.innerHTML = `<img src="${avatarSrc}" alt="Avatar ${displayName}">`;
+        if (!selfBtn.dataset.bound) {
+            selfBtn.dataset.bound = '1';
+            selfBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, missionUnit);
+                showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
+            });
+        }
+    }
+
+    if (handBtn && !handBtn.dataset.bound) {
+        handBtn.dataset.bound = '1';
+        handBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openHandOverlay();
+        });
+    }
 }
 
 // Mutatore con logging dettagliato

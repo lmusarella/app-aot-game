@@ -1,7 +1,7 @@
 <footer class="app-footer" aria-label="Footer">
     <div class="app-footer__row">
-        <div class="footer-avatars" role="list" aria-label="Giocatori">
-            <!-- popolato via JS -->
+        <div class="app-footer__credits">
+            Ideato da Marco Del Monaco, Sviluppato da Luca Musarella
         </div>
 
         <div class="footer-bars footer-bars--single" role="group" aria-label="Stato Squadra">
@@ -36,8 +36,20 @@
             </div>
         </div>
 
-        <div class="app-footer__credits">
-            Ideato da Marco Del Monaco, Sviluppato da Luca Musarella
+        <div class="footer-actions" aria-label="Azioni e compagni">
+            <button class="footer-action-btn footer-hand-btn" type="button" aria-label="Apri mano di carte" title="Mano">
+                <span aria-hidden="true">🃏</span>
+            </button>
+            <button class="footer-action-btn footer-self-btn" type="button" aria-label="Apri squadra fuori missione"
+                title="La tua squadra">
+                <img src="assets/units/default.png" alt="Il tuo avatar">
+            </button>
+            <div class="footer-companions" role="group" aria-label="Compagni">
+                <span class="footer-companions-label">Compagni</span>
+                <div class="footer-avatars" role="list" aria-label="Giocatori">
+                    <!-- popolato via JS -->
+                </div>
+            </div>
         </div>
     </div>
 </footer>
