@@ -229,6 +229,9 @@ export function renderFooterAvatars() {
     if (!container) return;
     const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
     const myId = APP_STATE.user?.id || null;
+    if (messageMenu) {
+        messageMenu.hidden = true;
+    }
     setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId: myId, fallbackEl: selfBtn });
     updateMessageButtonState(messageBtn, messageMenu);
     if (!players.length || !myId) {
