@@ -151,7 +151,7 @@ function recordFooterMessage(senderId, text) {
         : {};
     messages[senderId] = { text, at: now };
     GAME_STATE.footerMessages = messages;
-    scheduleSave('footer-message');
+    scheduleSave('footer-message', { force: true });
     return now;
 }
 
