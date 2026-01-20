@@ -3,13 +3,6 @@ let lastTurnSignature = null;
 let pendingRenderId = null;
 
 function buildRenderSignature(state) {
-  const footerMessages = state?.footerMessages;
-  const footerMessageUpdatedAt = footerMessages && typeof footerMessages === 'object'
-    ? Object.values(footerMessages).reduce((max, entry) => {
-      const ts = Number(entry?.at ?? 0);
-      return ts > max ? ts : max;
-    }, 0)
-    : 0;
   return JSON.stringify({
     version: state?.stateVersion ?? 0,
     spawns: state?.spawns?.length ?? 0,
@@ -18,7 +11,6 @@ function buildRenderSignature(state) {
     walls: state?.walls?.length ?? 0,
     hand: state?.hand?.length ?? 0,
     logs: state?.logs?.length ?? 0,
-    footerMessages: footerMessageUpdatedAt,
     mission: state?.missionState?.curIndex ?? 0,
     eventDeck: state?.decks?.event?.draw?.length ?? 0,
     consumableDeck: state?.decks?.consumable?.draw?.length ?? 0

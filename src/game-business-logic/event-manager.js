@@ -15,6 +15,7 @@ import showCombatWaitOverlay from './effects/combatWaitOverlay.js';
 import { showAttackSummaryOverlay, hideAttackSummaryOverlay } from '../view-components/overlays/overlays/attack-summary.js';
 import { showVersusOverlay, hideVersusOverlay } from '../ui-components/ui-helpers.js';
 import showWarningC from './effects/warningOverlayC.js';
+import { showFooterMessageFromEvent } from '../view-components/footer/footer.js';
 
 const processedIds = new Set();
 const MAX_EVENTS = 50;
@@ -125,9 +126,18 @@ function handleEvent(ev) {
     case 'log':
       handleLogEvent(ev);
       break;
+    case 'footer_message':
+      handleFooterMessageEvent(ev);
+      break;
     default:
       break;
   }
+}
+
+function handleFooterMessageEvent(ev) {
+  const senderId = ev.payload?.senderId;
+  const text = ev.payload?.text;
+  showFooterMessageFromEvent({ senderId, text });
 }
 
 function handleAttackEvent(ev) {

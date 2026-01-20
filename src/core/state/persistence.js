@@ -29,7 +29,6 @@ export function snapshot() {
         // log
         logs: structuredClone(GAME_STATE.logs),
         events: structuredClone(GAME_STATE.events),
-        footerMessages: structuredClone(GAME_STATE.footerMessages ?? {}),
         turnState: structuredClone(GAME_STATE.turnState),
         //turnengine
         turnEngine: GAME_STATE.turnEngine,
@@ -81,7 +80,6 @@ export function restore(save) {
     GAME_STATE.decks.consumable.removed = save.decks?.consumable?.removed ?? [];
     GAME_STATE.logs = save.logs ?? [];
     GAME_STATE.events = Array.isArray(save.events) ? save.events : [];
-    GAME_STATE.footerMessages = save.footerMessages ?? {};
     GAME_STATE.turnState = save.turnState ?? GAME_STATE.turnState ?? null;
     GAME_STATE.stateVersion = save.stateVersion ?? 0;
     GAME_STATE.stateUpdatedAt = save.stateUpdatedAt ?? save.savedAt ?? null;

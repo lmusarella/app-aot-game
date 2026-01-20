@@ -54,7 +54,6 @@ export const GAME_STATE = {
     walls: [],
     logs: [],
     events: [],
-    footerMessages: {},
     turnState: null,
     stateVersion: 0,
     stateUpdatedAt: null,
@@ -123,7 +122,6 @@ export function resetInMemoryGameState() {
 
     GAME_STATE.logs = [];
     GAME_STATE.events = [];
-    GAME_STATE.footerMessages = {};
     GAME_STATE.turnState = null;
     GAME_STATE.stateVersion = 0;
     GAME_STATE.stateUpdatedAt = null;
