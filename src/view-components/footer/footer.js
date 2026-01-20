@@ -8,6 +8,8 @@ import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
 import { focusUnitOnField } from '../grid/grid.js';
 import { showTooltipAt } from '../../ui-components/ui-helpers.js';
 import { openHandOverlay } from '../fabs/fab/hand-overlay.js';
+import { showSnackBar } from '../../ui-components/snackbar.js';
+import { getTurnInfo } from '../../game-business-logic/turn-tracker.js';
 
 function getFooterElements() {
     return {
@@ -24,6 +26,7 @@ function getFooterElements() {
 }
 
 export const stack_screen = [];
+const lastShownMessages = new Map();
 
 function getRoleLabel(role) {
     if (role === 'commander') return 'Comandante';
@@ -125,6 +128,44 @@ function showMessageOnCompanion(senderId, text, fallbackEl) {
     showMessageBubble(bubbleTarget, text);
 }
 
+function canSendFooterMessage() {
+    if (APP_STATE.gameMode !== 'multiplayer') return true;
+    return getTurnInfo().isMyTurn;
+}
+
+function updateMessageButtonState(messageBtn, messageMenu) {
+    if (!messageBtn) return;
+    const allowed = canSendFooterMessage();
+    messageBtn.disabled = !allowed;
+    if (!allowed && messageMenu) {
+        messageMenu.hidden = true;
+    }
+    messageBtn.title = allowed ? 'Messaggi' : 'Messaggi (solo nel tuo turno)';
+}
+
+function recordFooterMessage(senderId, text) {
+    if (!senderId || !text) return;
+    const now = Date.now();
+    const messages = GAME_STATE.footerMessages && typeof GAME_STATE.footerMessages === 'object'
+        ? GAME_STATE.footerMessages
+        : {};
+    messages[senderId] = { text, at: now };
+    GAME_STATE.footerMessages = messages;
+    scheduleSave('footer-message');
+    return now;
+}
+
+function renderFooterMessages({ fallbackEl }) {
+    const messages = GAME_STATE.footerMessages || {};
+    Object.entries(messages).forEach(([senderId, payload]) => {
+        if (!payload?.text || !payload?.at) return;
+        const lastAt = lastShownMessages.get(senderId) || 0;
+        if (payload.at <= lastAt) return;
+        lastShownMessages.set(senderId, payload.at);
+        showMessageOnCompanion(senderId, payload.text, fallbackEl);
+    });
+}
+
 function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, fallbackEl }) {
     if (!messageBtn) return;
     if (messageMenu) {
@@ -136,6 +177,7 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, 
             'Bella mossa!'
         ];
         buildMessageMenu(messageMenu, messages);
+        messageMenu.hidden = true;
     }
 
     if (!messageBtn.dataset.bound) {
@@ -143,6 +185,11 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, 
         messageBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!messageMenu) return;
+            if (!canSendFooterMessage()) {
+                showSnackBar('Puoi inviare messaggi solo durante il tuo turno.', {}, 'warning');
+                messageMenu.hidden = true;
+                return;
+            }
             messageMenu.hidden = !messageMenu.hidden;
         });
     }
@@ -154,6 +201,14 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, 
             if (!btn) return;
             const text = btn.dataset.message;
             messageMenu.hidden = true;
+            if (!canSendFooterMessage()) {
+                showSnackBar('Puoi inviare messaggi solo durante il tuo turno.', {}, 'warning');
+                return;
+            }
+            const sentAt = recordFooterMessage(senderId, text);
+            if (sentAt) {
+                lastShownMessages.set(senderId, sentAt);
+            }
             showMessageOnCompanion(senderId, text, fallbackEl || messageWrap);
         });
         document.addEventListener('click', (e) => {
@@ -175,6 +230,7 @@ export function renderFooterAvatars() {
     const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
     const myId = APP_STATE.user?.id || null;
     setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId: myId, fallbackEl: selfBtn });
+    updateMessageButtonState(messageBtn, messageMenu);
     if (!players.length || !myId) {
         container.classList.add('is-hidden');
         container.innerHTML = '';
@@ -288,6 +344,8 @@ export function renderFooterAvatars() {
             openHandOverlay();
         });
     }
+
+    renderFooterMessages({ fallbackEl: selfBtn });
 
 }
 

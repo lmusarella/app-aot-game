@@ -10,52 +10,57 @@
         </div>
 
         <div class="footer-bars footer-bars--single footer-bars--tracker" role="group" aria-label="Stato Squadra">
-            <div class="bar-row mini" id="morale-row">
-                <div class="bar-head">
-                    <span class="br-label">Morale</span>
-                    <span id="morale-val" class="br-val">65%</span>
-                </div>
-                <div class="bar-track">
-                    <button class="bbtn" data-target="morale" data-delta="-1" title="-1%">−</button>
-                    <div class="bar morale">
-                        <div id="morale-fill" class="fill" style="width:65%"></div>
+            <div class="footer-bars-card" aria-label="Morale ed esperienza">
+                <div class="bar-row mini" id="morale-row">
+                    <div class="bar-head">
+                        <span class="br-label">Morale</span>
+                        <span id="morale-val" class="br-val">65%</span>
                     </div>
-                    <button class="bbtn" data-target="morale" data-delta="1" title="+1%">+</button>
+                    <div class="bar-track">
+                        <button class="bbtn" data-target="morale" data-delta="-1" title="-1%">−</button>
+                        <div class="bar morale">
+                            <div id="morale-fill" class="fill" style="width:65%"></div>
+                        </div>
+                        <button class="bbtn" data-target="morale" data-delta="1" title="+1%">+</button>
+                    </div>
                 </div>
-            </div>
 
-            <div class="bar-row mini" id="xp-row">
-                <div class="bar-head">
-                    <span class="br-label">
-                        Exp <span id="lvl-val" class="br-sub">Lv. 1</span>
-                    </span>
-                    <span id="xp-val" class="br-val">40%</span>
-                </div>
-                <div class="bar-track">
-                    <button class="bbtn" data-target="xp" data-xp="-1" title="-1 XP">−</button>
-                    <div class="bar xp">
-                        <div id="xp-fill" class="fill" style="width:40%"></div>
+                <div class="bar-row mini" id="xp-row">
+                    <div class="bar-head">
+                        <span class="br-label">
+                            Exp <span id="lvl-val" class="br-sub">Lv. 1</span>
+                        </span>
+                        <span id="xp-val" class="br-val">40%</span>
                     </div>
-                    <button class="bbtn" data-target="xp" data-xp="1" title="+1 XP">+</button>
+                    <div class="bar-track">
+                        <button class="bbtn" data-target="xp" data-xp="-1" title="-1 XP">−</button>
+                        <div class="bar xp">
+                            <div id="xp-fill" class="fill" style="width:40%"></div>
+                        </div>
+                        <button class="bbtn" data-target="xp" data-xp="1" title="+1 XP">+</button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="footer-actions" aria-label="Azioni">
-            <button class="footer-action-btn footer-hand-btn" type="button" aria-label="Apri mano di carte" title="Mano">
-                <span aria-hidden="true">🃏</span>
-            </button>
-            <div class="footer-message-wrap">
-                <button class="footer-action-btn footer-message-btn" type="button" aria-label="Invia messaggio"
-                    title="Messaggi">
-                    <span aria-hidden="true">💬</span>
+            <div class="footer-actions__buttons">
+                <button class="footer-action-btn footer-hand-btn" type="button" aria-label="Apri mano di carte"
+                    title="Mano">
+                    <span aria-hidden="true">🃏</span>
                 </button>
-                <div class="footer-message-menu" hidden></div>
+                <div class="footer-message-wrap">
+                    <button class="footer-action-btn footer-message-btn" type="button" aria-label="Invia messaggio"
+                        title="Messaggi">
+                        <span aria-hidden="true">💬</span>
+                    </button>
+                    <div class="footer-message-menu" hidden></div>
+                </div>
+                <button class="footer-action-btn footer-self-btn" type="button"
+                    aria-label="Apri squadra fuori missione" title="La tua squadra">
+                    <img src="assets/units/default.png" alt="Il tuo avatar">
+                </button>
             </div>
-            <button class="footer-action-btn footer-self-btn" type="button" aria-label="Apri squadra fuori missione"
-                title="La tua squadra">
-                <img src="assets/units/default.png" alt="Il tuo avatar">
-            </button>
             <div class="app-footer__credits">
                 <span>Ideato da Marco Del Monaco</span>
                 <span>Sviluppato da Luca Musarella</span>
