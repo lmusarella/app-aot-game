@@ -1,4 +1,4 @@
-import { refreshMoraleUI, refreshXPUI } from "../view-components/footer/footer.js";
+import { refreshMoraleUI, refreshXPUI, refreshFooterTracker } from "../view-components/footer/footer.js";
 import { initModsDiceUI, renderBonusMalus, refreshRollModsUI, mountUnitModsUI } from "../view-components/leftbar/mods.js";
 import { renderGrid, renderBenches, grid } from "../view-components/grid/grid.js";
 import { renderHeader } from "../view-components/header/header.js";
@@ -18,4 +18,5 @@ export function renderCoreUI() {
     refreshRollModsUI();
     initModsDiceUI();
     mountUnitModsUI();
+    refreshFooterTracker();
 }
