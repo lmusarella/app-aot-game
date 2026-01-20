@@ -124,8 +124,9 @@ function showMessageOnCompanion(senderId, text, fallbackEl) {
         : null;
     const target = selector ? document.querySelector(selector) : null;
     const bubbleTarget = target || fallbackEl;
-    if (!bubbleTarget) return;
+    if (!bubbleTarget) return false;
     showMessageBubble(bubbleTarget, text);
+    return true;
 }
 
 function canSendFooterMessage() {
@@ -153,7 +154,13 @@ function recordFooterMessage(senderId, text) {
 export function showFooterMessageFromEvent({ senderId, text } = {}) {
     if (!senderId || !text) return;
     const fallbackEl = document.querySelector('.footer-self-btn') || document.querySelector('.footer-message-wrap');
-    showMessageOnCompanion(senderId, text, fallbackEl);
+    const attemptShow = (retries = 0) => {
+        const shown = showMessageOnCompanion(senderId, text, fallbackEl);
+        if (shown || retries <= 0) return;
+        renderFooterAvatars();
+        setTimeout(() => attemptShow(retries - 1), 200);
+    };
+    attemptShow(3);
 }
 
 function setupMessageControls({ messageBtn, messageMenu, messageWrap, getSenderId, fallbackEl }) {
