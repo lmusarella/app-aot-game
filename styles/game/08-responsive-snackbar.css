@@ -542,6 +542,7 @@
   border: 1px solid rgba(148, 163, 184, 0.35);
   background: rgba(15, 17, 24, 0.9);
   color: #f8fafc;
+  position: relative;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -616,6 +617,7 @@
   color: inherit;
   padding: 0;
   cursor: pointer;
+  position: relative;
   min-width: 54px;
 }
 
