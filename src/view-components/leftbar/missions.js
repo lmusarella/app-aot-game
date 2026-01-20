@@ -43,9 +43,6 @@ function ensureMissionCardSkeleton(card) {
       <div class="msn-badge"><span class="lbl">Round</span><span id="msn-round">0</span></div>
     </div>
 
-    <div class="mission-subtitle">Squadra</div>
-    <ul id="msn-squad" class="msn-squad"></ul>
-
     <div class="mission-subtitle">Eventi attivati</div>
     <ul id="msn-evlist" class="msn-list"></ul>
 
@@ -141,8 +138,6 @@ function renderMissionPanel() {
     if (rEl) rEl.textContent = String(ms.round || 0);
     refreshFooterTracker();
 
-    renderSquadStatus();
-
     // timeline eventi (cronologica)
     const list = document.getElementById('msn-evlist');
     if (list) {
@@ -163,81 +158,6 @@ function renderMissionPanel() {
     bindMissionListHandlers();
 }
 
-function renderSquadStatus() {
-    const list = document.getElementById('msn-squad');
-    if (!list) return;
-
-    const ONLINE_THRESHOLD_MS = 90000;
-    const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
-    const roster = Array.isArray(GAME_STATE.alliesRoster) ? GAME_STATE.alliesRoster : [];
-    const hasRoster = roster.length > 0;
-    if (players.length === 0 && !hasRoster) {
-        list.innerHTML = '<li class="msn-squad-item is-empty">— squadra non disponibile —</li>';
-        return;
-    }
-
-    const now = Date.now();
-    const rows = hasRoster ? roster : players.map(p => ({ owner_id: p.user_id, role: p.is_commander ? 'commander' : 'recruit' }));
-    const rosterIds = new Set(roster.map(u => u.id));
-    const unitIndex = Array.isArray(DB.ALLIES)
-        ? new Map(DB.ALLIES.map(u => [u.id, u]))
-        : new Map();
-    list.innerHTML = rows.map(entry => {
-        const player = players.find(p => p.user_id === entry.owner_id) || {};
-        const entryUnit = entry?.id ? (unitIndex.get(entry.id) || entry) : null;
-        const playerUnit = player.unit_code ? unitIndex.get(player.unit_code) : null;
-        const unit = entryUnit || playerUnit;
-        const unitLabel = unit?.name || entryUnit?.name || playerUnit?.name || 'Unità sconosciuta';
-        const unitAvatar = unit?.img || unit?.avatar || entryUnit?.img || playerUnit?.img || 'assets/units/default.png';
-        const last = player.last_seen ? new Date(player.last_seen).getTime() : 0;
-        const online = last && now - last < ONLINE_THRESHOLD_MS;
-        const baseName = player.nickname || entry.owner_nickname || player.user_id?.slice(0, 8) || 'Giocatore';
-        const isMe = entry.owner_id && APP_STATE.user?.id && entry.owner_id === APP_STATE.user.id;
-        const name = isMe ? `${baseName} (Tu)` : baseName;
-        const roleLabel = player.is_commander || entry.role === 'commander' ? 'Comandante' : 'Recluta';
-        const statusClass = online ? 'msn-squad-dot--online' : 'msn-squad-dot--offline';
-        const statusLabel = online ? 'Online' : 'Offline';
-        const allUnits = [
-            player.commander_code,
-            ...(Array.isArray(player.recruit_codes) ? player.recruit_codes : [])
-        ].filter(Boolean);
-        const extraUnits = allUnits.filter(code => !rosterIds.has(code));
-        const extraList = extraUnits
-            .map(code => {
-                const extraUnit = unitIndex.get(code);
-                const extraLabel = extraUnit?.name || code;
-                const extraAvatar = extraUnit?.img || extraUnit?.avatar || 'assets/units/default.png';
-                return `
-          <li class="msn-squad-extra-item">
-            <span class="msn-squad-avatar"><img src="${extraAvatar}" alt=""></span>
-            <span class="msn-squad-extra-name">${extraLabel}</span>
-          </li>`;
-            })
-            .join('');
-        const extraBlock = extraUnits.length
-            ? `
-        <details class="msn-squad-extra">
-          <summary>Altre unità (${extraUnits.length})</summary>
-          <ul>${extraList}</ul>
-        </details>
-      `
-            : '';
-        return `
-      <li class="msn-squad-item">
-        <span class="msn-squad-dot ${statusClass}" title="${statusLabel}"></span>
-        <span class="msn-squad-status">${statusLabel}</span>
-        <span class="msn-squad-player">
-          <span class="msn-squad-name">${name}</span>
-          <span class="msn-squad-unit">
-            <span class="msn-squad-avatar"><img src="${unitAvatar}" alt=""></span>
-            <span class="msn-squad-unit-name">${unitLabel}</span>
-          </span>
-        </span>
-        <span class="msn-squad-role">${roleLabel}</span>
-        ${extraBlock}
-      </li>`;
-    }).join('');
-}
 
 function bindMissionListHandlers() {
     const list = document.getElementById('msn-evlist');

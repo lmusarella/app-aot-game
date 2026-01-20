@@ -474,9 +474,15 @@
   padding: 0 6px;
 }
 
-.app-footer__credits {
+.footer-left {
   grid-column: 1;
-  justify-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.app-footer__credits {
   font-size: 9px;
   opacity: 0.55;
   text-align: left;
@@ -584,12 +590,22 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.25);
   background: rgba(0, 0, 0, 0.35);
   overflow: hidden;
   display: grid;
   place-items: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.footer-avatar-circle.is-online {
+  border-color: rgba(52, 211, 153, 0.9);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
+}
+
+.footer-avatar-circle.is-offline {
+  border-color: rgba(248, 113, 113, 0.9);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.12);
 }
 
 .footer-avatar-circle img {
@@ -613,15 +629,119 @@
   box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.35);
 }
 
-.footer-bars .bar-row.mini {
+.footer-message-wrap {
+  position: relative;
+}
+
+.footer-message-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(11, 15, 25, 0.95);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+  min-width: 180px;
+  z-index: 10000;
+}
+
+.footer-message-menu button {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(30, 41, 59, 0.6);
+  color: #e2e8f0;
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.footer-message-menu button:hover {
+  background: rgba(51, 65, 85, 0.8);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+.footer-message-bubble {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  max-width: 220px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e2e8f0;
+  font-size: 11px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  animation: footerBubbleIn 0.18s ease-out;
+  z-index: 10000;
+}
+
+.footer-message-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  right: 16px;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  border-left: 1px solid rgba(148, 163, 184, 0.3);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+  transform: rotate(-45deg);
+}
+
+@keyframes footerBubbleIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.footer-squad-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  opacity: 0.75;
+  margin-bottom: 6px;
+}
+
+.footer-squad-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #6b7280;
+  box-shadow: 0 0 6px rgba(107, 114, 128, 0.4);
+}
+
+.footer-squad-status.is-online::before {
+  background: #34d399;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+}
+
+.footer-squad-status.is-offline::before {
+  background: #f87171;
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.6);
+}
+
+.footer-bars--tracker .bar-row.mini {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: linear-gradient(180deg, rgba(20, 24, 36, 0.96), rgba(12, 15, 23, 0.96));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, rgba(11, 15, 25, 0.92), rgba(20, 24, 35, 0.6));
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
 }
 
 .footer-bars .bar-head {
@@ -629,6 +749,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  opacity: 0.8;
 }
 
 .footer-bars .bar-track {
@@ -722,11 +847,10 @@
 }
 
  /* Barre più sottili nel footer */
- .footer-bars .bar {
-  height: 10px;
+.footer-bars .bar {
+  height: 8px;
   border-radius: 999px;
-  background: #151a26;
-  border: 1px solid #23293a;
+  background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
   position: relative;
 }
@@ -737,14 +861,14 @@
 }
 
  /* Bottoni compatti nel footer */
- .footer-bars .bbtn {
-  width: 28px;
-  height: 28px;
-  line-height: 24px;
-  border-radius: 9px;
+.footer-bars .bbtn {
+  width: 26px;
+  height: 26px;
+  line-height: 22px;
+  border-radius: 999px;
   padding: 0;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: rgba(15, 17, 24, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 17, 24, 0.8);
   color: #e2e8f0;
   font-weight: 700;
   cursor: pointer;
@@ -757,8 +881,8 @@
 }
 
  /* Testi compatti nel footer */
- .footer-bars .br-label {
-  font-size: 12px;
+.footer-bars .br-label {
+  font-size: 11px;
   opacity: .9;
   white-space: nowrap;
   font-weight: 700;
@@ -766,12 +890,12 @@
 
 .footer-bars .br-sub {
   margin-left: 6px;
-  font-size: 11px;
+  font-size: 10px;
   opacity: 0.7;
 }
 
 .footer-bars .br-val {
-  font-size: 11px;
+  font-size: 10px;
   opacity: .85;
   min-width: 40px;
   text-align: right;
@@ -838,18 +962,22 @@
  /* regola se serve in base all’altezza del footer */
 
  /* Piccolo tuning per schermi stretti */
- @media (max-width: 900px) {
-   .app-footer__row {
-     grid-template-columns: 1fr;
-     justify-items: center;
-   }
+@media (max-width: 900px) {
+  .app-footer__row {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
 
-   .app-footer__credits {
-     grid-column: 1;
-     justify-self: center;
-     white-space: normal;
-     text-align: center;
-   }
+  .footer-left {
+    grid-column: 1;
+    align-items: center;
+  }
+
+  .app-footer__credits {
+    justify-self: center;
+    white-space: normal;
+    text-align: center;
+  }
 
    .footer-bars--single {
      grid-column: 1;
@@ -857,33 +985,33 @@
      width: min(520px, 96vw);
    }
 
-   .footer-actions {
-     grid-column: 1;
-     justify-self: center;
-     flex-wrap: wrap;
-     justify-content: center;
-   }
+  .footer-actions {
+    grid-column: 1;
+    justify-self: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 
-   .footer-companions {
-     width: min(320px, 90vw);
-     justify-content: center;
-     flex-wrap: wrap;
-   }
+  .footer-companions {
+    width: min(320px, 90vw);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 
-   .footer-avatars {
-     justify-content: center;
-     flex-wrap: wrap;
-   }
+  .footer-avatars {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 
-   .footer-bars .bar-track {
-     grid-template-columns: 24px 1fr 24px;
-   }
+  .footer-bars .bar-track {
+    grid-template-columns: 24px 1fr 24px;
+  }
 
-   .footer-bars .bbtn {
-     width: 24px;
-     height: 24px;
-   }
- }
+  .footer-bars .bbtn {
+    width: 24px;
+    height: 24px;
+  }
+}
 
 .topbar {
   display: flex;

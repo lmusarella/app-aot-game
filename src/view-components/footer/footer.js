@@ -33,6 +33,12 @@ function getRoleLabel(role) {
     return role ? role.toString() : 'Unità';
 }
 
+function isPlayerOnline(player, now = Date.now()) {
+    const ONLINE_THRESHOLD_MS = 90000;
+    const last = player?.last_seen ? new Date(player.last_seen).getTime() : 0;
+    return !!(last && now - last < ONLINE_THRESHOLD_MS);
+}
+
 function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex) {
     if (!player) return { units: [], playerName: 'Giocatore' };
     const allUnits = [
@@ -48,15 +54,18 @@ function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex) {
     return { units: extraUnits, playerName };
 }
 
-function buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit) {
+function buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit, { online, statusLabel }) {
     const { units, playerName } = getNonMissionUnitsForPlayer(player, rosterIds, unitIndex);
     const missionName = missionUnit?.name || missionUnit?.id || '—';
     const missionRole = getRoleLabel(missionUnit?.role);
+    const statusClass = online ? 'is-online' : 'is-offline';
+    const statusText = statusLabel || (online ? 'Online' : 'Offline');
     if (!units.length) {
         return `
             <div class="tt-card footer-squad-tooltip">
                 <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
                 <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}</div>
+                <div class="footer-squad-status ${statusClass}">${statusText}</div>
                 <div class="tt-badge">Unità fuori missione</div>
                 <p class="footer-squad-empty">Nessuna unità fuori missione.</p>
             </div>
@@ -80,19 +89,81 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit) {
         <div class="tt-card footer-squad-tooltip">
             <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
             <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}</div>
+            <div class="footer-squad-status ${statusClass}">${statusText}</div>
             <div class="tt-badge">Unità fuori missione</div>
             <ul class="msn-squad">${listItems}</ul>
         </div>
     `;
 }
 
+function buildMessageMenu(menuEl, messages) {
+    if (!menuEl) return;
+    menuEl.innerHTML = messages
+        .map(text => `<button type="button" data-message="${text}">${text}</button>`)
+        .join('');
+}
+
+function showMessageBubble(wrapper, text) {
+    if (!wrapper) return;
+    const existing = wrapper.querySelector('.footer-message-bubble');
+    if (existing) existing.remove();
+    const bubble = document.createElement('div');
+    bubble.className = 'footer-message-bubble';
+    bubble.textContent = text;
+    wrapper.appendChild(bubble);
+    setTimeout(() => bubble.remove(), 4000);
+}
+
+function setupMessageControls({ messageBtn, messageMenu, messageWrap }) {
+    if (!messageBtn) return;
+    if (messageMenu) {
+        const messages = [
+            'Pronti a muovere?',
+            'Attacco in corso!',
+            'Attendi il tuo turno.',
+            'Serve supporto qui.',
+            'Bella mossa!'
+        ];
+        buildMessageMenu(messageMenu, messages);
+    }
+
+    if (!messageBtn.dataset.bound) {
+        messageBtn.dataset.bound = '1';
+        messageBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!messageMenu) return;
+            messageMenu.hidden = !messageMenu.hidden;
+        });
+    }
+
+    if (messageMenu && !messageMenu.dataset.bound) {
+        messageMenu.dataset.bound = '1';
+        messageMenu.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-message]');
+            if (!btn) return;
+            const text = btn.dataset.message;
+            messageMenu.hidden = true;
+            showMessageBubble(messageWrap, text);
+        });
+        document.addEventListener('click', (e) => {
+            if (!messageMenu.hidden && !e.target.closest('.footer-message-wrap')) {
+                messageMenu.hidden = true;
+            }
+        });
+    }
+}
+
 export function renderFooterAvatars() {
     const container = document.querySelector('.footer-avatars');
     const selfBtn = document.querySelector('.footer-self-btn');
     const handBtn = document.querySelector('.footer-hand-btn');
+    const messageBtn = document.querySelector('.footer-message-btn');
+    const messageWrap = document.querySelector('.footer-message-wrap');
+    const messageMenu = document.querySelector('.footer-message-menu');
     if (!container) return;
     const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
     const myId = APP_STATE.user?.id || null;
+    setupMessageControls({ messageBtn, messageMenu, messageWrap });
     if (!players.length || !myId) {
         container.classList.add('is-hidden');
         container.innerHTML = '';
@@ -116,6 +187,7 @@ export function renderFooterAvatars() {
         : new Map();
 
     const playersById = new Map(players.map(player => [player.user_id, player]));
+    const now = Date.now();
     const avatars = players
         .filter(p => p.user_id && p.user_id !== myId)
         .map(player => {
@@ -126,11 +198,13 @@ export function renderFooterAvatars() {
             const unit = rosterUnit || unitFromDb;
             const avatarSrc = unit?.img || unit?.avatar || 'assets/units/default.png';
             const displayName = player.nickname || player.user_id?.slice(0, 8) || 'Giocatore';
+            const online = isPlayerOnline(player, now);
+            const statusClass = online ? 'is-online' : 'is-offline';
             return `
                 <button class="footer-avatar-btn" type="button" data-player-id="${player.user_id}"
                     data-unit-id="${unit?.id || ''}"
                     aria-label="Apri squadra fuori missione di ${displayName}" title="${displayName}">
-                    <span class="footer-avatar-circle">
+                    <span class="footer-avatar-circle ${statusClass}">
                         <img src="${avatarSrc}" alt="Avatar ${displayName}">
                     </span>
                     <span class="footer-avatar-name">${displayName}</span>
@@ -157,7 +231,11 @@ export function renderFooterAvatars() {
                 ? unitIndex.get(player.unit_code)
                 : null;
             const missionUnit = rosterUnit || unitFromDb;
-            const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit);
+            const online = isPlayerOnline(player, now);
+            const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit, {
+                online,
+                statusLabel: online ? 'Online' : 'Offline'
+            });
             showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
             const unitId = btn.dataset.unitId;
             if (unitId) {
@@ -181,7 +259,11 @@ export function renderFooterAvatars() {
             selfBtn.dataset.bound = '1';
             selfBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, missionUnit);
+                const online = isPlayerOnline(mePlayer, now);
+                const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, missionUnit, {
+                    online,
+                    statusLabel: online ? 'Online' : 'Offline'
+                });
                 showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
             });
         }
@@ -194,6 +276,7 @@ export function renderFooterAvatars() {
             openHandOverlay();
         });
     }
+
 }
 
 // Mutatore con logging dettagliato
