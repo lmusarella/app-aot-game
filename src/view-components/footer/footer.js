@@ -166,7 +166,7 @@ function renderFooterMessages({ fallbackEl }) {
     });
 }
 
-function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, fallbackEl }) {
+function setupMessageControls({ messageBtn, messageMenu, messageWrap, getSenderId, fallbackEl }) {
     if (!messageBtn) return;
     if (messageMenu) {
         const messages = [
@@ -205,6 +205,11 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, 
                 showSnackBar('Puoi inviare messaggi solo durante il tuo turno.', {}, 'warning');
                 return;
             }
+            const senderId = typeof getSenderId === 'function' ? getSenderId() : null;
+            if (!senderId) {
+                showSnackBar('Impossibile inviare il messaggio: utente non disponibile.', {}, 'warning');
+                return;
+            }
             const sentAt = recordFooterMessage(senderId, text);
             if (sentAt) {
                 lastShownMessages.set(senderId, sentAt);
@@ -232,7 +237,13 @@ export function renderFooterAvatars() {
     if (messageMenu) {
         messageMenu.hidden = true;
     }
-    setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId: myId, fallbackEl: selfBtn });
+    setupMessageControls({
+        messageBtn,
+        messageMenu,
+        messageWrap,
+        getSenderId: () => APP_STATE.user?.id || null,
+        fallbackEl: selfBtn
+    });
     updateMessageButtonState(messageBtn, messageMenu);
     if (!players.length || !myId) {
         container.classList.add('is-hidden');
