@@ -5,6 +5,9 @@ import { log } from "../leftbar/log.js";
 import { levelFromXP, levelProgressPercent, getMalusRow } from '../../game-business-logic/utils.js';
 import { renderBonusMalus } from '../leftbar/mods.js';
 import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
+import { focusUnitOnField } from '../grid/grid.js';
+import { showTooltipAt } from '../../ui-components/ui-helpers.js';
+import { openHandOverlay } from '../fabs/fab/hand-overlay.js';
 
 function getFooterElements() {
     return {
@@ -21,6 +24,272 @@ function getFooterElements() {
 }
 
 export const stack_screen = [];
+
+function getRoleLabel(role) {
+    if (role === 'commander') return 'Comandante';
+    if (role === 'recruit') return 'Recluta';
+    if (role === 'enemy') return 'Gigante';
+    if (role === 'wall') return 'Muro';
+    return role ? role.toString() : 'Unità';
+}
+
+function isPlayerOnline(player, now = Date.now()) {
+    const ONLINE_THRESHOLD_MS = 90000;
+    const last = player?.last_seen ? new Date(player.last_seen).getTime() : 0;
+    return !!(last && now - last < ONLINE_THRESHOLD_MS);
+}
+
+function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex) {
+    if (!player) return { units: [], playerName: 'Giocatore' };
+    const allUnits = [
+        player.commander_code,
+        ...(Array.isArray(player.recruit_codes) ? player.recruit_codes : [])
+    ].filter(Boolean);
+
+    const extraUnits = allUnits
+        .filter(code => !rosterIds.has(code))
+        .map(code => unitIndex.get(code) || { id: code, name: code, img: 'assets/units/default.png' });
+
+    const playerName = player.nickname || player.user_id?.slice(0, 8) || 'Giocatore';
+    return { units: extraUnits, playerName };
+}
+
+function buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit, { online, statusLabel }) {
+    const { units, playerName } = getNonMissionUnitsForPlayer(player, rosterIds, unitIndex);
+    const missionName = missionUnit?.name || missionUnit?.id || '—';
+    const missionRole = getRoleLabel(missionUnit?.role);
+    const statusClass = online ? 'is-online' : 'is-offline';
+    const statusText = statusLabel || (online ? 'Online' : 'Offline');
+    if (!units.length) {
+        return `
+            <div class="tt-card footer-squad-tooltip">
+                <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
+                <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}</div>
+                <div class="footer-squad-status ${statusClass}">${statusText}</div>
+                <div class="tt-badge">Unità fuori missione</div>
+                <p class="footer-squad-empty">Nessuna unità fuori missione.</p>
+            </div>
+        `;
+    }
+    const listItems = units.map(unit => {
+        const unitName = unit?.name || unit?.id || 'Unità sconosciuta';
+        const unitAvatar = unit?.img || unit?.avatar || 'assets/units/default.png';
+        const unitRole = getRoleLabel(unit?.role);
+        return `
+            <li class="msn-squad-item">
+                <span class="msn-squad-unit">
+                    <span class="msn-squad-avatar"><img src="${unitAvatar}" alt=""></span>
+                    <span class="msn-squad-unit-name">${unitName}</span>
+                    <span class="msn-squad-unit-role">${unitRole}</span>
+                </span>
+            </li>
+        `;
+    }).join('');
+    return `
+        <div class="tt-card footer-squad-tooltip">
+            <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
+            <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}</div>
+            <div class="footer-squad-status ${statusClass}">${statusText}</div>
+            <div class="tt-badge">Unità fuori missione</div>
+            <ul class="msn-squad">${listItems}</ul>
+        </div>
+    `;
+}
+
+function buildMessageMenu(menuEl, messages) {
+    if (!menuEl) return;
+    menuEl.innerHTML = messages
+        .map(text => `<button type="button" data-message="${text}">${text}</button>`)
+        .join('');
+}
+
+function showMessageBubble(wrapper, text) {
+    if (!wrapper) return;
+    const existing = wrapper.querySelector('.footer-message-bubble');
+    if (existing) existing.remove();
+    const bubble = document.createElement('div');
+    bubble.className = 'footer-message-bubble';
+    bubble.textContent = text;
+    wrapper.appendChild(bubble);
+    setTimeout(() => bubble.remove(), 4000);
+}
+
+function showMessageOnCompanion(senderId, text, fallbackEl) {
+    if (!text) return;
+    const selector = senderId
+        ? `.footer-avatar-btn[data-player-id="${CSS.escape(senderId)}"]`
+        : null;
+    const target = selector ? document.querySelector(selector) : null;
+    const bubbleTarget = target || fallbackEl;
+    if (!bubbleTarget) return;
+    showMessageBubble(bubbleTarget, text);
+}
+
+function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, fallbackEl }) {
+    if (!messageBtn) return;
+    if (messageMenu) {
+        const messages = [
+            'Pronti a muovere?',
+            'Attacco in corso!',
+            'Attendi il tuo turno.',
+            'Serve supporto qui.',
+            'Bella mossa!'
+        ];
+        buildMessageMenu(messageMenu, messages);
+    }
+
+    if (!messageBtn.dataset.bound) {
+        messageBtn.dataset.bound = '1';
+        messageBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!messageMenu) return;
+            messageMenu.hidden = !messageMenu.hidden;
+        });
+    }
+
+    if (messageMenu && !messageMenu.dataset.bound) {
+        messageMenu.dataset.bound = '1';
+        messageMenu.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-message]');
+            if (!btn) return;
+            const text = btn.dataset.message;
+            messageMenu.hidden = true;
+            showMessageOnCompanion(senderId, text, fallbackEl || messageWrap);
+        });
+        document.addEventListener('click', (e) => {
+            if (!messageMenu.hidden && !e.target.closest('.footer-message-wrap')) {
+                messageMenu.hidden = true;
+            }
+        });
+    }
+}
+
+export function renderFooterAvatars() {
+    const container = document.querySelector('.footer-avatars');
+    const selfBtn = document.querySelector('.footer-self-btn');
+    const handBtn = document.querySelector('.footer-hand-btn');
+    const messageBtn = document.querySelector('.footer-message-btn');
+    const messageWrap = document.querySelector('.footer-message-wrap');
+    const messageMenu = document.querySelector('.footer-message-menu');
+    if (!container) return;
+    const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
+    const myId = APP_STATE.user?.id || null;
+    setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId: myId, fallbackEl: selfBtn });
+    if (!players.length || !myId) {
+        container.classList.add('is-hidden');
+        container.innerHTML = '';
+        if (selfBtn) {
+            selfBtn.classList.add('is-hidden');
+        }
+        if (handBtn && !handBtn.dataset.bound) {
+            handBtn.dataset.bound = '1';
+            handBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openHandOverlay();
+            });
+        }
+        return;
+    }
+
+    const roster = Array.isArray(GAME_STATE.alliesRoster) ? GAME_STATE.alliesRoster : [];
+    const rosterIds = new Set(roster.map(u => u.id));
+    const unitIndex = Array.isArray(DB.ALLIES)
+        ? new Map(DB.ALLIES.map(u => [u.id, u]))
+        : new Map();
+
+    const playersById = new Map(players.map(player => [player.user_id, player]));
+    const now = Date.now();
+    const avatars = players
+        .filter(p => p.user_id && p.user_id !== myId)
+        .map(player => {
+            const rosterUnit = roster.find(u => u.owner_id === player.user_id);
+            const unitFromDb = !rosterUnit && player.unit_code
+                ? unitIndex.get(player.unit_code)
+                : null;
+            const unit = rosterUnit || unitFromDb;
+            const avatarSrc = unit?.img || unit?.avatar || 'assets/units/default.png';
+            const displayName = player.nickname || player.user_id?.slice(0, 8) || 'Giocatore';
+            const online = isPlayerOnline(player, now);
+            const statusClass = online ? 'is-online' : 'is-offline';
+            return `
+                <button class="footer-avatar-btn" type="button" data-player-id="${player.user_id}"
+                    data-unit-id="${unit?.id || ''}"
+                    aria-label="Apri squadra fuori missione di ${displayName}" title="${displayName}">
+                    <span class="footer-avatar-circle ${statusClass}">
+                        <img src="${avatarSrc}" alt="Avatar ${displayName}">
+                    </span>
+                    <span class="footer-avatar-name">${displayName}</span>
+                </button>
+            `;
+        })
+        .join('');
+
+    if (!avatars) {
+        container.classList.add('is-hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    container.classList.remove('is-hidden');
+    container.innerHTML = avatars;
+    container.querySelectorAll('.footer-avatar-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const playerId = btn.dataset.playerId;
+            const player = playersById.get(playerId);
+            const rosterUnit = roster.find(u => u.owner_id === playerId);
+            const unitFromDb = !rosterUnit && player?.unit_code
+                ? unitIndex.get(player.unit_code)
+                : null;
+            const missionUnit = rosterUnit || unitFromDb;
+            const online = isPlayerOnline(player, now);
+            const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit, {
+                online,
+                statusLabel: online ? 'Online' : 'Offline'
+            });
+            showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
+            const unitId = btn.dataset.unitId;
+            if (unitId) {
+                focusUnitOnField(unitId);
+            }
+        });
+    });
+
+    if (selfBtn) {
+        const mePlayer = playersById.get(myId);
+        const rosterUnit = roster.find(u => u.owner_id === myId);
+        const unitFromDb = !rosterUnit && mePlayer?.unit_code
+            ? unitIndex.get(mePlayer.unit_code)
+            : null;
+        const missionUnit = rosterUnit || unitFromDb;
+        const avatarSrc = missionUnit?.img || missionUnit?.avatar || 'assets/units/default.png';
+        const displayName = mePlayer?.nickname || mePlayer?.user_id?.slice(0, 8) || 'Giocatore';
+        selfBtn.classList.remove('is-hidden');
+        selfBtn.dataset.playerId = myId;
+        selfBtn.innerHTML = `<img src="${avatarSrc}" alt="Avatar ${displayName}">`;
+        if (!selfBtn.dataset.bound) {
+            selfBtn.dataset.bound = '1';
+            selfBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const online = isPlayerOnline(mePlayer, now);
+                const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, missionUnit, {
+                    online,
+                    statusLabel: online ? 'Online' : 'Offline'
+                });
+                showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
+            });
+        }
+    }
+
+    if (handBtn && !handBtn.dataset.bound) {
+        handBtn.dataset.bound = '1';
+        handBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openHandOverlay();
+        });
+    }
+
+}
 
 // Mutatore con logging dettagliato
 export function addMorale(deltaPct) {
@@ -152,6 +421,7 @@ export function refreshFooterTracker() {
     if (killsAnomaloEl) killsAnomaloEl.textContent = String(kills.Anomalo ?? 0);
     if (killsMutaformaEl) killsMutaformaEl.textContent = String(kills.Mutaforma ?? 0);
     if (lossesEl) lossesEl.textContent = String(missionStats.losses ?? 0);
+    renderFooterAvatars();
 }
 
 export function initFooterListeners() {
@@ -172,5 +442,6 @@ export function initFooterListeners() {
             }
         });
     });
+    renderFooterAvatars();
 
 }

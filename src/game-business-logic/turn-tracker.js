@@ -24,8 +24,6 @@ let elHeaderTurnPlayer = null;
 let elPlayerAvatar = null;
 let elPhase = null;
 let elPhasePercent = null;
-let elPhaseBar = null;
-let elPhaseFill = null;
 let elFabDock = null;
 
 const SETUP_MOVE_LIMIT = 3;
@@ -116,8 +114,6 @@ function ensureTurnElements() {
   elPlayerAvatar = document.getElementById('turn-player-avatar');
   elPhase = document.getElementById('turn-phase');
   elPhasePercent = document.getElementById('turn-phase-percent');
-  elPhaseBar = document.querySelector('.turn-progress-bar');
-  elPhaseFill = document.getElementById('turn-phase-fill');
   elFabDock = document.querySelector('.fab-dock');
 }
 
@@ -312,14 +308,12 @@ export function renderTurnTracker() {
     };
     elPhase.textContent = phaseLabels[phase] ?? phase;
   }
-  if (elPhasePercent && elPhaseBar && elPhaseFill) {
+  if (elPhasePercent) {
     const safeTotal = Math.max(0, order.length);
     const progressPct = safeTotal
       ? Math.min(100, Math.round((phaseDoneByCount / safeTotal) * 100))
       : 0;
     elPhasePercent.textContent = `${progressPct}%`;
-    elPhaseBar.setAttribute('aria-valuenow', String(progressPct));
-    elPhaseFill.style.width = `${progressPct}%`;
   }
 
   if (elContainer) {

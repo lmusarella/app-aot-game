@@ -442,9 +442,13 @@
 .turn-progress {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 160px;
   flex: 1;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .turn-progress-meta {
@@ -466,24 +470,6 @@
 .turn-progress-percent {
   font-variant-numeric: tabular-nums;
   color: #fbbf24;
-}
-
-.turn-progress-bar {
-  position: relative;
-  width: 100%;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-
-.turn-progress-fill {
-  position: absolute;
-  inset: 0;
-  width: 0%;
-  background: linear-gradient(90deg, rgba(251, 191, 36, 0.9), rgba(34, 197, 94, 0.9));
-  border-radius: inherit;
-  transition: width 0.3s ease;
 }
 
 .turn-tracker.my-turn {

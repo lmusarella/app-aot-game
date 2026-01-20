@@ -6,7 +6,7 @@ import { showDrawnCard, closeAllFabs, drawCard } from '../view-components/fabs/f
 import { DB, GAME_STATE } from '../core/data.js';
 
 import { missionStatsBumpAttempt, missionStatsSetRound } from '../view-components/leftbar/missions.js';
-import { stopTimer, startTimer, renderPhaseLabel } from "../view-components/header/header.js";
+import { stopTimer, startTimer, renderPhaseLabel, refreshHeaderUI } from "../view-components/header/header.js";
 import { log } from "../view-components/leftbar/log.js";
 import showPhaseBanner from './effects/phaseBanner.js';
 import showWarningC from './effects/warningOverlayC.js';
@@ -423,6 +423,7 @@ export const TurnEngine = {
             isCommander: isCommander()
         });
         renderPhaseLabel();
+        refreshHeaderUI();
         if (isMultiplayer()) {
             const ts = GAME_STATE.turnState || {};
             if (Array.isArray(ts.order) && ts.order.length > 0) {
