@@ -483,9 +483,12 @@
 }
 
 .app-footer__credits {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-size: 9px;
   opacity: 0.55;
-  text-align: left;
+  text-align: right;
   white-space: nowrap;
   padding-right: 2px;
 }
@@ -512,6 +515,8 @@
   align-items: center;
   gap: 12px;
   justify-self: end;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .footer-action-btn {
@@ -543,6 +548,11 @@
 
 .footer-action-btn.is-hidden {
   display: none;
+}
+
+.footer-actions .app-footer__credits {
+  align-items: flex-end;
+  text-align: right;
 }
 
 .footer-companions {
@@ -1047,11 +1057,24 @@
  }
 
  /* Brand */
- .brand {
-   font-weight: 600;
-   font-size: 16px;
-   margin-right: 12px;
- }
+.brand-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-right: 12px;
+}
+
+.brand {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.brand-version {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
 
  /* Centro missione+timer */
  .center-box {

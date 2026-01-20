@@ -114,7 +114,18 @@ function showMessageBubble(wrapper, text) {
     setTimeout(() => bubble.remove(), 4000);
 }
 
-function setupMessageControls({ messageBtn, messageMenu, messageWrap }) {
+function showMessageOnCompanion(senderId, text, fallbackEl) {
+    if (!text) return;
+    const selector = senderId
+        ? `.footer-avatar-btn[data-player-id="${CSS.escape(senderId)}"]`
+        : null;
+    const target = selector ? document.querySelector(selector) : null;
+    const bubbleTarget = target || fallbackEl;
+    if (!bubbleTarget) return;
+    showMessageBubble(bubbleTarget, text);
+}
+
+function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, fallbackEl }) {
     if (!messageBtn) return;
     if (messageMenu) {
         const messages = [
@@ -143,7 +154,7 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap }) {
             if (!btn) return;
             const text = btn.dataset.message;
             messageMenu.hidden = true;
-            showMessageBubble(messageWrap, text);
+            showMessageOnCompanion(senderId, text, fallbackEl || messageWrap);
         });
         document.addEventListener('click', (e) => {
             if (!messageMenu.hidden && !e.target.closest('.footer-message-wrap')) {
@@ -163,7 +174,7 @@ export function renderFooterAvatars() {
     if (!container) return;
     const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
     const myId = APP_STATE.user?.id || null;
-    setupMessageControls({ messageBtn, messageMenu, messageWrap });
+    setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId: myId, fallbackEl: selfBtn });
     if (!players.length || !myId) {
         container.classList.add('is-hidden');
         container.innerHTML = '';
@@ -254,6 +265,7 @@ export function renderFooterAvatars() {
         const avatarSrc = missionUnit?.img || missionUnit?.avatar || 'assets/units/default.png';
         const displayName = mePlayer?.nickname || mePlayer?.user_id?.slice(0, 8) || 'Giocatore';
         selfBtn.classList.remove('is-hidden');
+        selfBtn.dataset.playerId = myId;
         selfBtn.innerHTML = `<img src="${avatarSrc}" alt="Avatar ${displayName}">`;
         if (!selfBtn.dataset.bound) {
             selfBtn.dataset.bound = '1';
