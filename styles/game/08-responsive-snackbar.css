@@ -511,8 +511,8 @@
 
 .footer-bars-card {
   display: grid;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 8px 10px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: linear-gradient(135deg, rgba(11, 15, 25, 0.92), rgba(20, 24, 35, 0.6));
@@ -806,7 +806,7 @@
 }
 
 .footer-bars--single .bar-row.mini {
-  min-height: 56px;
+  min-height: 44px;
 }
 
 .footer-bars--single .bar-row.mini .bar-track {
