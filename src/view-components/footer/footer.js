@@ -409,7 +409,12 @@ export function renderFooterAvatars() {
         const displayName = mePlayer?.nickname || mePlayer?.user_id?.slice(0, 8) || 'Giocatore';
         selfBtn.classList.remove('is-hidden');
         selfBtn.dataset.playerId = myId;
-        selfBtn.innerHTML = `<img src="${avatarSrc}" alt="Avatar ${displayName}">`;
+        selfBtn.innerHTML = `
+            <span class="footer-avatar-circle">
+                <img src="${avatarSrc}" alt="Avatar ${displayName}">
+            </span>
+            <span class="footer-avatar-name footer-self-name">${displayName}</span>
+        `;
         if (!selfBtn.dataset.bound) {
             selfBtn.dataset.bound = '1';
             selfBtn.addEventListener('click', (e) => {
