@@ -87,10 +87,16 @@ const DICE = (function() {
         this.renderer.setClearColor(0xffffff, 0); //color, alpha
 
         this.reinit(container);
-        $t.bind(container, 'resize', function() {
-            //todo: this doesn't work :(
-            this.reinit(elem.canvas);
-        });
+        if (window.ResizeObserver) {
+            this.resizeObserver = new ResizeObserver(() => {
+                this.reinit(container);
+            });
+            this.resizeObserver.observe(container);
+        } else {
+            window.addEventListener('resize', () => {
+                this.reinit(container);
+            });
+        }
 
         this.world.gravity.set(0, 0, -9.8 * 800);
         this.world.broadphase = new CANNON.NaiveBroadphase();
@@ -858,4 +864,3 @@ const DICE = (function() {
 
     return that;
 }());
-
