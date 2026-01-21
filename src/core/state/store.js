@@ -67,6 +67,43 @@ export const GAME_STATE = {
     setupMoves: {}
 };
 
+export function populateGameStateFromDB({ resetMissionState = true } = {}) {
+    if (resetMissionState) {
+        Object.assign(GAME_STATE.missionState, buildDefaultMissionState());
+    }
+    GAME_STATE.xpMoraleState = structuredClone(DB.SETTINGS?.xpMoralDefault ?? {});
+
+    const allies = Array.isArray(DB.ALLIES) ? DB.ALLIES : [];
+    const giants = Array.isArray(DB.GIANTS) ? DB.GIANTS : [];
+    const events = Array.isArray(DB.EVENTS) ? DB.EVENTS : [];
+    const consumable = Array.isArray(DB.CONSUMABLE) ? DB.CONSUMABLE : [];
+
+    GAME_STATE.alliesPool.length = 0;
+    GAME_STATE.alliesPool.push(...allies.filter(unit => unit.role !== "wall").map(u => ({
+        ...u,
+        currHp: u.hp,
+        template: true,
+        dead: false
+    })));
+
+    GAME_STATE.giantsPool.length = 0;
+    GAME_STATE.giantsPool.push(...giants.map(u => ({
+        role: "enemy",
+        ...u,
+        currHp: u.hp,
+        template: true
+    })));
+
+    GAME_STATE.walls.length = 0;
+    GAME_STATE.walls.push(...allies.filter(unit => unit.role === "wall").map(u => ({
+        ...u,
+        currHp: u.hp
+    })));
+
+    GAME_STATE.decks.event.draw = structuredClone(events);
+    GAME_STATE.decks.consumable.draw = structuredClone(consumable);
+}
+
 export function resetInMemoryGameState() {
     if (!DB.ALLIES || !DB.GIANTS || !DB.EVENTS || !DB.CONSUMABLE || !DB.SETTINGS) {
         console.warn('[resetInMemoryGameState] DB non pronto per il reset.');
@@ -77,7 +114,7 @@ export function resetInMemoryGameState() {
     GIANT_ENGAGEMENT.clear();
     UNIT_SELECTED.selectedUnitId = null;
 
-    Object.assign(GAME_STATE.missionState, buildDefaultMissionState());
+    populateGameStateFromDB();
 
     GAME_STATE.missionStats = {};
     GAME_STATE.unitMods = {};
@@ -85,40 +122,13 @@ export function resetInMemoryGameState() {
     GAME_STATE.spawns.length = 0;
     GAME_STATE.hand.length = 0;
 
-    GAME_STATE.decks.event.draw = structuredClone(DB.EVENTS);
     GAME_STATE.decks.event.discard = [];
     GAME_STATE.decks.event.removed = [];
-    GAME_STATE.decks.consumable.draw = structuredClone(DB.CONSUMABLE);
     GAME_STATE.decks.consumable.discard = [];
     GAME_STATE.decks.consumable.removed = [];
 
-    GAME_STATE.xpMoraleState = structuredClone(DB.SETTINGS.xpMoralDefault);
-
-    GAME_STATE.alliesPool.length = 0;
-    GAME_STATE.alliesPool.push(...DB.ALLIES.filter(unit => unit.role !== "wall").map(u => ({
-        ...u,
-        currHp: u.hp,
-        template: true,
-        dead: false
-    })));
-
     GAME_STATE.alliesRoster.length = 0;
-
-    GAME_STATE.giantsPool.length = 0;
-    GAME_STATE.giantsPool.push(...DB.GIANTS.map(u => ({
-        role: "enemy",
-        ...u,
-        currHp: u.hp,
-        template: true
-    })));
-
     GAME_STATE.giantsRoster.length = 0;
-
-    GAME_STATE.walls.length = 0;
-    GAME_STATE.walls.push(...DB.ALLIES.filter(unit => unit.role === "wall").map(u => ({
-        ...u,
-        currHp: u.hp
-    })));
 
     GAME_STATE.logs = [];
     GAME_STATE.events = [];

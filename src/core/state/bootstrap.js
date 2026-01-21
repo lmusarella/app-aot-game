@@ -1,10 +1,22 @@
-import { DB, GAME_STATE, buildDefaultMissionState } from './store.js';
+import { DB, GAME_STATE, populateGameStateFromDB } from './store.js';
 
 // utility per caricare un json
 async function loadJSON(url) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Errore fetch ${url}: ${res.status}`);
     return res.json();
+}
+
+function ensureDbDefaults() {
+    DB.ALLIES ??= [];
+    DB.GIANTS ??= [];
+    DB.EVENTS ??= [];
+    DB.CONSUMABLE ??= [];
+    DB.MISSIONS ??= [];
+    DB.SETTINGS ??= {};
+    DB.SETTINGS.missionDefaults ??= {};
+    DB.SETTINGS.xpMoralDefault ??= {};
+    DB.SETTINGS.gridSettings ??= {};
 }
 
 export async function bootDataApplication() {
@@ -37,23 +49,20 @@ export async function bootDataApplication() {
         DB.CONSUMABLE = consumable;
         DB.SETTINGS = settings;
 
+        ensureDbDefaults();
         console.log('[boot] DB inizializzato:', DB);
         populateGameStateData();
         return DB;
     } catch (e) {
         console.warn('Caricamento JSON fallito, uso i fallback locali:', e);
+        ensureDbDefaults();
         return DB;
     }
 }
 
 function populateGameStateData() {
-    Object.assign(GAME_STATE.missionState, buildDefaultMissionState());
-    GAME_STATE.xpMoraleState = structuredClone(DB.SETTINGS.xpMoralDefault);
-    GAME_STATE.walls = DB.ALLIES.filter(unit => unit.role === "wall").map(u => ({ ...u, currHp: u.hp }));
-    GAME_STATE.alliesPool = DB.ALLIES.filter(unit => unit.role !== "wall").map(u => ({ ...u, currHp: u.hp, template: true, dead: false }));
-    GAME_STATE.giantsPool = DB.GIANTS.map(u => ({ role: "enemy", ...u, currHp: u.hp, template: true }));
-    GAME_STATE.decks.event.draw = structuredClone(DB.EVENTS);
-    GAME_STATE.decks.consumable.draw = structuredClone(DB.CONSUMABLE);
+    ensureDbDefaults();
+    populateGameStateFromDB({ resetMissionState: true });
     console.log('init gamestate', GAME_STATE);
 }
 
