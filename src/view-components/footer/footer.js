@@ -8,6 +8,9 @@ import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
 import { focusUnitOnField } from '../grid/grid.js';
 import { showTooltipAt } from '../../ui-components/ui-helpers.js';
 import { openHandOverlay } from '../fabs/fab/hand-overlay.js';
+import { showSnackBar } from '../../ui-components/snackbar.js';
+import { getTurnInfo } from '../../game-business-logic/turn-tracker.js';
+import { pushGameEvent } from '../../game-business-logic/event-manager.js';
 
 function getFooterElements() {
     return {
@@ -24,6 +27,7 @@ function getFooterElements() {
 }
 
 export const stack_screen = [];
+const pendingFooterMessages = [];
 
 function getRoleLabel(role) {
     if (role === 'commander') return 'Comandante';
@@ -121,11 +125,71 @@ function showMessageOnCompanion(senderId, text, fallbackEl) {
         : null;
     const target = selector ? document.querySelector(selector) : null;
     const bubbleTarget = target || fallbackEl;
-    if (!bubbleTarget) return;
+    if (!bubbleTarget) return false;
     showMessageBubble(bubbleTarget, text);
+    return true;
 }
 
-function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, fallbackEl }) {
+function queueFooterMessage(senderId, text) {
+    if (!senderId || !text) return;
+    pendingFooterMessages.push({ senderId, text, attempts: 0 });
+    if (pendingFooterMessages.length > 20) {
+        pendingFooterMessages.shift();
+    }
+}
+
+function flushFooterMessages(fallbackEl) {
+    if (!pendingFooterMessages.length) return;
+    const remaining = [];
+    pendingFooterMessages.forEach(({ senderId, text, attempts }) => {
+        const shown = showMessageOnCompanion(senderId, text, fallbackEl);
+        if (!shown && attempts < 4) {
+            remaining.push({ senderId, text, attempts: attempts + 1 });
+        }
+    });
+    pendingFooterMessages.length = 0;
+    pendingFooterMessages.push(...remaining);
+    if (pendingFooterMessages.length) {
+        setTimeout(() => flushFooterMessages(fallbackEl), 250);
+    }
+}
+
+function canSendFooterMessage() {
+    if (APP_STATE.gameMode !== 'multiplayer') return true;
+    return getTurnInfo().isMyTurn;
+}
+
+function updateMessageButtonState(messageBtn, messageMenu) {
+    if (!messageBtn) return;
+    const allowed = canSendFooterMessage();
+    messageBtn.disabled = !allowed;
+    if (!allowed && messageMenu) {
+        messageMenu.hidden = true;
+        delete messageMenu.dataset.open;
+    }
+    messageBtn.title = allowed ? 'Messaggi' : 'Messaggi (solo nel tuo turno)';
+}
+
+function recordFooterMessage(senderId, text) {
+    if (!senderId || !text) return false;
+    pushGameEvent('footer_message', { senderId, text });
+    scheduleSave('footer-message', { force: true });
+    return true;
+}
+
+export function showFooterMessageFromEvent({ senderId, text } = {}) {
+    if (!senderId || !text) return;
+    queueFooterMessage(senderId, text);
+    const container = document.querySelector('.footer-avatars');
+    if (!container || container.childElementCount === 0) {
+        renderFooterAvatars();
+        return;
+    }
+    const fallbackEl = document.querySelector('.footer-self-btn') || document.querySelector('.footer-message-wrap');
+    flushFooterMessages(fallbackEl);
+}
+
+function setupMessageControls({ messageBtn, messageMenu, messageWrap, getSenderId, fallbackEl }) {
     if (!messageBtn) return;
     if (messageMenu) {
         const messages = [
@@ -136,6 +200,7 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, 
             'Bella mossa!'
         ];
         buildMessageMenu(messageMenu, messages);
+        messageMenu.hidden = true;
     }
 
     if (!messageBtn.dataset.bound) {
@@ -143,7 +208,19 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, 
         messageBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!messageMenu) return;
-            messageMenu.hidden = !messageMenu.hidden;
+            if (!canSendFooterMessage()) {
+                showSnackBar('Puoi inviare messaggi solo durante il tuo turno.', {}, 'warning');
+                messageMenu.hidden = true;
+                delete messageMenu.dataset.open;
+                return;
+            }
+            const nextHidden = !messageMenu.hidden;
+            messageMenu.hidden = nextHidden;
+            if (nextHidden) {
+                delete messageMenu.dataset.open;
+            } else {
+                messageMenu.dataset.open = '1';
+            }
         });
     }
 
@@ -154,11 +231,23 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId, 
             if (!btn) return;
             const text = btn.dataset.message;
             messageMenu.hidden = true;
+            delete messageMenu.dataset.open;
+            if (!canSendFooterMessage()) {
+                showSnackBar('Puoi inviare messaggi solo durante il tuo turno.', {}, 'warning');
+                return;
+            }
+            const senderId = typeof getSenderId === 'function' ? getSenderId() : null;
+            if (!senderId) {
+                showSnackBar('Impossibile inviare il messaggio: utente non disponibile.', {}, 'warning');
+                return;
+            }
+            recordFooterMessage(senderId, text);
             showMessageOnCompanion(senderId, text, fallbackEl || messageWrap);
         });
         document.addEventListener('click', (e) => {
             if (!messageMenu.hidden && !e.target.closest('.footer-message-wrap')) {
                 messageMenu.hidden = true;
+                delete messageMenu.dataset.open;
             }
         });
     }
@@ -174,7 +263,17 @@ export function renderFooterAvatars() {
     if (!container) return;
     const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
     const myId = APP_STATE.user?.id || null;
-    setupMessageControls({ messageBtn, messageMenu, messageWrap, senderId: myId, fallbackEl: selfBtn });
+    if (messageMenu && !messageMenu.dataset.open) {
+        messageMenu.hidden = true;
+    }
+    setupMessageControls({
+        messageBtn,
+        messageMenu,
+        messageWrap,
+        getSenderId: () => APP_STATE.user?.id || null,
+        fallbackEl: selfBtn
+    });
+    updateMessageButtonState(messageBtn, messageMenu);
     if (!players.length || !myId) {
         container.classList.add('is-hidden');
         container.innerHTML = '';
@@ -288,7 +387,7 @@ export function renderFooterAvatars() {
             openHandOverlay();
         });
     }
-
+    flushFooterMessages(selfBtn || messageWrap);
 }
 
 // Mutatore con logging dettagliato

@@ -505,8 +505,18 @@
 }
 
 .footer-bars--single {
-  grid-template-columns: repeat(2, minmax(240px, 1fr));
-  width: min(760px, 86vw);
+  grid-template-columns: minmax(240px, 1fr);
+  width: min(520px, 86vw);
+}
+
+.footer-bars-card {
+  display: grid;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, rgba(11, 15, 25, 0.92), rgba(20, 24, 35, 0.6));
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
 }
 
 .footer-actions {
@@ -519,6 +529,12 @@
   justify-content: flex-end;
 }
 
+.footer-actions__buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .footer-action-btn {
   width: 36px;
   height: 36px;
@@ -526,11 +542,19 @@
   border: 1px solid rgba(148, 163, 184, 0.35);
   background: rgba(15, 17, 24, 0.9);
   color: #f8fafc;
+  position: relative;
   display: grid;
   place-items: center;
   cursor: pointer;
   padding: 0;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.footer-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .footer-action-btn img {
@@ -593,6 +617,7 @@
   color: inherit;
   padding: 0;
   cursor: pointer;
+  position: relative;
   min-width: 54px;
 }
 
@@ -656,6 +681,10 @@
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
   min-width: 180px;
   z-index: 10000;
+}
+
+.footer-message-menu[hidden] {
+  display: none;
 }
 
 .footer-message-menu button {
@@ -747,11 +776,11 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: linear-gradient(135deg, rgba(11, 15, 25, 0.92), rgba(20, 24, 35, 0.6));
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 .footer-bars .bar-head {
@@ -774,7 +803,7 @@
 }
 
 .footer-bars--single .bar-row.mini {
-  min-height: 64px;
+  min-height: 56px;
 }
 
 .footer-bars--single .bar-row.mini .bar-track {
@@ -1000,6 +1029,11 @@
     justify-self: center;
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .footer-actions__buttons {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .footer-companions {
