@@ -66,21 +66,9 @@ function getTurnRemainingSec(turnState) {
 
 function renderTurnTimer() {
   ensureTurnElements();
-  if (APP_STATE.gameMode === 'multiplayer' && DISABLE_TURN_TIMER_MP) {
-    if (elTimer) {
-      elTimer.textContent = '—';
-    }
-    return;
-  }
-  if (APP_STATE.gameMode !== 'multiplayer' && DISABLE_TURN_TIMER_SP) {
-    if (elTimer) {
-      elTimer.textContent = '—';
-    }
-    return;
-  }
-  remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
+  const round = GAME_STATE.turnEngine?.round ?? 0;
   if (elTimer) {
-    elTimer.textContent = `${remainingSec}s`;
+    elTimer.textContent = round > 0 ? `${round}° Round` : '—';
   }
 }
 

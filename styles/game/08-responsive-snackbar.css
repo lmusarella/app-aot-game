@@ -480,7 +480,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  align-items: flex-start;
+  align-items: flex-end;
+  justify-self: end;
 }
 
 .app-footer__credits {
@@ -501,17 +502,17 @@
 .footer-bars {
   grid-column: 2;
   display: grid;
-  grid-template-columns: minmax(280px, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   justify-items: stretch;
   gap: 10px;
-  width: min(640px, 96vw);
+  width: 100%;
   justify-self: center;
 }
 
 .footer-bars--single {
-  grid-template-columns: minmax(280px, 1fr);
-  width: min(600px, 90vw);
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
 }
 
 .footer-bars-card {
@@ -530,7 +531,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  justify-self: end;
+  justify-self: start;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
