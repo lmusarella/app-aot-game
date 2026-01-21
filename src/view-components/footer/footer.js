@@ -118,6 +118,49 @@ function showMessageBubble(wrapper, text) {
     setTimeout(() => bubble.remove(), 4000);
 }
 
+function collectActiveFooterBubbles(container, selfBtn, messageWrap) {
+    const bubbles = [];
+    if (container) {
+        container.querySelectorAll('.footer-message-bubble').forEach(bubble => {
+            const playerBtn = bubble.closest('.footer-avatar-btn');
+            const playerId = playerBtn?.dataset.playerId;
+            if (playerId) {
+                bubbles.push({ type: 'player', id: playerId, bubble });
+            }
+        });
+    }
+    if (selfBtn) {
+        const bubble = selfBtn.querySelector('.footer-message-bubble');
+        if (bubble) bubbles.push({ type: 'self', bubble });
+    }
+    if (messageWrap) {
+        const bubble = messageWrap.querySelector('.footer-message-bubble');
+        if (bubble) bubbles.push({ type: 'message', bubble });
+    }
+    bubbles.forEach(({ bubble }) => bubble.remove());
+    return bubbles;
+}
+
+function restoreActiveFooterBubbles(bubbles, container, selfBtn, messageWrap) {
+    if (!bubbles?.length) return;
+    bubbles.forEach(({ type, id, bubble }) => {
+        if (type === 'player') {
+            const target = container?.querySelector(
+                `.footer-avatar-btn[data-player-id="${CSS.escape(id)}"]`
+            );
+            if (target) target.appendChild(bubble);
+            return;
+        }
+        if (type === 'self' && selfBtn) {
+            selfBtn.appendChild(bubble);
+            return;
+        }
+        if (type === 'message' && messageWrap) {
+            messageWrap.appendChild(bubble);
+        }
+    });
+}
+
 function showMessageOnCompanion(senderId, text, fallbackEl) {
     if (!text) return;
     const selector = senderId
@@ -261,6 +304,7 @@ export function renderFooterAvatars() {
     const messageWrap = document.querySelector('.footer-message-wrap');
     const messageMenu = document.querySelector('.footer-message-menu');
     if (!container) return;
+    const activeBubbles = collectActiveFooterBubbles(container, selfBtn, messageWrap);
     const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
     const myId = APP_STATE.user?.id || null;
     if (messageMenu && !messageMenu.dataset.open) {
@@ -387,6 +431,7 @@ export function renderFooterAvatars() {
             openHandOverlay();
         });
     }
+    restoreActiveFooterBubbles(activeBubbles, container, selfBtn, messageWrap);
     flushFooterMessages(selfBtn || messageWrap);
 }
 
