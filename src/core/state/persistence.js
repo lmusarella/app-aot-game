@@ -4,42 +4,72 @@ import { GAME_STATE } from './store.js';
 const SAVE_VERSION = 1;
 const SAVE_KEY = 'aot-save-v' + SAVE_VERSION;
 
+let cachedSnapshot = null;
+const dirtySections = new Set(['all']);
+
+export function markGameStateDirty(sections = 'all') {
+    const list = Array.isArray(sections) ? sections : [sections];
+    if (list.includes('all')) {
+        dirtySections.clear();
+        dirtySections.add('all');
+        return;
+    }
+    list.filter(Boolean).forEach((section) => dirtySections.add(section));
+}
+
+function resolveSection(key, builder) {
+    if (!cachedSnapshot || dirtySections.has('all') || dirtySections.has(key)) {
+        return builder();
+    }
+    return cachedSnapshot[key];
+}
+
 export function snapshot() {
-    return {
+    const turnEngineState = {
+        phase: GAME_STATE.turnEngine?.phase ?? 'idle',
+        round: GAME_STATE.turnEngine?.round ?? 0,
+        teamCreated: GAME_STATE.turnEngine?.teamCreated ?? false,
+        eventCards: GAME_STATE.turnEngine?.eventCards ?? 0,
+        squadNumber: GAME_STATE.turnEngine?.squadNumber ?? 0
+    };
+    const newSnapshot = {
         ver: SAVE_VERSION,
         savedAt: Date.now(),
         stateVersion: GAME_STATE.stateVersion ?? 0,
         stateUpdatedAt: GAME_STATE.stateUpdatedAt ?? null,
         // campo - griglia
-        spawns: structuredClone(GAME_STATE.spawns),
+        spawns: resolveSection('spawns', () => structuredClone(GAME_STATE.spawns)),
         // panchine/pool
-        alliesPool: structuredClone(GAME_STATE.alliesPool),
-        alliesRoster: structuredClone(GAME_STATE.alliesRoster),
-        giantsPool: structuredClone(GAME_STATE.giantsPool),
-        giantsRoster: structuredClone(GAME_STATE.giantsRoster),
-        walls: structuredClone(GAME_STATE.walls), // base walls (w1,w2,w3)
+        alliesPool: resolveSection('alliesPool', () => structuredClone(GAME_STATE.alliesPool)),
+        alliesRoster: resolveSection('alliesRoster', () => structuredClone(GAME_STATE.alliesRoster)),
+        giantsPool: resolveSection('giantsPool', () => structuredClone(GAME_STATE.giantsPool)),
+        giantsRoster: resolveSection('giantsRoster', () => structuredClone(GAME_STATE.giantsRoster)),
+        walls: resolveSection('walls', () => structuredClone(GAME_STATE.walls)), // base walls (w1,w2,w3)
         //mano
-        hand: structuredClone(GAME_STATE.hand),
+        hand: resolveSection('hand', () => structuredClone(GAME_STATE.hand)),
         // mazzi
-        decks: structuredClone(GAME_STATE.decks),
+        decks: resolveSection('decks', () => structuredClone(GAME_STATE.decks)),
         // UI/stati
-        xpMoraleState: structuredClone(GAME_STATE.xpMoraleState),
-        modRolls: structuredClone(GAME_STATE.modRolls),
-        missionStats: structuredClone(GAME_STATE.missionStats),
+        xpMoraleState: resolveSection('xpMoraleState', () => structuredClone(GAME_STATE.xpMoraleState)),
+        modRolls: resolveSection('modRolls', () => structuredClone(GAME_STATE.modRolls)),
+        missionStats: resolveSection('missionStats', () => structuredClone(GAME_STATE.missionStats)),
         // log
-        logs: structuredClone(GAME_STATE.logs),
-        events: structuredClone(GAME_STATE.events),
-        turnState: structuredClone(GAME_STATE.turnState),
+        logs: resolveSection('logs', () => structuredClone(GAME_STATE.logs)),
+        events: resolveSection('events', () => structuredClone(GAME_STATE.events)),
+        turnState: resolveSection('turnState', () => structuredClone(GAME_STATE.turnState)),
         //turnengine
-        turnEngine: GAME_STATE.turnEngine,
-        setupMoves: structuredClone(GAME_STATE.setupMoves ?? {}),
-        missionState: (() => {
+        turnEngineState: resolveSection('turnEngineState', () => turnEngineState),
+        setupMoves: resolveSection('setupMoves', () => structuredClone(GAME_STATE.setupMoves ?? {})),
+        missionState: resolveSection('missionState', () => {
             const m = structuredClone(GAME_STATE.missionState);
             // leggero “sanitize”: niente intervalId/oggetti runtime
             delete m.intervalId;
             return m;
-        })()
+        })
     };
+    cachedSnapshot = newSnapshot;
+    dirtySections.clear();
+    return newSnapshot;
 }
 
 /** Reset totale del gioco: cancella storage e ripristina i default */
@@ -90,15 +120,18 @@ export function restore(save) {
     Object.assign(GAME_STATE.xpMoraleState, save.xpMoraleState || {});
     Object.assign(GAME_STATE.modRolls, save.modRolls || {});
     Object.assign(GAME_STATE.missionState, save.missionState || {});
+    const savedTurnEngine = save.turnEngineState || save.turnEngine || {};
     if (typeof GAME_STATE.turnEngine?.init === 'function') {
-        Object.assign(GAME_STATE.turnEngine, save.turnEngine || {});
+        Object.assign(GAME_STATE.turnEngine, savedTurnEngine);
     } else {
-        GAME_STATE.turnEngine = save.turnEngine || {};
+        GAME_STATE.turnEngine = savedTurnEngine;
     }
     GAME_STATE.setupMoves = save.setupMoves || {};
     Object.assign(GAME_STATE.missionStats, save.missionStats || {});
     GAME_STATE.missionState.intervalId = null; // sempre nullo a cold start
-
+    cachedSnapshot = null;
+    dirtySections.clear();
+    dirtySections.add('all');
 
     return true;
 }

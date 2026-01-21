@@ -1,7 +1,7 @@
 // game/game-sync.js
 import { supabase } from '../core/supabase/supabaseClient.js'
 import { APP_STATE, GAME_STATE, gameAPI, snapshot } from '../core/app-state.js'
-import { loadLocalGameState, saveLocalGameState } from '../core/data.js'
+import { loadLocalGameState, saveLocalGameState, markGameStateDirty } from '../core/data.js'
 import { getTurnInfo, initTurnTracker, startTurnCountdown, renderTurnTracker } from './turn-tracker.js';
 import { initEventManager } from './event-manager.js';
 import { seedWallRows } from './entity/entity.js';
@@ -18,9 +18,11 @@ export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
   APP_STATE.roomPlayers = Array.isArray(allPlayers) ? allPlayers : [];
   APP_STATE.gameMode = 'multiplayer'
 
+  const userId = APP_STATE.user?.id ?? null;
   const isLeader =
-    room.leader_id === APP_STATE.user.id ||
-    room.created_by === APP_STATE.user.id
+    !!userId &&
+    (room.leader_id === userId ||
+      room.created_by === userId)
 
   APP_STATE.isGameDriver = isLeader
 
@@ -93,7 +95,26 @@ const pendingSaveOptions = {
   force: false
 };
 
+const SAVE_SECTION_MAP = {
+  'mission-timer': ['missionState'],
+  'mod': ['modRolls'],
+  'mission': ['missionState', 'missionStats'],
+  'log': ['logs'],
+  'fab': ['hand', 'decks', 'alliesPool', 'alliesRoster', 'giantsPool', 'giantsRoster'],
+  'grid': ['spawns', 'alliesRoster', 'giantsRoster', 'walls'],
+  'setup-moves': ['setupMoves', 'turnState'],
+  'move-phase': ['spawns', 'turnState'],
+  'phase-change': ['turnEngineState', 'turnState', 'missionState'],
+  'footer-message': ['logs'],
+  'footer': ['logs'],
+  'turn-timer': ['turnState'],
+  'phase-turn': ['turnState'],
+  'entity': ['spawns', 'alliesRoster', 'giantsRoster', 'giantsPool', 'alliesPool', 'walls', 'logs']
+};
+
 export const scheduleSave = (arg, opts = {}) => {
+  const sections = SAVE_SECTION_MAP[arg] ?? 'all';
+  markGameStateDirty(sections);
   if (APP_STATE.gameMode === 'single') {
     debouncedSaveLocalState();
     return;
@@ -119,6 +140,11 @@ function saveLocalState() {
 async function pushGameState() {
   if (APP_STATE.gameMode === 'single') return;
   if (!APP_STATE.roomId) return;
+  const userId = APP_STATE.user?.id ?? null;
+  if (!userId) {
+    console.warn('[game-sync] pushGameState skipped: user missing');
+    return;
+  }
   const { force } = pendingSaveOptions;
   pendingSaveOptions.force = false;
   console.info('[game-sync] pushGameState start', {
@@ -158,7 +184,7 @@ async function pushGameState() {
     .update({
       state_json: newState,
       updated_at: new Date().toISOString(),
-      updated_by: APP_STATE.user.id
+      updated_by: userId
     })
     .eq('room_id', APP_STATE.roomId)
 
