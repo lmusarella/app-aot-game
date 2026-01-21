@@ -27,6 +27,7 @@ function getFooterElements() {
 }
 
 export const stack_screen = [];
+const pendingFooterMessages = [];
 
 function getRoleLabel(role) {
     if (role === 'commander') return 'Comandante';
@@ -129,6 +130,22 @@ function showMessageOnCompanion(senderId, text, fallbackEl) {
     return true;
 }
 
+function queueFooterMessage(senderId, text) {
+    if (!senderId || !text) return;
+    pendingFooterMessages.push({ senderId, text });
+    if (pendingFooterMessages.length > 20) {
+        pendingFooterMessages.shift();
+    }
+}
+
+function flushFooterMessages(fallbackEl) {
+    if (!pendingFooterMessages.length) return;
+    const messages = pendingFooterMessages.splice(0, pendingFooterMessages.length);
+    messages.forEach(({ senderId, text }) => {
+        showMessageOnCompanion(senderId, text, fallbackEl);
+    });
+}
+
 function canSendFooterMessage() {
     if (APP_STATE.gameMode !== 'multiplayer') return true;
     return getTurnInfo().isMyTurn;
@@ -153,14 +170,8 @@ function recordFooterMessage(senderId, text) {
 
 export function showFooterMessageFromEvent({ senderId, text } = {}) {
     if (!senderId || !text) return;
-    const fallbackEl = document.querySelector('.footer-self-btn') || document.querySelector('.footer-message-wrap');
-    const attemptShow = (retries = 0) => {
-        const shown = showMessageOnCompanion(senderId, text, fallbackEl);
-        if (shown || retries <= 0) return;
-        renderFooterAvatars();
-        setTimeout(() => attemptShow(retries - 1), 200);
-    };
-    attemptShow(3);
+    queueFooterMessage(senderId, text);
+    renderFooterAvatars();
 }
 
 function setupMessageControls({ messageBtn, messageMenu, messageWrap, getSenderId, fallbackEl }) {
@@ -352,7 +363,7 @@ export function renderFooterAvatars() {
             openHandOverlay();
         });
     }
-
+    flushFooterMessages(selfBtn || messageWrap);
 }
 
 // Mutatore con logging dettagliato
