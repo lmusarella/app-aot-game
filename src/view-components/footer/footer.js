@@ -132,7 +132,7 @@ function showMessageOnCompanion(senderId, text, fallbackEl) {
 
 function queueFooterMessage(senderId, text) {
     if (!senderId || !text) return;
-    pendingFooterMessages.push({ senderId, text });
+    pendingFooterMessages.push({ senderId, text, attempts: 0 });
     if (pendingFooterMessages.length > 20) {
         pendingFooterMessages.shift();
     }
@@ -140,10 +140,18 @@ function queueFooterMessage(senderId, text) {
 
 function flushFooterMessages(fallbackEl) {
     if (!pendingFooterMessages.length) return;
-    const messages = pendingFooterMessages.splice(0, pendingFooterMessages.length);
-    messages.forEach(({ senderId, text }) => {
-        showMessageOnCompanion(senderId, text, fallbackEl);
+    const remaining = [];
+    pendingFooterMessages.forEach(({ senderId, text, attempts }) => {
+        const shown = showMessageOnCompanion(senderId, text, fallbackEl);
+        if (!shown && attempts < 4) {
+            remaining.push({ senderId, text, attempts: attempts + 1 });
+        }
     });
+    pendingFooterMessages.length = 0;
+    pendingFooterMessages.push(...remaining);
+    if (pendingFooterMessages.length) {
+        setTimeout(() => flushFooterMessages(fallbackEl), 250);
+    }
 }
 
 function canSendFooterMessage() {
@@ -157,6 +165,7 @@ function updateMessageButtonState(messageBtn, messageMenu) {
     messageBtn.disabled = !allowed;
     if (!allowed && messageMenu) {
         messageMenu.hidden = true;
+        delete messageMenu.dataset.open;
     }
     messageBtn.title = allowed ? 'Messaggi' : 'Messaggi (solo nel tuo turno)';
 }
@@ -171,7 +180,13 @@ function recordFooterMessage(senderId, text) {
 export function showFooterMessageFromEvent({ senderId, text } = {}) {
     if (!senderId || !text) return;
     queueFooterMessage(senderId, text);
-    renderFooterAvatars();
+    const container = document.querySelector('.footer-avatars');
+    if (!container || container.childElementCount === 0) {
+        renderFooterAvatars();
+        return;
+    }
+    const fallbackEl = document.querySelector('.footer-self-btn') || document.querySelector('.footer-message-wrap');
+    flushFooterMessages(fallbackEl);
 }
 
 function setupMessageControls({ messageBtn, messageMenu, messageWrap, getSenderId, fallbackEl }) {
@@ -196,9 +211,16 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, getSenderI
             if (!canSendFooterMessage()) {
                 showSnackBar('Puoi inviare messaggi solo durante il tuo turno.', {}, 'warning');
                 messageMenu.hidden = true;
+                delete messageMenu.dataset.open;
                 return;
             }
-            messageMenu.hidden = !messageMenu.hidden;
+            const nextHidden = !messageMenu.hidden;
+            messageMenu.hidden = nextHidden;
+            if (nextHidden) {
+                delete messageMenu.dataset.open;
+            } else {
+                messageMenu.dataset.open = '1';
+            }
         });
     }
 
@@ -209,6 +231,7 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, getSenderI
             if (!btn) return;
             const text = btn.dataset.message;
             messageMenu.hidden = true;
+            delete messageMenu.dataset.open;
             if (!canSendFooterMessage()) {
                 showSnackBar('Puoi inviare messaggi solo durante il tuo turno.', {}, 'warning');
                 return;
@@ -224,6 +247,7 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, getSenderI
         document.addEventListener('click', (e) => {
             if (!messageMenu.hidden && !e.target.closest('.footer-message-wrap')) {
                 messageMenu.hidden = true;
+                delete messageMenu.dataset.open;
             }
         });
     }
@@ -239,7 +263,7 @@ export function renderFooterAvatars() {
     if (!container) return;
     const players = Array.isArray(APP_STATE.roomPlayers) ? APP_STATE.roomPlayers : [];
     const myId = APP_STATE.user?.id || null;
-    if (messageMenu) {
+    if (messageMenu && !messageMenu.dataset.open) {
         messageMenu.hidden = true;
     }
     setupMessageControls({
