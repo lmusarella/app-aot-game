@@ -4,7 +4,7 @@
    left: 0;
    right: 0;
    bottom: 0;
-   height: var(--footer-h);
+   min-height: var(--footer-h);
    z-index: 99998;
    background: linear-gradient(180deg, #0b0d14, #090b12);
    border-top: 1px solid #1f2230;
@@ -12,7 +12,7 @@
    align-items: center;
    justify-content: center;
    gap: 12px;
-   padding: 0 12px;
+   padding: 6px 12px;
    backdrop-filter: blur(6px) saturate(120%);
    pointer-events: auto;
  }
