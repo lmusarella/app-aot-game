@@ -5,6 +5,7 @@ export {
     DB,
     GAME_STATE,
     buildDefaultMissionState,
+    populateGameStateFromDB,
     resetInMemoryGameState,
     rebuildUnitIndex
 } from './state/store.js';
@@ -20,5 +21,6 @@ export {
     restore,
     saveLocalGameState,
     loadLocalGameState,
-    getLastSaveInfo
+    getLastSaveInfo,
+    markGameStateDirty
 } from './state/persistence.js';

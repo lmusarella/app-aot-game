@@ -1,4 +1,4 @@
-import { DB, GAME_STATE, buildDefaultMissionState } from './store.js';
+import { DB, GAME_STATE, populateGameStateFromDB } from './store.js';
 
 // utility per caricare un json
 async function loadJSON(url) {
@@ -62,13 +62,7 @@ export async function bootDataApplication() {
 
 function populateGameStateData() {
     ensureDbDefaults();
-    Object.assign(GAME_STATE.missionState, buildDefaultMissionState());
-    GAME_STATE.xpMoraleState = structuredClone(DB.SETTINGS.xpMoralDefault);
-    GAME_STATE.walls = DB.ALLIES.filter(unit => unit.role === "wall").map(u => ({ ...u, currHp: u.hp }));
-    GAME_STATE.alliesPool = DB.ALLIES.filter(unit => unit.role !== "wall").map(u => ({ ...u, currHp: u.hp, template: true, dead: false }));
-    GAME_STATE.giantsPool = DB.GIANTS.map(u => ({ role: "enemy", ...u, currHp: u.hp, template: true }));
-    GAME_STATE.decks.event.draw = structuredClone(DB.EVENTS);
-    GAME_STATE.decks.consumable.draw = structuredClone(DB.CONSUMABLE);
+    populateGameStateFromDB({ resetMissionState: true });
     console.log('init gamestate', GAME_STATE);
 }
 
