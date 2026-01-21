@@ -502,6 +502,7 @@
   justify-items: stretch;
   gap: 10px;
   width: min(560px, 96vw);
+  justify-self: center;
 }
 
 .footer-bars--single {
@@ -511,6 +512,7 @@
 
 .footer-bars-card {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   padding: 8px 10px;
   border-radius: 16px;
@@ -778,7 +780,7 @@
 .footer-bars--tracker .bar-row.mini {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   padding: 0;
   border-radius: 0;
   border: none;
@@ -803,7 +805,7 @@
   grid-template-columns: 28px 1fr 28px;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
+  padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid rgba(99, 102, 241, 0.2);
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.92));
@@ -895,7 +897,7 @@
 
  /* Barre più sottili nel footer */
 .footer-bars .bar {
-  height: 8px;
+  height: 12px;
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(148, 163, 184, 0.2), rgba(15, 23, 42, 0.7));
   overflow: hidden;
@@ -1063,6 +1065,12 @@
   .footer-bars .bbtn {
     width: 24px;
     height: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .footer-bars-card {
+    grid-template-columns: 1fr;
   }
 }
 
