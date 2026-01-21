@@ -7,6 +7,18 @@ async function loadJSON(url) {
     return res.json();
 }
 
+function ensureDbDefaults() {
+    DB.ALLIES ??= [];
+    DB.GIANTS ??= [];
+    DB.EVENTS ??= [];
+    DB.CONSUMABLE ??= [];
+    DB.MISSIONS ??= [];
+    DB.SETTINGS ??= {};
+    DB.SETTINGS.missionDefaults ??= {};
+    DB.SETTINGS.xpMoralDefault ??= {};
+    DB.SETTINGS.gridSettings ??= {};
+}
+
 export async function bootDataApplication() {
     // Config delle sorgenti JSON
     const BOOT_CONFIG = {
@@ -37,16 +49,19 @@ export async function bootDataApplication() {
         DB.CONSUMABLE = consumable;
         DB.SETTINGS = settings;
 
+        ensureDbDefaults();
         console.log('[boot] DB inizializzato:', DB);
         populateGameStateData();
         return DB;
     } catch (e) {
         console.warn('Caricamento JSON fallito, uso i fallback locali:', e);
+        ensureDbDefaults();
         return DB;
     }
 }
 
 function populateGameStateData() {
+    ensureDbDefaults();
     Object.assign(GAME_STATE.missionState, buildDefaultMissionState());
     GAME_STATE.xpMoraleState = structuredClone(DB.SETTINGS.xpMoralDefault);
     GAME_STATE.walls = DB.ALLIES.filter(unit => unit.role === "wall").map(u => ({ ...u, currHp: u.hp }));

@@ -18,9 +18,11 @@ export async function initGameForRoom(roomId, mePlayerRow, allPlayers, room) {
   APP_STATE.roomPlayers = Array.isArray(allPlayers) ? allPlayers : [];
   APP_STATE.gameMode = 'multiplayer'
 
+  const userId = APP_STATE.user?.id ?? null;
   const isLeader =
-    room.leader_id === APP_STATE.user.id ||
-    room.created_by === APP_STATE.user.id
+    !!userId &&
+    (room.leader_id === userId ||
+      room.created_by === userId)
 
   APP_STATE.isGameDriver = isLeader
 
@@ -119,6 +121,11 @@ function saveLocalState() {
 async function pushGameState() {
   if (APP_STATE.gameMode === 'single') return;
   if (!APP_STATE.roomId) return;
+  const userId = APP_STATE.user?.id ?? null;
+  if (!userId) {
+    console.warn('[game-sync] pushGameState skipped: user missing');
+    return;
+  }
   const { force } = pendingSaveOptions;
   pendingSaveOptions.force = false;
   console.info('[game-sync] pushGameState start', {
@@ -158,7 +165,7 @@ async function pushGameState() {
     .update({
       state_json: newState,
       updated_at: new Date().toISOString(),
-      updated_by: APP_STATE.user.id
+      updated_by: userId
     })
     .eq('room_id', APP_STATE.roomId)
 

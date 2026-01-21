@@ -5,6 +5,13 @@ const SAVE_VERSION = 1;
 const SAVE_KEY = 'aot-save-v' + SAVE_VERSION;
 
 export function snapshot() {
+    const turnEngineState = {
+        phase: GAME_STATE.turnEngine?.phase ?? 'idle',
+        round: GAME_STATE.turnEngine?.round ?? 0,
+        teamCreated: GAME_STATE.turnEngine?.teamCreated ?? false,
+        eventCards: GAME_STATE.turnEngine?.eventCards ?? 0,
+        squadNumber: GAME_STATE.turnEngine?.squadNumber ?? 0
+    };
     return {
         ver: SAVE_VERSION,
         savedAt: Date.now(),
@@ -31,7 +38,7 @@ export function snapshot() {
         events: structuredClone(GAME_STATE.events),
         turnState: structuredClone(GAME_STATE.turnState),
         //turnengine
-        turnEngine: GAME_STATE.turnEngine,
+        turnEngineState,
         setupMoves: structuredClone(GAME_STATE.setupMoves ?? {}),
         missionState: (() => {
             const m = structuredClone(GAME_STATE.missionState);
@@ -90,10 +97,11 @@ export function restore(save) {
     Object.assign(GAME_STATE.xpMoraleState, save.xpMoraleState || {});
     Object.assign(GAME_STATE.modRolls, save.modRolls || {});
     Object.assign(GAME_STATE.missionState, save.missionState || {});
+    const savedTurnEngine = save.turnEngineState || save.turnEngine || {};
     if (typeof GAME_STATE.turnEngine?.init === 'function') {
-        Object.assign(GAME_STATE.turnEngine, save.turnEngine || {});
+        Object.assign(GAME_STATE.turnEngine, savedTurnEngine);
     } else {
-        GAME_STATE.turnEngine = save.turnEngine || {};
+        GAME_STATE.turnEngine = savedTurnEngine;
     }
     GAME_STATE.setupMoves = save.setupMoves || {};
     Object.assign(GAME_STATE.missionStats, save.missionStats || {});
