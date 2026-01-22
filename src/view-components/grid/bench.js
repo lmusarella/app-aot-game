@@ -158,14 +158,18 @@ function renderBenchSection(container, units, readOnly = false) {
 
         const info = document.createElement("div");
         info.className = "unit-info";
+        const header = document.createElement("div");
+        header.className = "unit-info-header";
         const name = document.createElement("div");
-        name.className = "unit-name"; name.textContent = u.name;
+        name.className = "unit-name";
+        name.textContent = u.name;
         const sub = document.createElement("div");
         sub.className = "unit-sub";
         sub.textContent = (u.role === "recruit") ? "Recluta" :
             (u.role === "commander") ? "Comandante" :
                 (u.role === "enemy") ? "Gigante" : "Muro";
 
+        header.appendChild(name);
 
         // 👇 NUOVO: riga con nickname giocatore (solo per alleati)
         if (u.owner_nickname && (u.role === "recruit" || u.role === "commander")) {
@@ -185,10 +189,10 @@ function renderBenchSection(container, units, readOnly = false) {
                 <span>Giocatore: ${nameLabel}</span>
             `;
             owner.setAttribute('title', statusLabel);
-            info.append(name, sub, owner);
-        } else {
-            info.append(name, sub);
+            header.appendChild(owner);
         }
+
+        info.append(header, sub);
 
         const actions = document.createElement("div"); actions.className = "unit-actions";
 
