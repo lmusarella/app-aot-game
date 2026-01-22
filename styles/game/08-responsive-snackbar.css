@@ -946,6 +946,12 @@
   display: none;
 }
 
+.bar-row.morale-readonly .bar-track,
+.bar-row.xp-readonly .bar-track {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
  /* Barre più sottili nel footer */
 .footer-bars .bar {
   height: 12px;
