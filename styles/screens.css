@@ -410,7 +410,7 @@
   margin: 8px 0 6px;
 }
 
-.unit-card {
+.unit-grid .unit-card {
   flex: 1 1 45%;
   min-width: 120px;
   padding: 6px 8px;
@@ -424,12 +424,12 @@
   font-size: 0.8rem;
 }
 
-.unit-card.selected {
+.unit-grid .unit-card.selected {
   border-color: #ffcc4d;
   box-shadow: 0 0 0 1px rgba(255, 204, 77, 0.5);
 }
 
-.unit-avatar {
+.unit-grid .unit-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -438,17 +438,17 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.unit-avatar img {
+.unit-grid .unit-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.unit-info-title {
+.unit-grid .unit-info-title {
   font-weight: 600;
 }
 
-.unit-info-tag {
+.unit-grid .unit-info-tag {
   font-size: 0.7rem;
   opacity: 0.75;
 }
