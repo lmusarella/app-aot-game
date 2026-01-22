@@ -299,7 +299,7 @@ export function renderTurnTracker() {
     elPhase.textContent = phaseLabels[phase] ?? phase;
   }
   if (elPhaseLabel) {
-    elPhaseLabel.textContent = round > 0 ? `${round}° Round Fase` : 'Fase';
+    elPhaseLabel.textContent = 'Fase';
   }
   if (elPhasePercent) {
     const safeTotal = Math.max(0, order.length);

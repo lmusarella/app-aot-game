@@ -203,14 +203,14 @@
 }
 
 .header-user-avatar {
-  width: 36px;
-  height: 36px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid rgba(255, 255, 255, 0.25);
   background: rgba(0, 0, 0, 0.35);
-  flex: 0 0 36px;
-  min-width: 36px;
+  flex: 0 0 46px;
+  min-width: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -243,6 +243,8 @@
 
 .header-user-name {
   max-width: 140px;
+  font-size: large;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -375,8 +377,8 @@
 }
 
 .turn-player-avatar {
-  width: 36px;
-  height: 36px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid rgba(255, 255, 255, 0.2);
