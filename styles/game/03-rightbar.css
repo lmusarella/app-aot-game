@@ -147,9 +147,14 @@
    color: rgba(226, 232, 240, 0.85);
  }
 
- .unit-actions {
-   display: flex;
-   align-items: center;
+.unit-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+ .hpbar-row {
+   grid-column: 1 / -1;
    gap: 6px;
  }
 

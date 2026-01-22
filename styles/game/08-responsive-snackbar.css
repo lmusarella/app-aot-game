@@ -75,11 +75,12 @@
    background: #181b26;
  }
 
- .footer-toggle {
-   position: absolute;
-   bottom: 8px;
-   z-index: 2;
- }
+.footer-toggle {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  transform: translateY(-50%);
+}
 
  .footer-toggle--left {
    left: 10px;

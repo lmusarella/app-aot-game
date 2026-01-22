@@ -232,9 +232,9 @@
  }
 
  /* HP a destra, font piccolo */
- .hp-inline-right {
-   font: 12px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono";
-   opacity: .9;
-   min-width: 60px;
-   text-align: right;
- }
+.hp-inline-right {
+  font: 12px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono";
+  opacity: .9;
+  min-width: 48px;
+  text-align: right;
+}
