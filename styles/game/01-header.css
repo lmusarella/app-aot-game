@@ -218,6 +218,7 @@ header {
   gap: 8px;
   padding: 2px 6px;
   max-width: min(320px, 32vw);
+  position: relative;
 }
 
 .header-briefing-avatar {
@@ -229,6 +230,12 @@ header {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
   flex: 0 0 auto;
   background: #0f172a;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .header-briefing-avatar img {
@@ -236,6 +243,28 @@ header {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.header-briefing-avatar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes briefing-avatar-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.1), 0 4px 10px rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(56, 189, 248, 0.18), 0 6px 14px rgba(0, 0, 0, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.08), 0 4px 10px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.header-briefing-avatar--alert {
+  animation: briefing-avatar-pulse 1.2s ease-in-out infinite;
+  border-color: rgba(56, 189, 248, 0.75);
 }
 
 .header-briefing-bubble {
@@ -248,6 +277,26 @@ header {
   font-size: 12px;
   line-height: 1.2;
   max-width: 240px;
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.header-briefing.is-open .header-briefing-bubble {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+
+.header-briefing:not(.is-open):hover .header-briefing-bubble,
+.header-briefing:not(.is-open):focus-within .header-briefing-bubble {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
 }
 
 .header-briefing-bubble.phase-bubble--blue {

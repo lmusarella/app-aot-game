@@ -483,19 +483,18 @@
    justify-self: end;
  }
 
- .app-footer__credits {
-   display: flex;
-   flex-direction: column;
-   gap: 2px;
-   font-size: 9px;
-   opacity: 0.55;
-   text-align: right;
-   white-space: nowrap;
-   padding-right: 2px;
-   position: absolute;
-   right: 6px;
-   bottom: 6px;
- }
+.app-footer__credits {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 9px;
+  opacity: 0.55;
+  text-align: right;
+  white-space: nowrap;
+  padding-right: 2px;
+  justify-self: end;
+  align-self: center;
+}
 
  /* Contenitore delle barre nel footer */
  .footer-bars {
