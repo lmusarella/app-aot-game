@@ -78,7 +78,7 @@
   grid-template-rows: auto auto auto;
   align-items: start;
   gap: 6px 10px;
-  background: linear-gradient(135deg, rgba(21, 25, 35, 0.95), rgba(12, 14, 20, 0.95));
+  background: linear-gradient(135deg, rgba(18, 22, 32, 0.98), rgba(12, 15, 22, 0.98));
   border: 1px solid rgba(148, 163, 184, 0.28);
   padding: 6px 8px;
   border-radius: 12px;
@@ -116,7 +116,7 @@
 .bench .unit-avatar {
   width: var(--unit-avatar-size, 56px);
   height: var(--unit-avatar-size, 56px);
-  border-radius: 10px;
+  border-radius: 50%;
   overflow: hidden;
   border: 2px solid var(--sel, #fff);
   flex: 0 0 auto;
@@ -192,6 +192,11 @@
   gap: 6px;
   grid-column: 2 / -1;
   grid-row: 3;
+}
+
+.bench .hpbar {
+  grid-column: auto;
+  width: 100%;
 }
 
 .bench .hpbar-row.hp-readonly {
