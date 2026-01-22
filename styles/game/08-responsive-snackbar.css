@@ -852,9 +852,9 @@
 
 .footer-bars .bar-track {
   display: grid;
-  grid-template-columns: 28px 1fr 28px;
+  grid-template-columns: 1fr;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid rgba(99, 102, 241, 0.2);
@@ -865,10 +865,6 @@
 
 .footer-bars--single .bar-row.mini {
   min-height: 44px;
-}
-
-.footer-bars--single .bar-row.mini .bar-track {
-  grid-template-columns: 28px 1fr 28px;
 }
 
 .footer-phase {
@@ -946,6 +942,7 @@
   display: none;
 }
 
+
  /* Barre più sottili nel footer */
 .footer-bars .bar {
   height: 12px;
@@ -961,6 +958,9 @@
   height: 100%;
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.25), inset 0 0 8px rgba(15, 23, 42, 0.45);
   border-radius: inherit;
+  width: 100%;
+  transform-origin: left;
+  transform: scaleX(var(--bar-fill, 0));
 }
 
  /* Bottoni compatti nel footer */
