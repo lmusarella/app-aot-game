@@ -23,6 +23,7 @@ let elTimer = null;
 let elHeaderTurnPlayer = null;
 let elPlayerAvatar = null;
 let elPhase = null;
+let elPhaseLabel = null;
 let elPhasePercent = null;
 let elFabDock = null;
 
@@ -65,21 +66,9 @@ function getTurnRemainingSec(turnState) {
 
 function renderTurnTimer() {
   ensureTurnElements();
-  if (APP_STATE.gameMode === 'multiplayer' && DISABLE_TURN_TIMER_MP) {
-    if (elTimer) {
-      elTimer.textContent = '—';
-    }
-    return;
-  }
-  if (APP_STATE.gameMode !== 'multiplayer' && DISABLE_TURN_TIMER_SP) {
-    if (elTimer) {
-      elTimer.textContent = '—';
-    }
-    return;
-  }
-  remainingSec = getTurnRemainingSec(GAME_STATE.turnState);
+  const round = GAME_STATE.turnEngine?.round ?? 0;
   if (elTimer) {
-    elTimer.textContent = `${remainingSec}s`;
+    elTimer.textContent = round > 0 ? `${round}° Round` : '—';
   }
 }
 
@@ -113,6 +102,7 @@ function ensureTurnElements() {
   elHeaderTurnPlayer = document.getElementById('header-turn-player');
   elPlayerAvatar = document.getElementById('turn-player-avatar');
   elPhase = document.getElementById('turn-phase');
+  elPhaseLabel = document.querySelector('.turn-phase-label');
   elPhasePercent = document.getElementById('turn-phase-percent');
   elFabDock = document.querySelector('.fab-dock');
 }
@@ -307,6 +297,9 @@ export function renderTurnTracker() {
       end_round: 'Fine round'
     };
     elPhase.textContent = phaseLabels[phase] ?? phase;
+  }
+  if (elPhaseLabel) {
+    elPhaseLabel.textContent = round > 0 ? `${round}° Round Fase` : 'Fase';
   }
   if (elPhasePercent) {
     const safeTotal = Math.max(0, order.length);

@@ -1,5 +1,6 @@
 import { APP_STATE } from '../core/app-state.js';
 import { GAME_STATE, unitById } from '../core/data.js';
+import { markGameStateDirty } from '../core/state/persistence.js';
 import { log } from '../view-components/leftbar/log.js';
 import { playSfx, playBg } from '../view-components/audio/audio.js';
 import swordSlash from './effects/swordSlash.js';
@@ -64,6 +65,7 @@ export function pushGameEvent(type, payload = {}) {
   if (GAME_STATE.events.length > MAX_EVENTS) {
     GAME_STATE.events.splice(0, GAME_STATE.events.length - MAX_EVENTS);
   }
+  markGameStateDirty('events');
   return event;
 }
 

@@ -1,6 +1,9 @@
 import { initHeaderListeners } from './header.js';
 import { initPhasesListeners } from '../../game-business-logic/phases.js';
-import { showTutorialPopupViaDialog } from '../../ui-components/ui-helpers.js';
+import { showTutorialPopupViaDialog, showScreen } from '../../ui-components/ui-helpers.js';
+import { supabase } from '../../core/supabase/supabaseClient.js';
+import { APP_STATE } from '../../core/app-state.js';
+import { stopRoomPresence } from '../pages/room/room-ui.js';
 
 export function initView() {
   initHeaderListeners();
@@ -31,6 +34,15 @@ export function initView() {
       tutorialBtn?.click();
     } else if (action === 'leave') {
       leaveBtn?.click();
+    } else if (action === 'logout') {
+      stopRoomPresence();
+      await supabase.auth.signOut();
+      APP_STATE.roomId = null;
+      APP_STATE.role = null;
+      APP_STATE.roomPlayers = [];
+      APP_STATE.isGameDriver = false;
+      APP_STATE.gameMode = null;
+      showScreen('login');
     }
   });
 }
