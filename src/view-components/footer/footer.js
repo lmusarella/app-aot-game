@@ -530,7 +530,7 @@ export function refreshXPUI() {
     if (xpRow) {
         xpRow.classList.toggle("xp-readonly", APP_STATE.gameMode === "multiplayer");
     }
-    if (xp.fill) xp.fill.style.width = pct + "%";
+    if (xp.fill) xp.fill.style.setProperty("--bar-fill", pct / 100);
     if (xp.pct) xp.pct.textContent = Math.round(pct) + "%";
     if (xp.lvl) xp.lvl.textContent = "Lv. " + L;
     renderBonusMalus();
@@ -544,7 +544,7 @@ export function refreshMoraleUI() {
     if (moraleRow) {
         moraleRow.classList.toggle("morale-readonly", APP_STATE.gameMode === "multiplayer");
     }
-    if (morale.fill) morale.fill.style.width = pct + "%";
+    if (morale.fill) morale.fill.style.setProperty("--bar-fill", pct / 100);
     if (morale.pct) morale.pct.textContent = Math.round(pct) + "%";
     renderBonusMalus();
     refreshFooterTracker();
