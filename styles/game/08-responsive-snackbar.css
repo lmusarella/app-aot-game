@@ -56,11 +56,8 @@
    background: linear-gradient(180deg, #0c0d12, #090a0f);
  }
 
- /* Maniglie flottanti (chevron) sempre visibili ai lati dello schermo */
+ /* Maniglie nel footer */
  .collapse-handle {
-   position: fixed;
-   bottom: calc(var(--footer-h) + 10px);
-   z-index: 9999;
    width: 40px;
    height: 40px;
    border-radius: 10px;
@@ -78,11 +75,17 @@
    background: #181b26;
  }
 
- .collapse-handle.left {
+ .footer-toggle {
+   position: absolute;
+   bottom: 8px;
+   z-index: 2;
+ }
+
+ .footer-toggle--left {
    left: 10px;
  }
 
- .collapse-handle.right {
+ .footer-toggle--right {
    right: 10px;
  }
 
@@ -470,7 +473,7 @@
    gap: 12px;
    width: 100%;
    max-width: 1200px;
-   padding: 0 6px;
+   padding: 0 54px;
    position: relative;
  }
 
@@ -1066,11 +1069,12 @@
  /* regola se serve in base all’altezza del footer */
 
  /* Piccolo tuning per schermi stretti */
- @media (max-width: 900px) {
-   .app-footer__row {
-     grid-template-columns: 1fr;
-     justify-items: center;
-   }
+@media (max-width: 900px) {
+  .app-footer__row {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding: 0 46px;
+  }
 
    .footer-left {
      grid-column: 1;
@@ -1101,11 +1105,11 @@
      flex-wrap: wrap;
    }
 
-   .footer-companions {
-     width: min(320px, 90vw);
-     justify-content: center;
-     flex-wrap: wrap;
-   }
+  .footer-companions {
+    width: min(320px, 90vw);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 
    .footer-avatars {
      justify-content: center;

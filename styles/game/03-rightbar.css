@@ -52,11 +52,11 @@
 
  .bench {
    display: grid;
-   gap: 10px;
+   gap: 8px;
    min-height: 40px;
    overflow: auto;
    max-height: none;
-   padding-right: 4px;
+   padding-right: 6px;
    grid-auto-rows: min-content;
  }
 
@@ -73,16 +73,16 @@
  }
 
  .unit-card {
-   display: flex;
+   display: grid;
+   grid-template-columns: auto minmax(0, 1fr) auto;
    align-items: center;
-   gap: 10px;
-   flex-wrap: wrap;
-   background: #151515;
-   border: 1px solid gray;
-   padding: 8px 10px;
-   border-radius: 10px;
+   gap: 8px;
+   background: linear-gradient(135deg, rgba(21, 25, 35, 0.95), rgba(12, 14, 20, 0.95));
+   border: 1px solid rgba(148, 163, 184, 0.28);
+   padding: 6px 8px;
+   border-radius: 12px;
    cursor: grab;
-   transition: opacity .15s ease, box-shadow .15s ease, transform .1s ease;
+   transition: opacity .15s ease, box-shadow .15s ease, transform .1s ease, border-color .2s ease;
    user-select: none;
  }
 
@@ -95,12 +95,13 @@
  }
 
  .unit-card.is-destroyed {
-   opacity: 0.6;
+   opacity: 0.55;
  }
 
 
  .unit-card:hover {
-   box-shadow: 0 6px 16px rgba(0, 0, 0, .35)
+   box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+   border-color: rgba(248, 250, 252, 0.5);
  }
 
  .unit-card[data-role="wall"] {
@@ -112,8 +113,8 @@
  }
 
  .unit-avatar {
-   width: 34px;
-   height: 34px;
+   width: 32px;
+   height: 32px;
    border-radius: 50%;
    overflow: hidden;
    border: 3px solid var(--sel, #fff);
@@ -129,11 +130,11 @@
  .unit-info {
    display: flex;
    flex-direction: column;
-   width: 200px;
+   min-width: 0;
  }
 
  .unit-name {
-   font-weight: 600;
+   font-weight: 700;
    font-size: 13px;
    white-space: nowrap;
    overflow: hidden;
@@ -141,12 +142,12 @@
  }
 
  .unit-sub {
-   font-size: 12px;
-   opacity: .9
+   font-size: 11px;
+   opacity: .78;
+   color: rgba(226, 232, 240, 0.85);
  }
 
  .unit-actions {
-   margin-left: auto;
    display: flex;
    align-items: center;
    gap: 6px;
@@ -155,8 +156,8 @@
  .btn-icon {
    display: inline-grid;
    place-items: center;
-   width: 28px;
-   height: 28px;
+   width: 26px;
+   height: 26px;
    border-radius: 8px;
    border: 1px solid #2a2a2a;
    background: #1a1a1a;
@@ -171,7 +172,7 @@
 
  /* HP BAR */
  .hpbar {
-   flex-basis: 100%;
+   grid-column: 1 / -1;
    height: 6px;
    background: #0c0c0c;
    border: 1px solid #222;
@@ -195,4 +196,3 @@
 
 
  }
-
