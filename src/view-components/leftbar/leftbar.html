@@ -1,0 +1,158 @@
+<nav class="leftbar" aria-label="Pannello laterale">
+
+    <!-- OBIETTIVO MISSIONE -->
+    <section class="bench-section accordion-section" id="mission-section" data-open="1">
+        <div class="accordion-header">
+            <button class="accordion-trigger" type="button" aria-expanded="true" aria-controls="mission-panel">
+                <h4 class="accordion-title">Dashboard Missione</h4>
+                <span class="accordion-caret" aria-hidden="true">▾</span>
+            </button>
+        </div>
+        <div class="accordion-panel" id="mission-panel" role="region" aria-hidden="false">
+            <div class="accordion-inner" style="padding: 10px;">
+
+                <div id="mission-card" role="button" tabindex="0" aria-label="Apri dettagli missione corrente">
+
+                    <div id="mission-head" class="mission-head mission-card">
+                        <p class="mission-title">
+                            <strong>#<span id="mc-num"></span> — <span id="mc-title"></span></strong>
+                        </p>
+                        <ul id="mc-brief" class="mission-brief"></ul>
+                        <p id="mc-reward" class="mission-reward"></p>
+                        <p id="mc-event" class="mission-reward"></p>
+                    </div>
+
+                    <div class="mission-stats">
+                        <div class="msn-badge"><span class="lbl">Uccisioni</span><span id="msn-kills">0</span>
+                        </div>
+                        <div class="msn-badge"><span class="lbl">Perdite</span><span id="msn-losses">0</span>
+                        </div>
+                        <div class="msn-badge"><span class="lbl">Tentativi</span><span id="msn-attempts">0</span>
+                        </div>
+                        <div class="msn-badge"><span class="lbl">Round</span><span id="msn-round">0</span></div>
+                    </div>
+
+                    <div class="mission-subtitle">Carte attivate</div>
+                    <ul id="msn-evlist" class="msn-list"><!-- cronologia eventi --></ul>
+
+                    <!--<div class="mission-subtitle">Effetti attivi</div>
+                    <div id="msn-evactive" class="msn-chips"> </div>-->
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- MODIFICATORI TIRI -->
+    <section class="bench-section accordion-section" id="mods-section" data-open="0">
+        <div class="accordion-header">
+            <button class="accordion-trigger" type="button" aria-expanded="true" aria-controls="mods-panel">
+                <h4 class="accordion-title">Modificatori Globali</h4>
+                <span class="accordion-caret" aria-hidden="true">▾</span>
+            </button>
+        </div>
+        <div class="accordion-panel" id="mods-panel" role="region" aria-hidden="false">
+            <div class="accordion-inner">
+                <div class="rm-rows">
+                    <div class="rm-row" data-kind="atk" data-sign="zero">
+                        <span class="rm-label">ATK</span>
+                        <div class="rm-stepper">
+                            <button class="rm-btn" data-delta="-1" type="button">−</button>
+                            <span class="rm-chip"><span id="rm-atk">+0</span></span>
+                            <button class="rm-btn" data-delta="+1" type="button">+</button>
+                        </div>
+                    </div>
+                    <div class="rm-row" data-kind="tec" data-sign="zero">
+                        <span class="rm-label">TEC</span>
+                        <div class="rm-stepper">
+                            <button class="rm-btn" data-delta="-1" type="button">−</button>
+                            <span class="rm-chip"><span id="rm-tec">+0</span></span>
+                            <button class="rm-btn" data-delta="+1" type="button">+</button>
+                        </div>
+                    </div>
+                    <div class="rm-row" data-kind="agi" data-sign="zero">
+                        <span class="rm-label">AGI</span>
+                        <div class="rm-stepper">
+                            <button class="rm-btn" data-delta="-1" type="button">−</button>
+                            <span class="rm-chip"><span id="rm-agi">+0</span></span>
+                            <button class="rm-btn" data-delta="+1" type="button">+</button>
+                        </div>
+                    </div>
+                    <div class="rm-row" data-kind="all" data-sign="zero">
+                        <span class="rm-label">TOT</span>
+                        <div class="rm-stepper">
+                            <button class="rm-btn" data-delta="-1" type="button">−</button>
+                            <span class="rm-chip"><span id="rm-all">+0</span></span>
+                            <button class="rm-btn" data-delta="+1" type="button">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="rm-sep">
+
+                <div class="rm-dice">
+                    <div class="rm-dice-row">
+                        <select id="rm-die" class="rm-die">
+                            <option value="4">d4</option>
+                            <option value="6">d6</option>
+                            <option value="8">d8</option>
+                            <option value="10">d10</option>
+                            <option value="12">d12</option>
+                            <option value="20" selected>d20</option>
+                        </select>
+                        <button id="rm-roll" class="rm-btn" type="button" title="Tira">🎲</button>
+                        <span id="rm-roll-out" class="rm-roll-out" aria-live="polite">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="bench-section accordion-section" id="unit-mods-section" data-open="0">
+        <div class="accordion-header">
+            <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="mods-unit-panel">
+                <h4 class="accordion-title">Modificatori Unità</h4>
+                <span class="accordion-caret" aria-hidden="true">▾</span>
+            </button>
+        </div>
+
+        <div class="accordion-panel" id="mods-unit-panel" role="region" aria-hidden="true">
+            <div class="accordion-inner" style="padding: 10px;">
+                <div class="um">
+                    <div class="um-head">
+                        <button id="um-picker" class="um-picker" type="button">
+                            <span class="um-ava"><img id="um-ava" src="assets/img/logo.jpg" alt=""></span>
+                            <span class="um-info">
+                                <span id="um-name" class="um-name">Seleziona unità</span>
+                                <span id="um-role" class="um-role">—</span>
+                            </span>
+                            <span class="um-caret">▾</span>
+                        </button>
+                        <button id="um-reset" class="um-reset btn-icon" title="Reset">⟲</button>
+                        <div id="um-menu" class="um-menu" hidden></div>
+                    </div>
+
+                    <!-- ✨ NON mettere qui altri blocchi duplicati "Missione/Round" -->
+                    <div id="um-rows" class="um-rows"><!-- riempito via JS --></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- LOG PARTITA -->
+    <section class="bench-section accordion-section" id="log-section" data-open="0">
+        <div class="accordion-header">
+            <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="log-panel">
+                <h4 class="accordion-title">Log partita</h4>
+                <span class="accordion-caret" aria-hidden="true">▾</span>
+            </button>
+        </div>
+        <div class="accordion-panel" id="log-panel" role="region" aria-hidden="true">
+            <div class="accordion-inner">
+                <div id="log-box" class="left-content"></div>
+            </div>
+        </div>
+    </section>
+
+</nav>

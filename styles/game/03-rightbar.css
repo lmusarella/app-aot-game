@@ -1,0 +1,198 @@
+ /* ===== Colonna DX ===== */
+ aside {
+   grid-row: 2;
+   grid-column: 3;
+   padding: 4px;
+   border-left: 1px solid #222;
+   overflow: hidden;
+   display: flex;
+   flex-direction: column;
+   gap: 6px;
+   min-height: 0;
+   position: relative;
+   z-index: 2;
+   background: linear-gradient(180deg, #0c0d12, #090a0f);
+ }
+
+ .panel-title {
+   font-weight: 800;
+   font-size: 15px;
+   margin: 0 0 10px;
+   letter-spacing: .2px
+ }
+
+ .bench-section {
+   background: #0f0f0f;
+   border: 1px solid gray;
+   border-radius: 12px;
+   padding: 10px;
+   display: flex;
+   flex-direction: column;
+   min-height: 0;
+ }
+
+ .bench-head {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 8px;
+   margin-bottom: 8px;
+ }
+
+ .bench-head h4 {
+   margin: 0;
+   font-size: 14px;
+   font-weight: 700
+ }
+
+ .bench-count {
+   font-size: 12px;
+   opacity: .8
+ }
+
+ .bench {
+   display: grid;
+   gap: 10px;
+   min-height: 40px;
+   overflow: auto;
+   max-height: none;
+   padding-right: 4px;
+   grid-auto-rows: min-content;
+ }
+
+ /* Limita Altezza (3/4 card) + scroll */
+ .bench[data-section="enemy"],
+ .bench[data-section="ally"] {
+   max-height: var(--bench-max);
+ }
+
+ .bench.drop-ok {
+   outline: 2px dashed #2c7;
+   outline-offset: 4px;
+   border-radius: 10px;
+ }
+
+ .unit-card {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   flex-wrap: wrap;
+   background: #151515;
+   border: 1px solid gray;
+   padding: 8px 10px;
+   border-radius: 10px;
+   cursor: grab;
+   transition: opacity .15s ease, box-shadow .15s ease, transform .1s ease;
+   user-select: none;
+ }
+
+ .unit-card:active {
+   cursor: grabbing
+ }
+
+ .unit-card.is-fielded {
+   opacity: 1;
+ }
+
+ .unit-card.is-destroyed {
+   opacity: 0.6;
+ }
+
+
+ .unit-card:hover {
+   box-shadow: 0 6px 16px rgba(0, 0, 0, .35)
+ }
+
+ .unit-card[data-role="wall"] {
+   cursor: pointer
+ }
+
+ .unit-card.flash {
+   box-shadow: 0 0 0 2px rgba(255, 255, 255, .2), 0 0 16px rgba(255, 0, 0, .35)
+ }
+
+ .unit-avatar {
+   width: 34px;
+   height: 34px;
+   border-radius: 50%;
+   overflow: hidden;
+   border: 3px solid var(--sel, #fff);
+   flex: 0 0 auto;
+ }
+
+ .unit-avatar img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover
+ }
+
+ .unit-info {
+   display: flex;
+   flex-direction: column;
+   width: 200px;
+ }
+
+ .unit-name {
+   font-weight: 600;
+   font-size: 13px;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+ }
+
+ .unit-sub {
+   font-size: 12px;
+   opacity: .9
+ }
+
+ .unit-actions {
+   margin-left: auto;
+   display: flex;
+   align-items: center;
+   gap: 6px;
+ }
+
+ .btn-icon {
+   display: inline-grid;
+   place-items: center;
+   width: 28px;
+   height: 28px;
+   border-radius: 8px;
+   border: 1px solid #2a2a2a;
+   background: #1a1a1a;
+   color: #e6e6e6;
+   cursor: pointer;
+   padding: 0;
+ }
+
+ .btn-icon:hover {
+   background: #202020;
+ }
+
+ /* HP BAR */
+ .hpbar {
+   flex-basis: 100%;
+   height: 6px;
+   background: #0c0c0c;
+   border: 1px solid #222;
+   border-radius: 999px;
+   overflow: hidden;
+ }
+
+ .hpbar-fill {
+   height: 100%;
+   width: 100%;
+   transition: width .25s ease, background-color .25s ease, filter .25s ease;
+ }
+
+ .grid-wrapper {
+   width: 500px;
+   /* scegli tu: 800px, 1024px, ecc. */
+   max-width: 100%;
+   /* non esce mai dallo schermo */
+   display: flex;
+   justify-content: center;
+
+
+ }
+

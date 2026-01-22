@@ -1,0 +1,73 @@
+<footer class="app-footer" aria-label="Footer">
+    <div class="app-footer__row">
+        <div class="footer-left">
+            <div class="footer-companions" role="group" aria-label="Compagni">
+                <span class="footer-companions-label">Compagni</span>
+                <div class="footer-avatars" role="list" aria-label="Giocatori">
+                    <!-- popolato via JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bars footer-bars--single footer-bars--tracker" role="group" aria-label="Stato Squadra">
+            <div class="footer-bars-card" aria-label="Morale ed esperienza">
+                <div class="bar-row mini" id="morale-row">
+                    <div class="bar-head">
+                        <span class="br-label">Morale</span>
+                        <span id="morale-val" class="br-val">65%</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar morale">
+                            <div id="morale-fill" class="fill" style="--bar-fill:0.65"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bar-row mini" id="xp-row">
+                    <div class="bar-head">
+                        <span class="br-label">
+                            Exp <span id="lvl-val" class="br-sub">Lv. 1</span>
+                        </span>
+                        <span id="xp-val" class="br-val">40%</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar xp">
+                            <div id="xp-fill" class="fill" style="--bar-fill:0.4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-actions" aria-label="Azioni">
+            <div class="footer-actions-group" role="group" aria-label="Azioni">
+                
+                <div class="footer-actions__buttons">
+                    <button class="footer-action-btn footer-hand-btn" type="button" aria-label="Apri mano di carte"
+                        title="Mano">
+                        <span aria-hidden="true">✋</span>
+                    </button>
+                    <div class="footer-message-wrap">
+                        <button class="footer-action-btn footer-message-btn" type="button" aria-label="Invia messaggio"
+                            title="Messaggi">
+                            <span aria-hidden="true">💬</span>
+                        </button>
+                        <div class="footer-message-menu" hidden></div>
+                    </div>
+                    <button class="footer-action-btn footer-self-btn" type="button"
+                        aria-label="Apri squadra fuori missione" title="La tua squadra">
+                        <span class="footer-avatar-circle">
+                            <img src="assets/units/default.png" alt="Il tuo avatar">
+                        </span>
+                        <span class="footer-avatar-name footer-self-name">—</span>
+                    </button>
+                </div>
+                <span class="footer-actions-label">Azioni</span>
+            </div>
+        </div>
+        <div class="app-footer__credits">
+            <span>Ideato da Marco Del Monaco</span>
+            <span>Sviluppato da Luca Musarella</span>
+        </div>
+    </div>
+</footer>

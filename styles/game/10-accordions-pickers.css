@@ -1,0 +1,450 @@
+ /* ========== Accordion (Mura) ========== */
+ .accordion-section {
+   border: 1px solid gray;
+   border-radius: 12px;
+   background: #0f111a;
+ }
+
+ /* Header */
+ .accordion-header {
+   padding: 0;
+ }
+
+ /* ===== Accordion (Mura) — versione migliorata ===== */
+ .accordion-trigger {
+   all: unset;
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   width: 100%;
+   cursor: pointer;
+   padding: 12px 18px;
+   justify-content: space-between;
+   user-select: none;
+   -webkit-user-select: none;
+   touch-action: manipulation;
+ }
+
+ .accordion-title {
+   margin: 0;
+   font-size: 15px;
+   font-weight: 600;
+ }
+
+ .accordion-trigger .bench-count {
+   margin-left: auto;
+   opacity: .85;
+   font-size: 12px;
+ }
+
+ /* caret più grande, non attaccato al bordo */
+ .accordion-caret {
+   flex: 0 0 auto;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   width: 28px;
+   height: 28px;
+   /* target ampio */
+   border-radius: 8px;
+   margin-left: 10px;
+   margin-right: 20px;
+   /* stacca dal bordo destro */
+   font-size: 16px;
+   /* caret più leggibile */
+   opacity: .85;
+   background: rgba(255, 255, 255, .05);
+   /* leggero chip */
+   transition: transform .18s ease, background .18s ease;
+ }
+
+ .accordion-trigger:hover .accordion-caret {
+   background: rgba(255, 255, 255, .08);
+ }
+
+ .accordion-trigger[aria-expanded="true"] .accordion-caret {
+   transform: rotate(180deg);
+ }
+
+ /* pannello animato */
+ .accordion-panel {
+   display: grid;
+   overflow: auto;
+   grid-template-rows: 1fr;
+   transition: grid-template-rows .22s ease;
+   border-top: 1px solid #2a2a2a;
+ }
+
+ /* 👇 scroll interno che rimane */
+ .accordion-inner {
+   overflow: auto;
+   /* mantieni lo scroll interno */
+   min-height: 0;
+   max-height: var(--acc-max-h, 44vh);
+   /* regola qui l’altezza del riquadro scrollabile */
+ }
+
+ /* stato chiuso */
+ .accordion-section[data-open="0"] .accordion-panel {
+   grid-template-rows: 0fr;
+   border-top-color: transparent;
+ }
+
+ /* Le card in panchina ereditano il colore da --ring (impostato in JS) */
+ .unit-card {
+   border: 1px solid var(--ring, #2a2a2a);
+   transition: box-shadow .18s ease, border-color .18s ease;
+ }
+
+ /* Avatar con bordo colorato come il tipo unità */
+ .unit-avatar {
+   border: 2px solid var(--ring, #444);
+ }
+
+ /* Stato selezionato: glow + bordo del colore della unità */
+ .unit-card.is-selected {
+   border-color: var(--ring, var(--oro));
+   box-shadow:
+     0 0 0 4px var(--ring, var(--oro)),
+     0 0 16px color-mix(in srgb, var(--ring, #fff) 35%, transparent 65%);
+ }
+
+ @supports not (color-mix(in srgb, black, white)) {
+   .unit-card.is-selected {
+     box-shadow: 0 0 16px var(--ring, #fff);
+   }
+ }
+
+ /* Effetto focus-ring sull’avatar (quando seleziono) */
+ .unit-card.is-selected .unit-avatar,
+ .unit-avatar.focus-ring {
+   animation: focusPulse 1.2s ease-out 0s infinite;
+   border-color: var(--ring, #fff) !important;
+ }
+
+ .unit-card.pulse .unit-avatar {
+   animation: focusPulse 1s ease-in-out infinite;
+   border-color: var(--ring, #fff);
+   box-shadow: 0 0 0 3px var(--ring, rgba(255, 255, 255, .55)), 0 0 0 6px rgba(0, 0, 0, .4);
+ }
+
+ /* bordo di default = tinta dell’unità (con fallback) */
+ .unit-card {
+   border: 1px solid var(--ring, #2a2a2a);
+ }
+
+ .unit-avatar {
+   border: 2px solid var(--ring, #444);
+ }
+
+ /* stato selezionato: glow nel colore dell’unità */
+ .unit-card.is-selected {
+   border-color: var(--ring, #cfa439);
+   box-shadow:
+     0 0 0 2px var(--ring, #cfa439),
+     0 0 16px color-mix(in srgb, var(--ring, #cfa439) 35%, transparent 65%);
+ }
+
+ @supports not (color-mix(in srgb, black, white)) {
+   .unit-card.is-selected {
+     box-shadow: 0 0 16px var(--ring, #cfa439);
+   }
+ }
+
+ /* === touch-guards-css === */
+ .hex-content img,
+ .unit-avatar img,
+ .cardmodal__media img {
+   pointer-events: none;
+   -webkit-touch-callout: none;
+   -webkit-user-select: none;
+   user-select: none;
+   -webkit-user-drag: none;
+ }
+
+ /* === card-chip-css === */
+ #dlg-title {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   flex-wrap: wrap;
+ }
+
+ .card-chip {
+   --chip-color: var(--blu);
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   padding: 2px 8px;
+   border-radius: 999px;
+   font-size: 12px;
+   line-height: 1;
+   font-weight: 600;
+   border: 1px solid currentColor;
+   color: var(--blu);
+   background: color-mix(in srgb, var(--chip-color) 16%, transparent);
+ }
+
+ .card-chip::before {
+   content: "";
+   width: 8px;
+   height: 8px;
+   border-radius: 50%;
+   background: var(--chip-color);
+ }
+
+ .card-chip--event {
+   --chip-color: var(--oro);
+   color: var(--oro);
+ }
+
+ .card-chip--spawn {
+   --chip-color: var(--rosso);
+   color: var(--rosso);
+ }
+
+ .card-chip--malus {
+   --chip-color: var(--rosso);
+   color: var(--rosso);
+ }
+
+ .card-chip--bonus {
+   --chip-color: var(--verde);
+   color: var(--verde);
+ }
+
+ .card-chip--consumable {
+   --chip-color: var(--argento);
+   color: var(--argento);
+ }
+
+ /* === picker-css === */
+ .picker {
+   display: flex;
+   flex-direction: column;
+   gap: 10px;
+   min-width: 0;
+ }
+
+ .picker__head {
+   display: flex;
+   gap: 10px;
+   align-items: center;
+   min-width: 0;
+ }
+
+ .picker__title {
+   font-weight: 600;
+   white-space: nowrap;
+ }
+
+ .picker__search {
+   flex: 1;
+   min-width: 0;
+   padding: 8px 10px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #0f111a;
+   color: #eaeaea;
+ }
+
+ .picker__tools {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+ }
+
+ .picker__spacer {
+   flex: 1;
+ }
+
+ .picker__count {
+   opacity: .9;
+   font-size: 12px;
+ }
+
+ .picker__btn {
+   padding: 6px 10px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #121421;
+   color: #ddd;
+   cursor: pointer;
+ }
+
+ .picker__grid {
+   display: grid;
+   gap: 10px;
+   padding-right: 2px;
+   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+ }
+
+ /* Card stile bench */
+ .pick-card.unit-card {
+   cursor: pointer;
+   user-select: none;
+   padding: 8px 10px;
+ }
+
+ .pick-card.unit-card:hover {
+   box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+ }
+
+ .pick-card .unit-avatar {
+   width: 34px;
+   height: 34px;
+   border-radius: 50%;
+   border: 2px solid #444;
+   overflow: hidden;
+ }
+
+ .pick-card .unit-name {
+   font-weight: 600;
+   font-size: 13px;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+ }
+
+ .pick-card .unit-sub {
+   font-size: 12px;
+   opacity: .9;
+ }
+
+ .pick-card.is-selected {
+   border-color: var(--oro);
+   box-shadow: 0 0 0 1px var(--oro), 0 0 12px rgba(207, 148, 57, .35);
+   animation: pickPulse 1.1s ease-in-out infinite;
+ }
+
+ @keyframes pickPulse {
+
+   0%,
+   100% {
+     box-shadow: 0 0 0 1px var(--oro), 0 0 10px rgba(207, 148, 57, .25);
+   }
+
+   50% {
+     box-shadow: 0 0 0 2px var(--oro), 0 0 18px rgba(207, 148, 57, .55);
+   }
+ }
+
+ .picker__empty {
+   opacity: .8;
+   padding: 20px;
+   text-align: center;
+ }
+
+ /* === modal-fix-css === */
+ .modal {
+   box-sizing: border-box;
+   max-height: min(84vh, 100dvh - 40px);
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+   padding: 16px;
+   border-radius: 14px;
+   overflow: hidden;
+ }
+
+ .modal-body {
+   min-height: 0;
+   overflow: auto;
+ }
+
+ .modal input[type="search"],
+ .modal input[type="text"] {
+   width: 100%;
+   min-width: 0;
+   box-sizing: border-box;
+ }
+
+ /* ===== Right-column accordions: fill available height ===== */
+
+ /* Ogni sezione accordion nella colonna destra deve poter crescere */
+ nav .bench-section,
+ aside .bench-section {
+   display: flex;
+   flex-direction: column;
+   min-height: 0;
+   /* important per far funzionare gli overflow interni */
+ }
+
+ /* Usa l'attributo data-open per controllare l'altezza via flex */
+ nav .bench-section[data-open="1"],
+ aside .bench-section[data-open="1"] {
+   flex: 1 1 auto;
+ }
+
+ /* sezione aperta: prende spazio */
+ nav .bench-section[data-open="0"],
+ aside .bench-section[data-open="0"] {
+   flex: 0 0 auto;
+ }
+
+ /* sezione chiusa: solo header */
+
+ /* Il pannello dell'accordion deve crescere e gestire lo scroll interno */
+ nav .bench-section .accordion-panel,
+ aside .bench-section .accordion-panel {
+   display: flex;
+   flex: 1 1 auto;
+   overflow: hidden;
+   /* niente scroll qui; lo diamo al contenuto interno */
+   border-top: 1px solid #2a2a2a;
+ }
+
+ /* Stato chiuso: pannello compresso */
+ nav .bench-section[data-open="0"] .accordion-panel,
+ aside .bench-section[data-open="0"] .accordion-panel {
+   flex: 0 0 0;
+   border-top-color: transparent;
+ }
+
+ /* Contenitore interno scorrevole */
+ nav .bench-section .accordion-inner,
+ aside .bench-section .accordion-inner {
+   flex: 1 1 auto;
+   min-height: 0;
+   overflow: auto;
+   max-height: none;
+   /* rimuove i vincoli precedenti */
+ }
+
+ /* Rimuovi i limiti "da lista" quando le bench stanno dentro un accordion */
+ nav .bench,
+ aside .bench {
+   max-height: none !important;
+ }
+
+ /* Se avevi un max-height per le Mura, disattivalo in accordion */
+ nav .accordion-inner,
+ aside .accordion-inner {
+   max-height: none !important;
+ }
+
+ /* Aprendo una card del pannello, le griglie dentro possono scorrere senza tagli */
+ aside .bench .unit-card {
+   contain: layout paint;
+ }
+
+ /* — override layout quando l’utente usa i toggle — */
+ body.collapse-left,
+ body.collapse-right,
+ body.collapse-both {
+   transition: grid-template-columns .18s ease;
+ }
+
+ body.collapse-left {
+   grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-w) !important;
+ }
+
+ body.collapse-right {
+   grid-template-columns: var(--sidebar-w) 1fr var(--sidebar-c) !important;
+ }
+
+ body.collapse-both {
+   grid-template-columns: var(--sidebar-c) 1fr var(--sidebar-c) !important;
+ }
+
+

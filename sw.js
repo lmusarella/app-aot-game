@@ -1,11 +1,33 @@
 // sw.js - Service Worker base per PWA
-const CACHE_NAME = 'aot-cache-v1';
-const ASSETS = [
+const CACHE_NAME = 'aot-cache-v4';
+const BASE_ASSETS = [
   './',
   './index.html',
-  './style.css',
-  './app.js',
+  './styles/game/00-base.css',
+  './styles/game/01-header.css',
+  './styles/game/02-leftbar.css',
+  './styles/game/03-rightbar.css',
+  './styles/game/04-field.css',
+  './styles/game/05-fab.css',
+  './styles/game/06-dice-log.css',
+  './styles/game/07-footer-modal.css',
+  './styles/game/08-responsive-snackbar.css',
+  './styles/game/09-tooltips-cards.css',
+  './styles/game/10-accordions-pickers.css',
+  './styles/game/11-overlays.css',
+  './styles/game/12-audio-controls.css',
+  './styles/game/13-unit-mods.css',
+  './styles/game/14-vs-overlay.css',
+  './styles/game/15-tutorial-overlay.css',
+  './styles/screens.css',
+  './src/app.js',
   './manifest.json',
+  './libs/three.min.js',
+  './libs/cannon.min.js',
+  './libs/teal.js',
+  './src/dice-roller/styles.css',
+  './src/dice-roller/dice.js',
+  './src/dice-roller/main.js',
 
   // === img/cards ===
   './assets/img/cards/fulmine.jpg',
@@ -106,8 +128,6 @@ const ASSETS = [
   "./assets/sounds/reclute/rico_presentazione.mp3",
   "./assets/sounds/reclute/sasha_presentazione.mp3",
   "./assets/sounds/reclute/ymir_presentazione.mp3",
-  "./assets/sounds/carte/carta_consumabile.mp3",
-  "./assets/sounds/carte/carta_evento.mp3",
   "./assets/sounds/comandanti/hange_presentazione.mp3",
   "./assets/sounds/comandanti/levi_presentazione.mp3",
   "./assets/sounds/comandanti/mike_presentazione.mp3",
@@ -115,13 +135,59 @@ const ASSETS = [
   "./assets/sounds/comandanti/urlo_erwin.mp3"
 ];
 
+const VIEW_ASSETS = [
+  './src/view-components/pages/login/screen-login.html',
+  './src/view-components/pages/lobby/screen-lobby.html',
+  './src/view-components/pages/room/screen-room.html',
+  './src/view-components/header/header.html',
+  './src/view-components/leftbar/leftbar.html',
+  './src/view-components/rightbar/rightbar.html',
+  './src/view-components/footer/footer.html',
+  './src/view-components/layout-controls/layout-controls.html',
+  './src/view-components/audio/audio-modal.html',
+  './src/view-components/overlays/overlays.html',
+  './src/view-components/fabs/fabs.html'
+];
+
+const SCRIPT_ASSETS = [
+  './src/boot/general-listeners.js',
+  './src/services.js',
+  './src/ui-components/ui-helpers.js',
+  './src/view-components/pages/login/view-login.js',
+  './src/view-components/pages/lobby/view-lobby.js',
+  './src/view-components/header/view-header.js',
+  './src/view-components/leftbar/view-leftbar.js',
+  './src/view-components/rightbar/view-rightbar.js',
+  './src/view-components/footer/view-footer.js',
+  './src/view-components/layout-controls/view-layout-controls.js',
+  './src/view-components/audio/view-audio.js',
+  './src/view-components/fabs/view-fabs.js'
+];
+
+const ASSETS = Array.from(new Set([...BASE_ASSETS, ...VIEW_ASSETS, ...SCRIPT_ASSETS]));
+
+const precacheAssets = async () => {
+  const cache = await caches.open(CACHE_NAME);
+  const requests = ASSETS.map((asset) => new Request(asset, { cache: 'no-cache' }));
+  const results = await Promise.allSettled(
+    requests.map(async (request) => {
+      const response = await fetch(request);
+      if (!response.ok) {
+        throw new Error(`Failed to precache ${request.url}`);
+      }
+      await cache.put(request, response);
+    })
+  );
+  const rejected = results.filter((result) => result.status === 'rejected');
+  if (rejected.length) {
+    console.warn('Precache skipped some assets.', rejected);
+  }
+};
+
 
 // Installazione: cache iniziale
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
-  self.skipWaiting();
+  event.waitUntil(precacheAssets());
 });
 
 // Attivazione: pulizia cache vecchie
@@ -149,12 +215,32 @@ self.addEventListener('fetch', (event) => {
     try {
       const network = await fetch(req);
       if (req.method === 'GET') {
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(req, network.clone());
+        const isPartial = network.status === 206 || network.headers.has('Content-Range');
+        const isRangeRequest = req.headers.has('Range');
+        if (!isPartial && !isRangeRequest) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(req, network.clone());
+        }
       }
       return network;
     } catch {
       return caches.match(req) || caches.match('./index.html');
     }
   })());
+});
+
+self.addEventListener('message', (event) => {
+  const { type } = event.data || {};
+  if (type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+
+  if (type !== 'PRECACHE') return;
+  const replyPort = event.ports?.[0];
+  event.waitUntil(
+    precacheAssets().then(() => {
+      replyPort?.postMessage({ type: 'PRECACHE_DONE' });
+    })
+  );
 });

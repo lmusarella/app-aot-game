@@ -1,0 +1,549 @@
+ /* ==== Overlay mano – auto width + tools ==== */
+ .hand-overlay[hidden] {
+   display: none !important;
+ }
+
+ .hand-overlay {
+   --card-w: clamp(280px, 30ch, 340px);
+   /* larghezza carta base */
+   position: fixed;
+   inset: 0;
+   z-index: 100002;
+   display: grid;
+   place-items: center;
+ }
+
+ .hand-backdrop {
+   position: absolute;
+   inset: 0;
+   background: rgba(8, 10, 14, .64);
+   backdrop-filter: blur(6px) saturate(120%);
+ }
+
+ /* lo stage ora shrink-wrappa al contenuto (max 96vw) */
+ .hand-stage {
+   position: relative;
+   display: inline-block;
+   /* <-- fa shrink-wrap */
+   width: fit-content(96vw);
+   /* <-- si adatta alle carte */
+   max-width: 600px;
+   /* cap a viewport */
+   max-height: 88vh;
+   padding: 18px;
+   border-radius: 16px;
+   border: 1px solid #1f2230;
+   background-color: transparent;
+   box-shadow: 0 18px 44px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
+   animation: ttPop .12s ease-out;
+   overflow: hidden;
+ }
+
+ /* toolbar (close + rimescola) */
+ .hand-close,
+ .hand-shuffle {
+   position: absolute;
+   top: 10px;
+   width: 34px;
+   height: 34px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #13151d;
+   color: #ddd;
+   cursor: pointer;
+ }
+
+ .hand-close {
+   right: 10px;
+ }
+
+ .hand-shuffle {
+   right: 52px;
+ }
+
+ /* icona a sinistra della X */
+ .hand-close:hover,
+ .hand-shuffle:hover {
+   filter: brightness(1.08);
+ }
+
+ /* strip carte: grid in colonne => larghezza intrinseca = somma carte */
+ .hand-strip {
+   display: grid;
+   grid-auto-flow: column;
+   grid-auto-columns: var(--card-w);
+   gap: 16px;
+   overflow-x: auto;
+   padding: 6px 10px 12px;
+   scroll-snap-type: x proximity;
+   -webkit-overflow-scrolling: touch;
+ }
+
+ .hand-strip::before,
+ .hand-strip::after {
+   content: "";
+   width: 12px;
+ }
+
+ /* carta */
+ .hand-card {
+   scroll-snap-align: center;
+ }
+
+ .tt-card.card-sheet {
+   height: 100%;
+   display: flex;
+   flex-direction: column;
+   align-items: stretch;
+   padding: 14px;
+   border-radius: 16px;
+   border: 3px solid gray;
+   background: linear-gradient(180deg, #121524, #0d101b);
+   box-shadow: 0 8px 24px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .04);
+   text-align: center;
+   transition: transform .08s ease, filter .12s ease, box-shadow .2s ease, border-color .2s ease;
+   animation: cardPulse 2.8s ease-in-out infinite;
+ }
+
+ @keyframes cardPulse {
+
+   0%,
+   100% {
+
+     box-shadow:
+       0 0 0 0 rgba(0, 170, 255, .45),
+       0 0 12px rgba(0, 140, 255, .35),
+       0 0 22px rgba(0, 110, 255, .25) inset;
+     border-color: #3399ff;
+   }
+
+   50% {
+
+     box-shadow:
+       0 0 0 10px rgba(0, 170, 255, .12),
+       0 0 28px rgba(0, 180, 255, .55),
+       0 0 35px rgba(0, 140, 255, .4) inset;
+     border-color: #66ccff;
+   }
+ }
+
+ .card-sheet .tt-title {
+   display: flex;
+   justify-content: center;
+   gap: 10px;
+   margin: 0 0 6px;
+   font: 700 16px/1.1 system-ui;
+ }
+
+ .card-sheet .tt-avatar {
+   width: 180px;
+   height: 180px;
+   margin: 6px auto 8px;
+   border-radius: 50%;
+   overflow: hidden;
+   border: 3px solid gray;
+   background: #0b0d12;
+   box-shadow: 0 0 12px rgba(0, 0, 0, .4);
+ }
+
+ .card-sheet .tt-ability {
+   margin-top: 6px;
+   padding-top: 8px;
+   border-top: 1px solid #20253a;
+ }
+
+ .card-sheet .tt-ability .tt-label {
+   display: block;
+   font-size: 11px;
+   opacity: .7;
+   letter-spacing: .3px;
+   margin-bottom: 6px;
+ }
+
+ .card-sheet .tt-ability-text {
+   font-size: 13px;
+   line-height: 1.35;
+   white-space: pre-wrap;
+   overflow-wrap: anywhere;
+   max-height: 7.5em;
+   overflow: auto;
+ }
+
+ .card-actions {
+   margin-top: 12px;
+   display: flex;
+   gap: 8px;
+   justify-content: center;
+ }
+
+ .card-btn {
+   padding: 8px 12px;
+   border-radius: 10px;
+   border: 1px solid #2a2f43;
+   background: #14192b;
+   color: #e6e6e6;
+   font-weight: 800;
+   cursor: pointer;
+ }
+
+ .card-btn.primary {
+   background: #193256;
+   border-color: #254066;
+   color: #cfe8ff;
+ }
+
+.card-btn.danger {
+  background: linear-gradient(180deg, #b83131, #7a1f1f);
+  border-color: #3f1111;
+  color: #fff;
+}
+
+/* ==== Effetti carte (pescata/uso) ==== */
+.card-fx-overlay {
+  position: fixed;
+  inset: -8%;
+  pointer-events: none;
+  z-index: 100001;
+  opacity: 0;
+}
+
+.card-fx-overlay.card-fx--draw {
+  animation: cardFxFade 2000ms ease-out forwards;
+}
+
+.card-fx-overlay.card-fx--draw::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(140% 120% at 50% 40%, rgba(0, 0, 0, 0) 30%, rgba(25, 35, 55, 0.45) 60%, rgba(10, 12, 18, 0.85) 85%),
+    radial-gradient(80% 70% at 15% 20%, rgba(80, 120, 160, 0.22), transparent 60%),
+    radial-gradient(80% 80% at 85% 75%, rgba(120, 160, 190, 0.2), transparent 60%);
+  filter: blur(4px) saturate(110%);
+  animation: cardMistDrift 2400ms ease-in-out forwards;
+}
+
+.card-fx-overlay.card-fx--use {
+  --fx-color: #f97316;
+  animation: cardFxPulse 1400ms ease-out forwards;
+}
+
+.card-fx-overlay.card-fx--use::before,
+.card-fx-overlay.card-fx--use::after {
+  content: "";
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  opacity: 0.8;
+}
+
+.card-fx-overlay.card-fx--use::before {
+  background: radial-gradient(circle, color-mix(in srgb, var(--fx-color) 65%, #fff) 0%, color-mix(in srgb, var(--fx-color) 55%, #000) 35%, transparent 70%);
+  filter: blur(6px);
+  animation: cardUseRing 1400ms ease-out forwards;
+}
+
+.card-fx-overlay.card-fx--use::after {
+  background: radial-gradient(circle, color-mix(in srgb, var(--fx-color) 50%, #fff) 0%, transparent 60%);
+  filter: blur(12px);
+  animation: cardUseGlow 1400ms ease-out forwards;
+}
+
+.card-fx-overlay.card-fx--event { --fx-color: #f97316; }
+.card-fx-overlay.card-fx--consumable { --fx-color: #22c55e; }
+.card-fx-overlay.card-fx--equip { --fx-color: #60a5fa; }
+
+@keyframes cardFxFade {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes cardMistDrift {
+  0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.8; }
+  50% { transform: translate3d(-2%, 1.5%, 0) scale(1.04); opacity: 1; }
+  100% { transform: translate3d(2%, -1.5%, 0) scale(1.06); opacity: 0; }
+}
+
+@keyframes cardFxPulse {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes cardUseRing {
+  0% { transform: scale(0.7); opacity: 0.9; }
+  65% { transform: scale(1.05); opacity: 0.6; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes cardUseGlow {
+  0% { transform: scale(0.8); opacity: 0.7; }
+  60% { transform: scale(1.1); opacity: 0.45; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+ .card-btn:hover {
+   filter: brightness(1.08);
+ }
+
+ .card-btn:active {
+   transform: translateY(1px);
+ }
+
+ /* micro-interazione */
+ @media (hover:hover) {
+   .hand-card {
+     transition: transform .18s cubic-bezier(.2, .8, .2, 1), filter .18s;
+   }
+
+   .hand-card:hover {
+     transform: translateY(-8px);
+     filter: brightness(1.06);
+   }
+ }
+
+ /* vista singola (quando peschi): carte più larghe */
+ .hand-stage--single {
+   max-width: 350px !important;
+ }
+
+
+ /* === Attack bubble / picker === */
+ .attack-bubble {
+   position: fixed;
+   z-index: 100000;
+   background: linear-gradient(180deg, #10121a, #0d0f16);
+   border: 1px solid #24263a;
+   border-radius: 12px;
+   padding: 8px 10px;
+   box-shadow: 0 12px 32px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .04);
+   animation: ttPop .12s ease-out;
+ }
+
+ .attack-bubble__btn {
+   border: 1px solid #2a2a2a;
+   background: #13151d;
+   color: #e6e6e6;
+   padding: 8px 12px;
+   border-radius: 10px;
+   font-weight: 800;
+   cursor: pointer;
+ }
+
+ .attack-bubble__btn:hover {
+   background: #181b26;
+ }
+
+ /* evidenzia i bersagli selezionabili */
+ .hex-member.targetable .hex-circle {
+   box-shadow: 0 0 0 3px #22c55e, 0 0 16px rgba(34, 197, 94, .45);
+   border-color: #22c55e !important;
+ }
+
+ /* mini-hint in basso */
+ .target-hint {
+   position: fixed;
+   left: 50%;
+   transform: translateX(-50%);
+   bottom: calc(var(--footer-h) + 10px);
+   background: #0f1118;
+   border: 1px solid #23263a;
+   color: #dfe6ff;
+   padding: 6px 10px;
+   border-radius: 999px;
+   font-size: 12px;
+   z-index: 100000;
+   box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+ }
+
+ /* stile mini per scelte bersaglio nel tooltip */
+ #tooltip .atk-choice {
+   all: unset;
+   cursor: pointer;
+   display: grid;
+   place-items: center;
+   padding: 6px 8px;
+   border-radius: 10px;
+   border: 1px solid #2a2a2a;
+   background: #11131a;
+ }
+
+ #tooltip .atk-choice:hover {
+   filter: brightness(1.06);
+ }
+
+ /* === Target pick list (tooltip) === */
+ .picklist {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+   gap: 10px;
+   max-height: 48vh;
+   overflow: auto;
+   padding-right: 2px;
+   /* evita che la scrollbar copra */
+   scrollbar-gutter: stable;
+ }
+
+ .tcard {
+   display: grid;
+   grid-template-columns: 48px 1fr;
+   align-items: center;
+   gap: 10px;
+   padding: 8px 10px;
+   border-radius: 10px;
+   border: 1px solid var(--ring, #2a2a2a);
+   background: #13151d;
+   color: #e6e6e6;
+   cursor: pointer;
+   text-align: left;
+   transition: box-shadow .16s ease, filter .16s ease, border-color .16s ease;
+ }
+
+ .tcard:hover {
+   box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+   filter: brightness(1.03);
+ }
+
+ .tcard:focus-visible {
+   outline: 2px solid #66ccff;
+   outline-offset: 2px;
+ }
+
+ .tcard.is-active {
+   border-color: var(--oro);
+   box-shadow: 0 0 0 2px var(--oro), 0 0 12px rgba(207, 148, 57, .35);
+ }
+
+ /* variante mini (stesso markup che hai usato) */
+ .tcard--mini .tcard__avatar {
+   width: 44px;
+   height: 44px;
+ }
+
+ .tcard__avatar {
+   width: 48px;
+   height: 48px;
+   border-radius: 50%;
+   overflow: hidden;
+   border: 2px solid var(--ring, #444);
+   grid-row: 1 / span 3;
+ }
+
+ .tcard__avatar img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+ }
+
+ .tcard__body {
+   display: grid;
+   grid-template-rows: auto auto auto auto;
+   gap: 4px;
+   min-width: 0;
+ }
+
+ .tcard__name {
+   font-weight: 700;
+   font-size: 13px;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+ }
+
+ .tcard__sub {
+   font-size: 12px;
+   opacity: .85;
+ }
+
+ .tcard .hpbar {
+   margin-top: 2px;
+   height: 6px;
+ }
+
+ .tcard .hpbar-fill {
+   height: 100%;
+   background: linear-gradient(180deg, #22c55e, #15803d);
+   transition: width .2s ease;
+ }
+
+ .tcard__meta {
+   font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono";
+   opacity: .9;
+ }
+
+ /* tooltip più largo quando c'è una picklist (auto-adatta la larghezza) */
+ #tooltip .tt-card:has(.picklist) {
+   width: auto;
+   max-width: min(92vw, 680px);
+ }
+
+.start-hdr-btn {
+  --start-accent: #16a34a;
+  background: radial-gradient(120% 140% at 25% 20%, color-mix(in oklch, var(--start-accent) 88%, white 12%), color-mix(in oklch, var(--start-accent) 70%, black 30%));
+  color: #fff;
+  border: 1px solid color-mix(in oklch, var(--start-accent) 60%, black 40%);
+  border-radius: var(--fab-radius);
+  min-width: var(--fab-size);
+  height: var(--fab-size);
+  padding: 0 16px;
+  font-weight: 900;
+  letter-spacing: .3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-outer), var(--shadow-inset-top), var(--shadow-inset-bottom), 0 0 0 3px color-mix(in oklch, var(--start-accent) 22%, transparent);
+  transition: transform .08s cubic-bezier(.25, .9, .2, 1), filter .14s cubic-bezier(.2, .8, .2, 1), box-shadow .18s cubic-bezier(.2, .8, .2, 1), border-color .18s cubic-bezier(.2, .8, .2, 1);
+  white-space: nowrap;
+}
+
+.start-hdr-btn:hover {
+  filter: saturate(1.06) brightness(1.02);
+}
+
+.start-hdr-btn:active {
+  transform: scale(.985);
+  box-shadow: var(--shadow-outer-strong), var(--shadow-inset-top), var(--shadow-inset-bottom);
+}
+
+ .start-hdr-btn[hidden] {
+   display: none !important;
+ }
+
+ /* quando è in modalità "Termina setup" (arancio) */
+.start-hdr-btn[data-mode="end"] {
+  --start-accent: #f59e0b;
+}
+
+.turn-status-overlay {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10050;
+  max-width: min(520px, 90vw);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(135deg, rgba(18, 22, 34, 0.94), rgba(12, 14, 20, 0.92));
+  color: #e2e8f0;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(251, 191, 36, 0.08);
+  animation: turnStatusPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes turnStatusPulse {
+  0%,
+  100% {
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+    opacity: 0.9;
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.35), 0 12px 26px rgba(0, 0, 0, 0.55);
+    opacity: 1;
+  }
+}

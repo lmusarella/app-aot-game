@@ -1,0 +1,152 @@
+ :root {
+   --hex-bg: #111;
+   --rosso: #AE2A27;
+   --oro: #CF9439;
+   --argento: #C0C0C0;
+   --viola: #584083;
+   --grigio: #431c14;
+   --blu: #102575b5;
+   --verde: #44ad6b;
+
+   /* FAB palette */
+   --spawn: #d7263d;
+   --event: #7c3aed;
+   --arruola: #16a34a;
+
+   --cone: #2c7;
+   /* bars */
+   --bar-h: 18px;
+   --bar-radius: 12px;
+
+   /* benches height target (~3-4 card) */
+   --bench-max: 240px;
+
+   /* footer */
+   --footer-h: 100px;
+ }
+
+ * {
+   box-sizing: border-box
+ }
+
+body {
+  margin: 0;
+  background: #1c2030c7;
+  color: #e6e6e6;
+   font: 13px/1.35 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+
+   /* layout 3 colonne */
+   height: 100vh;
+   /* ⬅️ blocca l’altezza al viewport */
+   display: grid;
+   grid-template-rows: auto 1fr;
+   /* header + contenuto */
+   grid-template-columns: 350px 1fr 350px;
+   /* sinistra, campo, destra */
+
+   -webkit-user-select: none;
+   /* iOS/Safari */
+   -ms-user-select: none;
+   /* vecchio Edge */
+   user-select: none;
+   /* standard */
+  -webkit-touch-callout: none;
+}
+
+#view-header,
+#view-leftbar,
+#view-rightbar,
+#view-footer,
+#view-overlays,
+#view-audio,
+#view-layout-controls,
+#view-fabs,
+#view-login,
+#view-lobby,
+#view-room {
+  display: contents;
+}
+
+ /* === Scrollbar unificata (dark) — cross-browser === */
+ :root {
+   --sb-size: 10px;
+   /* spessore base */
+   --sb-radius: 10px;
+   /* raggio angoli */
+   --sb-track: #0b0c12;
+   /* binario */
+   --sb-thumb: #2a2a2a;
+   /* pollice */
+   --sb-thumb-hover: #333;
+   /* hover */
+   --sb-thumb-active: #3b3b3b;
+   /* active/drag */
+ }
+
+ /* Firefox */
+ * {
+   scrollbar-width: thin;
+   /* auto | thin | none */
+   scrollbar-color: var(--sb-thumb) var(--sb-track);
+ }
+
+ /* WebKit (Chrome, Edge, Safari, Opera) */
+ *::-webkit-scrollbar {
+   width: var(--sb-size);
+   height: var(--sb-size);
+   /* per scroll orizzontali, se presenti */
+ }
+
+ *::-webkit-scrollbar-track {
+   background: var(--sb-track);
+   border-radius: var(--sb-radius);
+ }
+
+ *::-webkit-scrollbar-thumb {
+   background: var(--sb-thumb);
+   border-radius: var(--sb-radius);
+   border: 2px solid var(--sb-track);
+   /* crea effetto “inset” */
+ }
+
+ *::-webkit-scrollbar-thumb:hover {
+   background: var(--sb-thumb-hover);
+ }
+
+ *::-webkit-scrollbar-thumb:active {
+   background: var(--sb-thumb-active);
+ }
+
+ /* (Opzionale) leggero padding interno per evitare overlapping del contenuto con la barra in liste strette */
+ .left-content,
+ .bench,
+ #log-box {
+   scrollbar-gutter: stable;
+   /* migliora layout quando appare la scrollbar */
+   overscroll-behavior: contain;
+ }
+
+ .log-entry {
+   font-family: monospace;
+ }
+
+ .log-info {
+   color: #5bc0de;
+ }
+
+ /* azzurrino */
+ .log-success {
+   color: #5cb85c;
+ }
+
+ /* verde */
+ .log-warning {
+   color: #f0ad4e;
+ }
+
+ /* giallo/arancio */
+ .log-error {
+   color: #d9534f;
+ }
+
+ /*

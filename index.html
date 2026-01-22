@@ -6,8 +6,24 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <link rel="manifest" href="./manifest.json">
     <title>AOT Companion</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel='stylesheet' href='src/dice-roller/styles.css' />
+    <link rel="stylesheet" href="styles/game/00-base.css">
+    <link rel="stylesheet" href="styles/game/01-header.css">
+    <link rel="stylesheet" href="styles/game/02-leftbar.css">
+    <link rel="stylesheet" href="styles/game/03-rightbar.css">
+    <link rel="stylesheet" href="styles/game/04-field.css">
+    <link rel="stylesheet" href="styles/game/05-fab.css">
+    <link rel="stylesheet" href="styles/game/06-dice-log.css">
+    <link rel="stylesheet" href="styles/game/07-footer-modal.css">
+    <link rel="stylesheet" href="styles/game/08-responsive-snackbar.css">
+    <link rel="stylesheet" href="styles/game/09-tooltips-cards.css">
+    <link rel="stylesheet" href="styles/game/10-accordions-pickers.css">
+    <link rel="stylesheet" href="styles/game/11-overlays.css">
+    <link rel="stylesheet" href="styles/game/12-audio-controls.css">
+    <link rel="stylesheet" href="styles/game/13-unit-mods.css">
+    <link rel="stylesheet" href="styles/game/14-vs-overlay.css">
+    <link rel="stylesheet" href="styles/game/15-tutorial-overlay.css">
+    <link rel="stylesheet" href="styles/screens.css">
+    <link rel='stylesheet' href='src/view-components/dice-roller/styles.css' />
     <link rel="icon" type="image/png" sizes="40x40" href="assets/img/logo.jpg">
 
     <!-- iPad/iPhone: icona Home -->
@@ -16,329 +32,36 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log('Service Worker registrato'))
-                .catch(err => console.error('SW registration failed:', err));
-        });
-    }
-</script>
 
 <body>
 
+    <!-- SCHERMATA LOGIN -->
+    <div id="view-login"></div>
+
+    <!-- SCHERMATA LOBBY -->
+    <div id="view-lobby"></div>
+
+    <!-- SCHERMATA STANZA -->
+    <div id="view-room"></div>
+
+
+
+    <!--<div id="screen-game" class="hidden">-->
     <!-- ===== HEADER minimal ===== -->
-    <header>
-        <div class="topbar">
-            <!-- Logo / Icona -->
-            <div class="logo-box">
-                <img src="assets/img/logo.jpg" alt="Logo" />
-            </div>
-
-            <!-- Brand -->
-            <div class="brand">AOT Companion</div>
-
-            <!-- Centro: Missione + Timer -->
-            <div class="center-box">
-                <button id="btn-tutorial" class="btn-icon" title="Tutorial" aria-label="Tutorial">
-                    ❔
-                </button>
-                <!-- Missione -->
-                <div class="mission-ctrl">
-                    <div class="mc-box">
-                        <span class="mc-label">Missione</span>
-                        <button id="m-dec" class="mc-btn" type="button" title="Missione precedente">−</button>
-                        <span id="m-num" class="mc-num">1</span>
-                        <button id="m-inc" class="mc-btn" type="button" title="Missione successiva">+</button>
-                    </div>
-                </div>
-
-                <button id="btn-start" class="start-hdr-btn" data-mode="start" type="button"
-                    title="Avvia missione">INIZIA</button>
-                <!-- Timer missione -->
-                <div class="timer" title="Timer missione">
-                    <span class="mc-label">Timer</span>
-                    <button id="t-play" class="t-btn" aria-label="Play/Pausa">▶</button>
-                    <span id="t-time" class="t-time">00:00</span>
-                    <button id="t-reset" class="t-btn" aria-label="Azzera timer">⟲</button>
-                </div>
-
-                <button id="btn-audio" class="btn-icon" title="Impostazioni audio" aria-label="Impostazioni audio">
-                    🎧
-                </button>
-
-            </div>
-
-            <!-- Reset partita (a destra) -->
-            <button id="btn-reset-game" class="reset-hdr-btn" title="Reset Partita">
-                RESET PARTITA
-            </button>
-        </div>
-    </header>
+    <div id="view-header"></div>
 
 
     <!-- ===== MENU LATERALE SINISTRO ===== -->
 
-    <nav class="leftbar" aria-label="Pannello laterale">
-
-        <!-- OBIETTIVO MISSIONE -->
-        <section class="bench-section accordion-section" id="mission-section" data-open="1">
-            <div class="accordion-header">
-                <button class="accordion-trigger" type="button" aria-expanded="true" aria-controls="mission-panel">
-                    <h4 class="accordion-title">Dashboard Missione</h4>
-                    <span class="accordion-caret" aria-hidden="true">▾</span>
-                </button>
-            </div>
-            <div class="accordion-panel" id="mission-panel" role="region" aria-hidden="false">
-                <div class="accordion-inner" style="padding: 10px;">
-
-                    <div id="mission-card" role="button" tabindex="0" aria-label="Apri dettagli missione corrente">
-
-                        <div id="mission-head" class="mission-head mission-card">
-                            <p class="mission-title">
-                                <strong>#<span id="mc-num"></span> — <span id="mc-title"></span></strong>
-                            </p>
-                            <ul id="mc-brief" class="mission-brief"></ul>
-                            <p id="mc-reward" class="mission-reward"></p>
-                            <p id="mc-event" class="mission-reward"></p>
-                        </div>
-
-                        <div class="mission-stats">
-                            <div class="msn-badge"><span class="lbl">Uccisioni</span><span id="msn-kills">0</span></div>
-                            <div class="msn-badge"><span class="lbl">Perdite</span><span id="msn-losses">0</span></div>
-                            <div class="msn-badge"><span class="lbl">Tentativi</span><span id="msn-attempts">0</span>
-                            </div>
-                            <div class="msn-badge"><span class="lbl">Round</span><span id="msn-round">0</span></div>
-                        </div>
-
-                        <div class="mission-subtitle">Carte attivate</div>
-                        <ul id="msn-evlist" class="msn-list"><!-- cronologia eventi --></ul>
-
-                        <!--<div class="mission-subtitle">Effetti attivi</div>
-                        <div id="msn-evactive" class="msn-chips"> </div>-->
-                    </div>
-
-                </div>
-            </div>
-        </section>
-
-        <!-- MODIFICATORI TIRI -->
-        <section class="bench-section accordion-section" id="mods-section" data-open="0">
-            <div class="accordion-header">
-                <button class="accordion-trigger" type="button" aria-expanded="true" aria-controls="mods-panel">
-                    <h4 class="accordion-title">Modificatori Globali</h4>
-                    <span class="accordion-caret" aria-hidden="true">▾</span>
-                </button>
-            </div>
-            <div class="accordion-panel" id="mods-panel" role="region" aria-hidden="false">
-                <div class="accordion-inner">
-                    <div class="rm-rows">
-                        <div class="rm-row" data-kind="atk" data-sign="zero">
-                            <span class="rm-label">ATK</span>
-                            <div class="rm-stepper">
-                                <button class="rm-btn" data-delta="-1" type="button">−</button>
-                                <span class="rm-chip"><span id="rm-atk">+0</span></span>
-                                <button class="rm-btn" data-delta="+1" type="button">+</button>
-                            </div>
-                        </div>
-                        <div class="rm-row" data-kind="tec" data-sign="zero">
-                            <span class="rm-label">TEC</span>
-                            <div class="rm-stepper">
-                                <button class="rm-btn" data-delta="-1" type="button">−</button>
-                                <span class="rm-chip"><span id="rm-tec">+0</span></span>
-                                <button class="rm-btn" data-delta="+1" type="button">+</button>
-                            </div>
-                        </div>
-                        <div class="rm-row" data-kind="agi" data-sign="zero">
-                            <span class="rm-label">AGI</span>
-                            <div class="rm-stepper">
-                                <button class="rm-btn" data-delta="-1" type="button">−</button>
-                                <span class="rm-chip"><span id="rm-agi">+0</span></span>
-                                <button class="rm-btn" data-delta="+1" type="button">+</button>
-                            </div>
-                        </div>
-                        <div class="rm-row" data-kind="all" data-sign="zero">
-                            <span class="rm-label">TOT</span>
-                            <div class="rm-stepper">
-                                <button class="rm-btn" data-delta="-1" type="button">−</button>
-                                <span class="rm-chip"><span id="rm-all">+0</span></span>
-                                <button class="rm-btn" data-delta="+1" type="button">+</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr class="rm-sep">
-
-                    <div class="rm-dice">
-                        <div class="rm-dice-row">
-                            <select id="rm-die" class="rm-die">
-                                <option value="4">d4</option>
-                                <option value="6">d6</option>
-                                <option value="8">d8</option>
-                                <option value="10">d10</option>
-                                <option value="12">d12</option>
-                                <option value="20" selected>d20</option>
-                            </select>
-                            <button id="rm-roll" class="rm-btn" type="button" title="Tira">🎲</button>
-                            <span id="rm-roll-out" class="rm-roll-out" aria-live="polite">—</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="bench-section accordion-section" id="unit-mods-section" data-open="0">
-            <div class="accordion-header">
-                <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="mods-unit-panel">
-                    <h4 class="accordion-title">Modificatori Unità</h4>
-                    <span class="accordion-caret" aria-hidden="true">▾</span>
-                </button>
-            </div>
-
-            <div class="accordion-panel" id="mods-unit-panel" role="region" aria-hidden="true">
-                <div class="accordion-inner" style="padding: 10px;">
-                    <div class="um">
-                        <div class="um-head">
-                            <button id="um-picker" class="um-picker" type="button">
-                                <span class="um-ava"><img id="um-ava" src="assets/img/logo.jpg" alt=""></span>
-                                <span class="um-info">
-                                    <span id="um-name" class="um-name">Seleziona unità</span>
-                                    <span id="um-role" class="um-role">—</span>
-                                </span>
-                                <span class="um-caret">▾</span>
-                            </button>
-                            <button id="um-reset" class="um-reset btn-icon" title="Reset">⟲</button>
-                            <div id="um-menu" class="um-menu" hidden></div>
-                        </div>
-
-                        <!-- ✨ NON mettere qui altri blocchi duplicati "Missione/Round" -->
-                        <div id="um-rows" class="um-rows"><!-- riempito via JS --></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- LOG PARTITA -->
-        <section class="bench-section accordion-section" id="log-section" data-open="0">
-            <div class="accordion-header">
-                <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="log-panel">
-                    <h4 class="accordion-title">Log partita</h4>
-                    <span class="accordion-caret" aria-hidden="true">▾</span>
-                </button>
-            </div>
-            <div class="accordion-panel" id="log-panel" role="region" aria-hidden="true">
-                <div class="accordion-inner">
-                    <div id="log-box" class="left-content"></div>
-                </div>
-            </div>
-        </section>
-
-    </nav>
+    <div id="view-leftbar"></div>
 
 
     <!-- ===== COLONNA PANCHINE (DESTRA) ===== -->
-    <aside>
-        <!-- SQUADRA -->
-        <section class="bench-section accordion-section" id="allies-section" data-open="0">
-            <div class="accordion-header">
-                <button class="accordion-trigger" type="button" aria-expanded="true" aria-controls="allies-panel">
-                    <h4 class="accordion-title">Squadra in missione</h4>
-                    <span id="count-allies" class="bench-count"></span>
-                    <span class="accordion-caret" aria-hidden="true">▾</span>
-                </button>
-            </div>
-            <div class="accordion-panel" id="allies-panel" role="region" aria-hidden="false">
-                <div class="accordion-inner">
-                    <div id="bench-allies" class="bench" data-section="ally"></div>
-                </div>
-            </div>
-        </section>
+    <div id="view-rightbar"></div>
 
-        <!-- GIGANTI -->
-        <section class="bench-section accordion-section" id="giants-section" data-open="0">
-            <div class="accordion-header">
-                <button class="accordion-trigger" type="button" aria-expanded="false" aria-controls="giants-panel">
-                    <h4 class="accordion-title">Giganti in campo</h4>
-                    <span id="count-enemies" class="bench-count"></span>
-                    <span class="accordion-caret" aria-hidden="true">▾</span>
-                </button>
-            </div>
-            <div class="accordion-panel" id="giants-panel" role="region" aria-hidden="true">
-                <div class="accordion-inner">
-                    <div id="bench-enemies" class="bench" data-section="enemy"></div>
-                </div>
-            </div>
-        </section>
+    <div id="view-overlays"></div>
 
-
-        <section class="bench-section accordion-section" id="walls-section" data-open="1">
-            <div class="accordion-header">
-                <button id="walls-toggle" class="accordion-trigger" type="button" aria-expanded="true"
-                    aria-controls="walls-panel">
-                    <h4 class="accordion-title">Mura</h4>
-                    <span id="count-walls" class="bench-count"></span>
-                    <span class="accordion-caret" aria-hidden="true">▾</span>
-                </button>
-            </div>
-
-            <!-- wrapper = necessario per animazione fluida -->
-            <div class="accordion-panel" id="walls-panel" role="region" aria-labelledby="walls-toggle"
-                aria-hidden="false">
-                <div class="accordion-inner">
-                    <div id="bench-walls" class="bench" data-section="wall"></div>
-                </div>
-            </div>
-        </section>
-
-
-    </aside>
-
-    <!-- ===== Tooltip ===== -->
-    <div id="tooltip"></div>
-
-
-    <!-- Popup Audio -->
-    <div id="audio-backdrop" class="modal-backdrop"></div>
-    <div id="audio-modal" class="modal modal-audio" role="dialog" aria-modal="true" aria-labelledby="audio-title">
-        <div class="modal-header">
-            <span id="audio-title" class="modal-title">Impostazioni Audio</span>
-            <button class="modal-close" data-close aria-label="Chiudi">×</button>
-        </div>
-        <div class="modal-body">
-            <!-- la stessa card di prima -->
-            <div class="vol-card" id="vol-card" role="region" aria-label="Controlli volume">
-                <div class="vol-row">
-                    <div class="vol-head">
-                        <span class="vol-ico" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" width="16" height="16">
-                                <path fill="currentColor" d="M12 3v10.55A4 4 0 1 1 10 17V8h8V3h-6z" />
-                            </svg>
-                        </span>
-                        <span class="vol-title">Musica</span>
-                        <output id="vol-music-val" class="vol-val">22%</output>
-                    </div>
-                    <input id="vol-music" class="vol-range music" type="range" min="0" max="100" step="1" value="22"
-                        data-prop="music" />
-                </div>
-
-                <div class="vol-row">
-                    <div class="vol-head">
-                        <span class="vol-ico" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" width="16" height="16">
-                                <path fill="currentColor" d="M13 3L4 14h6l-1 7 9-11h-6l1-7z" />
-                            </svg>
-                        </span>
-                        <span class="vol-title">Effetti</span>
-                        <output id="vol-sfx-val" class="vol-val">80%</output>
-                    </div>
-                    <input id="vol-sfx" class="vol-range sfx" type="range" min="0" max="100" step="1" value="80"
-                        data-prop="sfx" />
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="view-audio"></div>
 
 
     <!-- ===== CAMPO ===== -->
@@ -351,135 +74,23 @@
     <div id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
 
 
-    <!-- === FAB DOCK === -->
-    <div class="fab-dock" aria-label="Azioni rapide">
-        <!-- SPAWN -->
-        <div id="fab-spawn" class="fab spawn" aria-expanded="false">
-            <button class="fab-main spawn" type="button" title="Spawna un gigante">GIGANTI</button>
-            <div class="fab-options" aria-hidden="true">
-                <button class="fab-option" data-type="Puro" title="Gigante Puro" style="--angle:-70deg">Spawn
-                    Puro</button>
-                <button class="fab-option" data-type="Anomalo" title="Gigante Anomalo" style="--angle:-45deg">Spawn
-                    Anomalo</button>
-                <button class="fab-option" data-type="Mutaforma" title="Gigante Mutaforma" style="--angle:45deg">Spawn
-                    Mutaforma</button>
-                <button class="fab-option" data-type="Casuale" title="Gigante Casuale" style="--angle:70deg">Spawn
-                    Evento
-                </button>
-                <button class="fab-option" data-type="Movimento" title="Movimento" style="--angle:0deg">Movimento
-                </button>
-            </div>
-        </div>
-        <!-- EVENTO -->
-        <div id="fab-event" class="fab event" aria-expanded="false">
-            <button class="fab-main event" type="button" title="Carte">CARTE</button>
-            <div class="fab-options" aria-hidden="true">
-                <button class="fab-option" data-ev="evento" title="Pesca Evento" style="--angle:-65deg">Pesca
-                    Evento <span class="deck-badge" data-deck-badge="event"></span></button>
-                <button class="fab-option" data-ev="reshuffle" title="Rimescola gli scarti di tutti i mazzi"
-                    style="--angle:-35deg">
-                    Rimescola Mazzi
-                </button>
-                <button class="fab-option" data-ev="showhand" title="Carte in mano" style="--angle:35deg">Carte in
-                    mano <span class="deck-badge" data-deck-badge="showhand"></span></button>
-                <button class="fab-option" data-ev="consumabile" title="Pesca Consumabile" style="--angle:65deg">Pesca
-                    Consumabile <span class="deck-badge" data-deck-badge="consumable"></span> </button>
-            </div>
-        </div>
-
-        <!-- ARRUOLA -->
-        <div id="fab-arruola" class="fab arruola" aria-expanded="false">
-            <button class="fab-main arruola" type="button" title="Arruola unità">SQUADRA</button>
-            <div class="fab-options" aria-hidden="true">
-                <button class="fab-option" data-role="recruit" title="Arruola Reclute" style="--angle:-50deg">Arruola
-                    Reclute</button>
-                <button class="fab-option" data-role="random-team" title="Squadra casuale" style="--angle:0deg">
-                    Squadra casuale
-                </button>
-                <button class="fab-option" data-role="commander" title="Arruola Comandanti"
-                    style="--angle:50deg">Arruola Comandanti</button>
-            </div>
-        </div>
-
-
-    </div>
+    <div id="view-fabs"></div>
 
     <!-- ===== FOOTER overlay ===== -->
-    <footer class="app-footer" aria-label="Footer">
-        <!-- Barre compatte nel footer -->
-        <div class="footer-bars" role="group" aria-label="Stato Squadra">
-            <!-- Morale -->
-            <div class="bar-row mini" id="morale-row">
-                <span class="br-label">Morale</span>
-                <button class="bbtn" data-target="morale" data-delta="-1" title="-1%">−</button>
-                <div class="bar morale">
-                    <div id="morale-fill" class="fill" style="width:65%"></div>
-                </div>
-                <button class="bbtn" data-target="morale" data-delta="1" title="+1%">+</button>
+    <div id="view-footer"></div>
 
-            </div>
+    <div id="view-layout-controls"></div>
 
-            <!-- Esperienza -->
-            <div class="bar-row mini" id="xp-row">
-                <span class="br-label">
-                    Exp <span id="lvl-val" style="margin-left:6px; opacity:.75; font-size:11px;">Lv. 1</span>
-                </span>
-                <button class="bbtn" data-target="xp" data-xp="-1" title="-1 XP">−</button>
-                <div class="bar xp">
-                    <div id="xp-fill" class="fill" style="width:40%"></div>
-                </div>
-                <button class="bbtn" data-target="xp" data-xp="1" title="+1 XP">+</button>
-                <!-- non serve più il br-val a destra -->
-            </div>
-        </div>
-    </footer>
+    <!-- </div> -->
 
-    <div id="vs-overlay" hidden>
-        <div class="vs-wrap" role="dialog" aria-label="Scontro in corso" aria-live="polite">
-            <div class="vs-card vs-left"></div>
-            <div class="vs-badge">VS</div>
-            <div class="vs-card vs-right"></div>
-        </div>
-    </div>
-
-    <div id="atk-overlay" hidden>
-        <div class="vs-backdrop"></div>
-        <div class="vs-wrap atk" role="dialog" aria-label="Esito attacco" aria-live="polite">
-            <div class="vs-card vs-left"></div>
-            <div class="vs-badge" id="atk-badge">—</div>
-            <div class="vs-card vs-right"></div>
-            <div class="atk-details">
-                <ul id="atk-lines"></ul>
-            </div>
-        </div>
-    </div>
-    <!-- Overlay Mano (creato/riempito via JS) -->
-    <!-- Overlay Carte (mano / pesca) -->
-    <div id="hand-overlay" class="hand-overlay" hidden>
-        <div class="hand-backdrop"></div>
-        <div class="hand-stage hand-stage--strip" role="dialog" aria-modal="true" aria-label="Carte">
-            <div class="hand-strip" id="hand-strip" tabindex="0" aria-live="polite"></div>
-            <button class="hand-close" title="Chiudi" aria-label="Chiudi">×</button>
-        </div>
-    </div>
-
-
-    <button id="toggle-left" class="collapse-handle left" aria-expanded="true" title="Comprimi/espandi menu sinistro">
-        <span class="arrow">⟨</span>
-    </button>
-
-    <button id="toggle-right" class="collapse-handle right" aria-expanded="true" title="Comprimi/espandi menu destro">
-        <span class="arrow">⟩</span>
-    </button>
-
-    <script type="module" src="app.js"></script>
+    <script type="module" src="src/app.js"></script>
 
     <script src="libs/three.min.js"></script>
     <script src="libs/cannon.min.js"></script>
     <script src="libs/teal.js"></script>
-    
-    <script src="src/dice-roller/dice.js"></script>
-    <script src="src/dice-roller/main.js"></script>
+
+    <script src="src/view-components/dice-roller/dice.js"></script>
+    <script src="src/view-components/dice-roller/main.js"></script>
 </body>
 
 </html>
