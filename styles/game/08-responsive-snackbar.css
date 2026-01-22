@@ -492,6 +492,7 @@
   text-align: right;
   white-space: nowrap;
   padding-right: 2px;
+  grid-column: 3;
   justify-self: end;
   align-self: center;
 }

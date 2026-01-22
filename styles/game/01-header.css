@@ -219,6 +219,7 @@ header {
   padding: 2px 6px;
   max-width: min(320px, 32vw);
   position: relative;
+  margin-left: 4px;
 }
 
 .header-briefing-avatar {
@@ -268,19 +269,19 @@ header {
 }
 
 .header-briefing-bubble {
-  position: relative;
-  padding: 6px 10px;
-  border-radius: 16px;
-  background: rgba(17, 24, 39, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  color: #e2e8f0;
-  font-size: 12px;
-  line-height: 1.2;
-  max-width: 240px;
   position: absolute;
-  left: calc(100% + 10px);
-  top: 50%;
-  transform: translateY(-50%);
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 240px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e2e8f0;
+  font-size: 11px;
+  line-height: 1.3;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -289,14 +290,7 @@ header {
 .header-briefing.is-open .header-briefing-bubble {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(-50%) translateX(0);
-}
-
-.header-briefing:not(.is-open):hover .header-briefing-bubble,
-.header-briefing:not(.is-open):focus-within .header-briefing-bubble {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(-50%) translateX(0);
+  transform: translate(-50%, 0);
 }
 
 .header-briefing-bubble.phase-bubble--blue {
@@ -341,23 +335,14 @@ header {
 .header-briefing-bubble::before {
   content: '';
   position: absolute;
-  left: -8px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-width: 8px 8px 8px 0;
-  border-style: solid;
-  border-color: transparent rgba(17, 24, 39, 0.92) transparent transparent;
-}
-
-.header-briefing-bubble::after {
-  content: '';
-  position: absolute;
-  left: -9px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-width: 9px 9px 9px 0;
-  border-style: solid;
-  border-color: transparent rgba(148, 163, 184, 0.35) transparent transparent;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  border-left: 1px solid rgba(148, 163, 184, 0.3);
+  border-top: 1px solid rgba(148, 163, 184, 0.3);
 }
 
 .header-briefing-text {

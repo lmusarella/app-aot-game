@@ -12,6 +12,15 @@
                 <div class="brand-version">v0.9.0</div>
             </div>
 
+            <div class="header-briefing is-open" aria-live="polite">
+                <button class="header-briefing-avatar" id="header-briefing-toggle" type="button"
+                    aria-expanded="true" aria-controls="header-briefing-bubble" aria-label="Mostra briefing">
+                    <img src="assets/img/comandanti/pixies.png" alt="Erwin Smith" />
+                </button>
+                <div id="header-briefing-bubble" class="header-briefing-bubble" role="tooltip" aria-hidden="false">
+                    <span id="phase-label" class="header-briefing-text">Attesa: in attesa del prossimo ordine.</span>
+                </div>
+            </div>
             <!-- Missione + controlli -->
             <div class="center-box">
                 <button id="btn-tutorial" class="btn-icon" title="Tutorial" aria-label="Tutorial">
@@ -34,15 +43,6 @@
         </div>
 
         <div class="header-center">
-            <div class="header-briefing is-open" aria-live="polite">
-                <button class="header-briefing-avatar" id="header-briefing-toggle" type="button"
-                    aria-expanded="true" aria-controls="header-briefing-bubble" aria-label="Mostra briefing">
-                    <img src="assets/img/comandanti/pixies.png" alt="Erwin Smith" />
-                </button>
-                <div id="header-briefing-bubble" class="header-briefing-bubble" role="tooltip" aria-hidden="false">
-                    <span id="phase-label" class="header-briefing-text">Attesa: in attesa del prossimo ordine.</span>
-                </div>
-            </div>
 
             <!-- Turn tracker (a destra) -->
             <div id="turn-tracker" class="turn-tracker">
