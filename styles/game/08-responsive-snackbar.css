@@ -852,9 +852,9 @@
 
 .footer-bars .bar-track {
   display: grid;
-  grid-template-columns: 28px 1fr 28px;
+  grid-template-columns: 1fr;
   align-items: center;
-  gap: 8px;
+  gap: 0;
   padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid rgba(99, 102, 241, 0.2);
@@ -865,10 +865,6 @@
 
 .footer-bars--single .bar-row.mini {
   min-height: 44px;
-}
-
-.footer-bars--single .bar-row.mini .bar-track {
-  grid-template-columns: 28px 1fr 28px;
 }
 
 .footer-phase {
@@ -946,11 +942,6 @@
   display: none;
 }
 
-.bar-row.morale-readonly .bar-track,
-.bar-row.xp-readonly .bar-track {
-  grid-template-columns: 1fr;
-  gap: 0;
-}
 
  /* Barre più sottili nel footer */
 .footer-bars .bar {
