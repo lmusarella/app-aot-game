@@ -102,6 +102,82 @@ function setPhase(text, loading = false) {
   roomPhaseLabel.classList.toggle('phase-loading', loading)
 }
 
+function arraysEqual(a = [], b = []) {
+  if (a === b) return true
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false
+  return a.every((value, index) => value === b[index])
+}
+
+async function ensureUniqueUnitPools(players = []) {
+  if (!APP_STATE.roomId || players.length === 0) return true
+
+  const commanderPool = shuffle(getCommanderPool().slice())
+  const recruitPool = shuffle(getRecruitPool().slice())
+
+  if (commanderPool.length < players.length) {
+    setError('Non ci sono abbastanza comandanti unici per questa stanza.')
+    return false
+  }
+
+  if (recruitPool.length < players.length * 3) {
+    setError('Non ci sono abbastanza reclute uniche per questa stanza.')
+    return false
+  }
+
+  const usedCommanders = new Set()
+  const usedRecruits = new Set()
+  const updates = []
+
+  const orderedPlayers = shuffle(players.slice())
+
+  orderedPlayers.forEach(player => {
+    let commanderCode = player.commander_code
+    if (!commanderCode || usedCommanders.has(commanderCode) || !commanderPool.includes(commanderCode)) {
+      commanderCode = commanderPool.find(code => !usedCommanders.has(code))
+    }
+    if (commanderCode) {
+      usedCommanders.add(commanderCode)
+    }
+
+    let recruits = Array.isArray(player.recruit_codes) ? [...new Set(player.recruit_codes)] : []
+    recruits = recruits.filter(code => code && !usedRecruits.has(code) && recruitPool.includes(code))
+    recruits.forEach(code => usedRecruits.add(code))
+
+    while (recruits.length < 3) {
+      const nextRecruit = recruitPool.find(code => !usedRecruits.has(code))
+      if (!nextRecruit) break
+      recruits.push(nextRecruit)
+      usedRecruits.add(nextRecruit)
+    }
+
+    const commanderChanged = commanderCode !== player.commander_code
+    const recruitsChanged = !arraysEqual(recruits, player.recruit_codes)
+
+    if (commanderChanged || recruitsChanged) {
+      updates.push({
+        room_id: APP_STATE.roomId,
+        user_id: player.user_id,
+        commander_code: commanderCode,
+        recruit_codes: recruits
+      })
+    }
+  })
+
+  if (updates.length === 0) return true
+
+  const { error } = await supabase
+    .from('room_players')
+    .upsert(updates, { onConflict: 'room_id,user_id' })
+
+  if (error) {
+    console.error('Errore aggiornando pool unità:', error)
+    setError('Errore aggiornando il pool di unità.')
+    return false
+  }
+
+  return true
+}
+
 async function ensurePlayerUnitPool() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !APP_STATE.roomId) return
@@ -601,6 +677,9 @@ export async function onAssignRolesAndUnits() {
     setError('Non tutti i giocatori hanno cliccato "Entra in campo".')
     return
   }
+
+  const poolsOk = await ensureUniqueUnitPools(players)
+  if (!poolsOk) return
 
   const shuffledPlayers = shuffle(players.slice())
   const commanderPlayer = shuffledPlayers[0]
