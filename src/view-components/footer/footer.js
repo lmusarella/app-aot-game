@@ -96,8 +96,10 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missi
                 <span class="msn-squad-unit">
                     <span class="msn-squad-avatar"><img src="${unitAvatar}" alt=""></span>
                     <span class="msn-squad-unit-name">${unitName}</span>
-                    <span class="msn-squad-unit-role">${unitRole}</span>
-                    <span class="msn-squad-unit-hp ${unitHp.isDead ? 'is-dead' : ''}">${unitHp.text}${unitHp.isDead ? ' (Morta)' : ''}</span>
+                    <span class="msn-squad-unit-meta">
+                        <span class="msn-squad-unit-role">${unitRole}</span>
+                        <span class="msn-squad-unit-hp ${unitHp.isDead ? 'is-dead' : ''}">${unitHp.text}${unitHp.isDead ? ' (Morta)' : ''}</span>
+                    </span>
                 </span>
             </li>
         `;

@@ -1039,27 +1039,6 @@
    margin-bottom: 6px;
  }
 
-.msn-squad-unit-role {
-  margin-left: auto;
-  font-size: 10px;
-  opacity: 0.7;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.msn-squad-unit-hp {
-  margin-left: 10px;
-  font-size: 11px;
-  opacity: 0.8;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.msn-squad-unit-hp.is-dead {
-  color: #f87171;
-  opacity: 0.95;
-}
-
 .footer-squad-empty {
   font-size: 12px;
   opacity: 0.75;
