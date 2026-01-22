@@ -489,11 +489,11 @@
   gap: 10px;
   font-size: 9px;
   opacity: 0.55;
-  text-align: right;
+  text-align: center;
   white-space: nowrap;
   padding-right: 2px;
-  grid-column: 3;
-  justify-self: end;
+  grid-column: 2;
+  justify-self: center;
   align-self: center;
 }
 
