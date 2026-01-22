@@ -186,7 +186,7 @@ function renderBenchSection(container, units, readOnly = false) {
             const statusLabel = online ? 'Online' : 'Offline';
             owner.innerHTML = `
                 <span class="msn-squad-dot ${statusClass}" title="${statusLabel}"></span>
-                <span>Giocatore: ${nameLabel}</span>
+                <span>${nameLabel}</span>
             `;
             owner.setAttribute('title', statusLabel);
             header.appendChild(owner);
