@@ -485,8 +485,8 @@
 
 .app-footer__credits {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-direction: row;
+  gap: 10px;
   font-size: 9px;
   opacity: 0.55;
   text-align: right;
