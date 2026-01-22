@@ -113,8 +113,8 @@
  }
 
  .unit-avatar {
-   width: 32px;
-   height: 32px;
+   width: 38px;
+   height: 38px;
    border-radius: 50%;
    overflow: hidden;
    border: 3px solid var(--sel, #fff);
