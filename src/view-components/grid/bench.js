@@ -31,6 +31,23 @@ function warnAction(message) {
     showSnackBar(message, {}, 'warning');
 }
 
+function canStartBenchDrag(unit) {
+    const phase = GAME_STATE.turnEngine?.phase;
+    if (phase !== 'setup' && phase !== 'move_phase') {
+        warnAction('Non puoi muovere unità in questa fase.');
+        return false;
+    }
+    if (!canActNow()) {
+        warnAction('Non è il tuo turno.');
+        return false;
+    }
+    if (!canControlUnit(unit)) {
+        warnAction('Puoi muovere solo la tua unità.');
+        return false;
+    }
+    return true;
+}
+
 const benchContext = {
     renderGrid: null,
     grid: null,
@@ -323,15 +340,8 @@ function renderBenchSection(container, units, readOnly = false) {
             // disattiva drag H5 per evitare conflitti su touch
             card.draggable = false;
             enablePointerDrag(card, {
+                canStart: () => canStartBenchDrag(u),
                 makePayload: () => {
-                    if (!canActNow()) {
-                        warnAction('Non è il tuo turno.');
-                        return null;
-                    }
-                    if (!canControlUnit(u)) {
-                        warnAction('Puoi muovere solo la tua unità.');
-                        return null;
-                    }
                     return { type: 'from-bench', unitId: u.id };
                 },
                 onDrop: (hexEl, payload) => {

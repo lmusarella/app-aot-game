@@ -681,19 +681,67 @@
 }
 
 .msn-badge {
-   display: flex;
-   align-items: center;
-   justify-content: space-between;
-   gap: 8px;
-   padding: 6px 10px;
-   border: 1px solid #2a2a2a;
-   border-radius: 10px;
-   background: #11131a;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(16, 18, 28, 0.96), rgba(9, 10, 16, 0.95));
   font-size: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 18px rgba(0, 0, 0, 0.35);
 }
 
-.msn-badge .lbl {
-  opacity: .75;
+.msn-badge-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.msn-badge-label {
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  font-size: 9px;
+}
+
+.msn-badge-value {
+  font-weight: 800;
+  font-size: 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.msn-badge--kills {
+  border-color: rgba(34, 197, 94, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 18px rgba(34, 197, 94, 0.15);
+}
+
+.msn-badge--kills .msn-badge-icon,
+.msn-badge--kills .msn-badge-value {
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.msn-badge--losses {
+  border-color: rgba(248, 113, 113, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 18px rgba(248, 113, 113, 0.15);
+}
+
+.msn-badge--losses .msn-badge-icon,
+.msn-badge--losses .msn-badge-value {
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fecaca;
 }
 
 .mission-timer-panel {

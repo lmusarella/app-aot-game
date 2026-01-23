@@ -121,6 +121,67 @@ function consumeMovePhaseMove(unit, playerId) {
     scheduleSave('move-phase', { force: true });
 }
 
+function canStartFieldDrag(unit) {
+    const phase = GAME_STATE.turnEngine?.phase;
+    if (unit?.role === 'wall') {
+        denyAction('Le mura non si possono spostare.');
+        return false;
+    }
+    if (phase !== 'setup' && phase !== 'move_phase') {
+        denyAction('Non puoi muovere unità in questa fase.');
+        return false;
+    }
+    if (!canActNow()) {
+        denyAction('Non è il tuo turno.');
+        return false;
+    }
+    if (!canControlUnit(unit)) {
+        denyAction('Puoi muovere solo la tua unità.');
+        return false;
+    }
+    if (phase === 'move_phase' && unit?.role !== 'enemy' && unit?.role !== 'wall') {
+        const { currentPlayerId } = getTurnInfo();
+        const playerId = currentPlayerId || APP_STATE.user?.id || 'local';
+        if (remainingMovePhaseMoves(unit, playerId) <= 0) {
+            denyAction('Movimento: hai esaurito i movimenti disponibili per questa unità.');
+            return false;
+        }
+    }
+    if (phase === 'setup' && unit?.role !== 'enemy') {
+        if (remainingSetupMoves() <= 0) {
+            denyAction('Setup: hai già usato tutti i 3 movimenti disponibili.');
+            return false;
+        }
+    }
+    return true;
+}
+
+function getMoveDropStatus(payload, hexEl) {
+    if (!payload || !hexEl) return null;
+    const phase = GAME_STATE.turnEngine?.phase;
+    if (phase !== 'setup' && phase !== 'move_phase') return 'ko';
+    const target = { row: +hexEl.dataset.row, col: +hexEl.dataset.col };
+    if (hasWallInCell(target.row, target.col)) return 'ko';
+    if (payload.type !== 'from-cell') return 'ok';
+    const unit = unitById.get(payload.unitId);
+    if (!unit) return 'ko';
+    if (phase === 'move_phase' && unit?.role !== 'enemy' && unit?.role !== 'wall') {
+        const { currentPlayerId } = getTurnInfo();
+        const playerId = currentPlayerId || APP_STATE.user?.id || 'local';
+        const dist = hexDistance(payload.from.row, payload.from.col, target.row, target.col);
+        if (dist !== 1) return 'ko';
+        if (remainingMovePhaseMoves(unit, playerId) <= 0) return 'ko';
+        return 'ok';
+    }
+    if (phase === 'setup' && unit?.role !== 'enemy') {
+        const dist = hexDistance(payload.from.row, payload.from.col, target.row, target.col);
+        if (dist !== 1) return 'ko';
+        if (remainingSetupMoves() <= 0) return 'ko';
+        return 'ok';
+    }
+    return 'ok';
+}
+
 export function renderGrid(container, rows, cols, occupancy = []) {
     container.textContent = "";
 
@@ -233,11 +294,13 @@ function createHexagon(row, col, unitIds = []) {
             content.draggable = false; // evita l'H5 su touch
 
             enablePointerDrag(content, {
+                canStart: () => canStartFieldDrag(unit),
                 makePayload: () => ({
                     type: 'from-cell',
                     unitId: unit.id,
                     from: { row, col, stackIndex: i }
                 }),
+                getDropStatus: (hexEl, payload) => getMoveDropStatus(payload, hexEl),
                 onDrop: (hexEl, payload) => {
                     // drop su cella
                     if (hexEl.classList.contains('hexagon')) {
