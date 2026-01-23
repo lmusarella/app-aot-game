@@ -39,6 +39,7 @@ async function runRoundStart(engine) {
 
     setTimeout(() => {
         engine.setPhase('move_phase');
+        scheduleSave('phase-change', { force: true });
         showPhaseBanner({
             text: 'FASE DI MOVIMENTO',
             subtext: `Round ${engine.round}. Effettua una azione di movimento per unità.`,

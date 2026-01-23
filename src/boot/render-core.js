@@ -11,7 +11,17 @@ export function renderCoreUI() {
     refreshMoraleUI();
     renderBonusMalus();
     renderBenches();
-    renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
+    const gridSettings = DB?.SETTINGS?.gridSettings;
+    const rows = Number(gridSettings?.rows);
+    const cols = Number(gridSettings?.cols);
+    if (Number.isFinite(rows) && Number.isFinite(cols) && rows > 0 && cols > 0) {
+        renderGrid(grid, rows, cols, GAME_STATE.spawns);
+    } else {
+        console.warn('[renderCoreUI] Grid settings non disponibili, skip renderGrid.', {
+            rows,
+            cols
+        });
+    }
     renderHeader();
     renderLogs();
     updateFabDeckCounters();
