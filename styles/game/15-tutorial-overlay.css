@@ -126,7 +126,7 @@
    position: fixed !important;
    inset: 0 !important;
    z-index: 9900 !important;
-   /* > vs-overlay (9600) e > dice-overlay (9000) */
+   /* > combat overlay (9600) */
    display: block !important;
    opacity: 1 !important;
    visibility: visible !important;

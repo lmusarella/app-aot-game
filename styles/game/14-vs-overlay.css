@@ -1,12 +1,12 @@
  /* ============ VS OVERLAY ============ */
- #vs-overlay {
-   position: fixed;
-   inset: 0;
-   z-index: 999999;
-   pointer-events: none;
-   opacity: 0;
-   transition: opacity .2s ease-out;
- }
+#vs-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--combat-overlay-z);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s ease-out;
+}
 
  #vs-overlay.show {
    opacity: 1;
@@ -206,7 +206,7 @@
 #atk-overlay {
   position: fixed;
   inset: 0;
-  z-index: 12002;
+  z-index: var(--combat-overlay-z);
 }
 
 #atk-overlay[hidden] {
@@ -228,7 +228,7 @@
 .combat-wait-overlay {
   position: fixed;
   inset: 0;
-  z-index: 999999;
+  z-index: var(--combat-overlay-z);
   display: grid;
   place-items: center;
   pointer-events: none;
@@ -381,7 +381,7 @@
    position: fixed;
    left: 50%;
    transform: translateX(-50%);
-   z-index: 9100;
+   z-index: var(--combat-overlay-under-z);
    /* si adatta al box dadi */
    pointer-events: none;
  }
