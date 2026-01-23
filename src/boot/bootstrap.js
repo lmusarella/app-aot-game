@@ -3,8 +3,8 @@ import { requestPrecache } from './sw-manager.js';
 import { loadViews } from './view-loader.js';
 
 export const startApplication = async () => {
-    await requestPrecache();
     await loadViews();
+    requestPrecache();
 
     const [
         { bootDataApplication },

@@ -52,6 +52,7 @@ export { renderBenches };
 export const grid = document.getElementById("hex-grid");
 
 const SETUP_MOVE_LIMIT = 3;
+const HUMAN_MOVE_SFX = './assets/sounds/movimento_3d.mp3';
 
 function getSetupPlayerKey() {
     return APP_STATE.user?.id || 'local';
@@ -464,6 +465,9 @@ async function handleDrop(payload, target) {
             }
         }
         moveOneUnitBetweenStacks(payload.from, target, payload.unitId);
+        if (u?.role !== 'enemy' && u?.role !== 'wall') {
+            await playSfx(HUMAN_MOVE_SFX, { volume: 0.6, loop: false });
+        }
         if (phase === 'move_phase' && u?.role !== 'enemy' && u?.role !== 'wall') {
             const { currentPlayerId } = getTurnInfo();
             const playerId = currentPlayerId || APP_STATE.user?.id || 'local';
