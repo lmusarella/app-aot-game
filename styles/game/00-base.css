@@ -23,6 +23,10 @@
 
    /* footer */
    --footer-h: 80px;
+
+   /* combat overlays */
+   --combat-overlay-z: 9600;
+   --combat-overlay-under-z: 9500;
  }
 
  * {
