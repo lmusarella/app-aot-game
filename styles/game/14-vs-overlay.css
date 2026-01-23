@@ -1,5 +1,6 @@
  /* ============ VS OVERLAY ============ */
-#vs-overlay {
+#vs-overlay,
+#atk-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--combat-overlay-z);
@@ -8,24 +9,20 @@
   transition: opacity .2s ease-out;
 }
 
- #vs-overlay.show {
-   opacity: 1;
- }
+#vs-overlay.show,
+#atk-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
 
 #vs-overlay .vs-backdrop,
 #atk-overlay .vs-backdrop {
-   position: absolute;
-   inset: 0;
-   background: rgba(9, 12, 20, .5);
-   backdrop-filter: blur(2px);
-   opacity: 0;
-   transition: opacity .2s ease-out;
- }
-
-#vs-overlay.show .vs-backdrop,
-#atk-overlay.show .vs-backdrop {
-   opacity: 1;
- }
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 12, 20, .5);
+  backdrop-filter: blur(2px);
+  opacity: 1;
+}
 
 #vs-overlay .vs-wrap,
 #atk-overlay .vs-wrap {
@@ -202,13 +199,7 @@
    display: none !important;
  }
 
- /* overlay riepilogo */
-#atk-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--combat-overlay-z);
-}
-
+/* overlay riepilogo */
 #atk-overlay[hidden] {
   display: none;
 }
