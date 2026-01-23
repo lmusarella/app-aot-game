@@ -38,6 +38,11 @@ let elHeaderUserAvatar = null;
 let elHeaderUserAvatarImg = null;
 let elHeaderUserMenuToggle = null;
 let elHeaderUserMenu = null;
+let elBriefing = null;
+let elBriefingToggle = null;
+let elBriefingBubble = null;
+let lastBriefingMessage = '';
+let hasUnreadBriefing = false;
 
 function cacheHeaderElements() {
     missionCardHead = document.getElementById('mission-head');
@@ -66,6 +71,9 @@ function cacheHeaderElements() {
     elHeaderUserAvatarImg = document.getElementById('hdr-user-avatar');
     elHeaderUserMenuToggle = document.getElementById('hdr-user-menu-toggle');
     elHeaderUserMenu = document.getElementById('hdr-user-menu');
+    elBriefing = document.querySelector('.header-briefing');
+    elBriefingToggle = document.getElementById('header-briefing-toggle');
+    elBriefingBubble = document.getElementById('header-briefing-bubble');
 
     return {
         missionCardHead,
@@ -91,7 +99,10 @@ function cacheHeaderElements() {
         elHeaderUserAvatar,
         elHeaderUserAvatarImg,
         elHeaderUserMenuToggle,
-        elHeaderUserMenu
+        elHeaderUserMenu,
+        elBriefing,
+        elBriefingToggle,
+        elBriefingBubble
     };
 }
 
@@ -177,6 +188,7 @@ function renderGameModeBadge() {
 }
 
 export function renderPhaseLabel() {
+    cacheHeaderElements();
     const phaseLabel = document.getElementById('phase-label');
     if (!phaseLabel) return;
     if (APP_STATE.gameMode === 'multiplayer') {
@@ -204,7 +216,12 @@ export function renderPhaseLabel() {
         attack_phase: 'Combattimento: risolvi gli attacchi.',
         end_round: 'Fine round: chiudi il turno.'
     };
-    phaseLabel.textContent = messageMap[phase] ?? `Fase: ${label}`;
+    const message = messageMap[phase] ?? `Fase: ${label}`;
+    phaseLabel.textContent = message;
+    if (message !== lastBriefingMessage) {
+        lastBriefingMessage = message;
+        setBriefingUnread(true);
+    }
 }
 
 // Render UI timer
@@ -333,6 +350,7 @@ export function initHeaderListeners() {
     if (!elements.missionCardHead) {
         throw new Error('Mission card header not found. Verify leftbar.html is loaded before initHeaderListeners.');
     }
+    initHeaderBriefingToggle();
     document.addEventListener('resetGame', resetGame);
     btnReset.addEventListener('click', async () => {
         const ok = await confirmDialog({
@@ -494,6 +512,32 @@ export function initHeaderListeners() {
     });
 
     initHeaderUserMenu();
+}
+
+function setBriefingOpen(isOpen) {
+    if (!elBriefing || !elBriefingToggle || !elBriefingBubble) return;
+    elBriefing.classList.toggle('is-open', isOpen);
+    elBriefingToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    elBriefingBubble.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+}
+
+function setBriefingUnread(isUnread) {
+    hasUnreadBriefing = isUnread;
+    if (!elBriefingToggle) return;
+    elBriefingToggle.classList.toggle('header-briefing-avatar--alert', isUnread);
+}
+
+function initHeaderBriefingToggle() {
+    if (!elBriefingToggle || !elBriefing || elBriefingToggle.dataset.bound) return;
+    elBriefingToggle.dataset.bound = '1';
+    setBriefingOpen(true);
+    elBriefingToggle.addEventListener('click', () => {
+        const isOpen = !elBriefing.classList.contains('is-open');
+        setBriefingOpen(isOpen);
+        if (hasUnreadBriefing && isOpen) {
+            setBriefingUnread(false);
+        }
+    });
 }
 
 function initHeaderUserMenu() {

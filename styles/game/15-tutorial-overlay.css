@@ -251,8 +251,8 @@
 }
 
 .header-user-menu-toggle {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(0, 0, 0, 0.35);
@@ -345,7 +345,7 @@
   align-items: center;
   gap: 16px;
   padding: 10px 14px;
-  margin-right: 8px;
+  margin: 0;
   border-radius: 16px;
   background: linear-gradient(135deg, rgba(11, 15, 25, 0.92), rgba(20, 24, 35, 0.6));
   border: 1px solid rgba(255, 255, 255, 0.18);

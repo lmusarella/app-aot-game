@@ -150,7 +150,9 @@ export function levelProgressPercent(xp, level) {
 }
 export function getMalusRow(moralePct) {
     const m = Math.max(0, Math.min(10, Number(moralePct) || 0));
-    return DB.SETTINGS.malusTable.find(r => m >= r.range.min && m <= r.range.max) || null;
+    const table = DB?.SETTINGS?.malusTable;
+    if (!Array.isArray(table)) return null;
+    return table.find(r => m >= r.range.min && m <= r.range.max) || null;
 }
 
 // --- CAP MODIFICATORI GLOBALI ----------------------------------------------

@@ -1,5 +1,9 @@
 <footer class="app-footer" aria-label="Footer">
     <div class="app-footer__row">
+        <button id="toggle-left" class="collapse-handle footer-toggle footer-toggle--left" aria-expanded="true"
+            title="Comprimi/espandi menu sinistro">
+            <span class="arrow">⟨</span>
+        </button>
         <div class="footer-left">
             <div class="footer-companions" role="group" aria-label="Compagni">
                 <span class="footer-companions-label">Compagni</span>
@@ -13,7 +17,11 @@
             <div class="footer-bars-card" aria-label="Morale ed esperienza">
                 <div class="bar-row mini" id="morale-row">
                     <div class="bar-head">
-                        <span class="br-label">Morale</span>
+                        <span class="br-label">
+                            Morale
+                            <button class="footer-info-chip footer-info-chip--malus" type="button" data-info="malus"
+                                aria-label="Malus attivi">Malus</button>
+                        </span>
                         <span id="morale-val" class="br-val">65%</span>
                     </div>
                     <div class="bar-track">
@@ -27,6 +35,8 @@
                     <div class="bar-head">
                         <span class="br-label">
                             Exp <span id="lvl-val" class="br-sub">Lv. 1</span>
+                            <button class="footer-info-chip footer-info-chip--bonus" type="button" data-info="bonus"
+                                aria-label="Bonus attivi">Bonus</button>
                         </span>
                         <span id="xp-val" class="br-val">40%</span>
                     </div>
@@ -65,9 +75,9 @@
                 <span class="footer-actions-label">Azioni</span>
             </div>
         </div>
-        <div class="app-footer__credits">
-            <span>Ideato da Marco Del Monaco</span>
-            <span>Sviluppato da Luca Musarella</span>
-        </div>
+        <button id="toggle-right" class="collapse-handle footer-toggle footer-toggle--right" aria-expanded="true"
+            title="Comprimi/espandi menu destro">
+            <span class="arrow">⟩</span>
+        </button>
     </div>
 </footer>

@@ -52,11 +52,11 @@
 
  .bench {
    display: grid;
-   gap: 10px;
+   gap: 8px;
    min-height: 40px;
    overflow: auto;
    max-height: none;
-   padding-right: 4px;
+   padding: 10px;
    grid-auto-rows: min-content;
  }
 
@@ -72,91 +72,146 @@
    border-radius: 10px;
  }
 
- .unit-card {
-   display: flex;
-   align-items: center;
-   gap: 10px;
-   flex-wrap: wrap;
-   background: #151515;
-   border: 1px solid gray;
-   padding: 8px 10px;
-   border-radius: 10px;
+.bench .unit-card {
+  display: grid;
+  grid-template-columns: var(--unit-avatar-size, 56px) minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  align-items: start;
+  gap: 6px 10px;
+  background: linear-gradient(135deg, rgba(18, 22, 32, 0.98), rgba(12, 15, 22, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  padding: 6px 8px;
+  border-radius: 12px;
    cursor: grab;
-   transition: opacity .15s ease, box-shadow .15s ease, transform .1s ease;
+   transition: opacity .15s ease, box-shadow .15s ease, transform .1s ease, border-color .2s ease;
    user-select: none;
  }
 
- .unit-card:active {
-   cursor: grabbing
- }
+.bench .unit-card:active {
+  cursor: grabbing
+}
 
- .unit-card.is-fielded {
-   opacity: 1;
- }
+.bench .unit-card.is-fielded {
+  opacity: 1;
+}
 
- .unit-card.is-destroyed {
-   opacity: 0.6;
- }
+.bench .unit-card.is-destroyed {
+  opacity: 0.55;
+}
 
 
- .unit-card:hover {
-   box-shadow: 0 6px 16px rgba(0, 0, 0, .35)
- }
+.bench .unit-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+  border-color: rgba(248, 250, 252, 0.5);
+}
 
- .unit-card[data-role="wall"] {
-   cursor: pointer
- }
+.bench .unit-card[data-role="wall"] {
+  cursor: pointer
+}
 
- .unit-card.flash {
-   box-shadow: 0 0 0 2px rgba(255, 255, 255, .2), 0 0 16px rgba(255, 0, 0, .35)
- }
+.bench .unit-card.flash {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, .2), 0 0 16px rgba(255, 0, 0, .35)
+}
 
- .unit-avatar {
-   width: 34px;
-   height: 34px;
-   border-radius: 50%;
-   overflow: hidden;
-   border: 3px solid var(--sel, #fff);
-   flex: 0 0 auto;
- }
+.bench .unit-avatar {
+  width: var(--unit-avatar-size, 56px);
+  height: var(--unit-avatar-size, 56px);
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--sel, #fff);
+  flex: 0 0 auto;
+  grid-row: 1 / span 3;
+}
 
- .unit-avatar img {
-   width: 100%;
-   height: 100%;
-   object-fit: cover
- }
+.bench .unit-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover
+}
 
- .unit-info {
-   display: flex;
-   flex-direction: column;
-   width: 200px;
- }
+.bench .unit-info {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 2px;
+  min-width: 0;
+}
 
- .unit-name {
-   font-weight: 600;
-   font-size: 13px;
-   white-space: nowrap;
-   overflow: hidden;
-   text-overflow: ellipsis;
- }
+.bench .unit-info-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
 
- .unit-sub {
-   font-size: 12px;
-   opacity: .9
- }
+.bench .unit-name {
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1 1 auto;
+}
 
- .unit-actions {
-   margin-left: auto;
-   display: flex;
-   align-items: center;
-   gap: 6px;
- }
+.bench .unit-sub {
+  font-size: 11px;
+  opacity: .78;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.bench .unit-owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: rgba(226, 232, 240, 0.75);
+  max-width: 45%;
+  margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bench .unit-owner span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bench .unit-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.bench .hpbar-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 6px;
+  grid-column: 2 / -1;
+  grid-row: 3;
+}
+
+.bench .hpbar {
+  grid-column: auto;
+  width: 100%;
+}
+
+.bench .hpbar-row.hp-readonly {
+  grid-template-columns: 1fr auto;
+}
+
+.bench .hpbar-row.hp-readonly .btn-mini {
+  display: none;
+}
 
  .btn-icon {
    display: inline-grid;
    place-items: center;
-   width: 28px;
-   height: 28px;
+   width: 26px;
+   height: 26px;
    border-radius: 8px;
    border: 1px solid #2a2a2a;
    background: #1a1a1a;
@@ -171,7 +226,7 @@
 
  /* HP BAR */
  .hpbar {
-   flex-basis: 100%;
+   grid-column: 1 / -1;
    height: 6px;
    background: #0c0c0c;
    border: 1px solid #222;
@@ -195,4 +250,3 @@
 
 
  }
-

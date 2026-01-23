@@ -37,10 +37,30 @@ function ensureMissionCardSkeleton(card) {
     </div>
 
     <div class="mission-stats">
-      <div class="msn-badge"><span class="lbl">Uccisioni</span><span id="msn-kills">0</span></div>
-      <div class="msn-badge"><span class="lbl">Perdite</span><span id="msn-losses">0</span></div>
-      <div class="msn-badge"><span class="lbl">Tentativi</span><span id="msn-attempts">0</span></div>
-      <div class="msn-badge"><span class="lbl">Round</span><span id="msn-round">0</span></div>
+      <div class="msn-badge msn-badge--kills">
+        <span class="msn-badge-icon" aria-hidden="true">⚔️</span>
+        <span class="msn-badge-label">Uccisioni</span>
+        <span id="msn-kills" class="msn-badge-value">0</span>
+      </div>
+      <div class="msn-badge msn-badge--losses">
+        <span class="msn-badge-icon" aria-hidden="true">☠️</span>
+        <span class="msn-badge-label">Perdite</span>
+        <span id="msn-losses" class="msn-badge-value">0</span>
+      </div>
+    </div>
+
+    <div class="mission-timer-panel">
+      <div class="mission-subtitle mission-timer-title">Timer missione</div>
+      <div id="mission-timer-sticky" class="mission-timer-card" aria-live="polite">
+        <span class="mission-timer-label">Tempo residuo</span>
+        <span id="t-time" class="mission-timer-time">00:00</span>
+        <div class="mission-timer-actions">
+          <button id="t-play" class="mission-timer-btn" type="button" title="Avvia/Pausa timer"
+            aria-label="Avvia o pausa timer">▶</button>
+          <button id="t-reset" class="mission-timer-btn" type="button" title="Reset timer"
+            aria-label="Reset timer">↺</button>
+        </div>
+      </div>
     </div>
 
     <div class="mission-subtitle">Eventi attivati</div>
@@ -130,12 +150,8 @@ function renderMissionPanel() {
     // numeri
     const kEl = document.getElementById('msn-kills');
     const lEl = document.getElementById('msn-losses');
-    const aEl = document.getElementById('msn-attempts');
-    const rEl = document.getElementById('msn-round');
     if (kEl) kEl.textContent = String(ms.kills || 0);
     if (lEl) lEl.textContent = String(ms.losses || 0);
-    if (aEl) aEl.textContent = String(ms.attempts || 0);
-    if (rEl) rEl.textContent = String(ms.round || 0);
     refreshFooterTracker();
 
     // timeline eventi (cronologica)
@@ -237,8 +253,10 @@ function computeObjectiveProgress(objectives, kills) {
 
 
 export function renderMissionUI() {
-    const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
-    const num = m?.id ?? (GAME_STATE.missionState.curIndex + 1);
+    if (!DB?.MISSIONS || !GAME_STATE?.missionState) return;
+    const curIndex = Number(GAME_STATE.missionState.curIndex ?? 0);
+    const m = DB.MISSIONS?.[curIndex] || null;
+    const num = m?.id ?? (curIndex + 1);
     const title = m?.title ?? 'Missione';
     const objectives = Array.isArray(m?.objectives) ? m.objectives : [];
     const reward = m?.reward ?? { morale: 0, xp: 0 };

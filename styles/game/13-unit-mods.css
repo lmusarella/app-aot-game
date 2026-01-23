@@ -640,24 +640,26 @@
    font-weight: 700;
  }
 
- .mission-card {
-   border: 1px solid #2a2a2a;
-   border-radius: 12px;
-   padding: 10px;
-   background: #0f1118;
-   transition: .2s;
-   cursor: pointer;
- }
+.mission-card {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(12, 18, 30, 0.95), rgba(17, 21, 33, 0.75));
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
 
- .mission-card:focus,
- .mission-card:hover {
-   border-color: #4b4b4b;
- }
+.mission-card:focus,
+.mission-card:hover {
+  border-color: rgba(148, 163, 184, 0.45);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.45);
+}
 
- .mission-title {
-   margin: 0 0 6px;
-   opacity: .95;
- }
+.mission-title {
+  margin: 0 0 6px;
+  opacity: .95;
+}
 
  .mission-brief {
    margin: 0 0 8px 18px;
@@ -671,28 +673,146 @@
    opacity: .8;
  }
 
- .mission-stats {
-   display: grid;
-   grid-template-columns: repeat(4, minmax(0, 1fr));
-   gap: 8px;
-   margin: 10px 0;
- }
+.mission-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
 
- .msn-badge {
-   display: flex;
-   align-items: center;
-   justify-content: space-between;
-   gap: 8px;
-   padding: 6px 10px;
-   border: 1px solid #2a2a2a;
-   border-radius: 10px;
-   background: #11131a;
-   font-size: 10px;
- }
+.msn-badge {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(16, 18, 28, 0.96), rgba(9, 10, 16, 0.95));
+  font-size: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 18px rgba(0, 0, 0, 0.35);
+}
 
- .msn-badge .lbl {
-   opacity: .75;
- }
+.msn-badge-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.msn-badge-label {
+  opacity: 0.75;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  font-size: 9px;
+}
+
+.msn-badge-value {
+  font-weight: 800;
+  font-size: 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.msn-badge--kills {
+  border-color: rgba(34, 197, 94, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 18px rgba(34, 197, 94, 0.15);
+}
+
+.msn-badge--kills .msn-badge-icon,
+.msn-badge--kills .msn-badge-value {
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.msn-badge--losses {
+  border-color: rgba(248, 113, 113, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 18px rgba(248, 113, 113, 0.15);
+}
+
+.msn-badge--losses .msn-badge-icon,
+.msn-badge--losses .msn-badge-value {
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fecaca;
+}
+
+.mission-timer-panel {
+  margin: 6px 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mission-timer-title {
+  margin-bottom: 0;
+}
+
+.mission-timer-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(16, 20, 30, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  justify-content: space-between;
+}
+
+.mission-timer-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  opacity: 0.7;
+}
+
+.mission-timer-time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-weight: 800;
+  font-size: 14px;
+  color: #f8fafc;
+}
+
+.mission-timer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mission-timer-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 17, 24, 0.9);
+  color: #e2e8f0;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-weight: 800;
+}
+
+.mission-timer-btn:hover {
+  background: rgba(30, 41, 59, 0.85);
+}
+
+.mission-timer-card.mission-timer--urgent {
+  border-color: rgba(244, 114, 182, 0.7);
+  box-shadow: 0 0 0 1px rgba(244, 114, 182, 0.3);
+}
+
+.mission-timer-card.mission-timer--urgent .mission-timer-time {
+  color: #f472b6;
+}
 
 .mission-subtitle {
   margin: 8px 0 6px;
@@ -754,6 +874,7 @@
   gap: 6px;
   font-size: 11px;
   opacity: 0.85;
+  width: 100%;
 }
 
 .msn-squad-unit-name {
@@ -761,6 +882,33 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.msn-squad-unit-meta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.msn-squad-unit-role {
+  font-size: 10px;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.msn-squad-unit-hp {
+  font-size: 11px;
+  opacity: 0.8;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.msn-squad-unit-hp.is-dead {
+  color: #f87171;
+  opacity: 0.95;
 }
 
 .msn-squad-item.is-empty {

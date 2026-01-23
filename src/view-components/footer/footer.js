@@ -2,7 +2,7 @@ import { GAME_STATE, DB } from "../../core/data.js";
 import { APP_STATE } from "../../core/app-state.js";
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
 import { log } from "../leftbar/log.js";
-import { levelFromXP, levelProgressPercent, getMalusRow } from '../../game-business-logic/utils.js';
+import { levelFromXP, levelProgressPercent, getMalusRow, fmtSigned } from '../../game-business-logic/utils.js';
 import { renderBonusMalus } from '../leftbar/mods.js';
 import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
 import { focusUnitOnField } from '../grid/grid.js';
@@ -26,6 +26,85 @@ function getFooterElements() {
     };
 }
 
+function formatBonusValues(bonus = {}) {
+    const entries = Object.entries(bonus)
+        .filter(([, value]) => Number(value) !== 0)
+        .map(([key, value]) => `<span class="footer-info-stat">${key.toUpperCase()} ${fmtSigned(Number(value))}</span>`);
+    return entries.length ? entries.join('') : '<span class="footer-info-empty">Nessun bonus numerico.</span>';
+}
+
+function getActiveBonusRows(level) {
+    const bonusTable = DB?.SETTINGS?.bonusTable ?? [];
+    return bonusTable.filter(row => level >= row.lvl);
+}
+
+function buildFooterBonusTooltip() {
+    const level = levelFromXP(GAME_STATE.xpMoraleState.xp);
+    const bonusRows = getActiveBonusRows(level);
+    if (!bonusRows.length) {
+        return `
+            <div class="tt-card footer-info-tooltip">
+                <div class="tt-title">Bonus EXP</div>
+                <div class="footer-info-empty">Nessun bonus attivo al momento.</div>
+            </div>
+        `;
+    }
+    const rows = bonusRows.map(row => `
+        <div class="footer-info-row">
+            <div class="footer-info-row-title">Lv. ${row.lvl}</div>
+            <div class="footer-info-text">${row.text || 'Bonus esperienza'}</div>
+            <div class="footer-info-stats">${formatBonusValues(row.bonus || {})}</div>
+        </div>
+    `).join('');
+    return `
+        <div class="tt-card footer-info-tooltip">
+            <div class="tt-title">Bonus EXP attivi</div>
+            <div class="footer-info-list">${rows}</div>
+        </div>
+    `;
+}
+
+function buildFooterMalusTooltip() {
+    const moralePct = Number(GAME_STATE.xpMoraleState.moralePct) || 0;
+    const row = getMalusRow(moralePct);
+    if (!row) {
+        return `
+            <div class="tt-card footer-info-tooltip">
+                <div class="tt-title">Malus Morale</div>
+                <div class="footer-info-empty">Nessun malus attivo al momento.</div>
+            </div>
+        `;
+    }
+    return `
+        <div class="tt-card footer-info-tooltip">
+            <div class="tt-title">Malus Morale attivi</div>
+            <div class="footer-info-row">
+                <div class="footer-info-row-title">${row.label || 'Morale basso'}</div>
+                <div class="footer-info-text">${row.text || 'Malus morale attivo.'}</div>
+                <div class="footer-info-stats">${formatBonusValues(row.bonus || {})}</div>
+            </div>
+        </div>
+    `;
+}
+
+function updateFooterInfoChips() {
+    const bonusChip = document.querySelector('.footer-info-chip[data-info="bonus"]');
+    const malusChip = document.querySelector('.footer-info-chip[data-info="malus"]');
+    const level = levelFromXP(GAME_STATE.xpMoraleState.xp);
+    const bonusRows = getActiveBonusRows(level);
+    const malusRow = getMalusRow(Number(GAME_STATE.xpMoraleState.moralePct) || 0);
+    if (bonusChip) {
+        const count = bonusRows.length;
+        bonusChip.textContent = count ? `Bonus ${count}` : 'Bonus';
+        bonusChip.classList.toggle('is-empty', count === 0);
+    }
+    if (malusChip) {
+        const count = malusRow ? 1 : 0;
+        malusChip.textContent = count ? `Malus ${count}` : 'Malus';
+        malusChip.classList.toggle('is-empty', count === 0);
+    }
+}
+
 export const stack_screen = [];
 const pendingFooterMessages = [];
 
@@ -43,7 +122,7 @@ function isPlayerOnline(player, now = Date.now()) {
     return !!(last && now - last < ONLINE_THRESHOLD_MS);
 }
 
-function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex) {
+function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex, poolIndex) {
     if (!player) return { units: [], playerName: 'Giocatore' };
     const allUnits = [
         player.commander_code,
@@ -52,23 +131,34 @@ function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex) {
 
     const extraUnits = allUnits
         .filter(code => !rosterIds.has(code))
-        .map(code => unitIndex.get(code) || { id: code, name: code, img: 'assets/units/default.png' });
+        .map(code => poolIndex.get(code) || unitIndex.get(code) || { id: code, name: code, img: 'assets/units/default.png' });
 
     const playerName = player.nickname || player.user_id?.slice(0, 8) || 'Giocatore';
     return { units: extraUnits, playerName };
 }
 
-function buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit, { online, statusLabel }) {
-    const { units, playerName } = getNonMissionUnitsForPlayer(player, rosterIds, unitIndex);
+function formatUnitHp(unit) {
+    const max = Number(unit?.hp ?? 0);
+    const cur = Math.max(0, Number(unit?.currHp ?? max));
+    if (!max) return { text: '—', isDead: false };
+    const dead = unit?.dead || cur <= 0;
+    const icon = dead ? '☠️' : '❤️';
+    return { text: `${icon} ${cur}/${max}`, isDead: dead };
+}
+
+function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missionUnit, { online, statusLabel }) {
+    const { units, playerName } = getNonMissionUnitsForPlayer(player, rosterIds, unitIndex, poolIndex);
     const missionName = missionUnit?.name || missionUnit?.id || '—';
     const missionRole = getRoleLabel(missionUnit?.role);
+    const missionHp = missionUnit ? formatUnitHp(missionUnit) : null;
+    const missionHpLabel = missionHp?.text ? ` · ${missionHp.text}${missionHp.isDead ? ' (Morta)' : ''}` : '';
     const statusClass = online ? 'is-online' : 'is-offline';
     const statusText = statusLabel || (online ? 'Online' : 'Offline');
     if (!units.length) {
         return `
             <div class="tt-card footer-squad-tooltip">
                 <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
-                <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}</div>
+                <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}${missionHpLabel}</div>
                 <div class="footer-squad-status ${statusClass}">${statusText}</div>
                 <div class="tt-badge">Unità fuori missione</div>
                 <p class="footer-squad-empty">Nessuna unità fuori missione.</p>
@@ -79,12 +169,16 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit, { o
         const unitName = unit?.name || unit?.id || 'Unità sconosciuta';
         const unitAvatar = unit?.img || unit?.avatar || 'assets/units/default.png';
         const unitRole = getRoleLabel(unit?.role);
+        const unitHp = formatUnitHp(unit);
         return `
             <li class="msn-squad-item">
                 <span class="msn-squad-unit">
                     <span class="msn-squad-avatar"><img src="${unitAvatar}" alt=""></span>
                     <span class="msn-squad-unit-name">${unitName}</span>
-                    <span class="msn-squad-unit-role">${unitRole}</span>
+                    <span class="msn-squad-unit-meta">
+                        <span class="msn-squad-unit-role">${unitRole}</span>
+                        <span class="msn-squad-unit-hp ${unitHp.isDead ? 'is-dead' : ''}">${unitHp.text}${unitHp.isDead ? ' (Morta)' : ''}</span>
+                    </span>
                 </span>
             </li>
         `;
@@ -92,7 +186,7 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit, { o
     return `
         <div class="tt-card footer-squad-tooltip">
             <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
-            <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}</div>
+            <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}${missionHpLabel}</div>
             <div class="footer-squad-status ${statusClass}">${statusText}</div>
             <div class="tt-badge">Unità fuori missione</div>
             <ul class="msn-squad">${listItems}</ul>
@@ -234,7 +328,8 @@ export function showFooterMessageFromEvent({ senderId, text } = {}) {
 
 function setupMessageControls({ messageBtn, messageMenu, messageWrap, getSenderId, fallbackEl }) {
     if (!messageBtn) return;
-    if (messageMenu) {
+    if (messageMenu && !messageMenu.dataset.built) {
+        messageMenu.dataset.built = '1';
         const messages = [
             'Pronti a muovere?',
             'Attacco in corso!',
@@ -243,7 +338,9 @@ function setupMessageControls({ messageBtn, messageMenu, messageWrap, getSenderI
             'Bella mossa!'
         ];
         buildMessageMenu(messageMenu, messages);
-        messageMenu.hidden = true;
+        if (!messageMenu.dataset.open) {
+            messageMenu.hidden = true;
+        }
     }
 
     if (!messageBtn.dataset.bound) {
@@ -339,6 +436,9 @@ export function renderFooterAvatars() {
     const unitIndex = Array.isArray(DB.ALLIES)
         ? new Map(DB.ALLIES.map(u => [u.id, u]))
         : new Map();
+    const poolIndex = Array.isArray(GAME_STATE.alliesPool)
+        ? new Map(GAME_STATE.alliesPool.map(u => [u.id, u]))
+        : new Map();
 
     const playersById = new Map(players.map(player => [player.user_id, player]));
     const now = Date.now();
@@ -386,7 +486,7 @@ export function renderFooterAvatars() {
                 : null;
             const missionUnit = rosterUnit || unitFromDb;
             const online = isPlayerOnline(player, now);
-            const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex, missionUnit, {
+            const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missionUnit, {
                 online,
                 statusLabel: online ? 'Online' : 'Offline'
             });
@@ -408,6 +508,7 @@ export function renderFooterAvatars() {
         const avatarSrc = missionUnit?.img || missionUnit?.avatar || 'assets/units/default.png';
         const displayName = mePlayer?.nickname || mePlayer?.user_id?.slice(0, 8) || 'Giocatore';
         selfBtn.classList.remove('is-hidden');
+        selfBtn.classList.toggle('is-needs-unit', !rosterUnit);
         selfBtn.dataset.playerId = myId;
         selfBtn.innerHTML = `
             <span class="footer-avatar-circle">
@@ -420,7 +521,7 @@ export function renderFooterAvatars() {
             selfBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const online = isPlayerOnline(mePlayer, now);
-                const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, missionUnit, {
+                const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, poolIndex, missionUnit, {
                     online,
                     statusLabel: online ? 'Online' : 'Offline'
                 });
@@ -534,6 +635,7 @@ export function refreshXPUI() {
     if (xp.pct) xp.pct.textContent = Math.round(pct) + "%";
     if (xp.lvl) xp.lvl.textContent = "Lv. " + L;
     renderBonusMalus();
+    updateFooterInfoChips();
     refreshFooterTracker();
 }
 
@@ -547,6 +649,7 @@ export function refreshMoraleUI() {
     if (morale.fill) morale.fill.style.setProperty("--bar-fill", pct / 100);
     if (morale.pct) morale.pct.textContent = Math.round(pct) + "%";
     renderBonusMalus();
+    updateFooterInfoChips();
     refreshFooterTracker();
 }
 
@@ -591,6 +694,16 @@ export function initFooterListeners() {
             }
         });
     });
+    document.querySelectorAll('.footer-info-chip').forEach(chip => {
+        chip.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const type = chip.dataset.info;
+            const html = type === 'bonus' ? buildFooterBonusTooltip() : buildFooterMalusTooltip();
+            const rect = chip.getBoundingClientRect();
+            showTooltipAt(html, { x: rect.left + rect.width / 2, y: rect.top });
+        });
+    });
+    updateFooterInfoChips();
     renderFooterAvatars();
 
 }

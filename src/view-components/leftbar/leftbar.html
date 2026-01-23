@@ -23,13 +23,34 @@
                     </div>
 
                     <div class="mission-stats">
-                        <div class="msn-badge"><span class="lbl">Uccisioni</span><span id="msn-kills">0</span>
+                        <div class="msn-badge msn-badge--kills">
+                            <span class="msn-badge-icon" aria-hidden="true">⚔️</span>
+                            <span class="msn-badge-label">Uccisioni</span>
+                            <span id="msn-kills" class="msn-badge-value">0</span>
                         </div>
-                        <div class="msn-badge"><span class="lbl">Perdite</span><span id="msn-losses">0</span>
+                        <div class="msn-badge msn-badge--losses">
+                            <span class="msn-badge-icon" aria-hidden="true">☠️</span>
+                            <span class="msn-badge-label">Perdite</span>
+                            <span id="msn-losses" class="msn-badge-value">0</span>
                         </div>
-                        <div class="msn-badge"><span class="lbl">Tentativi</span><span id="msn-attempts">0</span>
+                    </div>
+
+                    <div class="mission-timer-panel">
+                        <div class="mission-subtitle mission-timer-title">Timer missione</div>
+                        <div id="mission-timer-sticky" class="mission-timer-card" aria-live="polite">
+                            <span class="mission-timer-label">Tempo residuo</span>
+                            <span id="t-time" class="mission-timer-time">00:00</span>
+                            <div class="mission-timer-actions">
+                                <button id="t-play" class="mission-timer-btn" type="button" title="Avvia/Pausa timer"
+                                    aria-label="Avvia o pausa timer">
+                                    ▶
+                                </button>
+                                <button id="t-reset" class="mission-timer-btn" type="button" title="Reset timer"
+                                    aria-label="Reset timer">
+                                    ↺
+                                </button>
+                            </div>
                         </div>
-                        <div class="msn-badge"><span class="lbl">Round</span><span id="msn-round">0</span></div>
                     </div>
 
                     <div class="mission-subtitle">Carte attivate</div>

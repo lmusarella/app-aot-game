@@ -1,4 +1,4 @@
-export function enablePointerDrag(el, { makePayload, onDrop }) {
+export function enablePointerDrag(el, { makePayload, onDrop, canStart, getDropStatus }) {
   (function ensureDragGhostStyles() {
     if (document.getElementById('drag-ghost-styles')) return;
     const css = `
@@ -104,6 +104,7 @@ export function enablePointerDrag(el, { makePayload, onDrop }) {
   let prevX = 0, prevY = 0;
   let activeId = null;
   let dragging = false;
+  let activePayload = null;
   let lastHoverHex = null;
   const MOVE_THRESHOLD = 8;
 
@@ -148,20 +149,27 @@ export function enablePointerDrag(el, { makePayload, onDrop }) {
     const target = document.elementFromPoint(x, y);
     const hex = target?.closest?.('.hexagon') || null;
     if (hex !== lastHoverHex) {
-      if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
-      if (hex) hex.classList.add('drop-ok');
+      if (lastHoverHex) lastHoverHex.classList.remove('drop-ok', 'drop-ko');
+      if (hex) {
+        const status = getDropStatus?.(hex, activePayload) ?? 'ok';
+        if (status === 'ok') hex.classList.add('drop-ok');
+        if (status === 'ko') hex.classList.add('drop-ko');
+      }
       lastHoverHex = hex;
     }
   };
 
   const clearHover = () => {
-    if (lastHoverHex) lastHoverHex.classList.remove('drop-ok');
+    if (lastHoverHex) lastHoverHex.classList.remove('drop-ok', 'drop-ko');
     lastHoverHex = null;
   };
 
   const onDown = (e) => {
     if (isInteractiveTarget(e.target)) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (canStart && !canStart()) return;
+    activePayload = makePayload?.();
+    if (!activePayload) return;
     activeId = e.pointerId;
     try { el.setPointerCapture(activeId); } catch { }
     startX = prevX = e.clientX; startY = prevY = e.clientY;
@@ -198,8 +206,7 @@ export function enablePointerDrag(el, { makePayload, onDrop }) {
   const dropAtPoint = (x, y) => {
     const target = document.elementFromPoint(x, y);
     const hex = target?.closest?.('.hexagon');
-    const payload = makePayload?.();
-    if (hex && payload) onDrop(hex, payload);
+    if (hex && activePayload) onDrop(hex, activePayload);
   };
 
   const onUp = (e) => {
@@ -213,6 +220,7 @@ export function enablePointerDrag(el, { makePayload, onDrop }) {
   const cleanup = () => {
     try { el.releasePointerCapture(activeId); } catch { }
     activeId = null;
+    activePayload = null;
     dragging = false;
     clearHover();
     destroyGhost();

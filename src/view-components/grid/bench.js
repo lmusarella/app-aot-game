@@ -31,6 +31,23 @@ function warnAction(message) {
     showSnackBar(message, {}, 'warning');
 }
 
+function canStartBenchDrag(unit) {
+    const phase = GAME_STATE.turnEngine?.phase;
+    if (phase !== 'setup' && phase !== 'move_phase') {
+        warnAction('Non puoi muovere unità in questa fase.');
+        return false;
+    }
+    if (!canActNow()) {
+        warnAction('Non è il tuo turno.');
+        return false;
+    }
+    if (!canControlUnit(unit)) {
+        warnAction('Puoi muovere solo la tua unità.');
+        return false;
+    }
+    return true;
+}
+
 const benchContext = {
     renderGrid: null,
     grid: null,
@@ -158,14 +175,18 @@ function renderBenchSection(container, units, readOnly = false) {
 
         const info = document.createElement("div");
         info.className = "unit-info";
+        const header = document.createElement("div");
+        header.className = "unit-info-header";
         const name = document.createElement("div");
-        name.className = "unit-name"; name.textContent = u.name;
+        name.className = "unit-name";
+        name.textContent = u.name;
         const sub = document.createElement("div");
         sub.className = "unit-sub";
         sub.textContent = (u.role === "recruit") ? "Recluta" :
             (u.role === "commander") ? "Comandante" :
                 (u.role === "enemy") ? "Gigante" : "Muro";
 
+        header.appendChild(name);
 
         // 👇 NUOVO: riga con nickname giocatore (solo per alleati)
         if (u.owner_nickname && (u.role === "recruit" || u.role === "commander")) {
@@ -182,13 +203,13 @@ function renderBenchSection(container, units, readOnly = false) {
             const statusLabel = online ? 'Online' : 'Offline';
             owner.innerHTML = `
                 <span class="msn-squad-dot ${statusClass}" title="${statusLabel}"></span>
-                <span>Giocatore: ${nameLabel}</span>
+                <span>${nameLabel}</span>
             `;
             owner.setAttribute('title', statusLabel);
-            info.append(name, sub, owner);
-        } else {
-            info.append(name, sub);
+            header.appendChild(owner);
         }
+
+        info.append(header, sub);
 
         const actions = document.createElement("div"); actions.className = "unit-actions";
 
@@ -319,15 +340,8 @@ function renderBenchSection(container, units, readOnly = false) {
             // disattiva drag H5 per evitare conflitti su touch
             card.draggable = false;
             enablePointerDrag(card, {
+                canStart: () => canStartBenchDrag(u),
                 makePayload: () => {
-                    if (!canActNow()) {
-                        warnAction('Non è il tuo turno.');
-                        return null;
-                    }
-                    if (!canControlUnit(u)) {
-                        warnAction('Puoi muovere solo la tua unità.');
-                        return null;
-                    }
                     return { type: 'from-bench', unitId: u.id };
                 },
                 onDrop: (hexEl, payload) => {
