@@ -111,6 +111,7 @@ const BASE_ASSETS = [
   "./assets/sounds/morte_gigante.mp3",
   "./assets/sounds/risorsa_audio_avvio_app.mp3",
   "./assets/sounds/muro_distrutto.mp3",
+  "./assets/sounds/movimento_3d.mp3",
   "./assets/sounds/reclute/annie_presentazione.mp3",
   "./assets/sounds/reclute/armin_presentazione.mp3",
   "./assets/sounds/reclute/bertold_presentazione.mp3",

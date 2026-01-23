@@ -24,8 +24,9 @@ const registerServiceWorker = () => {
         );
     };
 
-    navigator.serviceWorker.register('./sw.js')
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
         .then((registration) => {
+            const requestUpdate = () => registration.update().catch(() => {});
             if (registration.waiting) {
                 notifyUpdate(registration);
             }
@@ -49,6 +50,13 @@ const registerServiceWorker = () => {
                 }
                 refreshing = true;
                 window.location.reload();
+            });
+
+            requestUpdate();
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    requestUpdate();
+                }
             });
         })
         .catch((err) => console.error('SW registration failed:', err));
