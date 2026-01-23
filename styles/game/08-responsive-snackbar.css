@@ -843,17 +843,101 @@
    width: 100%;
  }
 
- .footer-bars .bar-head {
-   display: flex;
-   align-items: center;
-   justify-content: space-between;
-   gap: 8px;
-   font-size: 10px;
-   font-weight: 700;
-   text-transform: uppercase;
-   letter-spacing: 0.18em;
-   opacity: 0.8;
- }
+.footer-bars .bar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  opacity: 0.8;
+}
+
+.footer-bars .br-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.footer-info-chip {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(15, 23, 42, 0.65);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.footer-info-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(2, 6, 23, 0.35);
+}
+
+.footer-info-chip.is-empty {
+  opacity: 0.6;
+}
+
+.footer-info-chip--bonus {
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #86efac;
+}
+
+.footer-info-chip--malus {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+}
+
+.footer-info-tooltip {
+  max-width: 260px;
+}
+
+.footer-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-info-row-title {
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 4px;
+}
+
+.footer-info-text {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-bottom: 6px;
+}
+
+.footer-info-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.footer-info-stat {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.6);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.footer-info-empty {
+  font-size: 11px;
+  opacity: 0.7;
+}
 
  .footer-bars .bar-track {
    display: grid;

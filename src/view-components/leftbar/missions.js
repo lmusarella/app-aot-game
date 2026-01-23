@@ -37,8 +37,16 @@ function ensureMissionCardSkeleton(card) {
     </div>
 
     <div class="mission-stats">
-      <div class="msn-badge"><span class="lbl">Uccisioni</span><span id="msn-kills">0</span></div>
-      <div class="msn-badge"><span class="lbl">Perdite</span><span id="msn-losses">0</span></div>
+      <div class="msn-badge msn-badge--kills">
+        <span class="msn-badge-icon" aria-hidden="true">⚔️</span>
+        <span class="msn-badge-label">Uccisioni</span>
+        <span id="msn-kills" class="msn-badge-value">0</span>
+      </div>
+      <div class="msn-badge msn-badge--losses">
+        <span class="msn-badge-icon" aria-hidden="true">☠️</span>
+        <span class="msn-badge-label">Perdite</span>
+        <span id="msn-losses" class="msn-badge-value">0</span>
+      </div>
     </div>
 
     <div class="mission-timer-panel">
@@ -245,8 +253,10 @@ function computeObjectiveProgress(objectives, kills) {
 
 
 export function renderMissionUI() {
-    const m = DB.MISSIONS[GAME_STATE.missionState.curIndex];
-    const num = m?.id ?? (GAME_STATE.missionState.curIndex + 1);
+    if (!DB?.MISSIONS || !GAME_STATE?.missionState) return;
+    const curIndex = Number(GAME_STATE.missionState.curIndex ?? 0);
+    const m = DB.MISSIONS?.[curIndex] || null;
+    const num = m?.id ?? (curIndex + 1);
     const title = m?.title ?? 'Missione';
     const objectives = Array.isArray(m?.objectives) ? m.objectives : [];
     const reward = m?.reward ?? { morale: 0, xp: 0 };

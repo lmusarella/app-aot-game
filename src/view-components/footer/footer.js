@@ -2,7 +2,7 @@ import { GAME_STATE, DB } from "../../core/data.js";
 import { APP_STATE } from "../../core/app-state.js";
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
 import { log } from "../leftbar/log.js";
-import { levelFromXP, levelProgressPercent, getMalusRow } from '../../game-business-logic/utils.js';
+import { levelFromXP, levelProgressPercent, getMalusRow, fmtSigned } from '../../game-business-logic/utils.js';
 import { renderBonusMalus } from '../leftbar/mods.js';
 import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
 import { focusUnitOnField } from '../grid/grid.js';
@@ -24,6 +24,85 @@ function getFooterElements() {
             pct: document.getElementById("morale-val"),
         }
     };
+}
+
+function formatBonusValues(bonus = {}) {
+    const entries = Object.entries(bonus)
+        .filter(([, value]) => Number(value) !== 0)
+        .map(([key, value]) => `<span class="footer-info-stat">${key.toUpperCase()} ${fmtSigned(Number(value))}</span>`);
+    return entries.length ? entries.join('') : '<span class="footer-info-empty">Nessun bonus numerico.</span>';
+}
+
+function getActiveBonusRows(level) {
+    const bonusTable = DB?.SETTINGS?.bonusTable ?? [];
+    return bonusTable.filter(row => level >= row.lvl);
+}
+
+function buildFooterBonusTooltip() {
+    const level = levelFromXP(GAME_STATE.xpMoraleState.xp);
+    const bonusRows = getActiveBonusRows(level);
+    if (!bonusRows.length) {
+        return `
+            <div class="tt-card footer-info-tooltip">
+                <div class="tt-title">Bonus EXP</div>
+                <div class="footer-info-empty">Nessun bonus attivo al momento.</div>
+            </div>
+        `;
+    }
+    const rows = bonusRows.map(row => `
+        <div class="footer-info-row">
+            <div class="footer-info-row-title">Lv. ${row.lvl}</div>
+            <div class="footer-info-text">${row.text || 'Bonus esperienza'}</div>
+            <div class="footer-info-stats">${formatBonusValues(row.bonus || {})}</div>
+        </div>
+    `).join('');
+    return `
+        <div class="tt-card footer-info-tooltip">
+            <div class="tt-title">Bonus EXP attivi</div>
+            <div class="footer-info-list">${rows}</div>
+        </div>
+    `;
+}
+
+function buildFooterMalusTooltip() {
+    const moralePct = Number(GAME_STATE.xpMoraleState.moralePct) || 0;
+    const row = getMalusRow(moralePct);
+    if (!row) {
+        return `
+            <div class="tt-card footer-info-tooltip">
+                <div class="tt-title">Malus Morale</div>
+                <div class="footer-info-empty">Nessun malus attivo al momento.</div>
+            </div>
+        `;
+    }
+    return `
+        <div class="tt-card footer-info-tooltip">
+            <div class="tt-title">Malus Morale attivi</div>
+            <div class="footer-info-row">
+                <div class="footer-info-row-title">${row.label || 'Morale basso'}</div>
+                <div class="footer-info-text">${row.text || 'Malus morale attivo.'}</div>
+                <div class="footer-info-stats">${formatBonusValues(row.bonus || {})}</div>
+            </div>
+        </div>
+    `;
+}
+
+function updateFooterInfoChips() {
+    const bonusChip = document.querySelector('.footer-info-chip[data-info="bonus"]');
+    const malusChip = document.querySelector('.footer-info-chip[data-info="malus"]');
+    const level = levelFromXP(GAME_STATE.xpMoraleState.xp);
+    const bonusRows = getActiveBonusRows(level);
+    const malusRow = getMalusRow(Number(GAME_STATE.xpMoraleState.moralePct) || 0);
+    if (bonusChip) {
+        const count = bonusRows.length;
+        bonusChip.textContent = count ? `Bonus ${count}` : 'Bonus';
+        bonusChip.classList.toggle('is-empty', count === 0);
+    }
+    if (malusChip) {
+        const count = malusRow ? 1 : 0;
+        malusChip.textContent = count ? `Malus ${count}` : 'Malus';
+        malusChip.classList.toggle('is-empty', count === 0);
+    }
 }
 
 export const stack_screen = [];
@@ -556,6 +635,7 @@ export function refreshXPUI() {
     if (xp.pct) xp.pct.textContent = Math.round(pct) + "%";
     if (xp.lvl) xp.lvl.textContent = "Lv. " + L;
     renderBonusMalus();
+    updateFooterInfoChips();
     refreshFooterTracker();
 }
 
@@ -569,6 +649,7 @@ export function refreshMoraleUI() {
     if (morale.fill) morale.fill.style.setProperty("--bar-fill", pct / 100);
     if (morale.pct) morale.pct.textContent = Math.round(pct) + "%";
     renderBonusMalus();
+    updateFooterInfoChips();
     refreshFooterTracker();
 }
 
@@ -613,6 +694,16 @@ export function initFooterListeners() {
             }
         });
     });
+    document.querySelectorAll('.footer-info-chip').forEach(chip => {
+        chip.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const type = chip.dataset.info;
+            const html = type === 'bonus' ? buildFooterBonusTooltip() : buildFooterMalusTooltip();
+            const rect = chip.getBoundingClientRect();
+            showTooltipAt(html, { x: rect.left + rect.width / 2, y: rect.top });
+        });
+    });
+    updateFooterInfoChips();
     renderFooterAvatars();
 
 }

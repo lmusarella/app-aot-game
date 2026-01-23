@@ -134,9 +134,9 @@
    pointer-events: none;
  }
 
- .hexagon.drop-ok {
-   background: #4caf50;
- }
+.hexagon.drop-ok {
+  background: #4caf50;
+}
 
  .hexagon[data-color="gray"].drop-ok {
    background: #4caf50;
@@ -146,9 +146,20 @@
    background: #4caf50;
  }
 
- .hexagon[data-color="silver"].drop-ok {
-   background: #4caf50;
- }
+.hexagon[data-color="silver"].drop-ok {
+  background: #4caf50;
+}
+
+.hexagon.drop-ko {
+  background: #f44336;
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.45), 0 10px 18px rgba(0, 0, 0, 0.35);
+}
+
+.hexagon[data-color="gray"].drop-ko,
+.hexagon[data-color="blu"].drop-ko,
+.hexagon[data-color="silver"].drop-ko {
+  background: #f44336;
+}
 
  .dragging {
    opacity: .6
@@ -352,5 +363,4 @@
      background: color-mix(in srgb, var(--cone) 75%, var(--argento) 25%);
    }
  }
-
 
