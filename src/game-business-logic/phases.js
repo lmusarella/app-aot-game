@@ -433,6 +433,13 @@ export const TurnEngine = {
             }
             ts.phaseDoneBy = [];
             ts.phaseReady = false;
+            if (p === 'attack_phase') {
+                ts.giantsActedIds = [];
+                ts.giantsAutoResolved = false;
+            } else {
+                delete ts.giantsActedIds;
+                delete ts.giantsAutoResolved;
+            }
             ts.phase = p;
             GAME_STATE.turnState = ts;
         }
