@@ -105,8 +105,8 @@ const SAVE_SECTION_MAP = {
   'setup-moves': ['setupMoves', 'turnState'],
   'move-phase': ['spawns', 'turnState'],
   'phase-change': ['turnEngineState', 'turnState', 'missionState'],
-  'footer-message': ['logs', 'events'],
-  'footer': ['logs', 'events'],
+  'footer-message': ['logs', 'events', 'xpMoraleState'],
+  'footer': ['logs', 'events', 'xpMoraleState'],
   'turn-timer': ['turnState'],
   'phase-turn': ['turnState'],
   'entity': ['spawns', 'alliesRoster', 'giantsRoster', 'giantsPool', 'alliesPool', 'walls', 'logs']

@@ -436,6 +436,8 @@ export const TurnEngine = {
             if (p === 'attack_phase') {
                 ts.giantsActedIds = [];
                 ts.giantsAutoResolved = false;
+            } else if (p === 'move_phase') {
+                ts.moveState = null;
             } else {
                 delete ts.giantsActedIds;
                 delete ts.giantsAutoResolved;
