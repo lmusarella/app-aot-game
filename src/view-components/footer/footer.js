@@ -583,14 +583,15 @@ export function renderFooterAvatars() {
             e.stopPropagation();
             const playerId = btn.dataset.playerId;
             const player = playersById.get(playerId);
-            const rosterUnit = roster.find(u => u.owner_id === playerId);
+            const liveRoster = Array.isArray(GAME_STATE.alliesRoster) ? GAME_STATE.alliesRoster : [];
+            const rosterUnit = liveRoster.find(u => u.owner_id === playerId);
             const unitFromDb = !rosterUnit && player?.unit_code
                 ? unitIndex.get(player.unit_code)
                 : null;
             const missionUnit = rosterUnit || unitFromDb;
             const online = isPlayerOnline(player, now);
             const { isMyTurn } = getTurnInfo();
-            const commanderInRoster = roster.some(u => u.role === 'commander' && isUnitAlive(u));
+            const commanderInRoster = liveRoster.some(u => u.role === 'commander' && isUnitAlive(u));
             const canAssign = playerId === myId && canAssignMissionUnit({ playerId, hasMissionUnit: !!rosterUnit, isMyTurn });
             const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missionUnit, {
                 online,
@@ -636,10 +637,14 @@ export function renderFooterAvatars() {
             selfBtn.dataset.bound = '1';
             selfBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                const liveRoster = Array.isArray(GAME_STATE.alliesRoster) ? GAME_STATE.alliesRoster : [];
+                const liveRosterUnit = liveRoster.find(u => u.owner_id === myId) || null;
+                const liveMissionUnit = liveRosterUnit || (mePlayer?.unit_code ? unitIndex.get(mePlayer.unit_code) : null);
+                const missionTooltipUnit = liveRosterUnit || null;
                 const online = isPlayerOnline(mePlayer, now);
                 const { isMyTurn } = getTurnInfo();
-                const commanderInRoster = roster.some(u => u.role === 'commander' && isUnitAlive(u));
-                const canAssign = canAssignMissionUnit({ playerId: myId, hasMissionUnit: !!rosterUnit, isMyTurn });
+                const commanderInRoster = liveRoster.some(u => u.role === 'commander' && isUnitAlive(u));
+                const canAssign = canAssignMissionUnit({ playerId: myId, hasMissionUnit: !!liveRosterUnit, isMyTurn });
                 const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, poolIndex, missionTooltipUnit, {
                     online,
                     statusLabel: online ? 'Online' : 'Offline',
@@ -652,8 +657,8 @@ export function renderFooterAvatars() {
                     tooltip.dataset.playerId = myId;
                 }
                 bindFooterTooltipActions();
-                if (missionUnit?.id && findUnitCell(missionUnit.id)) {
-                    focusUnitOnField(missionUnit.id);
+                if (liveMissionUnit?.id && findUnitCell(liveMissionUnit.id)) {
+                    focusUnitOnField(liveMissionUnit.id);
                 }
             });
         }
