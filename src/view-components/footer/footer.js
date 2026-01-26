@@ -131,7 +131,8 @@ function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex, poolIndex) {
 
     const extraUnits = allUnits
         .filter(code => !rosterIds.has(code))
-        .map(code => poolIndex.get(code) || unitIndex.get(code) || { id: code, name: code, img: 'assets/units/default.png' });
+        .map(code => poolIndex.get(code))
+        .filter(Boolean);
 
     const playerName = player.nickname || player.user_id?.slice(0, 8) || 'Giocatore';
     return { units: extraUnits, playerName };
@@ -162,7 +163,7 @@ function canAssignMissionUnit({ playerId, hasMissionUnit, isMyTurn }) {
     return true;
 }
 
-function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missionUnit, { online, statusLabel, canAssign = false }) {
+function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missionUnit, { online, statusLabel, canAssign = false, commanderInRoster = false }) {
     const { units, playerName } = getNonMissionUnitsForPlayer(player, rosterIds, unitIndex, poolIndex);
     const missionName = missionUnit?.name || missionUnit?.id || '—';
     const missionRole = getRoleLabel(missionUnit?.role);
@@ -186,7 +187,10 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missi
         const unitAvatar = unit?.img || unit?.avatar || 'assets/units/default.png';
         const unitRole = getRoleLabel(unit?.role);
         const unitHp = formatUnitHp(unit);
-        const canAssignUnit = canAssign && !unit?.dead && isUnitAlive(unit);
+        const canAssignUnit = canAssign
+            && !unit?.dead
+            && isUnitAlive(unit)
+            && !(unit?.role === 'commander' && commanderInRoster);
         const actionButton = canAssignUnit
             ? `<button class="msn-squad-action" type="button" data-action="assign-to-mission" data-unit-id="${unit.id}">Aggiungi</button>`
             : '';
@@ -245,7 +249,13 @@ function bindFooterTooltipActions() {
             showSnackBar('Unità non disponibile.', {}, 'warning');
             return;
         }
-        const unit = GAME_STATE.alliesPool.splice(poolIndex, 1)[0];
+        const unit = GAME_STATE.alliesPool[poolIndex];
+        const commanderInRoster = GAME_STATE.alliesRoster.some(u => u.role === 'commander' && isUnitAlive(u));
+        if (unit?.role === 'commander' && commanderInRoster) {
+            showSnackBar('C\'è già un comandante in missione.', {}, 'warning');
+            return;
+        }
+        GAME_STATE.alliesPool.splice(poolIndex, 1);
         const player = APP_STATE.roomPlayers?.find(p => p.user_id === playerId);
         const assigned = {
             ...unit,
@@ -558,11 +568,13 @@ export function renderFooterAvatars() {
             const missionUnit = rosterUnit || unitFromDb;
             const online = isPlayerOnline(player, now);
             const { isMyTurn } = getTurnInfo();
+            const commanderInRoster = roster.some(u => u.role === 'commander' && isUnitAlive(u));
             const canAssign = playerId === myId && canAssignMissionUnit({ playerId, hasMissionUnit: !!rosterUnit, isMyTurn });
             const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missionUnit, {
                 online,
                 statusLabel: online ? 'Online' : 'Offline',
-                canAssign
+                canAssign,
+                commanderInRoster
             });
             showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
             const tooltip = getTooltipEl();
@@ -604,11 +616,13 @@ export function renderFooterAvatars() {
                 e.stopPropagation();
                 const online = isPlayerOnline(mePlayer, now);
                 const { isMyTurn } = getTurnInfo();
+                const commanderInRoster = roster.some(u => u.role === 'commander' && isUnitAlive(u));
                 const canAssign = canAssignMissionUnit({ playerId: myId, hasMissionUnit: !!rosterUnit, isMyTurn });
                 const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, poolIndex, missionTooltipUnit, {
                     online,
                     statusLabel: online ? 'Online' : 'Offline',
-                    canAssign
+                    canAssign,
+                    commanderInRoster
                 });
                 showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
                 const tooltip = getTooltipEl();
