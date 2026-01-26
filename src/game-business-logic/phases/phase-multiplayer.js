@@ -6,6 +6,7 @@ import { drawCard, showDrawnCard, closeAllFabs } from '../../view-components/fab
 import { playSfx } from '../../view-components/audio/audio.js';
 import { log } from '../../view-components/leftbar/log.js';
 import { pushGameEvent } from '../event-manager.js';
+import { resolveRemainingGiantsAutoAttacks } from '../entity/attack.js';
 
 export function isMultiplayer() {
     return !!APP_STATE.roomId;
@@ -82,6 +83,21 @@ async function finalizePhaseTurn(phase, ctx) {
         return;
     }
 
+    if (phase === 'attack_phase') {
+        if (allDone) {
+            ensureMultiplayerTurnOrder({ resetToCommander: true });
+            ts = GAME_STATE.turnState || ts;
+            order = Array.isArray(ts.order) ? ts.order : order;
+            ts.phaseReady = true;
+            ts.giantsAutoResolved = false;
+        } else {
+            advanceTurnSkippingDone(ts);
+        }
+        renderTurnTracker();
+        scheduleSave('phase-turn', { force: true });
+        return;
+    }
+
     if (allDone) {
         ts.phaseDoneBy = [];
         ts.currentIndex = 0;
@@ -113,6 +129,21 @@ export async function handleMultiplayerPhaseEnd(phase) {
             pushGameEvent('card_draw', { deckType: 'event' });
         }
         return;
+    }
+    if (phase === 'attack_phase') {
+        const { ts, myId } = ctx;
+        if (ts?.phaseReady && ts?.currentPlayerId === myId) {
+            if (!ts.giantsAutoResolved) {
+                await resolveRemainingGiantsAutoAttacks();
+                ts.giantsAutoResolved = true;
+                GAME_STATE.turnState = ts;
+                renderTurnTracker();
+                scheduleSave('phase-turn', { force: true });
+            }
+            GAME_STATE.turnEngine?.setPhase?.('round_start');
+            scheduleSave('phase-change', { force: true });
+            return;
+        }
     }
     await finalizePhaseTurn(phase, ctx);
 }

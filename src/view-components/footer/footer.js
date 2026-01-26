@@ -1,12 +1,12 @@
-import { GAME_STATE, DB } from "../../core/data.js";
+import { GAME_STATE, DB, rebuildUnitIndex } from "../../core/data.js";
 import { APP_STATE } from "../../core/app-state.js";
 import { scheduleSave } from '../../game-business-logic/game-sync.js';
 import { log } from "../leftbar/log.js";
 import { levelFromXP, levelProgressPercent, getMalusRow, fmtSigned } from '../../game-business-logic/utils.js';
 import { renderBonusMalus } from '../leftbar/mods.js';
 import showDeathScreen from '../../game-business-logic/effects/deathOverlay.js';
-import { focusUnitOnField } from '../grid/grid.js';
-import { showTooltipAt } from '../../ui-components/ui-helpers.js';
+import { focusUnitOnField, findUnitCell, renderBenches } from '../grid/grid.js';
+import { showTooltipAt, getTooltipEl, hideTooltip } from '../../ui-components/ui-helpers.js';
 import { openHandOverlay } from '../fabs/fab/hand-overlay.js';
 import { showSnackBar } from '../../ui-components/snackbar.js';
 import { getTurnInfo } from '../../game-business-logic/turn-tracker.js';
@@ -131,7 +131,8 @@ function getNonMissionUnitsForPlayer(player, rosterIds, unitIndex, poolIndex) {
 
     const extraUnits = allUnits
         .filter(code => !rosterIds.has(code))
-        .map(code => poolIndex.get(code) || unitIndex.get(code) || { id: code, name: code, img: 'assets/units/default.png' });
+        .map(code => poolIndex.get(code))
+        .filter(Boolean);
 
     const playerName = player.nickname || player.user_id?.slice(0, 8) || 'Giocatore';
     return { units: extraUnits, playerName };
@@ -146,19 +147,57 @@ function formatUnitHp(unit) {
     return { text: `${icon} ${cur}/${max}`, isDead: dead };
 }
 
-function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missionUnit, { online, statusLabel }) {
+function isUnitAlive(unit) {
+    if (!unit) return false;
+    const max = Number(unit.hp ?? 0);
+    const cur = Number(unit.currHp ?? max);
+    return !unit.dead && cur > 0;
+}
+
+function canAssignMissionUnit({ playerId, hasMissionUnit, isMyTurn }) {
+    const phase = GAME_STATE.turnEngine?.phase;
+    if (APP_STATE.gameMode !== 'multiplayer') return false;
+    if (phase !== 'move_phase') return false;
+    if (!playerId || !isMyTurn) return false;
+    if (hasMissionUnit) return false;
+    return true;
+}
+
+function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missionUnit, { online, statusLabel, canAssign = false, commanderInRoster = false }) {
     const { units, playerName } = getNonMissionUnitsForPlayer(player, rosterIds, unitIndex, poolIndex);
     const missionName = missionUnit?.name || missionUnit?.id || '—';
     const missionRole = getRoleLabel(missionUnit?.role);
     const missionHp = missionUnit ? formatUnitHp(missionUnit) : null;
-    const missionHpLabel = missionHp?.text ? ` · ${missionHp.text}${missionHp.isDead ? ' (Morta)' : ''}` : '';
+    const missionAvatar = missionUnit?.img || missionUnit?.avatar || 'assets/units/default.png';
     const statusClass = online ? 'is-online' : 'is-offline';
     const statusText = statusLabel || (online ? 'Online' : 'Offline');
+    const missionBlock = missionUnit
+        ? `
+            <div class="msn-squad-mission">
+                <div class="msn-squad-mission-title">Unità in missione</div>
+                <div class="msn-squad-mission-card">
+                    <span class="msn-squad-avatar msn-squad-avatar--mission"><img src="${missionAvatar}" alt=""></span>
+                    <div class="msn-squad-mission-info">
+                        <div class="msn-squad-mission-name">${missionName}</div>
+                        <div class="msn-squad-mission-meta">
+                            <span class="msn-squad-unit-role">${missionRole}</span>
+                            <span class="msn-squad-unit-hp ${missionHp?.isDead ? 'is-dead' : ''}">${missionHp?.text || ''}${missionHp?.isDead ? ' (Morta)' : ''}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+        : `
+            <div class="msn-squad-mission msn-squad-mission--empty">
+                <div class="msn-squad-mission-title">Unità in missione</div>
+                <div class="msn-squad-mission-empty">Nessuna unità in missione.</div>
+            </div>
+        `;
     if (!units.length) {
         return `
             <div class="tt-card footer-squad-tooltip">
-                <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
-                <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}${missionHpLabel}</div>
+                <div class="tt-title">${playerName}</div>
+                ${missionBlock}
                 <div class="footer-squad-status ${statusClass}">${statusText}</div>
                 <div class="tt-badge">Unità fuori missione</div>
                 <p class="footer-squad-empty">Nessuna unità fuori missione.</p>
@@ -170,6 +209,13 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missi
         const unitAvatar = unit?.img || unit?.avatar || 'assets/units/default.png';
         const unitRole = getRoleLabel(unit?.role);
         const unitHp = formatUnitHp(unit);
+        const canAssignUnit = canAssign
+            && !unit?.dead
+            && isUnitAlive(unit)
+            && !(unit?.role === 'commander' && commanderInRoster);
+        const actionButton = canAssignUnit
+            ? `<button class="msn-squad-action" type="button" data-action="assign-to-mission" data-unit-id="${unit.id}">Aggiungi</button>`
+            : '';
         return `
             <li class="msn-squad-item">
                 <span class="msn-squad-unit">
@@ -180,18 +226,75 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missi
                         <span class="msn-squad-unit-hp ${unitHp.isDead ? 'is-dead' : ''}">${unitHp.text}${unitHp.isDead ? ' (Morta)' : ''}</span>
                     </span>
                 </span>
+                ${actionButton}
             </li>
         `;
     }).join('');
     return `
         <div class="tt-card footer-squad-tooltip">
-            <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
-            <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}${missionHpLabel}</div>
+            <div class="tt-title">${playerName}</div>
+            ${missionBlock}
             <div class="footer-squad-status ${statusClass}">${statusText}</div>
             <div class="tt-badge">Unità fuori missione</div>
             <ul class="msn-squad">${listItems}</ul>
         </div>
     `;
+}
+
+function bindFooterTooltipActions() {
+    const tooltip = getTooltipEl();
+    if (!tooltip || tooltip.dataset.footerBound) return;
+    tooltip.dataset.footerBound = '1';
+    tooltip.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action="assign-to-mission"]');
+        if (!btn) return;
+        const unitId = btn.dataset.unitId;
+        const playerId = tooltip.dataset.playerId || APP_STATE.user?.id || null;
+        if (!unitId || !playerId) return;
+        const { isMyTurn, currentPlayerId } = getTurnInfo();
+        if (!isMyTurn || (currentPlayerId && currentPlayerId !== playerId)) {
+            showSnackBar('Non è il tuo turno.', {}, 'warning');
+            return;
+        }
+        const phase = GAME_STATE.turnEngine?.phase;
+        if (phase !== 'move_phase') {
+            showSnackBar('Puoi assegnare unità solo durante la fase di movimento.', {}, 'warning');
+            return;
+        }
+        const rosterUnit = GAME_STATE.alliesRoster.find(u => u.owner_id === playerId && isUnitAlive(u));
+        if (rosterUnit) {
+            showSnackBar('Hai già un’unità in missione.', {}, 'info');
+            return;
+        }
+        const poolIndex = GAME_STATE.alliesPool.findIndex(u => u.id === unitId);
+        if (poolIndex < 0) {
+            showSnackBar('Unità non disponibile.', {}, 'warning');
+            return;
+        }
+        const unit = GAME_STATE.alliesPool[poolIndex];
+        const commanderInRoster = GAME_STATE.alliesRoster.some(u => u.role === 'commander' && isUnitAlive(u));
+        if (unit?.role === 'commander' && commanderInRoster) {
+            showSnackBar('C\'è già un comandante in missione.', {}, 'warning');
+            return;
+        }
+        GAME_STATE.alliesPool.splice(poolIndex, 1);
+        const player = APP_STATE.roomPlayers?.find(p => p.user_id === playerId);
+        const assigned = {
+            ...unit,
+            template: false,
+            dead: false,
+            currHp: unit.currHp ?? unit.hp,
+            owner_id: playerId,
+            owner_nickname: player?.nickname || null
+        };
+        GAME_STATE.alliesRoster.push(assigned);
+        rebuildUnitIndex();
+        renderBenches();
+        scheduleSave('entity', { force: true });
+        log(`${assigned.name || assigned.id} è entrato nella squadra in missione.`, 'success', 3000, true);
+        pushGameEvent('log', { msg: `${assigned.name || assigned.id} è entrato in missione.`, type: 'info', time: 2500 });
+        hideTooltip();
+    });
 }
 
 function buildMessageMenu(menuEl, messages) {
@@ -480,20 +583,33 @@ export function renderFooterAvatars() {
             e.stopPropagation();
             const playerId = btn.dataset.playerId;
             const player = playersById.get(playerId);
-            const rosterUnit = roster.find(u => u.owner_id === playerId);
+            const liveRoster = Array.isArray(GAME_STATE.alliesRoster) ? GAME_STATE.alliesRoster : [];
+            const rosterUnit = liveRoster.find(u => u.owner_id === playerId);
             const unitFromDb = !rosterUnit && player?.unit_code
                 ? unitIndex.get(player.unit_code)
                 : null;
             const missionUnit = rosterUnit || unitFromDb;
             const online = isPlayerOnline(player, now);
+            const { isMyTurn } = getTurnInfo();
+            const commanderInRoster = liveRoster.some(u => u.role === 'commander' && isUnitAlive(u));
+            const canAssign = playerId === myId && canAssignMissionUnit({ playerId, hasMissionUnit: !!rosterUnit, isMyTurn });
             const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missionUnit, {
                 online,
-                statusLabel: online ? 'Online' : 'Offline'
+                statusLabel: online ? 'Online' : 'Offline',
+                canAssign,
+                commanderInRoster
             });
             showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
+            const tooltip = getTooltipEl();
+            if (tooltip) {
+                tooltip.dataset.playerId = playerId;
+            }
+            bindFooterTooltipActions();
             const unitId = btn.dataset.unitId;
             if (unitId) {
-                focusUnitOnField(unitId);
+                if (findUnitCell(unitId)) {
+                    focusUnitOnField(unitId);
+                }
             }
         });
     });
@@ -505,6 +621,7 @@ export function renderFooterAvatars() {
             ? unitIndex.get(mePlayer.unit_code)
             : null;
         const missionUnit = rosterUnit || unitFromDb;
+        const missionTooltipUnit = rosterUnit || null;
         const avatarSrc = missionUnit?.img || missionUnit?.avatar || 'assets/units/default.png';
         const displayName = mePlayer?.nickname || mePlayer?.user_id?.slice(0, 8) || 'Giocatore';
         selfBtn.classList.remove('is-hidden');
@@ -520,12 +637,29 @@ export function renderFooterAvatars() {
             selfBtn.dataset.bound = '1';
             selfBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                const liveRoster = Array.isArray(GAME_STATE.alliesRoster) ? GAME_STATE.alliesRoster : [];
+                const liveRosterUnit = liveRoster.find(u => u.owner_id === myId) || null;
+                const liveMissionUnit = liveRosterUnit || (mePlayer?.unit_code ? unitIndex.get(mePlayer.unit_code) : null);
+                const missionTooltipUnit = liveRosterUnit || null;
                 const online = isPlayerOnline(mePlayer, now);
-                const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, poolIndex, missionUnit, {
+                const { isMyTurn } = getTurnInfo();
+                const commanderInRoster = liveRoster.some(u => u.role === 'commander' && isUnitAlive(u));
+                const canAssign = canAssignMissionUnit({ playerId: myId, hasMissionUnit: !!liveRosterUnit, isMyTurn });
+                const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, poolIndex, missionTooltipUnit, {
                     online,
-                    statusLabel: online ? 'Online' : 'Offline'
+                    statusLabel: online ? 'Online' : 'Offline',
+                    canAssign,
+                    commanderInRoster
                 });
                 showTooltipAt(tooltipHtml, { x: e.clientX, y: e.clientY });
+                const tooltip = getTooltipEl();
+                if (tooltip) {
+                    tooltip.dataset.playerId = myId;
+                }
+                bindFooterTooltipActions();
+                if (liveMissionUnit?.id && findUnitCell(liveMissionUnit.id)) {
+                    focusUnitOnField(liveMissionUnit.id);
+                }
             });
         }
     }

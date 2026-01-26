@@ -2,7 +2,10 @@ import {
   sameOrAdjCells, focusUnitOnField,
   grid, renderBenches, renderGrid, focusBenchCard
 } from '../../view-components/grid/grid.js';
-import { unitAlive, isHuman, getStat, keyRC, rollDiceSpec, d, capModSum, wait } from '../utils.js';
+import { findUnitCell, unitsAtCell } from '../../view-components/grid/queries.js';
+import { hexWithinRadius, hexDistance } from '../../view-components/grid/hex.js';
+import { hexCone, pickGiantFacing } from '../../view-components/grid/cone.js';
+import { unitAlive, isHuman, getStat, keyRC, rollDiceSpec, d, capModSum, wait, pickRandom } from '../utils.js';
 import { playSfx, playBg } from '../../view-components/audio/audio.js';
 import { unitById, GAME_STATE, GIANT_ENGAGEMENT, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
@@ -16,6 +19,7 @@ import wallCollapse from '../effects/wallCollapse.js';
 import showWarningC from '../effects/warningOverlayC.js';
 import { getEngagedHuman, getEngagingGiant } from './engagement.js';
 import { handleAllyDeath, handleGiantDeath, handleWallDeath } from './deaths.js';
+import { APP_STATE } from '../../core/app-state.js';
 
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
@@ -97,7 +101,7 @@ export async function setUnitHp(unitId, newHp) {
   renderGrid(grid, DB.SETTINGS.gridSettings.rows, DB.SETTINGS.gridSettings.cols, GAME_STATE.spawns);
 };
 
-async function resolveAttack(attackerId, targetId) {
+async function resolveAttack(attackerId, targetId, { autoRoll = false, d20RollOverride = null } = {}) {
   const a = unitById.get(attackerId);
   const t = unitById.get(targetId);
   if (!a || !t) return;
@@ -107,7 +111,9 @@ async function resolveAttack(attackerId, targetId) {
   pushGameEvent('combat_start', { attackerId: a.id, targetId: t.id });
   scheduleSave('entity');
 
-  const d20roll = t.role === 'wall' ? d(20) : await rollD20OrAbort();
+  const d20roll = t.role === 'wall'
+    ? d(20)
+    : (d20RollOverride ?? (autoRoll ? d(20) : await rollD20OrAbort()));
   if (d20roll == null) {
     hideVersusOverlay();
     pushGameEvent('combat_cancel', { attackerId: a.id, targetId: t.id });
@@ -115,6 +121,12 @@ async function resolveAttack(attackerId, targetId) {
   }
 
   const ctx = buildContext(a, t, d20roll);
+  if (APP_STATE.gameMode === 'multiplayer') {
+    const changed = trackGiantCombat(ctx);
+    if (changed) {
+      scheduleSave('phase-turn');
+    }
+  }
 
   if (!ctx.flags.isHumanVsGiant) {
     await resolveWallAttack(ctx);
@@ -457,4 +469,108 @@ function computeAbilityDamage(giant, ab) {
   const addAtk = !!ab?.addAtk;
   const atk = Math.max(0, getStat(giant, 'atk'));
   return Math.max(1, base + bonus + (addAtk ? atk : 0));
+}
+
+function trackGiantCombat(ctx) {
+  const ts = GAME_STATE.turnState || {};
+  const existing = Array.isArray(ts.giantsActedIds) ? ts.giantsActedIds : [];
+  const ids = new Set(existing);
+  if (ctx.flags.AisGiant) ids.add(ctx.ids.attackerId);
+  if (ctx.flags.TisGiant) ids.add(ctx.ids.targetId);
+  const next = Array.from(ids);
+  const changed = next.length !== existing.length;
+  if (changed) {
+    ts.giantsActedIds = next;
+    GAME_STATE.turnState = ts;
+  }
+  return changed;
+}
+
+function pickAutoGiantTarget(giant) {
+  const cell = findUnitCell(giant.id);
+  if (!cell) return null;
+
+  const engagedHumanId = getEngagedHuman(giant.id);
+  if (engagedHumanId) {
+    const engagedHuman = unitById.get(engagedHumanId);
+    if (engagedHuman && unitAlive(engagedHuman) && sameOrAdjCells(giant.id, engagedHuman.id)) {
+      return { unit: engagedHuman, cell: findUnitCell(engagedHuman.id) };
+    }
+  }
+
+  const rng = Math.max(1, getStat(giant, 'rng') || 1);
+  const viewRadius = Math.max(2, rng);
+  const area = hexWithinRadius(cell.row, cell.col, viewRadius, true);
+  let seenHuman = false;
+  for (const p of area) {
+    for (const u of unitsAtCell(p.row, p.col)) {
+      if (isHuman(u) && unitAlive(u)) {
+        seenHuman = true;
+        break;
+      }
+    }
+    if (seenHuman) break;
+  }
+
+  const { dir } = pickGiantFacing(giant, cell);
+  const coneCells = hexCone(cell.row, cell.col, dir, rng, { includeOrigin: true });
+  const candidates = [];
+  for (const p of coneCells) {
+    for (const u of unitsAtCell(p.row, p.col)) {
+      if (seenHuman) {
+        if (isHuman(u) && unitAlive(u)) {
+          candidates.push({ unit: u, row: p.row, col: p.col });
+        }
+      } else if (u.role === 'wall' && unitAlive(u)) {
+        candidates.push({ unit: u, row: p.row, col: p.col });
+      }
+    }
+  }
+
+  if (!candidates.length) return null;
+
+  const ranked = candidates.map((c) => ({
+    ...c,
+    hp: c.unit.currHp ?? c.unit.hp ?? 0,
+    d: hexDistance(cell.row, cell.col, c.row, c.col)
+  }));
+  ranked.sort((a, b) => a.hp - b.hp || a.d - b.d);
+  const top = ranked.filter(x => x.hp === ranked[0].hp && x.d === ranked[0].d);
+  const chosen = pickRandom(top);
+  return { unit: chosen.unit, cell: { row: chosen.row, col: chosen.col } };
+}
+
+export async function resolveRemainingGiantsAutoAttacks({ delayMs = 900 } = {}) {
+  if (APP_STATE.gameMode !== 'multiplayer') return { count: 0, attempted: 0 };
+  const ts = GAME_STATE.turnState || {};
+  const acted = new Set(Array.isArray(ts.giantsActedIds) ? ts.giantsActedIds : []);
+  const giants = Array.isArray(GAME_STATE.giantsRoster) ? GAME_STATE.giantsRoster : [];
+
+  let performed = 0;
+  let attempted = 0;
+
+  for (const giant of giants) {
+    if (!giant || giant.role !== 'enemy' || !unitAlive(giant)) continue;
+    if (acted.has(giant.id)) continue;
+    attempted += 1;
+
+    const target = pickAutoGiantTarget(giant);
+    if (!target?.unit) {
+      acted.add(giant.id);
+      continue;
+    }
+
+    log(`${giant.name} attacca automaticamente ${target.unit.name}.`, 'warning', 2500, true);
+    await resolveAttack(giant.id, target.unit.id, { autoRoll: true });
+    acted.add(giant.id);
+    performed += 1;
+    if (delayMs > 0) {
+      await awaitWait(delayMs);
+    }
+  }
+
+  ts.giantsActedIds = Array.from(acted);
+  GAME_STATE.turnState = ts;
+  scheduleSave('phase-turn', { force: true });
+  return { count: performed, attempted };
 }
