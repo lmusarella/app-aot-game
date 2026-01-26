@@ -169,7 +169,7 @@ header {
 #dice-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--combat-overlay-under-z); /* sotto VS/esito scontro */
+  z-index: 99999;
 }
 
 .diceov-backdrop {

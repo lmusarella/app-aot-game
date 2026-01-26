@@ -168,14 +168,36 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missi
     const missionName = missionUnit?.name || missionUnit?.id || '—';
     const missionRole = getRoleLabel(missionUnit?.role);
     const missionHp = missionUnit ? formatUnitHp(missionUnit) : null;
-    const missionHpLabel = missionHp?.text ? ` · ${missionHp.text}${missionHp.isDead ? ' (Morta)' : ''}` : '';
+    const missionAvatar = missionUnit?.img || missionUnit?.avatar || 'assets/units/default.png';
     const statusClass = online ? 'is-online' : 'is-offline';
     const statusText = statusLabel || (online ? 'Online' : 'Offline');
+    const missionBlock = missionUnit
+        ? `
+            <div class="msn-squad-mission">
+                <div class="msn-squad-mission-title">Unità in missione</div>
+                <div class="msn-squad-mission-card">
+                    <span class="msn-squad-avatar msn-squad-avatar--mission"><img src="${missionAvatar}" alt=""></span>
+                    <div class="msn-squad-mission-info">
+                        <div class="msn-squad-mission-name">${missionName}</div>
+                        <div class="msn-squad-mission-meta">
+                            <span class="msn-squad-unit-role">${missionRole}</span>
+                            <span class="msn-squad-unit-hp ${missionHp?.isDead ? 'is-dead' : ''}">${missionHp?.text || ''}${missionHp?.isDead ? ' (Morta)' : ''}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+        : `
+            <div class="msn-squad-mission msn-squad-mission--empty">
+                <div class="msn-squad-mission-title">Unità in missione</div>
+                <div class="msn-squad-mission-empty">Nessuna unità in missione.</div>
+            </div>
+        `;
     if (!units.length) {
         return `
             <div class="tt-card footer-squad-tooltip">
-                <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
-                <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}${missionHpLabel}</div>
+                <div class="tt-title">${playerName}</div>
+                ${missionBlock}
                 <div class="footer-squad-status ${statusClass}">${statusText}</div>
                 <div class="tt-badge">Unità fuori missione</div>
                 <p class="footer-squad-empty">Nessuna unità fuori missione.</p>
@@ -210,8 +232,8 @@ function buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missi
     }).join('');
     return `
         <div class="tt-card footer-squad-tooltip">
-            <div class="tt-title">${playerName} <span class="footer-squad-title-unit">· ${missionName}</span></div>
-            <div class="footer-squad-current">In missione: ${missionName} · ${missionRole}${missionHpLabel}</div>
+            <div class="tt-title">${playerName}</div>
+            ${missionBlock}
             <div class="footer-squad-status ${statusClass}">${statusText}</div>
             <div class="tt-badge">Unità fuori missione</div>
             <ul class="msn-squad">${listItems}</ul>
