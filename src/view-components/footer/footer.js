@@ -153,12 +153,12 @@ function isUnitAlive(unit) {
     return !unit.dead && cur > 0;
 }
 
-function canAssignMissionUnit({ playerId, missionUnit, isMyTurn }) {
+function canAssignMissionUnit({ playerId, hasMissionUnit, isMyTurn }) {
     const phase = GAME_STATE.turnEngine?.phase;
     if (APP_STATE.gameMode !== 'multiplayer') return false;
     if (phase !== 'move_phase') return false;
     if (!playerId || !isMyTurn) return false;
-    if (missionUnit && isUnitAlive(missionUnit)) return false;
+    if (hasMissionUnit) return false;
     return true;
 }
 
@@ -558,7 +558,7 @@ export function renderFooterAvatars() {
             const missionUnit = rosterUnit || unitFromDb;
             const online = isPlayerOnline(player, now);
             const { isMyTurn } = getTurnInfo();
-            const canAssign = playerId === myId && canAssignMissionUnit({ playerId, missionUnit, isMyTurn });
+            const canAssign = playerId === myId && canAssignMissionUnit({ playerId, hasMissionUnit: !!rosterUnit, isMyTurn });
             const tooltipHtml = buildFooterAvatarTooltip(player, rosterIds, unitIndex, poolIndex, missionUnit, {
                 online,
                 statusLabel: online ? 'Online' : 'Offline',
@@ -586,6 +586,7 @@ export function renderFooterAvatars() {
             ? unitIndex.get(mePlayer.unit_code)
             : null;
         const missionUnit = rosterUnit || unitFromDb;
+        const missionTooltipUnit = rosterUnit || null;
         const avatarSrc = missionUnit?.img || missionUnit?.avatar || 'assets/units/default.png';
         const displayName = mePlayer?.nickname || mePlayer?.user_id?.slice(0, 8) || 'Giocatore';
         selfBtn.classList.remove('is-hidden');
@@ -603,8 +604,8 @@ export function renderFooterAvatars() {
                 e.stopPropagation();
                 const online = isPlayerOnline(mePlayer, now);
                 const { isMyTurn } = getTurnInfo();
-                const canAssign = canAssignMissionUnit({ playerId: myId, missionUnit, isMyTurn });
-                const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, poolIndex, missionUnit, {
+                const canAssign = canAssignMissionUnit({ playerId: myId, hasMissionUnit: !!rosterUnit, isMyTurn });
+                const tooltipHtml = buildFooterAvatarTooltip(mePlayer, rosterIds, unitIndex, poolIndex, missionTooltipUnit, {
                     online,
                     statusLabel: online ? 'Online' : 'Offline',
                     canAssign
