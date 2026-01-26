@@ -833,10 +833,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  background: #10121a;
+  padding: 8px 10px;
+  border: 1px solid rgba(51, 65, 85, 0.65);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.65));
   font-size: 12px;
   flex-wrap: wrap;
 }
@@ -869,16 +869,17 @@
 }
 
 .msn-squad-avatar {
-  width: 18px;
-  height: 18px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.65);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.35);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 18px;
+  flex: 0 0 28px;
 }
 
 .msn-squad-avatar img {
@@ -891,37 +892,39 @@
 .msn-squad-unit {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  opacity: 0.85;
+  gap: 8px;
+  font-size: 12px;
+  opacity: 0.9;
   width: 100%;
 }
 
 .msn-squad-unit-name {
-  max-width: 140px;
+  max-width: 160px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 600;
+  color: #f8fafc;
 }
 
 .msn-squad-unit-meta {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   white-space: nowrap;
 }
 
 .msn-squad-unit-role {
   font-size: 10px;
-  opacity: 0.7;
+  opacity: 0.75;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .msn-squad-unit-hp {
-  font-size: 11px;
-  opacity: 0.8;
+  font-size: 12px;
+  opacity: 0.85;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
