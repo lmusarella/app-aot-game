@@ -75,7 +75,42 @@ HP e barre vita sono visualizzati su card/tooltip. Alcune card mostrano le stat 
   2) *Dadi 3D* (sotto il Versus) → l’utente lancia il d20  
   3) *Riepilogo Attacco* (sotto i dadi): badge **Successo/Fallito/Pareggio**, dettagli **Per colpire** / **Per schivare** e righe “narrative”.
 
-### 2.6 Morte e conseguenze
+### 2.6 Programmazione abilità giganti
+
+Le abilità dei giganti sono pensate come **handler dichiarativi**: il JSON del gigante sceglie un `kind`, mentre il codice risolve un *piano di effetti* ordinato e poi il combat applica quel piano in sequenza.
+
+- Registry: `src/game-business-logic/entity/giant-abilities.js`.
+- Entry point: `resolveGiantAbilityPlan({ ctx, ability, primaryTargetId, d20Total, agiTotalByUnitId })`.
+- Regola anti-desync: gli handler **non modificano direttamente HP/griglia/salvataggi**; restituiscono `damageEvents` e `dodgedTargets`. `attack.js` applica gli effetti uno per volta e pubblica gli eventi multiplayer.
+- Handler disponibili:
+  - `single_target_damage` (default): danno al bersaglio dello scontro.
+  - `adjacent_damage`: danno a tutti gli umani nelle celle adiacenti al gigante, utile per abilità tipo carica/schianto ad area.
+
+Esempio JSON per una carica adiacente:
+
+```json
+"ability": {
+  "name": "Carica devastante",
+  "kind": "adjacent_damage",
+  "dice": "1d6",
+  "bonus": 0,
+  "addAtk": true,
+  "dodgeable": true,
+  "cd": 12,
+  "coolDown": 3,
+  "coolDownLeft": 0,
+  "active": true,
+  "sfx": "./assets/sounds/attacco_gigante.mp3"
+}
+```
+
+Per aggiungere abilità custom:
+
+1. Aggiungi un handler puro in `GIANT_ABILITY_HANDLERS`.
+2. Calcola bersagli/effetti usando griglia e stat, senza chiamare `setUnitHp`, `scheduleSave` o funzioni UI.
+3. Restituisci target, danni e schivate; lascia ad `attack.js` l'applicazione dello stato e la sincronizzazione eventi.
+
+### 2.7 Morte e conseguenze
 
 - **Umani** a 0 HP → `handleAllyDeath()`:
   - Rimozione da campo/roster, ritorno al pool come “dead”.
