@@ -75,7 +75,73 @@ HP e barre vita sono visualizzati su card/tooltip. Alcune card mostrano le stat 
   2) *Dadi 3D* (sotto il Versus) → l’utente lancia il d20  
   3) *Riepilogo Attacco* (sotto i dadi): badge **Successo/Fallito/Pareggio**, dettagli **Per colpire** / **Per schivare** e righe “narrative”.
 
-### 2.6 Morte e conseguenze
+### 2.6 Programmazione abilità giganti
+
+Le abilità dei giganti sono pensate come **handler dichiarativi**: il JSON del gigante sceglie un `kind`, mentre il codice risolve un *piano di effetti* ordinato e poi il combat applica quel piano in sequenza.
+
+- Registry: `src/game-business-logic/entity/giant-abilities.js`.
+- Entry point: `resolveGiantAbilityPlan({ ctx, ability, primaryTargetId, d20Total, agiTotalByUnitId })`.
+- Regola anti-desync: gli handler **non modificano direttamente HP/griglia/salvataggi**; restituiscono `damageEvents` e `dodgedTargets`. `attack.js` applica gli effetti uno per volta e pubblica gli eventi multiplayer.
+- Handler disponibili:
+  - `single_target_damage` (default): danno al bersaglio dello scontro.
+  - `adjacent_damage`: danno a tutti gli umani nelle celle adiacenti al gigante, utile per abilità tipo carica/schianto ad area.
+
+Esempio JSON per una carica adiacente:
+
+```json
+"ability": {
+  "name": "Carica devastante",
+  "kind": "adjacent_damage",
+  "dice": "1d6",
+  "bonus": 0,
+  "addAtk": true,
+  "dodgeable": true,
+  "cd": 12,
+  "coolDown": 3,
+  "coolDownLeft": 0,
+  "active": true,
+  "sfx": "./assets/sounds/attacco_gigante.mp3"
+}
+```
+
+Per aggiungere abilità custom:
+
+1. Aggiungi un handler puro in `GIANT_ABILITY_HANDLERS`.
+2. Calcola bersagli/effetti usando griglia e stat, senza chiamare `setUnitHp`, `scheduleSave` o funzioni UI.
+3. Restituisci target, danni e schivate; lascia ad `attack.js` l'applicazione dello stato e la sincronizzazione eventi.
+
+### 2.7 Programmazione effetti carte
+
+Anche le carte evento e consumabili usano una struttura a **piano di effetti**, così ogni carta può avere un comportamento custom senza spargere logica dentro la UI della mano.
+
+- Registry: `src/game-business-logic/cards/card-effect-handlers.js`.
+- Entry point: `resolveCardEffectPlan({ deckType, card })`.
+- Executor: `runCardEffectPlan(plan)` in `src/game-business-logic/cards/card-effects.js`.
+- Regola anti-desync: gli handler descrivono solo `visualEffects`, `gameEvents`, `actions` e consumo carta; l'executor applica gli effetti in ordine, emette eventi multiplayer e mantiene compatibile il comportamento esistente delle carte spawn.
+- Handler disponibili:
+  - `generic_use` (default): mostra l'effetto carta, pubblica `card_use` e lascia la carta agli scarti.
+  - `spawn_giant`: retrocompatibile con `type: "spawn"`; attiva il fulmine e spawna un gigante.
+
+Schema consigliato per le nuove carte:
+
+```json
+{
+  "id": "e4",
+  "type": "spawn",
+  "effect": { "kind": "spawn_giant" },
+  "name": "Discesa del Gigante!",
+  "desc": "Si sente un rombo di tuono in lontananza..."
+}
+```
+
+Per aggiungere effetti particolari quando arriveranno le immagini/testi delle carte:
+
+1. Aggiungi un handler in `CARD_EFFECT_HANDLERS`.
+2. Fai restituire un piano, non mutazioni dirette di stato.
+3. Se serve una nuova azione concreta, aggiungila in `runCardAction()` dentro `card-effects.js`.
+4. Decidi il consumo carta con `consume: "discard" | "remove" | "keep" | "already_discarded"`.
+
+### 2.8 Morte e conseguenze
 
 - **Umani** a 0 HP → `handleAllyDeath()`:
   - Rimozione da campo/roster, ritorno al pool come “dead”.
@@ -160,6 +226,9 @@ HP e barre vita sono visualizzati su card/tooltip. Alcune card mostrano le stat 
 - **`entity.js`**  
   Motore di combat e turni: `resolveAttack`, `setUnitHp`, `handle*Death`, `giantsPhaseMove/stepGiant`, cooldown & effects tick, engagement (`getEngagedHuman`, `getEngagingGiant`).
 
+- **`cards/card-effects.js` + `cards/card-effect-handlers.js`**  
+  Risoluzione dichiarativa degli effetti delle carte evento/consumabili e executor unico per UI/eventi/azioni.
+
 - **`grid.js`**  
   Griglia/stack, pathing e distanze (`sameOrAdjCells`, `nextStepTowards`, `hexDistance`, `nearestWallCell`, ecc.).
 
@@ -213,7 +282,8 @@ showAttackOverlayUnderDice({
 
 ## 8) Estensioni
 
-- **Abilità**: definisci `ability` (dice, bonus, addAtk, dodgeable, coolDown) e usa `computeAbilityDamage`, `getReadyGiantAbility`, `consumeGiantAbilityCooldown`.
+- **Abilità giganti**: definisci `ability.kind` e aggiungi handler puri in `giant-abilities.js`.
+- **Effetti carte**: definisci `effect.kind` e aggiungi handler puri in `card-effect-handlers.js`; l'executor resta in `card-effects.js`.
 - **Nuovi giganti**: aggiungi al pool (`type`, stats, audio BG).
 - **Nuovi modificatori**: aggiungi chip/rows in UI e rispetta **cap ±5** in calcolo e display.
 
@@ -222,8 +292,8 @@ showAttackOverlayUnderDice({
 ## 9) Dev: Build & Run
 
 1. Servi il progetto come **app statica** (qualsiasi http dev server).
-2. `index.html` importa `script.js` (module) e i file del **dice roller**.
-3. Verifica che `libs/three.min.js`, `libs/cannon.min.js`, `src/dice-roller/dice.js`, `src/dice-roller/main.js`, `src/dice-roller/styles.css` siano accessibili.
+2. `index.html` importa `src/app.js` come module e i file del **dice roller**.
+3. Verifica che `libs/three.min.js`, `libs/cannon.min.js`, `src/view-components/dice-roller/dice.js`, `src/view-components/dice-roller/main.js`, `src/view-components/dice-roller/styles.css` siano accessibili.
 4. SW (`sw.js`) è registrato per modalità PWA.
 
 ---

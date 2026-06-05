@@ -2,7 +2,7 @@ import {
   sameOrAdjCells, focusUnitOnField,
   grid, renderBenches, renderGrid, focusBenchCard
 } from '../../view-components/grid/grid.js';
-import { unitAlive, isHuman, getStat, keyRC, rollDiceSpec, d, capModSum, wait } from '../utils.js';
+import { unitAlive, isHuman, getStat, keyRC, d, capModSum, wait } from '../utils.js';
 import { playSfx, playBg } from '../../view-components/audio/audio.js';
 import { unitById, GAME_STATE, GIANT_ENGAGEMENT, DB } from '../../core/data.js';
 import { scheduleSave } from '../game-sync.js';
@@ -16,6 +16,7 @@ import wallCollapse from '../effects/wallCollapse.js';
 import showWarningC from '../effects/warningOverlayC.js';
 import { getEngagedHuman, getEngagingGiant } from './engagement.js';
 import { handleAllyDeath, handleGiantDeath, handleWallDeath } from './deaths.js';
+import { resolveGiantAbilityPlan } from './giant-abilities.js';
 
 export let ATTACK_PICK = null; // { attackerId, targets:[{unit, cell}], _unbind? }
 let TARGET_CELLS = new Set();
@@ -265,6 +266,7 @@ async function resolveHumanVsGiant(ctx) {
 
   let humanDamageDealt = 0;
   let humanDamageTaken = 0;
+  let abilityExtraLines = [];
 
   const humanDistracted = !!(engagingGiantId && engagingGiantId !== giantId);
   const inMelee = sameOrAdjCells(humanId, giantId);
@@ -272,7 +274,7 @@ async function resolveHumanVsGiant(ctx) {
   if (humanHits && !humanDistracted && inMelee) {
     const dmg = Math.max(1, d(4) + ATK_TOTAL);
     humanDamageDealt = dmg;
-    setUnitHp(giantId, (giant.currHp ?? giant.hp) - dmg);
+    await setUnitHp(giantId, (giant.currHp ?? giant.hp) - dmg);
     pushGameEvent('attack', { attackerId: humanId, targetId: giantId, effect: 'slash' });
     try {
       const path = human.sex === 'm'
@@ -294,31 +296,41 @@ async function resolveHumanVsGiant(ctx) {
   if (!engagedHumanId || engagedHumanId === humanId) {
     if (ability) {
       cdGiantAbi = Number.isFinite(Number(ability.cd)) ? Number(ability.cd) : giantCd;
-      const dodgeable = (ability.dodgeable !== false);
-      humanDodgesAbility = (d20Total + AGI_TOTAL) >= cdGiantAbi;
-      const giantHits = dodgeable ? !humanDodgesAbility : true;
+      humanDodgesAbility = ability.dodgeable === false ? false : (d20Total + AGI_TOTAL) >= cdGiantAbi;
 
-      if (giantHits) {
-        showWarningC({
-          text: "ABILITA' ATTIVATA",
-          subtext: `${giant.name} usa ${ability.name || 'Abilità'}`,
-          theme: 'orange', ringAmp: 1.0, autoDismissMs: 3500
-        });
-        pushGameEvent('giant_ability', {
-          giantId,
-          name: `${giant.name} usa ${ability.name || 'Abilità'}`,
-          sfx: ability.sfx || './assets/sounds/abilita_gigante.mp3'
-        });
-        try { playSfx(ability.sfx || './assets/sounds/abilita_gigante.mp3', { volume: 0.9 }); } catch { }
-        await awaitWait(3500);
+      showWarningC({
+        text: "ABILITA' ATTIVATA",
+        subtext: `${giant.name} usa ${ability.name || 'Abilità'}`,
+        theme: 'orange', ringAmp: 1.0, autoDismissMs: 3500
+      });
+      pushGameEvent('giant_ability', {
+        giantId,
+        name: `${giant.name} usa ${ability.name || 'Abilità'}`,
+        sfx: ability.sfx || './assets/sounds/abilita_gigante.mp3'
+      });
+      try { playSfx(ability.sfx || './assets/sounds/abilita_gigante.mp3', { volume: 0.9 }); } catch { }
+      await awaitWait(3500);
 
-        const dmg = computeAbilityDamage(giant, ability);
-        humanDamageTaken = dmg;
-        setUnitHp(humanId, (human.currHp ?? human.hp) - dmg);
-        pushGameEvent('attack', { attackerId: giantId, targetId: humanId, effect: 'giant' });
+      const plan = resolveGiantAbilityPlan({
+        ctx, ability, primaryTargetId: humanId, d20Total,
+        agiTotalByUnitId: (unitId) => {
+          const unit = unitById.get(unitId);
+          return capModSum(getStat(unit, 'agi') || 0, ctx.bonus.effectiveBonus.agi);
+        }
+      });
 
+      for (const event of plan.damageEvents) {
+        const target = event.target.unit;
+        await setUnitHp(target.id, (target.currHp ?? target.hp) - event.damage);
+        pushGameEvent('attack', { attackerId: giantId, targetId: target.id, effect: 'giant', abilityKind: plan.kind });
+        if (String(target.id) === String(humanId)) humanDamageTaken += event.damage;
+      }
+
+      abilityExtraLines = buildAbilityExtraLines(plan, humanId);
+
+      if (plan.damageEvents.length) {
         bloodImpact();
-        giantFallQuake({ delayMs: 0, intensity: 28 });
+        giantFallQuake({ delayMs: 0, intensity: plan.kind === 'adjacent_damage' ? 32 : 28 });
       }
 
       consumeGiantAbilityCooldown(giant);
@@ -326,7 +338,7 @@ async function resolveHumanVsGiant(ctx) {
       const giantHits = !humanDodges;
       if (giantHits) {
         humanDamageTaken = giantAtk;
-        setUnitHp(humanId, (human.currHp ?? human.hp) - giantAtk);
+        await setUnitHp(humanId, (human.currHp ?? human.hp) - giantAtk);
         pushGameEvent('attack', { attackerId: giantId, targetId: humanId, effect: 'giant' });
         bloodImpact();
         try { playSfx('./assets/sounds/attacco_gigante.mp3', { volume: 0.8 }); } catch { }
@@ -338,7 +350,7 @@ async function resolveHumanVsGiant(ctx) {
 
   const summary = buildSummary({
     ctx, ability, humanHits, humanDodges, humanDodgesAbility, cdGiantAbi,
-    humanDistracted, giantDistracted, humanDamageDealt, humanDamageTaken
+    humanDistracted, giantDistracted, humanDamageDealt, humanDamageTaken, abilityExtraLines
   });
 
   return {
@@ -352,7 +364,7 @@ async function resolveHumanVsGiant(ctx) {
 
 function buildSummary({
   ctx, ability, humanHits, humanDodges, humanDodgesAbility, cdGiantAbi,
-  humanDistracted, giantDistracted, humanDamageDealt, humanDamageTaken
+  humanDistracted, giantDistracted, humanDamageDealt, humanDamageTaken, abilityExtraLines = []
 }) {
   const { human, giant } = ctx.units;
   const lines = [];
@@ -403,7 +415,26 @@ function buildSummary({
     }
   }
 
+  lines.push(...abilityExtraLines);
+
   return { badgeText, badgeClass, summaryLines: lines, ability };
+}
+
+
+function buildAbilityExtraLines(plan, primaryTargetId) {
+  if (!plan || plan.kind === 'single_target_damage') return [];
+  const lines = [];
+  for (const event of plan.damageEvents) {
+    const target = event.target?.unit;
+    if (!target || String(target.id) === String(primaryTargetId)) continue;
+    lines.push(`${target.name} subisce ${event.damage} danni da ${plan.name}.`);
+  }
+  for (const target of plan.dodgedTargets || []) {
+    const unit = target?.unit;
+    if (!unit || String(unit.id) === String(primaryTargetId)) continue;
+    lines.push(`${unit.name} schiva ${plan.name}.`);
+  }
+  return lines;
 }
 
 function showSummaryOverlay(ctx, outcome) {
@@ -449,12 +480,4 @@ function consumeGiantAbilityCooldown(giant) {
   if (!ab) return;
   const coolDown = Math.max(1, Number(ab.coolDown || 1));
   ab.coolDownLeft = coolDown;
-}
-
-function computeAbilityDamage(giant, ab) {
-  const base = rollDiceSpec(ab?.dice || '1d6');
-  const bonus = Number(ab?.bonus || 0);
-  const addAtk = !!ab?.addAtk;
-  const atk = Math.max(0, getStat(giant, 'atk'));
-  return Math.max(1, base + bonus + (addAtk ? atk : 0));
 }

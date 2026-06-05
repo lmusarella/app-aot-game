@@ -62,7 +62,7 @@ export function showDrawnCard(deckType, card) {
   }
   function onKey(e) { if (e.key === 'Escape') closeOverlay(); }
 
-  root.querySelector('.hand-backdrop').onclick = () => {
+  root.querySelector('.hand-backdrop').onclick = async () => {
     closeOverlay();
     if (deckType === 'consumable') {
       GAME_STATE.hand.push({ deck: deckType, card: structuredClone(card) });
@@ -73,7 +73,7 @@ export function showDrawnCard(deckType, card) {
       GAME_STATE.decks[deckType]?.discard.push(card);
       log(`Carta Evento "${card.name}" è stata attivata!.`, 'warning');
       updateFabDeckCounters();
-      applyCardEffect({ deckType, card });
+      await applyCardEffect({ deckType, card });
       markEventActivated();
 
       missionStatsRecordEvent(card, {
@@ -82,7 +82,7 @@ export function showDrawnCard(deckType, card) {
       });
     }
   };
-  root.querySelector('.hand-close').onclick = () => {
+  root.querySelector('.hand-close').onclick = async () => {
     closeOverlay();
     if (deckType === 'consumable') {
       GAME_STATE.hand.push({ deck: deckType, card: structuredClone(card) });
@@ -93,7 +93,7 @@ export function showDrawnCard(deckType, card) {
       GAME_STATE.decks[deckType]?.discard.push(card);
       log(`Carta Evento "${card.name}" è stata attivata!.`, 'warning');
       updateFabDeckCounters();
-      applyCardEffect({ deckType, card });
+      await applyCardEffect({ deckType, card });
       markEventActivated();
       missionStatsRecordEvent(card, {
         durationRounds: card.duration || Infinity,
@@ -104,6 +104,30 @@ export function showDrawnCard(deckType, card) {
   document.addEventListener('keydown', onKey);
 
   root.removeAttribute('hidden');
+}
+
+
+function normalizeCardEffectResult(result) {
+  if (result && typeof result === 'object') {
+    return {
+      handled: !!result.handled,
+      consume: result.consume || 'discard'
+    };
+  }
+  return {
+    handled: !!result,
+    consume: result ? 'already_discarded' : 'discard'
+  };
+}
+
+function consumeUsedCard(entry, consume = 'discard') {
+  if (!entry?.deck || !entry?.card) return;
+  if (consume === 'remove') {
+    GAME_STATE.decks[entry.deck]?.removed.push(entry.card);
+    return;
+  }
+  if (consume === 'already_discarded' || consume === 'keep') return;
+  GAME_STATE.decks[entry.deck]?.discard.push(entry.card);
 }
 
 export function openHandOverlay() {
@@ -138,14 +162,15 @@ export function openHandOverlay() {
       if (act === 'use-one') {
         const it = GAME_STATE.hand.splice(i, 1)[0];
         if (it) {
-          let handled = false;
-          try { handled = !!await applyCardEffect({ deckType: it.deck, card: it.card }); } catch { }
-          if (!handled) {
-            try { handled = !!window.onUseCard?.(it.deck, it.card); } catch { }
+          let effectResult = { handled: false, consume: 'discard' };
+          try { effectResult = normalizeCardEffectResult(await applyCardEffect({ deckType: it.deck, card: it.card })); } catch { }
+          if (!effectResult.handled) {
+            try {
+              const fallbackHandled = !!window.onUseCard?.(it.deck, it.card);
+              effectResult = { ...effectResult, handled: fallbackHandled };
+            } catch { }
           }
-          if (!handled) {
-            GAME_STATE.decks[it.deck]?.discard.push(it.card);
-          }
+          consumeUsedCard(it, effectResult.consume);
           log(`Usata "${it.card.name}".`, 'success');
           updateFabDeckCounters();
 

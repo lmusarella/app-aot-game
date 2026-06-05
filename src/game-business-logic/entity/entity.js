@@ -4,3 +4,4 @@ export { handleWallDeath, handleGiantDeath, handleAllyDeath } from './deaths.js'
 export { stepGiant, giantsPhaseMove, spawnGiant, pickRandomTeam } from './giants.js';
 export { resetMissionEffectsAllUnits, advanceAllCooldowns, tickUnitModsOnNewRound } from './cooldowns.js';
 export { seedWallRows } from './walls.js';
+export { resolveGiantAbilityPlan, getGiantAbilityHandlerNames } from './giant-abilities.js';
